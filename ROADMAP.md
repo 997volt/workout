@@ -17,8 +17,8 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-Nothing. The library's five read-only rows (N224–N228) shipped to the unreleased section of
-[CHANGELOG.md](CHANGELOG.md); the queue below starts at the library's own data.
+Nothing. The library's read-only rows (N224–N228) and its own data (B292, B293, N229, N240, N241) shipped to the
+unreleased section of [CHANGELOG.md](CHANGELOG.md); the queue below starts with the rows the library works with.
 
 ## Later — decided, and not being started
 
@@ -30,87 +30,11 @@ graveyard. **It drains like every other section**: a row picked up moves to *Nex
 the changelog.
 
 **The order below is the build order**, and it is chosen so each row starts with the least it can depend on: the
-library's own data first, then the rows it works with, then the exercise's own screen, then the schema changes,
-then the rule that reads history, and last the migrations that need their author's word on every row. Each row says
-what it waits for where it waits for anything; a row that says nothing waits for nothing but the one before it. The
-numbers quoted here are the measurements the work was planned from, not facts to keep up to date: a row that ships
-leaves this file.
-
-### The library's own data
-
-**B292 — a seeded family has taken a movement's id, so *Back Extension* does not exist.** A 2.6 database holds the
-seed's *category* under `back-extension`, the id the seed now uses for the **movement**. B148 taught the seeder to
-move that row, but the guard asks for one that is still its own parent, and the row on disk has no parent, so the
-guard never matches: the device shows **two categories named Back Extension** (the stale one and
-`back-extension-family`) and the movement `back-extension` fails to arrive on every start, because `INSERT OR
-IGNORE` cannot take a taken id. **The movement therefore cannot be logged at all** — a picker offers movements, and
-a category is never named by a set — while a duplicate family is drawn. The repair widens to the shape that is
-actually on disk and that no write path can produce: **a row whose id the seed claims for a movement, which is not
-that movement** (a category made in the app is minted with a UUID, so a seed slug sitting on the wrong kind of row
-is only ever an old seed). Its children are re-filed onto `back-extension-family`, the stale row is **deleted**
-rather than soft-deleted — a soft-deleted row keeps its id and would block the movement exactly as it does now —
-and the seeder's ordinary insert then lands. The case is built from a 2.6-shaped store in the seeder's own test, so
-the guard is proved against the row that caused it rather than the shape B148 imagined.
-
-**B293 — the seed declares no movement bodyweight or timed.** The seed's movement helper takes a name, an equipment
-and a taxonomy, and the seeder's insert writes ten columns; `isBodyweight` and `isTimed` are not among them, so
-every seeded row takes the table's own default of false. Two shapes are therefore wrong on the first workout. A
-**pull-up, dip, push-up or inverted row** is read as an ordinary loaded movement: the field asks for *Weight*
-rather than *Added weight*, the bodyweight prompt never opens, and the set snapshots no bodyweight — so a set at
-+20 kg is stored, charted and record-checked as 20 kg rather than 95, because N219's load rule cannot run without
-the snapshot. And a **plank, Copenhagen plank or farmer's carry** cannot be logged as a hold at all, because the
-editor offers reps. The fix is the seed's own: the helper takes both flags, the insert carries both columns, and
-each movement declares what it is — which is also what the plyometric rows need (N241), so it lands before them.
-**An existing device needs a guarded repair**, in the shape B148 and B292 established: filled only where the row
-still looks like the seed's, idempotent, and never over a row the lifter has edited, because the two flags are
-theirs to set.
-
-**N229 — every seeded movement is filed, or the seed says why it cannot be.** Eight of the seed's movements sit at
-the top level with no family, which is why a fresh install draws a flat alphabetical pile of loose lifts under its
-families: a shape that reads as the library's leftovers rather than as anything the lifter chose. *Face Pull* fits
-**Rear Delt** as it stands and *Dip* fits **Triceps Extension**, which already holds Bench Dip and Diamond Push-Up.
-Three new families are needed: one for the hamstring curls (*Lying Leg Curl*, *Seated Leg Curl*, *Nordic Curl*),
-one for *Leg Extension*, which is quad isolation that *Squat* would name wrongly, and one for the upright rows that
-N239 adds — four implements of one lift, with no family to hold them today. Each new family states its own pattern,
-primary muscle and secondary list, because a family is where its members read them. The other two are decided
-rather than filed: **Push-Up stays at the top level**, because every press family is a *lift's* family and a
-push-up is none of them — one seeded movement is loose on purpose, which is a different thing from eight of them
-being so — and the plain **Deadlift is merged away** into *Conventional Deadlift* (N238), so the collision of a
-family and a child sharing one name goes rather than being renamed around. **An existing device needs a guarded
-re-file as well**: `INSERT OR IGNORE` never updates a row, so a movement already on the device keeps its null
-family until a repair moves it — only where it still looks like the seed's, idempotent, in the shape B148
-established. Rejected: a synthetic *Unfiled* head in the library, which would give the app's own leftovers a name
-and a count, and still leave the rows unfiled.
-
-**N240 — the seeded taxonomy is audited, and corrected where it is owned.** Every seeded movement's effective
-primary and secondary muscles are reviewed against what the movement trains, and each finding is fixed at the level
-that owns it: a **family** states what all of its members share, and a member that differs states its own (N103,
-N110 — read live, never copied). The inspection starts from a real gap: the *Row* family names upper back and
-biceps and **not the lats**, which is half of what a row is trained for, while the *Lat Pulldown* family names lats
-and biceps and not the upper back that does the retracting. Two consequences have to be stated rather than
-discovered. **A family's correction moves every member that states nothing**, because the walk is live — which is
-why a wrong fact belongs at the level that owns it, and a member's exception belongs on the member. And **the
-correction is retroactive**: the balance figure a program shows (N119, N122) is computed from effective muscles in
-half-sets, so a corrected family reshapes the numbers of plans already authored. That is what a correction is for,
-and it is why this is a review with the author rather than a mechanical pass. It lands after N229, which creates
-the families it reviews. Existing devices need the same guarded update, for B148's reason: `INSERT OR IGNORE` never
-rewrites a row.
-
-**N241 — plyometric movements are part of the seed.** The seed ships strength and bodybuilding work and no jump,
-hop or throw, so a program that includes plyometrics authors every one of them by hand — the same gap the seed's
-own note records for the Olympic lifts, and for a related reason: **a family states one movement pattern and one
-primary muscle**, and a box jump has an honest claim on the squat pattern, on the calves, the quads and the glutes.
-Three things are decided here, in this order. **What ships**: a box jump, a jump squat, a broad jump, a depth jump,
-a pogo hop, a bound or skater and a medicine-ball throw, with the equipment each needs. **How they are filed**: one
-*Plyometric* family whose stated pattern and primary muscle are the decision, or one family per pattern where the
-members disagree — and they can be filed at all only once B293 makes a bodyweight row true, because a plyometric
-movement that is not marked bodyweight is handled as a loaded one. **What progression does with them**: a jump
-carries no added load, so the offer gives reps below its ceiling and says *topped out* at it (N74) — honest, and it
-means a plyometric plan climbs by reps and then stops, unless the jump is a loaded one, where the ordinary rule
-applies. The movement pattern enum has no value for it — press, pull, squat, hinge, lunge, carry, isolation, core,
-other — so the family either states *other* or the enum gains one. Adding it is additive and safe for the document
-format, which carries a pattern as a string rather than an enum, but the pickers and the generated catalog see it,
-so it is named here rather than slipped in.
+rows the library works with first, then the exercise's own screen, then the schema changes, then the rule that
+reads history, and last the migrations that need their author's word on every row. Each row says what it waits for
+where it waits for anything; a row that says nothing waits for nothing but the one before it. The numbers quoted
+here are the measurements the work was planned from, not facts to keep up to date: a row that ships leaves this
+file.
 
 ### Bringing a program in
 
@@ -310,7 +234,8 @@ reason this is the safe half of the work. The seed's catalog in `docs/` is gener
 test, so it is regenerated in the same change. A retired name that survives N238 stays the lifter's row and does
 **not** re-enter the seed: a retired name is a change to what a fresh install ships, and re-adding one would give
 two installs two different libraries. Waits for N229, whose new families these rows are filed under, and for N238,
-because a row merged away is a row not worth naming.
+because a row merged away is a row not worth naming. **The upright rows need one more family** — four implements of
+one lift with no family to hold them today — and it ships with them rather than before they exist.
 
 **A movement is per implement the lifter loads separately**, and the equipment variants of one lift stay separate
 movements rather than one row with a note. The seed already ships them that way — three bench presses, three flies,

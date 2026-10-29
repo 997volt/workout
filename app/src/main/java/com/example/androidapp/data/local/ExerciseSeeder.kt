@@ -36,104 +36,108 @@ internal fun seedMissingExercises(db: SupportSQLiteDatabase, seededAt: Long) {
         // an older seed can hold a row under an id the seed now claims for a *movement*, and `INSERT OR IGNORE`
         // would keep it there for ever — so the impostor is resolved before the inserts, in this transaction.
         releaseSeededMovementIds(db, seededAt)
-
-        // The families first (ROADMAP N95). A category is a row of the library like any other, so it is
-        // seeded by the same statement with the same conflict rule — which is what keeps a lifter's rename
-        // or re-file from being undone on the next start.
-        SeedExercises.categories.forEach { category ->
-            db.execSQL(
-                INSERT_EXERCISE,
-                arrayOf<Any?>(
-                    category.id,
-                    category.name,
-                    // **The three facts a family holds** (ROADMAP N110): its pattern, its primary muscle and
-                    // its secondary list, stated once here so no movement under it has to. Its **equipment
-                    // stays unstated**: a family spans equipment — the lat pulldown family alone holds a
-                    // cable, a bodyweight and a machine movement — so there is no one value to write.
-                    converters.fromMuscleGroup(category.primaryMuscle),
-                    converters.fromMuscleGroups(category.secondaryMuscles),
-                    null,
-                    converters.fromMovementPattern(category.pattern),
-                    null, // parentId: a category sits at the top level
-                    RowKind.CATEGORY.name,
-                    // A family is never loaded by the body and is never held: the two flags belong to the
-                    // movements a set is logged against (B293).
-                    0,
-                    0,
-                    seededAt,
-                    seededAt,
-                ),
-            )
-        }
-
-        SeedExercises.all.forEach { exercise ->
-            db.execSQL(
-                INSERT_EXERCISE,
-                arrayOf<Any?>(
-                    exercise.id,
-                    exercise.name,
-                    // What this row **states**, and nothing else (ROADMAP N103, N110): a movement filed
-                    // under a category usually states only its equipment, because the family is the home of
-                    // the pattern and the muscles. Null means *read it from the category*.
-                    exercise.primaryMuscle?.let(converters::fromMuscleGroup),
-                    converters.fromMuscleGroups(exercise.secondaryMuscles),
-                    exercise.equipment?.let(converters::fromEquipment),
-                    exercise.movementPattern?.let(converters::fromMovementPattern),
-                    // The family this movement arrives filed under (ROADMAP N95), from the seed's own map so
-                    // the seeder and the record of it cannot disagree. `INSERT OR IGNORE` is what
-                    // keeps this from undoing a re-file: the row that already exists is left alone, and
-                    // only a movement a database does not have yet arrives with its parent set.
-                    SeedExercises.parentOf[exercise.id],
-                    // The enum's name rather than the column's SQL default, so the value keeps one home; a
-                    // DEFAULT in SQL would be a second copy of a name that lives in the enum.
-                    RowKind.MOVEMENT.name,
-                    // The two flags the seeder did not write, so every seeded movement arrived as an ordinary
-                    // loaded one (B293): a weighted pull-up read as its belt alone, a plank offered reps.
-                    if (exercise.isBodyweight) 1 else 0,
-                    if (exercise.isTimed) 1 else 0,
-                    // One timestamp per batch, so seeded rows are recognisable as
-                    // seed rather than as something the user created.
-                    seededAt,
-                    seededAt,
-                ),
-            )
-        }
-        // **Everything below writes behind the insert, because `INSERT OR IGNORE` never updates a row.** A
-        // change the seed makes to how a movement already on a device is read has to be written there, guarded
-        // by what the seed shipped so a lifter's own edit is never undone.
-
-        // A movement the seed now files (N229).
-        fileMovementsTheSeedNowFiles(db, seededAt)
-
-        // A family's muscles the audit corrected (N240).
-        correctSeededTaxonomy(db, seededAt)
-
-        // The two flags the seeder never wrote (B293), only ever raised so a lifter's own answer survives.
-        SeedExercises.all.forEach { exercise ->
-            if (!exercise.isBodyweight && !exercise.isTimed) return@forEach
-            val bodyweight = if (exercise.isBodyweight) 1 else 0
-            val timed = if (exercise.isTimed) 1 else 0
-            db.execSQL(
-                UPDATE_SEEDED_FLAGS,
-                arrayOf<Any?>(
-                    bodyweight,
-                    timed,
-                    exercise.id,
-                    exercise.name,
-                    RowKind.MOVEMENT.name,
-                    bodyweight,
-                    timed,
-                ),
-            )
-        }
-        // A movement the seed retired, merged into the one that means it (N229). Last, because the row it
-        // merges into has just been inserted.
-        mergeRetiredMovements(db, seededAt)
-
+        insertCategories(db, converters, seededAt)
+        insertMovements(db, converters, seededAt)
+        writeBehindTheInsert(db, seededAt)
         db.setTransactionSuccessful()
     } finally {
         db.endTransaction()
     }
+}
+
+/**
+ * The families, first (ROADMAP N95).
+ *
+ * A category is a row of the library like any other, so it is seeded by the same statement with the same
+ * conflict rule — which is what keeps a lifter's rename or re-file from being undone on the next start.
+ */
+private fun insertCategories(db: SupportSQLiteDatabase, converters: Converters, seededAt: Long) {
+    SeedExercises.categories.forEach { category ->
+        db.execSQL(
+            INSERT_EXERCISE,
+            arrayOf<Any?>(
+                category.id,
+                category.name,
+                // **The three facts a family holds** (ROADMAP N110): its pattern, its primary muscle and its
+                // secondary list, stated once here so no movement under it has to. Its **equipment stays
+                // unstated**: a family spans equipment — the lat pulldown family alone holds a cable, a
+                // bodyweight and a machine movement — so there is no one value to write.
+                converters.fromMuscleGroup(category.primaryMuscle),
+                converters.fromMuscleGroups(category.secondaryMuscles),
+                null,
+                converters.fromMovementPattern(category.pattern),
+                null, // parentId: a category sits at the top level
+                RowKind.CATEGORY.name,
+                // A family is never loaded by the body and is never held: the two flags belong to the
+                // movements a set is logged against (B293).
+                0,
+                0,
+                seededAt,
+                seededAt,
+            ),
+        )
+    }
+}
+
+/** The movements, after the families they read their taxonomy from (ROADMAP N110). */
+private fun insertMovements(db: SupportSQLiteDatabase, converters: Converters, seededAt: Long) {
+    SeedExercises.all.forEach { exercise ->
+        db.execSQL(
+            INSERT_EXERCISE,
+            arrayOf<Any?>(
+                exercise.id,
+                exercise.name,
+                // What this row **states**, and nothing else (ROADMAP N103, N110): a movement filed under a
+                // category usually states only its equipment, because the family is the home of the pattern
+                // and the muscles. Null means *read it from the category*.
+                exercise.primaryMuscle?.let(converters::fromMuscleGroup),
+                converters.fromMuscleGroups(exercise.secondaryMuscles),
+                exercise.equipment?.let(converters::fromEquipment),
+                exercise.movementPattern?.let(converters::fromMovementPattern),
+                // The family this movement arrives filed under (ROADMAP N95), from the seed's own map so the
+                // seeder and the record of it cannot disagree. `INSERT OR IGNORE` is what keeps this from
+                // undoing a re-file: a row that already exists is left alone, and only a movement a database
+                // does not have yet arrives with its parent set.
+                SeedExercises.parentOf[exercise.id],
+                // The enum's name rather than the column's SQL default, so the value keeps one home; a
+                // DEFAULT in SQL would be a second copy of a name that lives in the enum.
+                RowKind.MOVEMENT.name,
+                // The two flags the seeder did not write, so every seeded movement arrived as an ordinary
+                // loaded one (B293): a weighted pull-up read as its belt alone, a plank offered reps.
+                if (exercise.isBodyweight) 1 else 0,
+                if (exercise.isTimed) 1 else 0,
+                // One timestamp per batch, so seeded rows are recognisable as
+                // seed rather than as something the user created.
+                seededAt,
+                seededAt,
+            ),
+        )
+    }
+}
+
+/**
+ * The repairs that write **behind** the insert, because `INSERT OR IGNORE` never updates a row.
+ *
+ * A change the seed makes to how a movement already on a device is read has to be written there, and each is
+ * guarded by what the seed shipped so a lifter's own edit is never undone. In order: a movement the seed now
+ * files (N229), a family's muscles the audit corrected (N240), the two flags the seeder never wrote (B293),
+ * and a movement the seed retired merged into the one that means it (N229) — last, because the row it merges
+ * into has just been inserted.
+ */
+private fun writeBehindTheInsert(db: SupportSQLiteDatabase, seededAt: Long) {
+    fileMovementsTheSeedNowFiles(db, seededAt)
+    correctSeededTaxonomy(db, seededAt)
+    // Only ever raised, so a lifter's own answer survives.
+    SeedExercises.all.forEach { exercise ->
+        if (!exercise.isBodyweight && !exercise.isTimed) return@forEach
+        val bodyweight = if (exercise.isBodyweight) 1 else 0
+        val timed = if (exercise.isTimed) 1 else 0
+        db.execSQL(
+            UPDATE_SEEDED_FLAGS,
+            arrayOf<Any?>(bodyweight, timed, exercise.id, exercise.name, RowKind.MOVEMENT.name, bodyweight, timed),
+        )
+    }
+    mergeRetiredMovements(db, seededAt)
 }
 
 /**

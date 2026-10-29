@@ -52,7 +52,50 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   had on the previous composition and opens what changed — the family joined, the one left, both when a movement
   moves between them. The library arriving is not the library changing, so the first composition opens nothing, and a
   movement that arrived unfiled names no family at all.
+- **Plyometric movements** (N241). Seven arrive — box jump, jump squat, broad jump, depth jump, pogo hop, skater bound
+  and a medicine-ball throw — as body-loaded movements, so a set prefills as added weight and one at its rep ceiling
+  earns nothing rather than a heavier bar it does not load. The movement pattern enum gained `JUMP` for the family to
+  state: a family holds one pattern and one primary muscle, and a box jump has an honest claim on the squat pattern
+  and on the calves, quads and glutes. The throw states its own taxonomy, because a medicine-ball throw is upper-body
+  power and the family's quads would be a fact invented about the movement.
 
+### Changed
+
+- **The seeded library files its movements, and one deadlift means one lift** (N229). Eight of the seed's movements sat
+  at the top level, so a fresh install drew a flat alphabetical pile of loose lifts under its families. A face pull is
+  rear-delt work and a dip is the compound its family already holds; the knee isolation needed two families, because a
+  leg extension is quad work that *Squat* would name wrongly and a leg curl is knee flexion rather than the hinge
+  *Deadlift* holds. The push-up stays unfiled on purpose: every press family is a *lift's* family. The plain
+  *Deadlift* row goes too — the family is named after the lift, so a movement of that name sat beside it, and the bar
+  lift a lifter means is *Conventional Deadlift*. Retiring a name is not deleting a row: a device that logged it keeps
+  every set, plan target and program slot, moved onto the survivor, and the plan row it changed moves its own
+  timestamp so a document exported before this is refused as stale rather than merged into a plan that changed.
+
+### Fixed
+
+- **A seeded family no longer holds a movement's id, so *Back Extension* exists** (B292). A database written by an
+  older seed holds the *category* under an id this seed uses for a movement, and `INSERT OR IGNORE` cannot take a
+  taken id — so the movement never arrived and the lift could not be logged at all, while a second family of the same
+  name was drawn beside the corrected one. B148's repair tried to move that row aside and asked for one that was still
+  its own parent, which is not the shape on disk, so it never fired. It now matches what is actually there and what no
+  write path can produce: a row the seed claims for a movement, under that id, of another kind, still carrying that
+  name. Its children are re-filed onto the family the seed files that movement under, and the impostor is deleted
+  rather than soft-deleted, because a soft-deleted row keeps its id and would block the movement exactly as before.
+
+- **The seed says which movements are bodyweight and which are held** (B293). The seeder's insert wrote ten columns,
+  and `isBodyweight` and `isTimed` were not among them, so every seeded movement arrived as an ordinary counted lift:
+  a weighted pull-up was recorded, charted and record-checked as its belt alone, and a plank could not be logged as a
+  hold. The seed declares both flags now — the twelve bodyweight movements, the assisted pull-up whose machine takes
+  weight off, the ab wheel, the three planks and the two carries — and a device that already holds the row is raised
+  to the seed's truth and never lowered, so a flag a lifter set stays theirs. The catalog the import helper reads
+  carries them too, which is what stops a pull-up resolved from a name arriving as an ordinary lift.
+
+- **The audited taxonomy names the lats and the upper back** (N240). The Row family named upper back and biceps and not
+  the lats, which is half of what a row is for, so a program's balance figure counted no lat work for the rows that
+  train them most; the Lat Pulldown family was the mirror image, missing the upper back that retracts the shoulder
+  blades. Both corrections are written behind the insert, matched on the list the seed shipped before, so a lifter who
+  set their own list keeps it — and because a family's muscles are what its members read live, the whole family moves
+  and the balance numbers of plans already authored are reshaped.
 ## [2.18] — 2026-10-29 (versionCode 38)
 
 ### Fixed
