@@ -92,8 +92,13 @@ by default, so reruns are fast.
 The import helper has its own gate, under node rather than Gradle (CI's `docs` job, N173):
 `node docs/tests-node.js` runs the page's editor assertions against the committed `docs/shared`
 build, `node docs/build-single-file.js` proves the portable copy still builds, and
-`node docs/fixtures/generate.js` followed by `git diff --exit-code -- docs/fixtures docs/shared`
-proves the generated files are current. Run them when touching `docs/`.
+`node docs/fixtures/generate.js` followed by `git diff --exit-code -- docs/fixtures` proves the
+fixtures are current. Run them when touching `docs/`.
+
+`docs/shared` is **generated**, and the fixtures command only reads it: when the shared model
+changes, run `./gradlew :shared:syncSharedJs` and commit the result. CI checks it with
+`git status --porcelain -- docs/shared`, stricter than a diff because a generator that starts
+writing a new file would pass one (B289).
 
 Formatting is not in that set: `detekt-formatting` reports a few hundred findings across the tree — the
 current count and the command that produces it are in [DECISIONS.md](DECISIONS.md#process) — so
