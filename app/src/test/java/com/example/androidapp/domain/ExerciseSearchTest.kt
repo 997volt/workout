@@ -1,10 +1,12 @@
 package com.example.androidapp.domain
 
+import com.example.androidapp.data.SeedExercises
 import com.example.androidapp.domain.ExerciseSearch.matches
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
+import com.google.common.truth.Truth.assertThat
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -82,6 +84,87 @@ class ExerciseSearchTest {
     @Test
     fun matchesTheMovementPattern() {
         assertTrue(squat.matches("isolation"))
+    }
+
+    @Test
+    fun matchesTheWordsOfTheName_howeverTheyAreSeparated() {
+        // N224: the separators are not part of the word. Typing the name without its hyphen, or without the
+        // space, finds the movement the name belongs to.
+        val pullUp = exercise("pull-up", "Pull-Up", MuscleGroup.LATS, Equipment.BODYWEIGHT)
+
+        assertTrue(pullUp.matches("pullup"))
+        assertTrue(pullUp.matches("pull up"))
+        assertTrue(pullUp.matches("PULL-UP"))
+    }
+
+    @Test
+    fun matchesSeveralWordsOfTheName_typedWithoutTheirSeparators() {
+        // "bench pr" is how a lifter writes it in a note: neither word is a prefix of the whole name, and the
+        // pair has to reach the same movement the phrase does.
+        assertTrue(bench.matches("bench pr"))
+        assertTrue(bench.matches("benchpress"))
+        assertFalse(curl.matches("bench pr"))
+    }
+
+    @Test
+    fun matchesInitials() {
+        assertTrue(bench.matches("bbp"))
+        assertTrue(bench.matches("BB"))
+
+        val closeGrip = exercise(
+            "close-grip-bench-press",
+            "Close-Grip Bench Press",
+            MuscleGroup.TRICEPS,
+            Equipment.BARBELL
+        )
+        assertTrue(closeGrip.matches("cgbp"))
+    }
+
+    @Test
+    fun initialsDoNotMatchALongerQuery() {
+        // The initials rule is a prefix, never a wildcard: "bbps" is not an abbreviation of anything here, and
+        // a search that guessed would be the fuzzy matching N224 refused.
+        assertFalse(bench.matches("bbps"))
+    }
+
+    @Test
+    fun matchesAnAlias() {
+        val ohp = exercise("overhead-press", "Overhead Press", MuscleGroup.SHOULDERS, Equipment.BARBELL)
+        val rdl = exercise("romanian-deadlift", "Romanian Deadlift", MuscleGroup.HAMSTRINGS, Equipment.BARBELL)
+
+        assertTrue(ohp.matches("ohp"))
+        assertTrue(ohp.matches("military press"))
+        assertTrue(rdl.matches("rdl"))
+    }
+
+    @Test
+    fun anAliasBelongsToItsOwnMovement() {
+        // The table is keyed by id rather than searched as a vocabulary, so one lift's shorthand cannot find
+        // another lift.
+        val ohp = exercise("overhead-press", "Overhead Press", MuscleGroup.SHOULDERS, Equipment.BARBELL)
+        val bench = exercise("barbell-bench-press", "Barbell Bench Press", MuscleGroup.CHEST, Equipment.BARBELL)
+
+        assertFalse(bench.matches("ohp"))
+        assertFalse(ohp.matches("rdl"))
+    }
+
+    @Test
+    fun aMovementWithNoAliases_stillMatchesByItsOwnRules() {
+        val curl = exercise("barbell-curl", "Barbell Curl", MuscleGroup.BICEPS, Equipment.BARBELL)
+
+        assertTrue(curl.matches("barbell curl"))
+        assertFalse(curl.matches("ohp"))
+    }
+
+    @Test
+    fun everyAliasBelongsToAMovementTheSeedShips() {
+        // The guard the table needs: an alias keyed to a retired or retyped id is an alias that silently stops
+        // working, and the test is the only place that can see both the table and the seed.
+        val seeded = SeedExercises.all.map { it.id }.toSet()
+
+        assertThat(ExerciseAliases.byExerciseId.keys).containsExactlyElementsIn(
+            ExerciseAliases.byExerciseId.keys.filter { it in seeded },
+        )
     }
 
     private fun exercise(
