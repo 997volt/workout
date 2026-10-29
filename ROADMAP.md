@@ -17,12 +17,9 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-N237 is the row in hand: the rule that notices one plan's prescription stalling, so the app can suggest a deload
-instead of saying nothing about a pattern it can already measure set by set.
-
-## Next
-
-Nothing is in flight. Two rows left the plan: the deload rule (N237) and the duplicate merge (N238, schema 16).
+Nothing is in flight. Seven of the eight rows this queue held have shipped — the two library-working rows
+(N230–N232), the exercise's own screen (N233, N234), three schema steps (N235, N236, N242) and two rules that read
+history (N237, N238). What is left is N239, which waits for one file.
 
 ## Later — decided, and not being started
 
