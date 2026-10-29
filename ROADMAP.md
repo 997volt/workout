@@ -23,24 +23,10 @@ history (N237, N238), and the lifter's own movements joining the seed (N239).
 
 ## Later — decided, and not being started
 
-Agreed work that is not next: the design is settled so it does not have to be re-argued, and nothing here is being
-built. It is **not** *Parked* — a parked row is a decision not to plan something, while these are planned and
-simply not now — and it is not *Next*, which is what is actually being worked on. Each row names **what brings it
-forward**, for the reason a parked row names its revisit trigger: a queue that cannot say why it is waiting is a
-graveyard. **It drains like every other section**: a row picked up moves to *Next*, and one that ships leaves for
-the changelog.
-
-**The order below is the build order**: the two library rows, because the merge has to settle which movements
-exist before the ones that remain can be given a taxonomy. Each row says what it waits for where it waits for
-anything. The numbers quoted here are the measurements the work was planned from, not facts to keep up to date: a
-row that ships leaves this file.
-
-### The lifter's own library joins the seed
-
-Both rows are driven by the same export and the same rulings, and both are measured rather than assumed: the
-library it was planned from holds 186 rows against the seed's 126, and of the 60 that the seed does not ship, 3 are
-names the seed retired on purpose, 15 are **duplicates of a seeded movement by name**, and 42 are movements the
-seed has never had.
+Nothing is queued. This section is where agreed work waits its turn: a row here has its design settled so it does
+not have to be re-argued, and a row in *Next* is what is actually being worked on. Both drain the same way — a row
+picked up moves to *Next*, and one that ships leaves for the changelog — which is what just happened to the last
+eight.
 
 ## Parked — deliberately not planned
 
