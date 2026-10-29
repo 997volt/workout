@@ -1,6 +1,7 @@
 package com.example.androidapp.data
 
 import com.example.androidapp.data.local.ExerciseEntity
+import com.example.androidapp.data.local.LastTrainedRow
 import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.data.local.toDomain
 import com.example.androidapp.data.local.toEntity
@@ -10,18 +11,19 @@ import com.example.androidapp.domain.NotFoundException
 import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.dataResultOf
-import com.example.androidapp.domain.toDataError
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.nowEpochMillis
 import com.example.androidapp.domain.repository.ExerciseRepository
-import java.util.UUID
-import javax.inject.Inject
-import javax.inject.Singleton
+import com.example.androidapp.domain.toDataError
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import java.time.Instant
+import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Room-backed [ExerciseRepository] (ROADMAP F5).
@@ -63,6 +65,18 @@ class RoomExerciseRepository @Inject constructor(
     override suspend fun getAllIncludingDeleted(): DataResult<List<Exercise>> = dataResultOf {
         dao.findAllIncludingDeleted().map { it.toDomain() }
     }
+
+    override fun observeLastTrained(): Flow<DataResult<Map<String, Instant>>> =
+        dao.observeLastTrained()
+            .map<List<LastTrainedRow>, DataResult<Map<String, Instant>>> { rows ->
+                DataResult.Success(rows.associate { it.exerciseId to Instant.ofEpochMilli(it.trainedAt) })
+            }
+            // A read that did not happen is said rather than shown as "never trained": the sort would put
+            // every lift at the bottom, which is a claim about the training rather than about the read.
+            .catch { throwable ->
+                if (throwable is CancellationException) throw throwable
+                emit(DataResult.Failure(throwable.toDataError()))
+            }
 
     override suspend fun createCustomExercise(name: String): DataResult<Exercise> =
         create(name = name, rowKind = RowKind.MOVEMENT)

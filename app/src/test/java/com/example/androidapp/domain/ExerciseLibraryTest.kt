@@ -8,6 +8,7 @@ import com.example.androidapp.domain.model.RowKind
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import org.junit.Test
+import java.time.Instant
 
 /**
  * The grouped library and the search that reaches through it (ROADMAP N95, N110).
@@ -186,6 +187,102 @@ class ExerciseLibraryTest {
         val after = library.filterNot { it.id == "barbell-bench-press" }
 
         assertThat(changedFamilies(before, after)).containsExactly("cat-bench")
+    }
+
+    @Test
+    fun lastTrained_ordersFamiliesByTheirMostRecentMember() {
+        // N230: a family's place is its newest session, because a week of rows under *Squat* is one answer to
+        // "what did I train last".
+        val rows = libraryRows(
+            exercises = library,
+            query = "",
+            sort = LibrarySort.LAST_TRAINED,
+            lastTrained = mapOf(
+                "barbell-bench-press" to Instant.ofEpochSecond(10),
+                "back-squat" to Instant.ofEpochSecond(30),
+                "deadlift" to Instant.ofEpochSecond(20),
+            ),
+        )
+
+        assertThat(rows.filter { it.isCategory }.map { it.name })
+            .containsExactly("Squat", "Bench Press")
+            .inOrder()
+    }
+
+    @Test
+    fun aFamilyNeverTrained_sortsAfterTheOnesThatWere() {
+        // The list is read from the bottom for what has not been done, so "never" is the last thing in it.
+        val rows = libraryRows(
+            exercises = library,
+            query = "",
+            sort = LibrarySort.LAST_TRAINED,
+            lastTrained = mapOf("back-squat" to Instant.ofEpochSecond(30)),
+        )
+
+        assertThat(rows.filter { it.isCategory }.map { it.name })
+            .containsExactly("Squat", "Bench Press")
+            .inOrder()
+    }
+
+    @Test
+    fun withinAFamily_theMostRecentlyTrainedComesFirst() {
+        val rows = libraryRows(
+            exercises = library,
+            query = "",
+            sort = LibrarySort.LAST_TRAINED,
+            lastTrained = mapOf(
+                "dumbbell-bench-press" to Instant.ofEpochSecond(30),
+                "barbell-bench-press" to Instant.ofEpochSecond(20),
+            ),
+        )
+
+        val filed = rows
+            .filter { it.id in setOf("barbell-bench-press", "dumbbell-bench-press") }
+            .map { it.name }
+        assertThat(filed).containsExactly("Dumbbell Bench Press", "Barbell Bench Press").inOrder()
+    }
+
+    @Test
+    fun aLiftNeverTrained_sortsAfterTheOnesThatWere() {
+        // The bottom of the list is the work you have not done, so "never" comes last within the loose rows too.
+        val pushUp = movement("push-up", "Push-Up")
+        val rows = libraryRows(
+            exercises = library + pushUp,
+            query = "",
+            sort = LibrarySort.LAST_TRAINED,
+            lastTrained = mapOf("push-up" to Instant.ofEpochSecond(20)),
+        )
+
+        assertThat(rows.filter { it.depth == 0 && !it.isCategory }.map { it.name })
+            .containsExactly("Push-Up", "Deadlift")
+            .inOrder()
+    }
+
+    @Test
+    fun twoUntrainedLifts_fallBackToTheName() {
+        // The tie-break is what keeps the order stable: nothing about an untrained row says which came first.
+        val pushUp = movement("push-up", "Push-Up")
+
+        val rows = libraryRows(library + pushUp, query = "", sort = LibrarySort.LAST_TRAINED)
+
+        assertThat(rows.filter { it.depth == 0 && !it.isCategory }.map { it.name })
+            .containsExactly("Deadlift", "Push-Up")
+            .inOrder()
+    }
+
+    @Test
+    fun theDefaultOrder_isStillTheName() {
+        val rows = libraryRows(exercises = library, query = "", lastTrained = emptyMap())
+
+        assertThat(rows.map { it.name }).containsExactly(
+            "Bench Press",
+            "Barbell Bench Press",
+            "Dumbbell Bench Press",
+            "Speed Day",
+            "Squat",
+            "Back Squat",
+            "Deadlift",
+        ).inOrder()
     }
 
     private fun category(id: String, name: String) = Exercise(

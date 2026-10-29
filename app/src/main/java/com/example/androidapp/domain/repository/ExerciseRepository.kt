@@ -3,6 +3,7 @@ package com.example.androidapp.domain.repository
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.model.Exercise
 import kotlinx.coroutines.flow.Flow
+import java.time.Instant
 
 /**
  * Read and write access to the exercise library.
@@ -38,6 +39,14 @@ interface ExerciseRepository {
      * it is consulted rather than watched.
      */
     suspend fun getAllIncludingDeleted(): DataResult<List<Exercise>>
+
+    /**
+     * When each movement was last trained, keyed by movement id (ROADMAP N230).
+     *
+     * The newest **finished** session that names it, and nothing for a movement never trained — which is a
+     * fact the library sorts by and a filter counts, and the detail screen's history reads (N233).
+     */
+    fun observeLastTrained(): Flow<DataResult<Map<String, Instant>>>
 
     /**
      * Stores a new custom exercise named [name] and returns it (ROADMAP N2).

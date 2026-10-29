@@ -1,33 +1,35 @@
 package com.example.androidapp.ui.exercises
 
-import java.io.IOException
 import android.content.Context
-import androidx.test.core.app.ApplicationProvider
-import com.example.androidapp.R
-import com.example.androidapp.domain.DataError
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.longClick
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
-import androidx.compose.ui.test.onAllNodesWithText
-import androidx.compose.ui.test.longClick
-import androidx.compose.ui.test.onNodeWithTag
+import androidx.test.core.app.ApplicationProvider
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.androidapp.R
+import com.example.androidapp.domain.DataError
+import com.example.androidapp.domain.LibrarySort
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.ui.components.TestTags
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.io.IOException
 
 /**
  * Instrumented UI tests for the library screen.
@@ -39,8 +41,6 @@ import org.junit.runner.RunWith
  *
  *   ./gradlew connectedDebugAndroidTest
  */
-
-
 
 @RunWith(AndroidJUnit4::class)
 class ExerciseLibraryScreenTest {
@@ -92,7 +92,7 @@ class ExerciseLibraryScreenTest {
         rowKind = RowKind.CATEGORY,
     )
 
-            @Test
+    @Test
     fun aCategory_canBeMadeFromTheLibrary() {
         // ROADMAP N95: the seeded families are a starting set rather than a closed one, so without this a
         // custom movement could only ever be filed under a head the seed happened to ship.
@@ -132,6 +132,29 @@ class ExerciseLibraryScreenTest {
         setScreen(ExerciseLibraryUiState(isLoading = false, exercises = items))
 
         composeTestRule.onNodeWithTag(TestTags.LIBRARY_NEW_CATEGORY).assertDoesNotExist()
+    }
+
+    @Test
+    fun theOrderControl_saysTheOrderItIs_andReportsAChange() {
+        // ROADMAP N230: the label is the order the list is in, so the state is on screen rather than only in
+        // the menu — and choosing the other order reports the choice rather than writing anything.
+        var chosen: LibrarySort? = null
+        composeTestRule.setContent {
+            ExerciseLibraryScreen(
+                state = ExerciseLibraryUiState(isLoading = false, exercises = groupedLibrary),
+                title = "Exercise library",
+                onQueryChange = {},
+                onExerciseClick = {},
+                onDismissMessage = {},
+                onSortChange = { chosen = it },
+            )
+        }
+
+        composeTestRule.onNodeWithTag(TestTags.LIBRARY_SORT).assertTextContains("Name")
+        composeTestRule.onNodeWithTag(TestTags.LIBRARY_SORT).performClick()
+        composeTestRule.onNodeWithTag(TestTags.librarySortOption("LAST_TRAINED")).performClick()
+
+        assertEquals(LibrarySort.LAST_TRAINED, chosen)
     }
 
     @Test
@@ -288,6 +311,7 @@ class ExerciseLibraryScreenTest {
                     onQueryChange = {},
                     onExerciseClick = {},
                     onDismissMessage = {},
+                    onSortChange = {},
                 )
             }
             return
@@ -318,6 +342,7 @@ class ExerciseLibraryScreenTest {
                 onExerciseClick = onExerciseClick,
                 onNewCategory = onNewCategory,
                 onDismissMessage = {},
+                onSortChange = {},
             )
         }
     }

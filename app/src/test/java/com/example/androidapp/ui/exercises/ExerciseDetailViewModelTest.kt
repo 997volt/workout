@@ -1,6 +1,5 @@
 package com.example.androidapp.ui.exercises
 
-import kotlinx.coroutines.flow.map
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.DataError
@@ -8,14 +7,15 @@ import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.MovementPattern
-import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.repository.ExerciseRepository
-import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -30,6 +30,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.io.IOException
+import java.time.Instant
 
 /**
  * Under Robolectric rather than plain JVM: the ViewModel reads its argument out
@@ -279,6 +281,10 @@ class ExerciseDetailViewModelTest {
          * The naming read (ROADMAP N95). The fake answers with the live rows it holds, which is enough for
          * these tests: nothing here asserts on a *removed* head naming its child.
          */
+        // The library's last-trained read is not part of this screen (ROADMAP N230).
+        override fun observeLastTrained(): Flow<DataResult<Map<String, Instant>>> =
+            flowOf(DataResult.Success(emptyMap()))
+
         override suspend fun getAllIncludingDeleted(): DataResult<List<Exercise>> =
             DataResult.Success(state.value)
 

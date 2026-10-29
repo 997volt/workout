@@ -1,11 +1,12 @@
 package com.example.androidapp.domain
 
+import com.example.androidapp.domain.ExerciseSearch.matches
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.taxonomySubtitle
-import com.example.androidapp.domain.ExerciseSearch.matches
+import java.time.Instant
 
 /**
  * The library as a list of rows: category heads with the movements filed under them (ROADMAP N95, N110).
@@ -42,6 +43,15 @@ fun libraryRows(
      * own muscle then comes from a head the list is not drawing.
      */
     headResolver: List<Exercise> = exercises,
+    /** How the list is ordered, which is the lifter's choice and defaults to the library as it was (N230). */
+    sort: LibrarySort = LibrarySort.NAME,
+    /**
+     * When each movement was last trained (ROADMAP N230), keyed by id and empty when nothing is known.
+     *
+     * Passed in rather than read here for the same reason the folds are: this is a pure function of its
+     * inputs, and the read is the repository's.
+     */
+    lastTrained: Map<String, Instant> = emptyMap(),
 ): List<LibraryRow> {
     // The query is trimmed **once**, here, so every caller searches the same way. The trim used to live in a
     // filter this list no longer has, so a query of only spaces — blank to v1.16 — matched nothing (B87).
@@ -65,12 +75,12 @@ fun libraryRows(
     val drawn = mutableSetOf<String>()
     val rows = mutableListOf<LibraryRow>()
 
-    exercises
-        .filter { it.rowKind == RowKind.CATEGORY }
-        .sortedBy { it.name }
-        .forEach { category -> rows += familyRows(category, shape, drawn) }
+    val families = exercises.filter { it.rowKind == RowKind.CATEGORY }
+    sort.families(families, shape, lastTrained).forEach { category ->
+        rows += familyRows(category, shape, drawn, sort, lastTrained)
+    }
 
-    rows += looseRows(shape, drawn)
+    rows += looseRows(shape, drawn, sort, lastTrained)
 
     return rows
 }
@@ -100,12 +110,14 @@ private fun familyRows(
     category: Exercise,
     shape: LibraryShape,
     drawn: MutableSet<String>,
+    sort: LibrarySort,
+    lastTrained: Map<String, Instant>,
 ): List<LibraryRow> {
     val isFolded = category.id in shape.folded
     // What the family holds, before the query is asked (N225): the head states its own size, and the matched
     // count is what a search is showing of it.
     val filed = shape.exercises.filter { it.parentId == category.id && it.rowKind == RowKind.MOVEMENT }
-    val children = filed.filter { it.id in shape.matched }.sortedBy { it.name }
+    val children = sort.movements(filed.filter { it.id in shape.matched }, lastTrained)
     if (children.isEmpty() && category.id !in shape.matched) return emptyList()
 
     drawn += category.id
@@ -129,6 +141,53 @@ private fun familyRows(
     }
     return rows
 }
+
+/**
+ * The families in the order this sort draws them (ROADMAP N230).
+ *
+ * **A family's place is its most recently trained member's**: the grouping is what the library is, and a week
+ * of rows under *Squat* is one answer to "what did I train last". A family whose movements have never been
+ * trained sorts after the ones that have — which is the point of the order, since the bottom of the list is
+ * then the work you have not done.
+ */
+private fun LibrarySort.families(
+    families: List<Exercise>,
+    shape: LibraryShape,
+    lastTrained: Map<String, Instant>,
+): List<Exercise> = when (this) {
+    LibrarySort.NAME -> families.sortedBy { it.name }
+    LibrarySort.LAST_TRAINED -> families.sortedWith(
+        // `compareBy` orders a null before a value and `reversed` turns "newest first" into the whole order:
+        // a never-trained family therefore lands after the trained ones, which is the list read from the
+        // bottom (N230).
+        compareBy<Exercise> { newestOf(shape, it, lastTrained) }.reversed().thenBy { it.name },
+    )
+}
+
+/**
+ * The movements in the order this sort draws them (ROADMAP N230).
+ *
+ * A tie falls back to the name, so the list is stable without depending on the order the database returned.
+ */
+private fun LibrarySort.movements(
+    movements: List<Exercise>,
+    lastTrained: Map<String, Instant>,
+): List<Exercise> = when (this) {
+    LibrarySort.NAME -> movements.sortedBy { it.name }
+    LibrarySort.LAST_TRAINED -> movements.sortedWith(
+        compareBy<Exercise> { lastTrained[it.id] }.reversed().thenBy { it.name },
+    )
+}
+
+/** When the newest of a family's movements was trained, or null when none of them was (N230). */
+private fun newestOf(
+    shape: LibraryShape,
+    family: Exercise,
+    lastTrained: Map<String, Instant>,
+): Instant? = shape.exercises
+    .filter { it.parentId == family.id && it.rowKind == RowKind.MOVEMENT }
+    .mapNotNull { lastTrained[it.id] }
+    .maxOrNull()
 
 /**
  * The families whose membership changed since [previous], given the movements now (ROADMAP N228).
@@ -180,9 +239,11 @@ fun changedFamilies(
 private fun looseRows(
     shape: LibraryShape,
     drawn: Set<String>,
+    sort: LibrarySort,
+    lastTrained: Map<String, Instant>,
 ): List<LibraryRow> {
     val known = shape.exercises.mapTo(mutableSetOf()) { it.id }
-    return shape.exercises
+    return sort.movements(shape.exercises, lastTrained)
         // `rowKind` as well as the parent, or a category is drawn twice: its own loop emits it, and its
         // `parentId` is null — which is "not under a family" — so this pass would take it too.
         .filter { it.rowKind == RowKind.MOVEMENT && it.id in shape.matched && it.id !in drawn }
@@ -190,7 +251,6 @@ private fun looseRows(
         // or left it out because the head is folded. Only a row with no parent, or a parent that is gone, is
         // top level.
         .filter { it.parentId == null || it.parentId !in known }
-        .sortedBy { it.name }
         .map { it.toLibraryRow(depth = 0, library = shape.library) }
 }
 

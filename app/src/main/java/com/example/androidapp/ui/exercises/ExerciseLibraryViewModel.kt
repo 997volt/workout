@@ -4,18 +4,22 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
+import com.example.androidapp.domain.LibrarySort
 import com.example.androidapp.domain.getOrNull
 import com.example.androidapp.domain.libraryRows
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.repository.ExerciseRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.Instant
+import javax.inject.Inject
 
 data class ExerciseLibraryUiState(
     val query: String = "",
@@ -56,6 +60,23 @@ data class ExerciseLibraryUiState(
      * Not part of the list: it is the answer to "what is this id called" rather than a set of rows to draw.
      */
     val removedHeads: Map<String, Exercise> = emptyMap(),
+    /** How the list is ordered, which is the lifter's choice and starts at the library as it was (N230). */
+    val sort: LibrarySort = LibrarySort.NAME,
+    /**
+     * When each movement was last trained, from its newest finished session (ROADMAP N230).
+     *
+     * Carried rather than applied here, like the library itself: the screen holds the folds and the list is
+     * one pure function of what it was given.
+     */
+    val lastTrained: Map<String, Instant> = emptyMap(),
+    /**
+     * The last-trained read failed, or null (ROADMAP N230).
+     *
+     * A message rather than the page: the library is still readable, and what is lost is one way of ordering
+     * it — but a sort that silently ordered everything as never trained would be a claim about the training
+     * rather than about the read, which is the one thing the failure may not become.
+     */
+    val lastTrainedError: DataError? = null,
 ) {
     /**
      * Nothing to show — the list is empty, whether because the library is or because the search missed.
@@ -81,7 +102,13 @@ class ExerciseLibraryViewModel @Inject constructor(
     private val exerciseRepository: ExerciseRepository,
 ) : ViewModel() {
 
-    private val query = MutableStateFlow("")
+    /** The search and the order — the form's memory rather than the document's (ROADMAP N230). */
+    private data class LibraryView(
+        val query: String = "",
+        val sort: LibrarySort = LibrarySort.NAME,
+    )
+
+    private val view = MutableStateFlow(LibraryView())
 
     private val error = MutableStateFlow<DataError?>(null)
 
@@ -94,17 +121,25 @@ class ExerciseLibraryViewModel @Inject constructor(
      */
     private val includingRemoved = MutableStateFlow<Map<String, Exercise>>(emptyMap())
 
+    /**
+     * The newest finished session per movement (ROADMAP N230), asked once for the whole library rather than
+     * a lift at a time.
+     */
+    private val lastTrained: Flow<DataResult<Map<String, Instant>>> =
+        exerciseRepository.observeLastTrained()
+
     val uiState: StateFlow<ExerciseLibraryUiState> = combine(
         exerciseRepository.observeExercises(),
-        query,
+        view,
         error,
         includingRemoved,
-    ) { result, currentQuery, currentError, removed ->
+        lastTrained,
+    ) { result, currentView, currentError, removed, trained ->
         // A read failure is rendered where the list would have been (ROADMAP B4),
         // instead of escaping the flow and taking the screen down.
         val exercises = result.getOrNull().orEmpty()
         ExerciseLibraryUiState(
-            query = currentQuery,
+            query = currentView.query,
             exercises = exercises,
             isLoading = false,
             libraryIsEmpty = exercises.isEmpty(),
@@ -112,6 +147,9 @@ class ExerciseLibraryViewModel @Inject constructor(
             error = (result as? DataResult.Failure)?.error,
             writeError = currentError,
             removedHeads = removed,
+            sort = currentView.sort,
+            lastTrained = trained.getOrNull().orEmpty(),
+            lastTrainedError = (trained as? DataResult.Failure)?.error,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -132,7 +170,12 @@ class ExerciseLibraryViewModel @Inject constructor(
     }
 
     fun onQueryChange(value: String) {
-        query.value = value
+        view.update { it.copy(query = value) }
+    }
+
+    /** Reorders the list; nothing is written, so this is a display choice (N230). */
+    fun onSortChange(value: LibrarySort) {
+        view.update { it.copy(sort = value) }
     }
 
     /**
@@ -154,7 +197,6 @@ class ExerciseLibraryViewModel @Inject constructor(
     fun onErrorShown() {
         error.value = null
     }
-
 
     private companion object {
         /** Keeps the upstream flow warm across a configuration change. */

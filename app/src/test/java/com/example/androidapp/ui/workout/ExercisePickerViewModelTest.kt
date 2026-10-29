@@ -42,6 +42,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.IOException
+import java.time.Instant
 import java.util.UUID
 /**
  * Under Robolectric rather than plain JVM: the ViewModel reads its route argument
@@ -527,6 +528,10 @@ class ExercisePickerViewModelTest {
         /** A category is never offered by the picker, so nothing here should ever ask for one. */
         override suspend fun createCategory(name: String): DataResult<Exercise> =
             error("the picker must not create categories")
+
+        // The library's last-trained read is not part of this screen (ROADMAP N230).
+        override fun observeLastTrained(): Flow<DataResult<Map<String, Instant>>> =
+            flowOf(DataResult.Success(emptyMap()))
 
         override suspend fun getAllIncludingDeleted(): DataResult<List<Exercise>> =
             DataResult.Success(state.value)

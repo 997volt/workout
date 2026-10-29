@@ -31,6 +31,24 @@ interface ExerciseDao {
     @Query("SELECT * FROM exercises ORDER BY name ASC")
     suspend fun findAllIncludingDeleted(): List<ExerciseEntity>
 
+    /**
+     * When each movement was last trained, from its newest finished session (ROADMAP N230).
+     *
+     * **Finished rather than started**: a session opened and abandoned is not training (P3.5's rule for the
+     * same question). The trends read answers this for the lifts a chart asked about, one id list at a time;
+     * the library asks it of the whole list, so the grouping is what the query is for.
+     */
+    @Query(
+        """
+        SELECT se.exerciseId AS exerciseId, MAX(ws.startedAt) AS trainedAt
+        FROM session_exercises se
+        JOIN workout_sessions ws ON ws.id = se.sessionId
+        WHERE se.deletedAt IS NULL AND ws.deletedAt IS NULL AND ws.finishedAt IS NOT NULL
+        GROUP BY se.exerciseId
+        """
+    )
+    fun observeLastTrained(): Flow<List<LastTrainedRow>>
+
     /** Counts soft-deleted rows too, so it answers "has this database been populated?". */
     @Query("SELECT COUNT(*) FROM exercises")
     suspend fun count(): Int
@@ -65,3 +83,10 @@ interface ExerciseDao {
     @Query("UPDATE exercises SET deletedAt = :deletedAt, updatedAt = :deletedAt WHERE id = :id")
     suspend fun softDelete(id: String, deletedAt: Long)
 }
+
+/** One movement and the instant of its newest finished session (ROADMAP N230). */
+data class LastTrainedRow(
+    val exerciseId: String,
+    /** When that session started, in epoch milliseconds. */
+    val trainedAt: Long,
+)

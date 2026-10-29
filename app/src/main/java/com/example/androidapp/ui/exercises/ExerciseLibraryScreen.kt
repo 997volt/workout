@@ -20,12 +20,12 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -47,26 +47,27 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
+import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.LibraryRow
+import com.example.androidapp.domain.LibrarySort
+import com.example.androidapp.domain.changedFamilies
+import com.example.androidapp.domain.libraryRows
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.RowKind
-import com.example.androidapp.domain.changedFamilies
-import com.example.androidapp.domain.libraryRows
 import com.example.androidapp.ui.components.AppRow
 import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.IconTile
 import com.example.androidapp.ui.components.MessageSnackbar
-import com.example.androidapp.ui.components.TopBarTitle
-import com.example.androidapp.ui.components.dataErrorMessage
-import com.example.androidapp.ui.components.RowFold
-import com.example.androidapp.ui.components.rememberRowFold
-import com.example.androidapp.domain.DataError
 import com.example.androidapp.ui.components.NewExerciseDialog
 import com.example.androidapp.ui.components.NewRowTags
+import com.example.androidapp.ui.components.RowFold
 import com.example.androidapp.ui.components.TestTags
+import com.example.androidapp.ui.components.TopBarTitle
+import com.example.androidapp.ui.components.dataErrorMessage
+import com.example.androidapp.ui.components.rememberRowFold
 import com.example.androidapp.ui.theme.AndroidAppTheme
 import com.example.androidapp.ui.theme.TileAccent
 
@@ -92,7 +93,10 @@ fun ExerciseLibraryRoute(
         onQueryChange = viewModel::onQueryChange,
         onExerciseClick = onExerciseClick,
         // A failed write is a message on the screen's own host (B88); the page's `error` stays the read's.
-        message = state.writeError?.let { dataErrorMessage(it) },
+        // A last-trained read that failed is the same kind of sentence: the list is still readable, and what
+        // is lost is one way of ordering it (N230).
+        message = (state.writeError ?: state.lastTrainedError)?.let { dataErrorMessage(it) },
+        onSortChange = viewModel::onSortChange,
         onNewCategory = viewModel::onCreateCategory,
         onDismissMessage = viewModel::onErrorShown,
         modifier = modifier,
@@ -116,6 +120,8 @@ fun ExerciseLibraryScreen(
     onQueryChange: (String) -> Unit,
     onExerciseClick: (String) -> Unit,
     onDismissMessage: () -> Unit,
+    /** How the list is ordered (ROADMAP N230). Required: a screen that forgot it would silently never sort. */
+    onSortChange: (LibrarySort) -> Unit,
     modifier: Modifier = Modifier,
     onBack: (() -> Unit)? = null,
     message: String? = null,
@@ -138,16 +144,7 @@ fun ExerciseLibraryScreen(
     // A family whose membership changed opens, once, so filing a movement is not a count changing on a
     // folded row and nothing else (N228).
     OpenFamiliesThatChanged(exercises = state.exercises, fold = fold)
-    val rows = remember(state.exercises, state.query, fold.foldedIds, state.removedHeads) {
-        libraryRows(
-            exercises = state.exercises,
-            query = state.query,
-            foldedCategories = fold.foldedIds,
-            // The fuller map, so a child reads what a head passed down even after that head is removed. The
-            // list still draws only what `state.exercises` holds: a removed row is never a row (N95).
-            headResolver = state.exercises + state.removedHeads.values,
-        )
-    }
+    val rows = rememberLibraryRows(state = state, fold = fold)
     MessageSnackbar(message, snackbarHostState, onDismissMessage)
 
     Scaffold(
@@ -168,6 +165,7 @@ fun ExerciseLibraryScreen(
             rows = rows,
             fold = fold,
             onQueryChange = onQueryChange,
+            onSortChange = onSortChange,
             onExerciseClick = onExerciseClick,
             onCategoryDetails = { detailsFor = it },
             modifier = Modifier.padding(innerPadding),
@@ -199,7 +197,6 @@ fun ExerciseLibraryScreen(
         },
     )
 }
-
 
 /**
  * Opens the family a movement joined or left (ROADMAP N228).
@@ -254,12 +251,14 @@ private fun LibraryBody(
     rows: List<LibraryRow>,
     fold: RowFold,
     onQueryChange: (String) -> Unit,
+    onSortChange: (LibrarySort) -> Unit,
     onExerciseClick: (String) -> Unit,
     onCategoryDetails: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxSize()) {
         LibrarySearchField(query = state.query, onQueryChange = onQueryChange)
+        LibrarySortControl(sort = state.sort, onSortChange = onSortChange)
 
         when {
             state.isLoading -> LoadingState()
@@ -363,6 +362,34 @@ internal fun EmptyState(
  * Reads the clock — and is the only composable here that does, so the one-second
  * tick stops at this button instead of rebuilding the list beneath it.
  */
+/**
+ * The grouped rows for this state, recomputed only when something that decides them changes.
+ *
+ * Split out of the screen because the screen is at the length this project allows and because this is the
+ * list-builder's one call: the folds, the search, the order and the read are all inputs to one pure function.
+ */
+@Composable
+private fun rememberLibraryRows(state: ExerciseLibraryUiState, fold: RowFold): List<LibraryRow> =
+    remember(
+        state.exercises,
+        state.query,
+        fold.foldedIds,
+        state.removedHeads,
+        state.sort,
+        state.lastTrained,
+    ) {
+        libraryRows(
+            exercises = state.exercises,
+            query = state.query,
+            foldedCategories = fold.foldedIds,
+            // The fuller map, so a child reads what a head passed down even after that head is removed. The
+            // list still draws only what `state.exercises` holds: a removed row is never a row (N95).
+            headResolver = state.exercises + state.removedHeads.values,
+            sort = state.sort,
+            lastTrained = state.lastTrained,
+        )
+    }
+
 /** The library's search box, split out so the screen composable stays readable. */
 @Composable
 internal fun LibrarySearchField(
@@ -586,6 +613,7 @@ private fun ExerciseLibraryScreenPreview() {
             onQueryChange = {},
             onExerciseClick = {},
             onDismissMessage = {},
+            onSortChange = {},
         )
     }
 }
@@ -600,6 +628,7 @@ private fun ExerciseLibraryEmptyPreview() {
             onQueryChange = {},
             onExerciseClick = {},
             onDismissMessage = {},
+            onSortChange = {},
         )
     }
 }

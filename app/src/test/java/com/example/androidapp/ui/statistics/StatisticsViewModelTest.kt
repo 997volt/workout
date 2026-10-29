@@ -1000,6 +1000,10 @@ private class FakeExerciseRepository(private val lifts: List<Exercise>) : Exerci
     override suspend fun createCategory(name: String): DataResult<Exercise> =
         DataResult.Failure(DataError.Invalid("not used here"))
 
+    // The library's last-trained read is not part of this screen (ROADMAP N230).
+    override fun observeLastTrained(): Flow<DataResult<Map<String, Instant>>> =
+        flowOf(DataResult.Success(emptyMap()))
+
     override suspend fun getAllIncludingDeleted(): DataResult<List<Exercise>> =
         DataResult.Success(lifts)
 

@@ -1,27 +1,27 @@
 package com.example.androidapp.ui.exercises
 
-import java.io.IOException
 import com.example.androidapp.domain.DataError
+import com.example.androidapp.domain.DataResult
+import com.example.androidapp.domain.LibrarySort
 import com.example.androidapp.domain.libraryRows
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.MovementPattern
-import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.repository.ExerciseRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import com.example.androidapp.domain.DataResult
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -30,6 +30,8 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.io.IOException
+import java.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ExerciseLibraryViewModelTest {
@@ -115,6 +117,7 @@ class ExerciseLibraryViewModelTest {
 
     private class FakeRepository(exercises: List<Exercise>) : ExerciseRepository {
         private val state = MutableStateFlow(exercises)
+
         /** Lets a test drive the B4 path: a read that fails rather than throws. */
         var failReads = false
 
@@ -152,6 +155,19 @@ class ExerciseLibraryViewModelTest {
                         rowKind = RowKind.CATEGORY,
                     ),
                 )
+            }
+
+        /** What the last-trained read answers, so a test can sort by it (ROADMAP N230). */
+        var lastTrained: Map<String, Instant> = emptyMap()
+
+        /** Lets a test drive the failure the sort must not turn into "never trained" (N230). */
+        var failLastTrained = false
+
+        override fun observeLastTrained(): Flow<DataResult<Map<String, Instant>>> =
+            if (failLastTrained) {
+                flowOf(DataResult.Failure(DataError.Storage(IOException("database is locked"))))
+            } else {
+                flowOf(DataResult.Success(lastTrained))
             }
 
         override suspend fun getAllIncludingDeleted(): DataResult<List<Exercise>> =
@@ -206,10 +222,51 @@ class ExerciseLibraryViewModelTest {
         assertFalse("but the library is not empty", viewModel.uiState.value.libraryIsEmpty)
     }
 
+    @Test
+    fun theSort_isTheLiftersChoice_andItReachesTheState() = runTest(dispatcher) {
+        // N230: ordering is a display choice rather than a write, so it lives in the state the screen reads.
+        val viewModel = viewModelFor(squat, bench)
+        observe(viewModel)
+        advanceUntilIdle()
+        assertEquals(LibrarySort.NAME, viewModel.uiState.value.sort)
+
+        viewModel.onSortChange(LibrarySort.LAST_TRAINED)
+        advanceUntilIdle()
+
+        assertEquals(LibrarySort.LAST_TRAINED, viewModel.uiState.value.sort)
+    }
+
+    @Test
+    fun theLastTrainedRead_reachesTheState() = runTest(dispatcher) {
+        val repository = FakeRepository(listOf(squat, bench))
+        repository.lastTrained = mapOf("back-squat" to Instant.ofEpochSecond(42))
+        val viewModel = ExerciseLibraryViewModel(exerciseRepository = repository)
+        observe(viewModel)
+        advanceUntilIdle()
+
+        assertEquals(
+            Instant.ofEpochSecond(42),
+            viewModel.uiState.value.lastTrained["back-squat"],
+        )
+    }
+
+    @Test
+    fun aFailedLastTrainedRead_isSaid_ratherThanReadAsNeverTrained() = runTest(dispatcher) {
+        // The sort would put every lift at the bottom, which is a claim about the training rather than about
+        // the read — so the failure is a message and the map is empty (N230).
+        val repository = FakeRepository(listOf(squat, bench))
+        repository.failLastTrained = true
+        val viewModel = ExerciseLibraryViewModel(exerciseRepository = repository)
+        observe(viewModel)
+        advanceUntilIdle()
+
+        assertNotNull(viewModel.uiState.value.lastTrainedError)
+        assertTrue("nothing is claimed about any lift", viewModel.uiState.value.lastTrained.isEmpty())
+    }
+
     private fun viewModelFor(vararg exercises: Exercise) = ExerciseLibraryViewModel(
         exerciseRepository = FakeRepository(exercises.toList()),
     )
-
 
     @Test
     fun aFailedRead_isReported_insteadOfTakingTheScreenDown() = runTest(dispatcher) {
