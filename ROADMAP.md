@@ -37,23 +37,13 @@ planned from, not facts to keep up to date: a row that ships leaves this file.
 
 ### The exercise's own screen
 
-**N233 — the screen says when the lift was last trained and what its best is.** `personalRecords(exerciseId, null)`
-returns the heaviest working set at each rep count, and its own comment says the `null` is "what a records view
-wants" — that view was never built, and the read serves only the record check on the workout screen. The exercise's
-screen gains the section: the last session's date with the working sets it holds, and the best set at each rep
-count (or the longest hold, for a timed movement), with the trends button it already has left where it is.
-`previousPerformance` already answers the first half for the prefill, so this is a screen and not a query. **No
-schema change.**
-
 **N234 — the workout's ⋮ opens the exercise, which reverses N121.** The shared menu already carries an optional
 *Open exercise* entry and the template editor supplies it; the live workout withholds it on purpose, with a test
 that asserts its absence. The reversal's argument is that the alternative was left unstated: to look at a lift
 mid-session you switch to Library, find the movement, open it and switch back — a larger interruption than two
 deliberate taps in an overflow that sits at the block's corner, away from the set fields; N53's order is unchanged,
 so the entry stays first among the optional ones. Opening a destination **pushes**, so the session's ViewModel, its
-running rest timer and the draft in the next set's fields are untouched and one back tap returns to them. Waits for
-N233: a look is worth the trip once the screen says something about the lift. The absence test becomes a presence
-test.
+running rest timer and the draft in the next set's fields are untouched and one back tap returns to them. N233 shipped first, so the screen now says something about the lift; the absence test becomes a presence test.
 
 ### A plan's progression, stored
 

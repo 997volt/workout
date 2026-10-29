@@ -240,7 +240,12 @@ interface WorkoutRepository {
      */
     suspend fun previousPerformance(
         exerciseId: String,
-        currentSessionId: String,
+        /**
+         * The session in progress, which must not be its own predecessor, or **null** for every session
+         * (ROADMAP N233): the exercise's own screen asks when the lift was last trained, and no session of
+         * its own is running there.
+         */
+        currentSessionId: String? = null,
     ): DataResult<PreviousPerformance>
 
     /**

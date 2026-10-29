@@ -2262,7 +2262,7 @@ class ActiveWorkoutViewModelTest {
 
         override suspend fun previousPerformance(
             exerciseId: String,
-            currentSessionId: String,
+            currentSessionId: String?,
         ): DataResult<PreviousPerformance> = DataResult.Success(previous)
 
         override suspend fun startRest(seconds: Int): DataResult<Instant> {

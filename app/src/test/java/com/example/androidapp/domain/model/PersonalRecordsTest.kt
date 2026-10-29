@@ -153,4 +153,47 @@ class PersonalRecordsTest {
         assertEquals("but the bar is the session's 20", 20_000L, against.bestAt(8))
         assertTrue(against.isRecord(reps = 8, weightGrams = 22_500L, role = SetType.NORMAL))
     }
+
+    @Test
+    fun aHoldIsRecordedInTime_andNeedsNoWeight() {
+        // ROADMAP N233: a timed movement has no rep count to be best at, so what it has is its longest
+        // hold — and a bodyweight carry still has one, which is why the weight is not part of this rule.
+        val held = PerformedSetSpec(
+            role = SetType.NORMAL,
+            weightGrams = 0L,
+            reps = 0,
+            durationSeconds = 45,
+        )
+        val longer = held.copy(durationSeconds = 90)
+
+        val records = PersonalRecords.from(listOf(held, longer))
+
+        assertEquals(90, records.longestHoldSeconds)
+        assertTrue("a held set is not a count", records.bestByReps.isEmpty())
+        assertFalse(records.isEmpty)
+    }
+
+    @Test
+    fun aWarmUpHold_isNotALongestHold() {
+        val warmUp = PerformedSetSpec(
+            role = SetType.WARMUP,
+            weightGrams = 0L,
+            reps = 0,
+            durationSeconds = 600,
+        )
+
+        val records = PersonalRecords.from(listOf(warmUp))
+
+        assertNull(records.longestHoldSeconds)
+        assertTrue(records.isEmpty)
+    }
+
+    @Test
+    fun mergingKeepsTheLongerHold() {
+        val earlier = PersonalRecords(longestHoldSeconds = 45)
+        val later = PersonalRecords(longestHoldSeconds = 30)
+
+        assertEquals(45, earlier.mergedWith(later).longestHoldSeconds)
+        assertEquals(45, later.mergedWith(earlier).longestHoldSeconds)
+    }
 }

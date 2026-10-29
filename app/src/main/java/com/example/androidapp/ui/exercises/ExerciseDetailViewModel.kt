@@ -6,22 +6,26 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
-import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.WeightUnit
+import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Exercise
-import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.PersonalRecords
+import com.example.androidapp.domain.model.RowKind
+import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.domain.repository.ExerciseRepository
+import com.example.androidapp.domain.repository.WorkoutRepository
 import com.example.androidapp.ui.navigation.ExerciseDetail
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.Instant
+import javax.inject.Inject
 
 /**
  * What the detail screen's edit form produces (ROADMAP N2, N5).
@@ -63,6 +67,22 @@ data class ExerciseEdit(
     val parentId: String? = null,
 )
 
+/**
+ * What this movement's history says at a glance (ROADMAP N233).
+ *
+ * Three answers from two reads the app already had: the newest finished session that trained it (with the
+ * sets that session holds), and the best at each rep count — or the longest hold, because a timed movement
+ * has no rep count to be best at.
+ */
+data class ExerciseHistoryUi(
+    /** When the lift was last trained, or null when it never was. */
+    val lastTrainedAt: Instant? = null,
+    /** The working sets that last session holds, in the order they were logged. */
+    val lastSets: List<SetEntry> = emptyList(),
+    /** Best at each rep count, and the longest hold (ROADMAP N23, N233). */
+    val records: PersonalRecords = PersonalRecords(),
+)
+
 data class ExerciseDetailUiState(
     val exercise: Exercise? = null,
     val isLoading: Boolean = true,
@@ -93,6 +113,16 @@ data class ExerciseDetailUiState(
      * can arrive, even though the shape this app writes is one level (B92, B96).
      */
     val ancestors: List<Exercise> = emptyList(),
+    /** This movement's history, empty until the read answers (ROADMAP N233). */
+    val history: ExerciseHistoryUi = ExerciseHistoryUi(),
+    /**
+     * The history read failed, or null.
+     *
+     * A message inside the section rather than the page's error: the exercise itself is readable, and what is
+     * missing is one section — but an empty section must not stand in for "never trained", which is a claim
+     * about the training rather than about the read.
+     */
+    val historyError: DataError? = null,
 ) {
     /**
      * Loaded, but no such exercise — a real state, not an error to hide.
@@ -123,6 +153,7 @@ data class ExerciseDetailUiState(
 @HiltViewModel
 class ExerciseDetailViewModel @Inject constructor(
     private val repository: ExerciseRepository,
+    private val workouts: WorkoutRepository,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -147,6 +178,7 @@ class ExerciseDetailViewModel @Inject constructor(
                 }
             }
             loadLibraryContext()
+            loadHistory()
         }
     }
 
@@ -203,6 +235,38 @@ class ExerciseDetailViewModel @Inject constructor(
     }
 
     /**
+     * The movement's own history (ROADMAP N233).
+     *
+     * Two reads the app already had — the prefill's previous performance and the record rule — asked with no
+     * session to exclude, because this screen is not a workout. **Deliberately not part of the page's error**:
+     * a section that could not be read draws its own sentence, and the rest of the exercise stays readable.
+     */
+    private suspend fun loadHistory() {
+        val exercise = _uiState.value.exercise ?: return
+        val previous = workouts.previousPerformance(exercise.id)
+        val records = workouts.personalRecords(exercise.id, excludingSessionId = null)
+        val failure = listOfNotNull(previous, records)
+            .firstNotNullOfOrNull { (it as? DataResult.Failure)?.error }
+        if (failure != null) {
+            _uiState.update { it.copy(historyError = failure) }
+            return
+        }
+        _uiState.update { state ->
+            val performed = (previous as? DataResult.Success)?.data
+            state.copy(
+                historyError = null,
+                history = ExerciseHistoryUi(
+                    lastTrainedAt = performed?.sessionStartedAt,
+                    // **Working sets only**: a warm-up is not what "the last time you did this" means (N67),
+                    // and a rung is part of the group above it rather than a set of its own (N79).
+                    lastSets = performed?.sets.orEmpty().filter { it.setType.recordsEffort },
+                    records = (records as? DataResult.Success)?.data ?: PersonalRecords(),
+                ),
+            )
+        }
+    }
+
+    /**
      * Every row above [exercise], nearest first, ending at the first cycle or missing link (ROADMAP N103).
      *
      * Read from the library including removed rows, because a removed head still supplies what it stated
@@ -243,6 +307,9 @@ class ExerciseDetailViewModel @Inject constructor(
                         )
                     }
                     loadLibraryContext()
+                    // The unit the history reads in follows the exercise's own setting (N64), so an edit
+                    // that changed it has to be re-read rather than left showing the old one.
+                    loadHistory()
                 }
 
                 is DataResult.Failure -> _uiState.update { it.copy(error = outcome.error) }

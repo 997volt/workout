@@ -535,7 +535,7 @@ class RoomWorkoutRepository @Inject constructor(
 
     override suspend fun previousPerformance(
         exerciseId: String,
-        currentSessionId: String,
+        currentSessionId: String?,
     ): DataResult<PreviousPerformance> = dataResultOf {
         // Two plain queries composed here rather than one correlated subquery:
         // this is the read a user waits on before their first set, and it is far
@@ -545,6 +545,10 @@ class RoomWorkoutRepository @Inject constructor(
 
         PreviousPerformance(
             sets = dao.findSetsFor(previousSessionId, exerciseId).map { it.toDomain() },
+            // The date the same read is asked for elsewhere (ROADMAP N233): one answer to "when was the
+            // last time", so the prefill and the exercise's own screen cannot disagree about which.
+            sessionStartedAt = dao.findSession(previousSessionId)
+                ?.let { Instant.ofEpochMilli(it.startedAt) },
         )
     }
 
@@ -627,12 +631,16 @@ private const val ALL_SESSIONS = 100_000
  * because silently discarding a set would make a record easier to beat than it is.
  */
 private fun ExerciseTrendRowEntity.toPerformedSetSpec(): PerformedSetSpec? {
-    val reps = reps ?: return null
+    // A hold records no reps (ROADMAP N220), so it must not be dropped here: its seconds are the only
+    // record a timed movement has (N233). A row with neither is not a performed set at all.
+    val held = durationSeconds
+    val counted = reps ?: if (held == null) return null else 0
     return PerformedSetSpec(
         role = SetType.entries.firstOrNull { it.name == setType } ?: SetType.NORMAL,
         weightGrams = weightGrams ?: 0L,
         assistanceGrams = assistanceGrams ?: 0L,
-        reps = reps,
+        reps = counted,
+        durationSeconds = held,
     )
 }
 
@@ -669,7 +677,6 @@ private suspend fun appendExercise(
         ),
     )
 }
-
 
 /** One day, in seconds: the ceiling on a hold, so a mistyped number cannot become a session (N220). */
 internal const val MAX_SET_SECONDS = 86_400

@@ -14,6 +14,14 @@ import com.example.androidapp.domain.WeightUnit
 data class PersonalRecords(
     /** Heaviest working set at each rep count. */
     val bestByReps: Map<Int, Long> = emptyMap(),
+    /**
+     * The longest hold, in seconds, or null when this movement has never been held (ROADMAP N233).
+     *
+     * A hold has no rep count to be the best at, so the record a timed movement has is time: a 45-second
+     * carry beaten by a minute is the same sentence a heavier five reps is for a counted movement, and a
+     * record list that left holds out would say a lifter who trains carries has never done anything.
+     */
+    val longestHoldSeconds: Int? = null,
 ) {
     /** The weight to beat at [reps], or null when nothing has been recorded there. */
     fun bestAt(reps: Int): Long? = bestByReps[reps]
@@ -38,7 +46,7 @@ data class PersonalRecords(
             weightGrams > 0L &&
             (bestAt(reps)?.let { weightGrams > it } ?: true)
 
-    val isEmpty: Boolean get() = bestByReps.isEmpty()
+    val isEmpty: Boolean get() = bestByReps.isEmpty() && longestHoldSeconds == null
 
     /**
      * These records and [later] ones together, keeping the heavier at each rep count.
@@ -51,6 +59,7 @@ data class PersonalRecords(
         bestByReps = (bestByReps.keys + later.bestByReps.keys).associateWith { reps ->
             maxOf(bestByReps[reps] ?: 0L, later.bestByReps[reps] ?: 0L)
         },
+        longestHoldSeconds = listOfNotNull(longestHoldSeconds, later.longestHoldSeconds).maxOrNull(),
     )
 
     companion object {
@@ -67,6 +76,13 @@ data class PersonalRecords(
                 .filter { it.role.recordsEffort && it.reps > 0 && it.weightGrams > 0L }
                 .groupBy { it.reps }
                 .mapValues { (_, atReps) -> atReps.maxOf { it.weightGrams } },
+            // A hold is measured in time rather than kilos, so it is recorded whether or not the movement
+            // adds weight — a bodyweight carry still has a longest one (N233).
+            longestHoldSeconds = sets
+                .filter { it.role.recordsEffort }
+                .mapNotNull { it.durationSeconds }
+                .filter { it > 0 }
+                .maxOrNull(),
         )
     }
 }

@@ -375,7 +375,7 @@ interface WorkoutDao {
         SELECT ws.id FROM workout_sessions ws
         JOIN session_exercises se ON se.sessionId = ws.id
         WHERE se.exerciseId = :exerciseId
-          AND ws.id != :currentSessionId
+          AND (:currentSessionId IS NULL OR ws.id != :currentSessionId)
           AND ws.finishedAt IS NOT NULL
           AND ws.deletedAt IS NULL
           AND se.deletedAt IS NULL
@@ -383,7 +383,7 @@ interface WorkoutDao {
         LIMIT 1
         """,
     )
-    suspend fun findPreviousSessionIdFor(exerciseId: String, currentSessionId: String): String?
+    suspend fun findPreviousSessionIdFor(exerciseId: String, currentSessionId: String?): String?
 
     @Query(
         """

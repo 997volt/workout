@@ -185,7 +185,8 @@ interface TrendsDao {
                s.rpeHalves AS rpeHalves,
                s.setType AS setType,
                s.assistanceGrams AS assistanceGrams,
-               s.bodyweightGrams AS bodyweightGrams
+               s.bodyweightGrams AS bodyweightGrams,
+               s.durationSeconds AS durationSeconds
         FROM session_exercises se
         JOIN workout_sessions ws ON ws.id = se.sessionId
         LEFT JOIN set_entries s ON s.sessionExerciseId = se.id AND s.deletedAt IS NULL
@@ -282,4 +283,6 @@ data class ExerciseTrendRowEntity(
      * at — see `loadGrams`.
      */
     val bodyweightGrams: Long?,
+    /** How long the set was held, or null for a counted set (ROADMAP N233, N220). */
+    val durationSeconds: Int? = null,
 )

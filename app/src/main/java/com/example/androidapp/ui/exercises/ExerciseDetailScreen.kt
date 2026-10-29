@@ -1,6 +1,5 @@
 package com.example.androidapp.ui.exercises
 
-import com.example.androidapp.ui.components.CenteredMessage
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,22 +45,23 @@ import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.WeightUnit
-import com.example.androidapp.ui.components.AppFilterChip
-import com.example.androidapp.ui.components.LocalWeightUnit
-import com.example.androidapp.ui.components.exerciseWeightUnit
-import com.example.androidapp.ui.components.label
-import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.effectiveMovementPattern
 import com.example.androidapp.domain.effectivePrimaryMuscle
 import com.example.androidapp.domain.effectiveSecondaryMuscles
+import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.RowKind
+import com.example.androidapp.ui.components.AppFilterChip
+import com.example.androidapp.ui.components.AppTextButton
+import com.example.androidapp.ui.components.CenteredMessage
+import com.example.androidapp.ui.components.LocalWeightUnit
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.dataErrorMessage
+import com.example.androidapp.ui.components.exerciseWeightUnit
+import com.example.androidapp.ui.components.label
 import com.example.androidapp.ui.components.restLabel
-import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.theme.AndroidAppTheme
 
 /** Stateful entry point for the detail destination; reads its id from the route. */
@@ -197,6 +197,8 @@ private fun ExerciseDetailBody(
             exercise = exercise,
             headName = state.headName,
             ancestors = state.ancestors,
+            history = state.history,
+            historyError = state.historyError,
             modifier = modifier,
         )
     }
@@ -253,6 +255,9 @@ private fun ExerciseDetails(
      * keep a second copy of the rule — which is what B96 was.
      */
     ancestors: List<Exercise>,
+    /** What the lift's record says (ROADMAP N233). */
+    history: ExerciseHistoryUi,
+    historyError: DataError?,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -319,16 +324,15 @@ private fun ExerciseDetails(
         WeightStepRow(exercise = exercise)
         HorizontalDivider()
 
-        // Honest placeholder: history is the next milestone, not a broken screen.
-        Text(
-            text = stringResource(R.string.exercise_detail_history_planned),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 16.dp),
+        ExerciseHistorySection(
+            history = history,
+            // The exercise's own unit, else whatever the app is set to — the same resolution the weight
+            // rows above this section use (N64).
+            unit = exercise.weightUnit ?: LocalWeightUnit.current,
+            error = historyError,
         )
     }
 }
-
 
 /**
  * What this row takes from the head it hangs under (ROADMAP N95): the family's name and the muscle it
@@ -884,7 +888,6 @@ private fun AttributeRow(label: String, value: String, modifier: Modifier = Modi
         Text(text = value, style = MaterialTheme.typography.bodyLarge)
     }
 }
-
 
 @Preview(showBackground = true)
 @Composable

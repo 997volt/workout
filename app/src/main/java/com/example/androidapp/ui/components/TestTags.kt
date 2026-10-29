@@ -691,6 +691,13 @@ object TestTags {
     /** One exercise's own trends (ROADMAP N17). */
     const val EXERCISE_TRENDS = "exercise_trends"
 
+    /** The exercise's own history section (ROADMAP N233). */
+    const val EXERCISE_HISTORY = "exercise_history"
+    const val EXERCISE_HISTORY_LAST_TRAINED = "exercise_history_last_trained"
+    const val EXERCISE_HISTORY_BEST_HOLD = "exercise_history_best_hold"
+    const val EXERCISE_HISTORY_EMPTY = "exercise_history_empty"
+    const val EXERCISE_HISTORY_ERROR = "exercise_history_error"
+
     fun historyExerciseTrends(id: String) = "history_exercise_trends_$id"
 
     /**

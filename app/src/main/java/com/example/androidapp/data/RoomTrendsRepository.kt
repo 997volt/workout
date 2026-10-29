@@ -70,6 +70,7 @@ class RoomTrendsRepository @Inject constructor(
                     setType = row.setType?.let(SetType::valueOf),
                     assistanceGrams = row.assistanceGrams,
                     bodyweightGrams = row.bodyweightGrams,
+                    durationSeconds = row.durationSeconds,
                 )
             }
             rowsDomain.toExerciseTrendPoints(jointPainBySite = joints.toJointPainByExercise())

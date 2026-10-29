@@ -118,10 +118,18 @@ internal class FakeWorkoutRepository : WorkoutRepository {
         durationSeconds: Int?,
     ): DataResult<Unit> = unused()
     override suspend fun deleteSet(setId: String): DataResult<Unit> = unused()
+
+    /** Lets a test drive the history read failing, which is a section's sentence rather than the page (N233). */
+    var failHistory = false
+
     override suspend fun previousPerformance(
         exerciseId: String,
-        currentSessionId: String,
-    ): DataResult<PreviousPerformance> = DataResult.Success(previous)
+        currentSessionId: String?,
+    ): DataResult<PreviousPerformance> = if (failHistory) {
+        DataResult.Failure(com.example.androidapp.domain.DataError.Storage(java.io.IOException("locked")))
+    } else {
+        DataResult.Success(previous)
+    }
     override suspend fun startRest(seconds: Int): DataResult<Instant> = unused()
     override suspend fun adjustRest(deltaSeconds: Int): DataResult<Instant> = unused()
     override suspend fun clearRest(): DataResult<Unit> = unused()

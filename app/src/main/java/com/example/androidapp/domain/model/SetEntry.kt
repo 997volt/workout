@@ -1,5 +1,7 @@
 package com.example.androidapp.domain.model
 
+import java.time.Instant
+
 /**
  * A single logged set (ROADMAP P1.3).
  *
@@ -71,7 +73,6 @@ fun loadGrams(weightGrams: Long, bodyweightGrams: Long?, assistanceGrams: Long):
     } else {
         (bodyweightGrams + weightGrams - assistanceGrams).coerceAtLeast(0L)
     }
-
 
 /**
  * What kind of set this was: a set of its own, or a *rung* of the group above it (ROADMAP N79).
@@ -151,4 +152,12 @@ enum class SetType(val label: String) {
  */
 data class PreviousPerformance(
     val sets: List<SetEntry>,
+    /**
+     * When that session started, or null when there is none (ROADMAP N233).
+     *
+     * Carried because the same read answers two questions: the workout prefill asks what to put in the
+     * fields, and the exercise's own screen asks when the lift was last trained. Asking twice would be two
+     * reads that could disagree about which session "last" means.
+     */
+    val sessionStartedAt: Instant? = null,
 )

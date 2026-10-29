@@ -8,8 +8,13 @@ import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.PersonalRecords
+import com.example.androidapp.domain.model.PreviousPerformance
 import com.example.androidapp.domain.model.RowKind
+import com.example.androidapp.domain.model.SetEntry
+import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.repository.ExerciseRepository
+import com.example.androidapp.ui.workout.FakeWorkoutRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -212,11 +217,76 @@ class ExerciseDetailViewModelTest {
         )
     }
 
+    @Test
+    fun theHistorySection_saysWhenTheLiftWasLastTrained_andWhatThatSessionHeld() = runTest(dispatcher) {
+        // ROADMAP N233: the two reads the workout screen already had, asked with no session to exclude.
+        val workouts = FakeWorkoutRepository().apply {
+            previous = PreviousPerformance(
+                sets = listOf(
+                    SetEntry(
+                        id = "set-1",
+                        sessionExerciseId = "se-1",
+                        setIndex = 0,
+                        reps = 5,
+                        weightGrams = 100_000L,
+                        setType = SetType.NORMAL,
+                    ),
+                    SetEntry(
+                        id = "set-warm",
+                        sessionExerciseId = "se-1",
+                        setIndex = 1,
+                        reps = 10,
+                        weightGrams = 40_000L,
+                        setType = SetType.WARMUP,
+                    ),
+                ),
+                sessionStartedAt = Instant.parse("2026-10-01T07:00:00Z"),
+            )
+            records = PersonalRecords(bestByReps = mapOf(5 to 110_000L))
+        }
+        val viewModel = viewModelFor(FakeRepository(mutableListOf(seeded)), seeded.id, workouts)
+        advanceUntilIdle()
+
+        val history = viewModel.uiState.value.history
+        assertEquals(Instant.parse("2026-10-01T07:00:00Z"), history.lastTrainedAt)
+        assertEquals(
+            "a warm-up is not what the last time you did this means",
+            listOf("set-1"),
+            history.lastSets.map { it.id },
+        )
+        assertEquals(110_000L, history.records.bestAt(5))
+        assertNull(viewModel.uiState.value.historyError)
+    }
+
+    @Test
+    fun aMovementThatWasNeverTrained_hasNoHistory_andSaysNothingAboutIt() = runTest(dispatcher) {
+        val viewModel = viewModelFor(FakeRepository(mutableListOf(seeded)), seeded.id)
+        advanceUntilIdle()
+
+        assertNull(viewModel.uiState.value.history.lastTrainedAt)
+        assertTrue(viewModel.uiState.value.history.records.isEmpty)
+        assertNull("nothing failed", viewModel.uiState.value.historyError)
+    }
+
+    @Test
+    fun aFailedHistoryRead_isSayso_ratherThanLookingLikeNoHistory() = runTest(dispatcher) {
+        // An empty section would read as "never trained", which is a claim about the training rather than
+        // about the read (N233).
+        val workouts = FakeWorkoutRepository().apply { failHistory = true }
+        val viewModel = viewModelFor(FakeRepository(mutableListOf(seeded)), seeded.id, workouts)
+        advanceUntilIdle()
+
+        assertNotNull(viewModel.uiState.value.historyError)
+        assertNull("and the exercise itself is still readable", viewModel.uiState.value.error)
+    }
+
     private fun viewModelFor(
         repository: FakeRepository,
         exerciseId: String = "custom-1",
+        workouts: FakeWorkoutRepository = FakeWorkoutRepository(),
     ) = ExerciseDetailViewModel(
         repository = repository,
+        workouts = workouts,
         savedStateHandle = SavedStateHandle(mapOf("exerciseId" to exerciseId)),
     )
 

@@ -341,7 +341,7 @@ class WorkoutDetailViewModelTest {
         override suspend fun deleteSet(setId: String): DataResult<Unit> = unused()
         override suspend fun previousPerformance(
             exerciseId: String,
-            currentSessionId: String,
+            currentSessionId: String?,
         ): DataResult<PreviousPerformance> =
             DataResult.Success(PreviousPerformance(emptyList()))
 

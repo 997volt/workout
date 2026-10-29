@@ -170,6 +170,8 @@ data class ExerciseTrendRow(
     val assistanceGrams: Long?,
     /** The lifter's weight if this set was bodyweight-loaded, or null (ROADMAP N219). */
     val bodyweightGrams: Long? = null,
+    /** How long the set was held, or null for a counted set (ROADMAP N233). */
+    val durationSeconds: Int? = null,
 )
 
 /**

@@ -1,10 +1,7 @@
 package com.example.androidapp.ui.exercises
 
-import java.io.IOException
-import com.example.androidapp.domain.DataError
-import com.example.androidapp.R
-import androidx.test.core.app.ApplicationProvider
 import android.content.Context
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
@@ -15,18 +12,22 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.androidapp.R
+import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.MovementPattern
-import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.PersonalRecords
+import com.example.androidapp.domain.model.RowKind
+import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.ui.components.TestTags
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -34,6 +35,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
+import java.io.IOException
+import java.time.Instant
 
 /**
  * The detail screen's edit mode (ROADMAP N2, N5).
@@ -69,6 +72,67 @@ class ExerciseDetailScreenTest {
                 onOpenTrends = { _ -> },
             )
         }
+    }
+
+    @Test
+    fun theHistorySection_saysWhenTheLiftWasLastTrained_andItsBest() {
+        // ROADMAP N233: the section the screen used to apologise for.
+        show(
+            ExerciseDetailUiState(
+                isLoading = false,
+                exercise = custom,
+                history = ExerciseHistoryUi(
+                    lastTrainedAt = Instant.parse("2026-10-01T07:00:00Z"),
+                    lastSets = listOf(
+                        SetEntry(
+                            id = "set-1",
+                            sessionExerciseId = "se-1",
+                            setIndex = 0,
+                            reps = 5,
+                            weightGrams = 100_000L,
+                        ),
+                    ),
+                    records = PersonalRecords(bestByReps = mapOf(5 to 110_000L), longestHoldSeconds = 90),
+                ),
+            ),
+        )
+
+        // The section sits under the taxonomy rows, so reaching it is a scroll — the same way a lifter
+        // reaches it.
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_HISTORY).performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_HISTORY_LAST_TRAINED)
+            .performScrollTo()
+            .assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_HISTORY_BEST_HOLD)
+            .performScrollTo()
+            .assertIsDisplayed()
+        composeTestRule.onNodeWithText("5 reps · 110 kg", substring = true).assertExists()
+        composeTestRule.onNodeWithText("100 kg × 5", substring = true).assertExists()
+    }
+
+    @Test
+    fun aMovementWithNoSessions_saysSoRatherThanShowingAnEmptySection() {
+        show(ExerciseDetailUiState(isLoading = false, exercise = custom))
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_HISTORY_EMPTY).performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_HISTORY_LAST_TRAINED).assertDoesNotExist()
+    }
+
+    @Test
+    fun aFailedHistoryRead_isSaidInsideTheSection_notAsThePage() {
+        // The exercise is still readable; what is missing is one section, and an empty one would read as
+        // "never trained" (N233).
+        show(
+            ExerciseDetailUiState(
+                isLoading = false,
+                exercise = custom,
+                historyError = DataError.Storage(IOException("database is locked")),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_HISTORY_ERROR).performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_HISTORY_EMPTY).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT).assertIsDisplayed()
     }
 
     private fun customState(isEditing: Boolean) = ExerciseDetailUiState(

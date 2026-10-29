@@ -127,7 +127,17 @@
     <string name="rest_edit_hint">Empty for the default, 0 for none.</string>
     <string name="rest_none">None</string>
     <string name="exercise_detail_not_found">That exercise is no longer in the library.</string>
-    <string name="exercise_detail_history_planned">Per-exercise history and personal records are planned (ROADMAP P2.1).</string>
+    <!-- The exercise's own record (ROADMAP N233): what the last session held, and the best at each rep
+         count or, for a movement that is held, the longest hold. -->
+    <string name="exercise_history_title">History</string>
+    <string name="exercise_history_empty">No sessions yet.</string>
+    <string name="exercise_history_last_trained">Last trained %1$s</string>
+    <string name="exercise_history_best">Best</string>
+    <plurals name="exercise_history_best_row">
+        <item quantity="one">%1$d rep · %2$s %3$s</item>
+        <item quantity="other">%1$d reps · %2$s %3$s</item>
+    </plurals>
+    <string name="exercise_history_best_hold">Longest hold · %1$s</string>
     <!-- Custom exercises are editable afterwards (ROADMAP N2). -->
     <string name="exercise_edit">Edit</string>
 

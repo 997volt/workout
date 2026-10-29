@@ -17,6 +17,15 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Added
 
+- **The exercise's own screen says when it was last trained and what its best is** (N233). The screen carried an
+  honest apology instead of history. It now has the section: the date of the newest finished session that trained
+  the movement, the working sets that session holds, and the best at each rep count — or the longest hold, because
+  a timed movement has no rep count to be best at (N220). Both halves come from reads the app already had: the
+  prefill's *previous performance* (which now also says when that session was) and the record rule the workout
+  screen checks against. No schema change, and the record rule now sees a hold's seconds: a warm-up hold is not a
+  record, and a bodyweight carry still has a longest one.
+
+
 - **The library can be sorted by when a lift was last trained** (N230). Order was alphabetical by family and then
   by movement, and nothing offered another, so the one question the list could not answer was "what have I not
   done". A control names the order it is — *Name* or *Last trained* — and the default stays alphabetical, so a
