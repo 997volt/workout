@@ -285,6 +285,73 @@ class ExerciseLibraryTest {
         ).inOrder()
     }
 
+    @Test
+    fun aFilter_narrowsTheList_andAFamilyComesOnlyFromWhatMatched() {
+        // N231: the group is applied to movements, so a family is drawn by the movements under it that matched
+        // rather than by the chip — and one with none is not a row.
+        val library = library + movement("push-up", "Push-Up").copy(isBodyweight = true)
+
+        val rows = libraryRows(library, query = "", filter = LibraryFilter.BODYWEIGHT)
+
+        assertThat(rows.map { it.name }).containsExactly("Push-Up")
+    }
+
+    @Test
+    fun unfiled_isTheMovementsInNoFamily() {
+        val rows = libraryRows(library, query = "", filter = LibraryFilter.UNFILED)
+
+        assertThat(rows.map { it.name }).containsExactly("Deadlift")
+    }
+
+    @Test
+    fun notTrained_isOlderThanTheWindow_orNeverTrained() {
+        // N230's read, read as a group (N231): a session inside the window is "trained", one before it is not,
+        // and a lift never trained is the most overdue of all.
+        val rows = libraryRows(
+            exercises = library,
+            query = "",
+            filter = LibraryFilter.NOT_TRAINED,
+            lastTrained = mapOf(
+                "barbell-bench-press" to Instant.ofEpochSecond(30),
+                "dumbbell-bench-press" to Instant.ofEpochSecond(10),
+            ),
+            notTrainedSince = Instant.ofEpochSecond(20),
+        )
+
+        assertThat(rows.map { it.name }).containsExactly(
+            "Bench Press",
+            "Dumbbell Bench Press",
+            "Speed Day",
+            "Squat",
+            "Back Squat",
+            "Deadlift",
+        ).inOrder()
+    }
+
+    @Test
+    fun theSearch_appliesInsideTheFilter() {
+        // The settled rule for the chips: they narrow the same list the search narrows rather than replacing
+        // one another (N231).
+        val library = library + movement("push-up", "Push-Up").copy(isBodyweight = true)
+
+        val rows = libraryRows(library, query = "dumbbell", filter = LibraryFilter.BODYWEIGHT)
+
+        assertThat(rows).isEmpty()
+    }
+
+    @Test
+    fun theCounts_comeFromTheWholeLibrary_ratherThanFromASearch() {
+        val library = library + movement("push-up", "Push-Up").copy(isBodyweight = true)
+
+        val counts = libraryFilterCounts(library, lastTrained = emptyMap(), notTrainedSince = Instant.EPOCH)
+
+        assertThat(counts[LibraryFilter.ALL]).isEqualTo(6)
+        assertThat(counts[LibraryFilter.BODYWEIGHT]).isEqualTo(1)
+        assertThat(counts[LibraryFilter.TIMED]).isEqualTo(0)
+        assertThat(counts[LibraryFilter.UNFILED]).isEqualTo(2)
+        assertThat(counts[LibraryFilter.NOT_TRAINED]).isEqualTo(6)
+    }
+
     private fun category(id: String, name: String) = Exercise(
         id = id,
         name = name,

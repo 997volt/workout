@@ -52,12 +52,23 @@ fun libraryRows(
      * inputs, and the read is the repository's.
      */
     lastTrained: Map<String, Instant> = emptyMap(),
+    /** The group the list is narrowed to, applied **inside** the search rather than instead of it (N231). */
+    filter: LibraryFilter = LibraryFilter.ALL,
+    /**
+     * The instant before which a finished session counts as "not recently trained" (ROADMAP N231).
+     *
+     * Passed in for the same reason as the map: the caller owns the clock, and a window computed in here would
+     * make the function read one.
+     */
+    notTrainedSince: Instant = Instant.EPOCH,
 ): List<LibraryRow> {
     // The query is trimmed **once**, here, so every caller searches the same way. The trim used to live in a
     // filter this list no longer has, so a query of only spaces — blank to v1.16 — matched nothing (B87).
     val trimmed = query.trim()
     val byId = exercises.associateBy { it.id }
-    val matched = exercises.filter { it.matchesWithItsFamily(trimmed, byId) }.mapTo(mutableSetOf()) { it.id }
+    val matched = exercises
+        .filter { it.matchesWithItsFamily(trimmed, byId) && it.matchesFilter(filter, lastTrained, notTrainedSince) }
+        .mapTo(mutableSetOf()) { it.id }
 
     // What both grouping passes read, in one value rather than six parameters: they are the same question
     // asked twice — what is filed under this, and what is left over — so they read the same facts.

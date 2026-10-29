@@ -4,8 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
+import com.example.androidapp.domain.LIBRARY_NOT_TRAINED_DAYS
+import com.example.androidapp.domain.LibraryFilter
 import com.example.androidapp.domain.LibrarySort
+import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.getOrNull
+import com.example.androidapp.domain.libraryFilterCounts
 import com.example.androidapp.domain.libraryRows
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.repository.ExerciseRepository
@@ -19,6 +23,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 
 data class ExerciseLibraryUiState(
@@ -77,6 +82,20 @@ data class ExerciseLibraryUiState(
      * rather than about the read, which is the one thing the failure may not become.
      */
     val lastTrainedError: DataError? = null,
+    /**
+     * The group the list is narrowed to (ROADMAP N231), already resolved: a group that emptied falls back to
+     * [LibraryFilter.ALL] rather than drawing a blank list under a selected chip.
+     */
+    val filter: LibraryFilter = LibraryFilter.ALL,
+    /** How many movements each chip holds, from the whole library (ROADMAP N231). */
+    val filterCounts: Map<LibraryFilter, Int> = emptyMap(),
+    /**
+     * The instant before which a session counts as *not recently trained* (ROADMAP N231).
+     *
+     * In the state because the screen builds the rows: the window is an input to the one pure function, not a
+     * clock the screen reads.
+     */
+    val notTrainedSince: Instant = Instant.EPOCH,
 ) {
     /**
      * Nothing to show — the list is empty, whether because the library is or because the search missed.
@@ -85,7 +104,7 @@ data class ExerciseLibraryUiState(
      * asking it here too would be a second place for one fact to be read.
      */
     val isEmpty: Boolean
-        get() = !isLoading && libraryRows(exercises, query).isEmpty()
+        get() = !isLoading && libraryRows(exercises, query, filter = filter).isEmpty()
 }
 
 /**
@@ -100,13 +119,24 @@ data class ExerciseLibraryUiState(
 @HiltViewModel
 class ExerciseLibraryViewModel @Inject constructor(
     private val exerciseRepository: ExerciseRepository,
+    private val timeSource: TimeSource,
 ) : ViewModel() {
 
     /** The search and the order — the form's memory rather than the document's (ROADMAP N230). */
     private data class LibraryView(
         val query: String = "",
         val sort: LibrarySort = LibrarySort.NAME,
+        val filter: LibraryFilter = LibraryFilter.ALL,
     )
+
+    /**
+     * The window the *Not trained in 30 days* chip means (ROADMAP N231).
+     *
+     * Read once for the screen's lifetime: a window that moved while the list was open would be a different
+     * question under the same chip.
+     */
+    private val notTrainedSince: Instant =
+        timeSource.now().minus(LIBRARY_NOT_TRAINED_DAYS, ChronoUnit.DAYS)
 
     private val view = MutableStateFlow(LibraryView())
 
@@ -138,6 +168,12 @@ class ExerciseLibraryViewModel @Inject constructor(
         // A read failure is rendered where the list would have been (ROADMAP B4),
         // instead of escaping the flow and taking the screen down.
         val exercises = result.getOrNull().orEmpty()
+        val trainedMap = trained.getOrNull().orEmpty()
+        val counts = libraryFilterCounts(exercises, trainedMap, notTrainedSince)
+        // **A group that emptied falls back to all** (N231): a blank list under a selected chip would say the
+        // library is empty when the chip is what is empty. The filter is one the lifter chose, and an empty
+        // one cannot stay chosen.
+        val filter = if ((counts[currentView.filter] ?: 0) == 0) LibraryFilter.ALL else currentView.filter
         ExerciseLibraryUiState(
             query = currentView.query,
             exercises = exercises,
@@ -148,8 +184,11 @@ class ExerciseLibraryViewModel @Inject constructor(
             writeError = currentError,
             removedHeads = removed,
             sort = currentView.sort,
-            lastTrained = trained.getOrNull().orEmpty(),
+            lastTrained = trainedMap,
             lastTrainedError = (trained as? DataResult.Failure)?.error,
+            filter = filter,
+            filterCounts = counts,
+            notTrainedSince = notTrainedSince,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -176,6 +215,11 @@ class ExerciseLibraryViewModel @Inject constructor(
     /** Reorders the list; nothing is written, so this is a display choice (N230). */
     fun onSortChange(value: LibrarySort) {
         view.update { it.copy(sort = value) }
+    }
+
+    /** Narrows the list to one group, inside whatever the search is (N231). */
+    fun onFilterChange(value: LibraryFilter) {
+        view.update { it.copy(filter = value) }
     }
 
     /**

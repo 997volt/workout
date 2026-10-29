@@ -289,6 +289,9 @@ object TestTags {
     const val LIBRARY_SORT = "library_sort"
     fun librarySortOption(sort: String) = "library_sort_$sort"
 
+    /** One of the library's groups, addressed by enum name (ROADMAP N231). */
+    fun libraryFilter(filter: String) = "library_filter_$filter"
+
     /**
      * Two empty states, two tags — deliberately. The distinction is the feature
      * (P1.1a): an empty library wants different words from a search with no hits.

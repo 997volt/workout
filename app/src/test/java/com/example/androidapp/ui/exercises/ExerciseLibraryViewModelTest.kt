@@ -240,7 +240,7 @@ class ExerciseLibraryViewModelTest {
     fun theLastTrainedRead_reachesTheState() = runTest(dispatcher) {
         val repository = FakeRepository(listOf(squat, bench))
         repository.lastTrained = mapOf("back-squat" to Instant.ofEpochSecond(42))
-        val viewModel = ExerciseLibraryViewModel(exerciseRepository = repository)
+        val viewModel = ExerciseLibraryViewModel(exerciseRepository = repository, timeSource = { Instant.EPOCH })
         observe(viewModel)
         advanceUntilIdle()
 
@@ -256,7 +256,7 @@ class ExerciseLibraryViewModelTest {
         // the read — so the failure is a message and the map is empty (N230).
         val repository = FakeRepository(listOf(squat, bench))
         repository.failLastTrained = true
-        val viewModel = ExerciseLibraryViewModel(exerciseRepository = repository)
+        val viewModel = ExerciseLibraryViewModel(exerciseRepository = repository, timeSource = { Instant.EPOCH })
         observe(viewModel)
         advanceUntilIdle()
 
@@ -266,6 +266,9 @@ class ExerciseLibraryViewModelTest {
 
     private fun viewModelFor(vararg exercises: Exercise) = ExerciseLibraryViewModel(
         exerciseRepository = FakeRepository(exercises.toList()),
+        // The window the "not trained" chip measures is read once, so a fixed clock keeps it out of the way
+        // of every other test on this screen (N231).
+        timeSource = { Instant.EPOCH },
     )
 
     @Test
@@ -273,7 +276,7 @@ class ExerciseLibraryViewModelTest {
         // ROADMAP B4: this used to escape the flow as an exception. It is now a
         // value the screen can render where the list would have been.
         val repository = FakeRepository(emptyList()).apply { failReads = true }
-        val viewModel = ExerciseLibraryViewModel(repository)
+        val viewModel = ExerciseLibraryViewModel(repository, timeSource = { Instant.EPOCH })
         observe(viewModel)
         advanceUntilIdle()
 
@@ -288,7 +291,7 @@ class ExerciseLibraryViewModelTest {
         // ROADMAP B88: a *New category* that did not land wrote into the same field a failed read uses, and
         // the body tests that field before the list — so the library vanished behind the read-failure page.
         val repository = FakeRepository(listOf(squat)).apply { failWrites = true }
-        val viewModel = ExerciseLibraryViewModel(repository)
+        val viewModel = ExerciseLibraryViewModel(repository, timeSource = { Instant.EPOCH })
         observe(viewModel)
         advanceUntilIdle()
 

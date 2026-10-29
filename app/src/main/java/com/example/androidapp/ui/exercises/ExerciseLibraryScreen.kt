@@ -48,6 +48,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
 import com.example.androidapp.domain.DataError
+import com.example.androidapp.domain.LibraryFilter
 import com.example.androidapp.domain.LibraryRow
 import com.example.androidapp.domain.LibrarySort
 import com.example.androidapp.domain.changedFamilies
@@ -97,6 +98,7 @@ fun ExerciseLibraryRoute(
         // is lost is one way of ordering it (N230).
         message = (state.writeError ?: state.lastTrainedError)?.let { dataErrorMessage(it) },
         onSortChange = viewModel::onSortChange,
+        onFilterChange = viewModel::onFilterChange,
         onNewCategory = viewModel::onCreateCategory,
         onDismissMessage = viewModel::onErrorShown,
         modifier = modifier,
@@ -122,6 +124,8 @@ fun ExerciseLibraryScreen(
     onDismissMessage: () -> Unit,
     /** How the list is ordered (ROADMAP N230). Required: a screen that forgot it would silently never sort. */
     onSortChange: (LibrarySort) -> Unit,
+    /** The group the list is narrowed to (ROADMAP N231). */
+    onFilterChange: (LibraryFilter) -> Unit,
     modifier: Modifier = Modifier,
     onBack: (() -> Unit)? = null,
     message: String? = null,
@@ -166,6 +170,7 @@ fun ExerciseLibraryScreen(
             fold = fold,
             onQueryChange = onQueryChange,
             onSortChange = onSortChange,
+            onFilterChange = onFilterChange,
             onExerciseClick = onExerciseClick,
             onCategoryDetails = { detailsFor = it },
             modifier = Modifier.padding(innerPadding),
@@ -252,13 +257,20 @@ private fun LibraryBody(
     fold: RowFold,
     onQueryChange: (String) -> Unit,
     onSortChange: (LibrarySort) -> Unit,
+    onFilterChange: (LibraryFilter) -> Unit,
     onExerciseClick: (String) -> Unit,
     onCategoryDetails: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxSize()) {
         LibrarySearchField(query = state.query, onQueryChange = onQueryChange)
-        LibrarySortControl(sort = state.sort, onSortChange = onSortChange)
+        LibraryControls(
+            sort = state.sort,
+            filter = state.filter,
+            counts = state.filterCounts,
+            onSortChange = onSortChange,
+            onFilterChange = onFilterChange,
+        )
 
         when {
             state.isLoading -> LoadingState()
@@ -377,6 +389,8 @@ private fun rememberLibraryRows(state: ExerciseLibraryUiState, fold: RowFold): L
         state.removedHeads,
         state.sort,
         state.lastTrained,
+        state.filter,
+        state.notTrainedSince,
     ) {
         libraryRows(
             exercises = state.exercises,
@@ -387,6 +401,8 @@ private fun rememberLibraryRows(state: ExerciseLibraryUiState, fold: RowFold): L
             headResolver = state.exercises + state.removedHeads.values,
             sort = state.sort,
             lastTrained = state.lastTrained,
+            filter = state.filter,
+            notTrainedSince = state.notTrainedSince,
         )
     }
 
@@ -614,6 +630,7 @@ private fun ExerciseLibraryScreenPreview() {
             onExerciseClick = {},
             onDismissMessage = {},
             onSortChange = {},
+            onFilterChange = {},
         )
     }
 }
@@ -629,6 +646,7 @@ private fun ExerciseLibraryEmptyPreview() {
             onExerciseClick = {},
             onDismissMessage = {},
             onSortChange = {},
+            onFilterChange = {},
         )
     }
 }

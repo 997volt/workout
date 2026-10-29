@@ -18,6 +18,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.R
 import com.example.androidapp.domain.DataError
+import com.example.androidapp.domain.LibraryFilter
 import com.example.androidapp.domain.LibrarySort
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Exercise
@@ -147,6 +148,7 @@ class ExerciseLibraryScreenTest {
                 onExerciseClick = {},
                 onDismissMessage = {},
                 onSortChange = { chosen = it },
+                onFilterChange = {},
             )
         }
 
@@ -155,6 +157,41 @@ class ExerciseLibraryScreenTest {
         composeTestRule.onNodeWithTag(TestTags.librarySortOption("LAST_TRAINED")).performClick()
 
         assertEquals(LibrarySort.LAST_TRAINED, chosen)
+    }
+
+    @Test
+    fun theFilterChips_showTheGroupSizes_andReportTheGroupChosen() {
+        // ROADMAP N231: the chip carries the group's size from the whole library, and a group with nothing in
+        // it is not a control.
+        var chosen: LibraryFilter? = null
+        val bodyweight = exercise("push-up", "Push-Up", "Chest", "Bodyweight").copy(isBodyweight = true)
+        composeTestRule.setContent {
+            ExerciseLibraryScreen(
+                state = ExerciseLibraryUiState(
+                    isLoading = false,
+                    exercises = groupedLibrary + bodyweight,
+                    filterCounts = mapOf(
+                        LibraryFilter.ALL to 3,
+                        LibraryFilter.BODYWEIGHT to 1,
+                        LibraryFilter.TIMED to 0,
+                    ),
+                ),
+                title = "Exercise library",
+                onQueryChange = {},
+                onExerciseClick = {},
+                onDismissMessage = {},
+                onSortChange = {},
+                onFilterChange = { chosen = it },
+            )
+        }
+
+        composeTestRule.onNodeWithTag(TestTags.libraryFilter("ALL")).assertTextContains("All · 3")
+        composeTestRule.onNodeWithTag(TestTags.libraryFilter("BODYWEIGHT")).assertTextContains("Bodyweight · 1")
+        composeTestRule.onNodeWithTag(TestTags.libraryFilter("TIMED")).assertDoesNotExist()
+
+        composeTestRule.onNodeWithTag(TestTags.libraryFilter("BODYWEIGHT")).performClick()
+
+        assertEquals(LibraryFilter.BODYWEIGHT, chosen)
     }
 
     @Test
@@ -312,6 +349,7 @@ class ExerciseLibraryScreenTest {
                     onExerciseClick = {},
                     onDismissMessage = {},
                     onSortChange = {},
+                    onFilterChange = {},
                 )
             }
             return
@@ -343,6 +381,7 @@ class ExerciseLibraryScreenTest {
                 onNewCategory = onNewCategory,
                 onDismissMessage = {},
                 onSortChange = {},
+                onFilterChange = {},
             )
         }
     }
