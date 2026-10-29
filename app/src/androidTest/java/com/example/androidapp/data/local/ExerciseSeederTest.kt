@@ -258,6 +258,98 @@ class ExerciseSeederTest {
         }
     }
 
+    @Test
+    fun anUnfiledMovement_isFiledByTheNextTopUp() = runTest {
+        // N229: the seed left eight movements loose, and a row already on a device was never updated by the
+        // filing — `INSERT OR IGNORE` keeps what is there. The repair moves the family and nothing else.
+        val database = databaseWithSeeding()
+        try {
+            val dao = database.exerciseDao()
+            val raw = database.openHelper.writableDatabase
+
+            raw.execSQL("UPDATE exercises SET parentId = NULL WHERE id = 'face-pull'")
+            assertNull(dao.findById("face-pull")?.parentId)
+
+            seedMissingExercises(raw, SEEDED_AT + 1_000L)
+
+            assertEquals("rear-delt", dao.findById("face-pull")?.parentId)
+        } finally {
+            database.close()
+        }
+    }
+
+    @Test
+    fun aMovementALifterFiledOrRenamed_isNotMovedByTheRepair() = runTest {
+        // The guard: the repair runs on every open, so only a row that still looks like the seed's is filed.
+        val database = databaseWithSeeding()
+        try {
+            val dao = database.exerciseDao()
+            val raw = database.openHelper.writableDatabase
+
+            raw.execSQL("UPDATE exercises SET parentId = 'core' WHERE id = 'face-pull'")
+            raw.execSQL("UPDATE exercises SET parentId = NULL, name = 'Rope Face Pull' WHERE id = 'dip'")
+
+            seedMissingExercises(raw, SEEDED_AT + 1_000L)
+
+            assertEquals("a filing the lifter changed stays", "core", dao.findById("face-pull")?.parentId)
+            assertNull("and a renamed row is theirs", dao.findById("dip")?.parentId)
+        } finally {
+            database.close()
+        }
+    }
+
+    @Test
+    fun theRetiredDeadlift_isMergedIntoTheConventionalOne_keepingItsHistory() = runTest {
+        // N229: the seed shipped a plain *Deadlift* beside the family of the same name, and the bar lift a
+        // lifter means is the conventional one. A device that logged the retired row keeps every set, plan
+        // target and program slot — they follow the survivor rather than being stranded on a row that goes.
+        val database = databaseWithSeeding()
+        try {
+            val raw = database.openHelper.writableDatabase
+            val dao = database.exerciseDao()
+
+            // A device from before the merge: the retired row, one session naming it, and one plan.
+            raw.execSQL(
+                "INSERT INTO exercises (id, name, secondaryMuscles, movementPattern, rowKind, createdAt, updatedAt) " +
+                    "VALUES ('deadlift', 'Deadlift', '', 'HINGE', 'MOVEMENT', 1, 1)",
+            )
+            raw.execSQL(
+                "INSERT INTO workout_sessions (id, startedAt, createdAt, updatedAt) VALUES ('s1', 1, 1, 1)",
+            )
+            raw.execSQL(
+                "INSERT INTO session_exercises (id, sessionId, exerciseId, position, createdAt, updatedAt) " +
+                    "VALUES ('se1', 's1', 'deadlift', 0, 1, 1)",
+            )
+            raw.execSQL(
+                "INSERT INTO templates (id, name, createdAt, updatedAt) VALUES ('t1', 'Lower', 1, 1)",
+            )
+            raw.execSQL(
+                "INSERT INTO template_exercises (id, templateId, exerciseId, position, createdAt, updatedAt) " +
+                    "VALUES ('te1', 't1', 'deadlift', 0, 1, 1)",
+            )
+
+            seedMissingExercises(raw, SEEDED_AT + 1_000L)
+
+            assertNull("the retired row is gone", dao.findById("deadlift"))
+            assertEquals(
+                "the logged set follows the movement that means it",
+                "conventional-deadlift",
+                raw.singleString("SELECT exerciseId FROM session_exercises WHERE id = 'se1'"),
+            )
+            assertEquals(
+                "and so does the plan",
+                "conventional-deadlift",
+                raw.singleString("SELECT exerciseId FROM template_exercises WHERE id = 'te1'"),
+            )
+        } finally {
+            database.close()
+        }
+    }
+
+    /** One value out of one row, for the assertions that read a table the DAOs do not offer. */
+    private fun SupportSQLiteDatabase.singleString(sql: String): String? =
+        query(sql).use { cursor -> if (cursor.moveToFirst()) cursor.getString(0) else null }
+
     private companion object {
         const val SEEDED_AT = 1_700_000_000_000L
     }

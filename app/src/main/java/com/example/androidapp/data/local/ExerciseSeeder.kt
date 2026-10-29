@@ -99,6 +99,11 @@ internal fun seedMissingExercises(db: SupportSQLiteDatabase, seededAt: Long) {
             )
         }
         // **A device that already holds the row keeps what it states**, and only the seed's own truth is
+        // filled in behind it (B293): a row that is on the device is never re-inserted, so each change the
+        // seed makes to how a movement is read has to be written behind the insert.
+        fileMovementsTheSeedNowFiles(db, seededAt)
+
+        // **A device that already holds the row keeps what it states**, and only the seed's own truth is
         // filled in behind it (B293): the flags were never written by an older seeder, so a row that says
         // "loaded" when the seed says "by the body" is the seed's omission rather than the lifter's choice.
         // Only ever raised, never lowered, so a movement a lifter marked bodyweight themselves stays marked.
@@ -119,6 +124,9 @@ internal fun seedMissingExercises(db: SupportSQLiteDatabase, seededAt: Long) {
                 ),
             )
         }
+        // Last, because the row a movement is merged into has just been inserted (N229).
+        mergeRetiredMovements(db, seededAt)
+
         db.setTransactionSuccessful()
     } finally {
         db.endTransaction()
@@ -177,9 +185,84 @@ internal fun releaseSeededMovementIds(db: SupportSQLiteDatabase, now: Long) {
  * seed says is not rewritten on every open. The `name` match is the same guard the id repair uses — a row the
  * lifter renamed is theirs.
  */
+/** Files a movement the seed now files, on a row that predates the link (N229). */
+internal const val UPDATE_SEEDED_FAMILY =
+    "UPDATE exercises SET parentId = ?, updatedAt = ? " +
+        "WHERE id = ? AND name = ? AND rowKind = ? AND parentId IS NULL"
+
 internal const val UPDATE_SEEDED_FLAGS =
     "UPDATE exercises SET isBodyweight = ?, isTimed = ? " +
         "WHERE id = ? AND name = ? AND rowKind = ? AND (isBodyweight < ? OR isTimed < ?)"
+
+/**
+ * Files the movements the seed now files, on a device whose rows predate the filing (N229).
+ *
+ * `INSERT OR IGNORE` never updates a row, so a movement that arrived unfiled keeps its null family for ever:
+ * the seed's own copy of it is the same row, and nothing wrote the link at the time. The `parentId IS NULL`
+ * and `name` guards are what make this safe to run on every open — a movement a lifter filed themselves, or
+ * renamed, is not the seed's to move.
+ */
+private fun fileMovementsTheSeedNowFiles(db: SupportSQLiteDatabase, now: Long) {
+    SeedExercises.all.forEach { exercise ->
+        val family = SeedExercises.parentOf[exercise.id] ?: return@forEach
+        db.execSQL(UPDATE_SEEDED_FAMILY, arrayOf<Any?>(family, now, exercise.id, exercise.name, RowKind.MOVEMENT.name))
+    }
+}
+
+/**
+ * A movement a later seed merged into another, and the name the retired one shipped under (N229).
+ *
+ * The retired row is not deleted from a fresh install's list — it is never in it again — and the pair is the
+ * whole record: what has to move is history, and the name is the guard that says the row is still the seed's.
+ */
+internal data class MergedMovement(val retired: String, val name: String, val survivor: String)
+
+/** The movements the seed has merged away, in the order they were retired (N229). */
+internal val MERGED_MOVEMENTS = listOf(
+    MergedMovement(retired = "deadlift", name = "Deadlift", survivor = "conventional-deadlift"),
+)
+
+/**
+ * Moves a retired movement's history onto the one that means it, then takes the row away (N229).
+ *
+ * Only a row that is still the seed's is merged — same id, same name, still a movement — so a lifter who
+ * renamed theirs keeps it, and the merge is a no-op after the first run. **History is the point**: a set
+ * names its exercise by id, so every logged set, plan target and program slot follows the survivor, and the
+ * row that said the same thing under another name stops being a second movement in the list.
+ *
+ * A survivor this device does not hold stops the merge rather than orphaning the history: the insert that
+ * puts it there runs earlier in this same transaction, and the guard is what keeps a refused statement from
+ * rolling the whole seeding back.
+ */
+private fun mergeRetiredMovements(db: SupportSQLiteDatabase, now: Long) {
+    MERGED_MOVEMENTS.forEach { merge ->
+        val retired = db.holdsMovement(merge.retired, merge.name)
+        val survivor = db.holdsMovement(merge.survivor)
+        if (!retired || !survivor) return@forEach
+        db.execSQL(
+            "UPDATE session_exercises SET exerciseId = ? WHERE exerciseId = ?",
+            arrayOf<Any?>(merge.survivor, merge.retired),
+        )
+        // A plan is a definition, so the row it changed moves its own timestamp: a program document exported
+        // before this is refused as stale rather than merged into a plan that changed (N171).
+        db.execSQL(
+            "UPDATE template_exercises SET exerciseId = ?, updatedAt = ? WHERE exerciseId = ?",
+            arrayOf<Any?>(merge.survivor, now, merge.retired),
+        )
+        db.execSQL(
+            "DELETE FROM exercises WHERE id = ? AND name = ? AND rowKind = ?",
+            arrayOf<Any?>(merge.retired, merge.name, RowKind.MOVEMENT.name),
+        )
+    }
+}
+
+/** True when this device holds [id] as a movement, under [name] when one is given. */
+private fun SupportSQLiteDatabase.holdsMovement(id: String, name: String? = null): Boolean {
+    val byId = arrayOf<Any?>(id, RowKind.MOVEMENT.name)
+    val sql = "SELECT 1 FROM exercises WHERE id = ? AND rowKind = ?" + if (name == null) "" else " AND name = ?"
+    val args = if (name == null) byId else byId + name
+    return query(sql, args).use { cursor -> cursor.moveToFirst() }
+}
 
 /** `deletedAt` is omitted so it keeps its NULL default. */
 internal const val INSERT_EXERCISE =

@@ -88,13 +88,9 @@ internal object SeedExercises {
         ),
 
         // ---- Back ----
-        movement(
-            "deadlift",
-            "Deadlift",
-            Equipment.BARBELL,
-            MuscleGroup.HAMSTRINGS,
-            listOf(MuscleGroup.GLUTES, MuscleGroup.FOREARMS, MuscleGroup.LOWER_BACK),
-        ),
+        // **No plain "Deadlift"** (N229): the family is named after the lift, so a movement of that name sat
+        // beside it and the two were one row too many. The bar lift a lifter means is *Conventional
+        // Deadlift*, and the row that said otherwise is merged into it on a device that already had one.
         movement("conventional-deadlift", "Conventional Deadlift", Equipment.BARBELL),
         movement("sumo-deadlift", "Sumo Deadlift", Equipment.BARBELL),
         movement("deficit-deadlift", "Deficit Deadlift", Equipment.BARBELL),
@@ -324,6 +320,25 @@ internal object SeedExercises {
             MuscleGroup.SHOULDERS,
             emptyList()
         ),
+        // The two families the knee isolation had no home in: a leg extension is quad work that *Squat*
+        // would name wrongly, and a leg curl is knee flexion rather than the hinge *Deadlift* holds (N229).
+        SeedCategory(
+            "leg-curl",
+            "Leg Curl",
+            MovementPattern.ISOLATION,
+            MuscleGroup.HAMSTRINGS,
+            listOf(MuscleGroup.GLUTES)
+        ),
+        // `-family` for the reason B148 named one: the movement *Leg Extension* is a row of its own, so a
+        // family under that same id would be dropped by `INSERT OR IGNORE` (SeedExercisesTest asserts the two
+        // lists never intersect).
+        SeedCategory(
+            "leg-extension-family",
+            "Leg Extension",
+            MovementPattern.ISOLATION,
+            MuscleGroup.QUADS,
+            emptyList()
+        ),
         SeedCategory("calf-raise-family", "Calf Raise", MovementPattern.ISOLATION, MuscleGroup.CALVES, emptyList()),
         SeedCategory("core", "Core", MovementPattern.CORE, MuscleGroup.CORE, emptyList()),
         // The families added with the strength and bodybuilding set. Each holds a cluster that had no home:
@@ -478,9 +493,18 @@ internal object SeedExercises {
         "turkish-get-up" to "core",
         "farmers-carry" to "carry",
         "suitcase-carry" to "carry",
-        // Deliberately unfiled, so the seed demonstrates both shapes: `face-pull`, `leg-extension`,
-        // `lying-leg-curl`, `seated-leg-curl`, `nordic-curl`, `dip`, `push-up` and `deadlift`'s own
-        // name are movements a lifter files themselves if they want a family around them.
+        // **The last unfiled movements, filed** (N229): a fresh install used to draw a flat alphabetical pile
+        // of loose lifts under its families, which read as the library's leftovers. A face pull is rear-delt
+        // work and a dip is the compound its family already holds; the knee isolation needed two families.
+        "face-pull" to "rear-delt",
+        "dip" to "triceps-extension",
+        "lying-leg-curl" to "leg-curl",
+        "seated-leg-curl" to "leg-curl",
+        "nordic-curl" to "leg-curl",
+        "leg-extension" to "leg-extension-family",
+        // **One movement stays unfiled on purpose** (N229): every press family is a *lift's* family, so a
+        // push-up is none of them. One loose movement the seed can stand behind is a different thing from
+        // eight of them sitting there because nothing was done.
     )
 
     /**

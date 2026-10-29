@@ -110,6 +110,21 @@ class SeedExercisesTest {
     }
 
     @Test
+    fun everyMovementTheSeedCanFile_isFiled_exceptThePushUp() {
+        // N229: eight movements sat at the top level, so a fresh install drew a flat alphabetical pile of
+        // loose lifts under its families. One stays loose on purpose - a push-up is none of the press
+        // families, which are each a lift's.
+        assertWithMessage("the one movement the seed leaves unfiled")
+            .that(SeedExercises.all.filterNot { it.id in SeedExercises.parentOf }.map { it.id })
+            .containsExactly("push-up")
+
+        assertWithMessage("the ambiguous plain deadlift is gone")
+            .that(SeedExercises.all.map { it.id })
+            .doesNotContain("deadlift")
+        assertThat(SeedExercises.parentOf["conventional-deadlift"]).isEqualTo("deadlift-family")
+    }
+
+    @Test
     fun theSeedDeclaresWhichMovementsAreBodyweightAndTimed() {
         // B293: the seeder wrote neither column, so every seeded movement arrived as an ordinary loaded one
         // — a weighted pull-up was recorded as its belt alone, and a plank offered reps. The two flags are
