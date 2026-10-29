@@ -1014,6 +1014,41 @@ class ActiveWorkoutScreenTest {
     )
 
     @Test
+    fun theExerciseStatesWhatItsPlanWillDoWithTheSet() {
+        // ROADMAP N227: the block's small print says the step the plan's own numbers can earn, read from the
+        // rule the plan editor prints. A 5-8 plan with a load moves the reps first and the weight at the
+        // ceiling, in the movement's own unit.
+        setScreen(state = state(isFinished = false, progression = earnedPrompt()))
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_PROGRESSION)
+            .assertTextEquals("Progresses by +1 rep, then +2.5 kg at the ceiling")
+    }
+
+    @Test
+    fun aPlanThatCannotProgress_saysNothingAboutItHere() {
+        // The plan editor states why a plan cannot progress (B181); the session is not where a plan is
+        // mended, so the block draws no line rather than a line about an impossibility.
+        val noGate = ProgressionPrompt(
+            sets = listOf(
+                ProgressionSetPrompt(
+                    planned = planSet().copy(targetRpeHalves = null),
+                    performed = ProgressionPerformance(reps = 5, weightGrams = 100_000L, rpeHalves = 8),
+                ),
+            ),
+        )
+        setScreen(state = state(isFinished = false, progression = noGate))
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_PROGRESSION).assertDoesNotExist()
+    }
+
+    @Test
+    fun anExerciseWithNoPlan_statesNoStep() {
+        setScreen(state = state(isFinished = false, progression = ProgressionPrompt()))
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_PROGRESSION).assertDoesNotExist()
+    }
+
+    @Test
     fun theNextSet_isStatedByFields_andLogSetWritesThem() {
         // ROADMAP N59: the values are on screen before anything is written, and the button beside
         // them writes exactly those values — B7's display-agrees-with-storage, back on this path.

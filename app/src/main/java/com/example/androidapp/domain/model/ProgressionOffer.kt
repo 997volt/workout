@@ -431,6 +431,9 @@ private fun stepAbove(planned: Long, performed: Long, stepGrams: Long): Long {
     return planned + steps.coerceAtLeast(1L) * step
 }
 
+/** True when this set names an added load a step can raise — what [progressionRuleFor] reads (N74). */
+val ProgressionPlanSet.namesAddedLoad: Boolean get() = addedWeightGrams != null
+
 /**
  * The **added** weight this set names, or null (N15).
  *
@@ -465,3 +468,29 @@ private fun List<ProgressionPerformance>.performedWork(): List<ProgressionPerfor
 
 /** One rep is the step a rep direction raises by: the smallest unit a plan counts in. */
 private const val REPS_PER_STEP = 1
+
+/**
+ * This plan's sets as the progression rule reads them (N227).
+ *
+ * The mapping the session already made, moved to the model because the plan editor needs the same shape: one
+ * rule reading one translation, rather than two predicates that must be kept in step.
+ *
+ * **The target RPE is one number for the exercise** (N59), so every set carries it rather than its own — which
+ * is what lets the rule check every working set against that single target, and why [progressionRuleFor] takes
+ * the number beside the sets.
+ */
+fun TemplateExercise.progressionSets(): List<ProgressionPlanSet> = sets.map { set ->
+    ProgressionPlanSet(
+        setId = set.id,
+        setIndex = set.setIndex,
+        role = set.role,
+        targetWeightGrams = set.targetWeightGrams,
+        targetAssistanceGrams = set.targetAssistanceGrams,
+        targetRepsMin = set.targetRepsMin,
+        targetRepsMax = set.targetRepsMax,
+        // Where in the range the lifter has climbed (N74): the number the rule measures and a step moves.
+        targetRepsCurrent = set.targetRepsCurrent,
+        targetRpeHalves = targetRpeHalves,
+        note = set.note,
+    )
+}

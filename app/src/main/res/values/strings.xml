@@ -213,6 +213,13 @@
     <string name="template_add_warmups">Add warm-ups</string>
     <!-- What Done will do with the plan's next step (P3.17, B181). The rep step is the first one:
          below its range's ceiling a set gains a rep, and the weight moves only at the ceiling. -->
+    <!-- What the plan will do with the set, in the workout block's small print (ROADMAP N227). The step
+         only: the gate is the plan's own effort, which the prefill's plan line states, and a plan that
+         cannot progress says nothing here because the plan editor is where that sentence belongs (B181). -->
+    <string name="active_workout_progresses_reps_then_load">Progresses by +1 rep, then +%1$s %2$s at the ceiling</string>
+    <string name="active_workout_progresses_reps_only">Progresses by +1 rep until the ceiling</string>
+    <string name="active_workout_progresses_load_only">Progresses by +%1$s %2$s when the set meets the plan</string>
+
     <string name="plan_progression_step">Progresses by +%1$s %2$s when a set meets the plan\'s RPE</string>
     <string name="plan_progression_reps_then_load">Progresses by +1 rep below the rep ceiling, then by +%1$s %2$s at it, when a set meets the plan\'s RPE</string>
     <string name="plan_progression_reps_only">Progresses by +1 rep below the rep ceiling; a set at the ceiling has no weight to raise.</string>

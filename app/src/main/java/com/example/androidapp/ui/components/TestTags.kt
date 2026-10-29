@@ -594,6 +594,9 @@ object TestTags {
     const val SETTINGS_REST_TIMER = "settings_rest_timer"
     const val EXERCISE_REST_PRESCRIPTION = "exercise_rest_prescription"
 
+    /** What the plan will do with the set, in the block's small print (ROADMAP N227). */
+    const val EXERCISE_PROGRESSION = "exercise_progression"
+
     /** One chip of the progression mode, by enum name (P3.17). */
     fun settingsProgressionMode(mode: String) = "settings_progression_$mode"
 

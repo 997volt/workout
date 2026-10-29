@@ -31,10 +31,10 @@ import com.example.androidapp.domain.model.SessionExercise
 import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.TemplateExercise
-import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.WorkoutSession
 import com.example.androidapp.domain.model.pendingProgressionFor
 import com.example.androidapp.domain.model.progressionPromptFor
+import com.example.androidapp.domain.model.progressionSets
 import com.example.androidapp.domain.model.runContinuesAfter
 import com.example.androidapp.domain.model.taxonomySubtitle
 import com.example.androidapp.domain.model.zoneIdOrNull
@@ -1664,24 +1664,7 @@ private fun List<SetEntry>.loggedRowsFor(
  * The **target RPE is one number for the exercise** (N59), so every set carries it rather than its
  * own, which is what lets the rule check every working set against that single target.
  */
-private fun PlanContext.progressionSets(): List<ProgressionPlanSet> =
-    plannedEntry?.sets.orEmpty().map { set ->
-        set.toProgressionSet(rpeTarget = plannedEntry?.targetRpeHalves)
-    }
-
-private fun TemplateSet.toProgressionSet(rpeTarget: Int?): ProgressionPlanSet = ProgressionPlanSet(
-    setId = id,
-    setIndex = setIndex,
-    role = role,
-    targetWeightGrams = targetWeightGrams,
-    targetAssistanceGrams = targetAssistanceGrams,
-    targetRepsMin = targetRepsMin,
-    targetRepsMax = targetRepsMax,
-    // Where in the range the lifter has climbed (N74): the number the rule measures and a step moves.
-    targetRepsCurrent = targetRepsCurrent,
-    targetRpeHalves = rpeTarget,
-    note = note,
-)
+private fun PlanContext.progressionSets(): List<ProgressionPlanSet> = plannedEntry?.progressionSets().orEmpty()
 
 /** One logged set as the rule reads it: the role decides whether it is work at all (N50). */
 private fun SetRow.toProgressionPerformance(): ProgressionPerformance = ProgressionPerformance(
