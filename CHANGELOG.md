@@ -17,6 +17,14 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Added
 
+- **The workout's ⋮ opens the exercise** (N234, reversing N121). The shared menu already carried an *Open exercise*
+  entry that the template editor supplied, and the live workout withheld it on purpose — with a test that asserted
+  its absence. The alternative was left unstated: to look at a lift mid-session you switched to Library, found the
+  movement, opened it and switched back, a larger interruption than two deliberate taps in an overflow that sits at
+  the block's corner, away from the set fields. Opening it **pushes**, so the session's ViewModel, its running rest
+  timer and the draft in the next set's fields are untouched and one back tap returns to them.
+
+
 - **The exercise's own screen says when it was last trained and what its best is** (N233). The screen carried an
   honest apology instead of history. It now has the section: the date of the newest finished session that trained
   the movement, the working sets that session holds, and the best at each rep count — or the longest hold, because

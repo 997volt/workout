@@ -502,6 +502,9 @@ object TestTags {
     /** The ⋮ entry that opens the lift itself from a planned row (ROADMAP N121). */
     fun templateOpenExercise(id: String) = "template_open_exercise_$id"
 
+    /** A running session's own way into the exercise's screen (ROADMAP N234). */
+    fun exerciseOpenExercise(id: String) = "exercise_open_exercise_$id"
+
     /** Reordering a template's exercises: one helper, because up and down are one idea. */
     fun templateMove(id: String, up: Boolean) = "template_move_${if (up) "up" else "down"}_$id"
 

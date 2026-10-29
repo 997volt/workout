@@ -85,19 +85,17 @@ fun ActiveWorkoutRoute(
     onAddExercise: () -> Unit,
     onDone: () -> Unit,
     onBack: () -> Unit,
+    onOpenExercise: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ActiveWorkoutViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val closed by viewModel.closed.collectAsStateWithLifecycle()
+    // Finishing closes the session; the review still has to be read, so this is what leaves the screen
+    // once it is dismissed (N20).
+    LeaveWhenClosed(closed = viewModel.closed.collectAsStateWithLifecycle().value, onLeave = onDone)
 
-    // Finishing closes the session; the review still has to be read, so this is what leaves
-    // the screen once it is dismissed (N20).
-    LeaveWhenClosed(closed = closed, onLeave = onDone)
-
-    // Kept as a State object rather than unwrapped with `by`: reading it here would
-    // recompose this composable — and everything below it — once a second, which is
-    // the whole point of F16. Only the header and the rest bar read it.
+    // A State object rather than unwrapped with `by`: reading it here would recompose everything below
+    // once a second, which is the whole point of F16. Only the header and the rest bar read it.
     val clock = viewModel.clock.collectAsStateWithLifecycle()
     val restCueEnabled by viewModel.restCueEnabled.collectAsStateWithLifecycle()
     val keepScreenOn by viewModel.keepScreenOn.collectAsStateWithLifecycle()
@@ -148,6 +146,7 @@ fun ActiveWorkoutRoute(
         },
         onDismissFinishUndo = viewModel::onDismissFinishUndo,
         onReopenExercise = viewModel::onReopenExercise,
+        onOpenExercise = onOpenExercise,
         onFinish = viewModel::onFinish,
         onDiscard = viewModel::onDiscard,
         onBack = onBack,
@@ -182,6 +181,8 @@ fun ActiveWorkoutScreen(
     onUndoFinishExercise: () -> Unit,
     onDismissFinishUndo: () -> Unit,
     onReopenExercise: (String) -> Unit,
+    /** Pushes the exercise's own screen from inside a running session (ROADMAP N234). */
+    onOpenExercise: (String) -> Unit,
     onFinish: (String?) -> Unit,
     onDiscard: () -> Unit,
     onBack: () -> Unit,
@@ -268,7 +269,7 @@ fun ActiveWorkoutScreen(
             onFinishExercise = onFinishExercise,
             onRateExercise = onRateExercise,
             onReopenExercise = onReopenExercise,
-            // The one action that used to float over the list is the list's own last item now (N82).
+            onOpenExercise = onOpenExercise,
             onAddExercise = onAddExercise,
             onSetActivity = onSetActivity,
             onAddActivity = { choosingActivity = true },
@@ -693,6 +694,8 @@ private fun WorkoutBody(
     onFinishExercise: (String) -> Unit,
     onRateExercise: (String, Int?, List<JointPain>) -> Unit,
     onReopenExercise: (String) -> Unit,
+    /** Pushes the exercise's own screen from inside a running session (ROADMAP N234). */
+    onOpenExercise: (String) -> Unit,
     onAddExercise: () -> Unit,
     onSetActivity: (Activity?) -> Unit,
     onAddActivity: () -> Unit,
@@ -737,14 +740,9 @@ private fun WorkoutBody(
                 // belongs to is off screen by then. The readiness row is not that, so it moved into the
                 // list and scrolls with the exercises, which is the whole of the request.
                 WorkoutHeader(startedAt = state.startedAt, clock = clock)
-                RestBar(
-                    clock = clock,
-                    onSkip = onSkipRest,
-                    onAdjust = onAdjustRest,
-                    // Off means no countdown at all (N44): the per-exercise prescription is drawn
-                    // in the list instead, so the timer is genuinely not running.
-                    enabled = restTimerEnabled,
-                )
+                // Off means no countdown at all (N44): the per-exercise prescription is drawn in the list
+                // instead, so the timer is genuinely not running.
+                RestBar(clock = clock, onSkip = onSkipRest, onAdjust = onAdjustRest, enabled = restTimerEnabled)
                 HorizontalDivider()
 
                 ExerciseList(
@@ -757,6 +755,7 @@ private fun WorkoutBody(
                     onFinishExercise = onFinishExercise,
                     onRateExercise = onRateExercise,
                     onReopenExercise = onReopenExercise,
+                    onOpenExercise = onOpenExercise,
                     onToggleSuperset = onToggleSuperset,
                     restTimerEnabled = restTimerEnabled,
                     defaultRestSeconds = defaultRestSeconds,
@@ -1004,6 +1003,7 @@ private fun ActiveWorkoutScreenPreview() {
             onUndoFinishExercise = {},
             onDismissFinishUndo = {},
             onReopenExercise = {},
+            onOpenExercise = {},
             onFinish = {},
             onDiscard = {},
             onBack = {},

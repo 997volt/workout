@@ -75,6 +75,8 @@ class ActiveWorkoutScreenTest {
         val onDismissProgression: () -> Unit = {},
         val onMoveExercise: (String, Int) -> Unit = { _, _ -> },
         val onReopenExercise: (String) -> Unit = {},
+        /** The running session's way into one exercise's own screen (ROADMAP N234). */
+        val onOpenExercise: (String) -> Unit = {},
         val onRemoveExercise: (String) -> Unit = {},
         val onRateExercise: (String, Int?, List<JointPain>) -> Unit = { _, _, _ -> },
         val onFinish: (String?) -> Unit = {},
@@ -128,6 +130,7 @@ class ActiveWorkoutScreenTest {
                 onFinish = actions.onFinish,
                 onFinishExercise = actions.onFinishExercise,
                 onReopenExercise = actions.onReopenExercise,
+                onOpenExercise = actions.onOpenExercise,
                 onDeleteSet = {},
                 onUndoDelete = {},
                 onDismissUndo = {},
@@ -544,16 +547,17 @@ class ActiveWorkoutScreenTest {
     }
 
     @Test
-    fun theWorkoutsMenu_doesNotOfferToOpenTheExercise() {
-        // ROADMAP N121: the shared ⋮ gained an *Open exercise* entry, and a template supplies it. The live
-        // workout deliberately does not — leaving a running session to look at one lift is its own decision,
-        // and a mis-tap mid-session costs more than the look is worth — so the entry's absence is the
-        // assertion, by the words this menu would show.
-        setScreen(state(isFinished = false))
+    fun theWorkoutsMenu_opensTheExercise_andTheSessionSurvivesIt() {
+        // ROADMAP N234, which reverses N121. The alternative was left unstated: to look at a lift mid-session
+        // you switch to Library, find the movement, open it and switch back — a larger interruption than two
+        // deliberate taps in an overflow that sits at the block's corner, away from the set fields.
+        var opened: String? = null
+        setScreen(state(isFinished = false), actions = Actions(onOpenExercise = { opened = it }))
 
         composeTestRule.onNodeWithTag(TestTags.exerciseMenu("se1")).performClick()
+        composeTestRule.onNodeWithTag(TestTags.exerciseOpenExercise("se1")).performClick()
 
-        composeTestRule.onNodeWithText("Open exercise").assertDoesNotExist()
+        assertEquals("the movement's own id, not the session exercise's", "back-squat", opened)
     }
 
     @Test

@@ -17,8 +17,8 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-Nothing is in flight. The last group (N230–N232) shipped: the library can be sorted by when a lift was last
-trained, narrowed by filters that compose with its search, and it can make a movement as well as a family.
+The *Later* queue is being worked through in its own build order: the exercise's own screen (N233, N234) is
+done, and what remains starts with the schema changes a movement's own progression answer needs.
 
 ## Later — decided, and not being started
 
@@ -30,20 +30,10 @@ graveyard. **It drains like every other section**: a row picked up moves to *Nex
 the changelog.
 
 **The order below is the build order**, and it is chosen so each row starts with the least it can depend on: the
-exercise's own screen first, then the schema changes, then the rule that reads history, and last the migrations
-that need their author's word on every row. Each row says what it waits for where it waits for anything; a row that
+schema changes first, then the prescription a hold needs, then the rule that reads history, and last the merge that
+needs the lifter's own list. Each row says what it waits for where it waits for anything; a row that
 says nothing waits for nothing but the one before it. The numbers quoted here are the measurements the work was
 planned from, not facts to keep up to date: a row that ships leaves this file.
-
-### The exercise's own screen
-
-**N234 — the workout's ⋮ opens the exercise, which reverses N121.** The shared menu already carries an optional
-*Open exercise* entry and the template editor supplies it; the live workout withholds it on purpose, with a test
-that asserts its absence. The reversal's argument is that the alternative was left unstated: to look at a lift
-mid-session you switch to Library, find the movement, open it and switch back — a larger interruption than two
-deliberate taps in an overflow that sits at the block's corner, away from the set fields; N53's order is unchanged,
-so the entry stays first among the optional ones. Opening a destination **pushes**, so the session's ViewModel, its
-running rest timer and the draft in the next set's fields are untouched and one back tap returns to them. N233 shipped first, so the screen now says something about the lift; the absence test becomes a presence test.
 
 ### A plan's progression, stored
 

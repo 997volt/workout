@@ -50,6 +50,7 @@ import com.example.androidapp.ui.components.DEFAULT_RPE_HALVES
 import com.example.androidapp.ui.components.ExerciseActionsMenu
 import com.example.androidapp.ui.components.ExerciseMenuTags
 import com.example.androidapp.ui.components.ExerciseRatingSection
+import com.example.androidapp.ui.components.OpenExerciseAction
 import com.example.androidapp.ui.components.SetEdit
 import com.example.androidapp.ui.components.SetEntryDraft
 import com.example.androidapp.ui.components.SetEntryNumbers
@@ -134,6 +135,8 @@ internal fun ExerciseList(
     onFinishExercise: (String) -> Unit,
     onRateExercise: (String, Int?, List<JointPain>) -> Unit,
     onReopenExercise: (String) -> Unit,
+    /** Opens the exercise's own screen; the session underneath is untouched because this **pushes** (N234). */
+    onOpenExercise: (String) -> Unit,
     modifier: Modifier = Modifier,
     onToggleSuperset: (String) -> Unit = {},
     /** Whether a rest is counted down, and the fallback its static label uses (ROADMAP N44). */
@@ -170,6 +173,7 @@ internal fun ExerciseList(
                     onFinishExercise = onFinishExercise,
                     onRateExercise = onRateExercise,
                     onReopenExercise = { onReopenExercise(row.id) },
+                    onOpenExercise = { onOpenExercise(row.exerciseId) },
                     // Row 0 has nothing above it to pair with: with no previous exercise the group
                     // comes out null and the write would rewrite every ungrouped row, churning
                     // `updatedAt` for no change (ROADMAP B28).
@@ -208,6 +212,7 @@ private fun ExerciseSection(
     onFinishExercise: (String) -> Unit,
     onRateExercise: (String, Int?, List<JointPain>) -> Unit,
     onReopenExercise: () -> Unit,
+    onOpenExercise: () -> Unit,
     modifier: Modifier = Modifier,
     onToggleSuperset: (() -> Unit)? = null,
     restTimerEnabled: Boolean = true,
@@ -236,6 +241,7 @@ private fun ExerciseSection(
                 onToggleSuperset = onToggleSuperset,
                 onMove = onMoveExercise,
                 onRemove = onRemoveExercise,
+                onOpenExercise = { onOpenExercise() },
             )
         }
 
@@ -303,6 +309,8 @@ private fun WorkoutExerciseActions(
     onToggleSuperset: (() -> Unit)?,
     onMove: (Int) -> Unit,
     onRemove: () -> Unit,
+    /** Opens the exercise's own screen, which **pushes** so the session stays exactly as it is (N234). */
+    onOpenExercise: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     ExerciseActionsMenu(
@@ -319,6 +327,10 @@ private fun WorkoutExerciseActions(
         onToggleSuperset = { onToggleSuperset?.invoke() },
         onMove = onMove,
         onRemove = onRemove,
+        openExercise = OpenExerciseAction(
+            tag = TestTags.exerciseOpenExercise(row.id),
+            onClick = { onOpenExercise(row.exerciseId) },
+        ),
         tags = ExerciseMenuTags(
             menu = TestTags.exerciseMenu(row.id),
             moveUp = TestTags.exerciseMove(row.id, up = true),

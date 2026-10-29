@@ -178,6 +178,9 @@ private fun NavGraphBuilder.workoutDestinations(navController: NavHostController
             onAddExercise = { navController.navigate(ExercisePicker()) },
             onDone = { navController.popBackStack() },
             onBack = { navController.popBackStack() },
+            // A **push**, so the session, its rest timer and the draft in the next set's fields are all
+            // exactly as they were and one back tap returns to them (ROADMAP N234).
+            onOpenExercise = { exerciseId -> navController.navigate(ExerciseDetail(exerciseId)) },
         )
     }
 
