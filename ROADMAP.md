@@ -54,7 +54,9 @@ reason this is the safe half of the work. The seed's catalog in `docs/` is gener
 test, so it is regenerated in the same change. A retired name that survives N238 stays the lifter's row and does
 **not** re-enter the seed: a retired name is a change to what a fresh install ships, and re-adding one would give
 two installs two different libraries. Waits for N229, whose new families these rows are filed under, and for N238,
-because a row merged away is a row not worth naming. **The upright rows need one more family** — four implements of
+because a row merged away is a row not worth naming. **It also waits for the lifter's export**: the rows this
+row names came from one device's library, and only 5 of them are pinned by this text — the rest cannot be derived
+from the seed, the app or the repo, so a table written without the file would be invented training data. **The upright rows need one more family** — four implements of
 one lift with no family to hold them today — and it ships with them rather than before they exist.
 
 **A movement is per implement the lifter loads separately**, and the equipment variants of one lift stay separate
