@@ -17,29 +17,10 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-Nothing. The whole-codebase review's batch (B268–B291) shipped, and every row of it left this file for
-[CHANGELOG.md](CHANGELOG.md) as it landed. The queue below is planned and not started; its first row is the next
-thing built.
-
-## Later — decided, and not being started
-
-Agreed work that is not next: the design is settled so it does not have to be re-argued, and nothing here is being
-built. It is **not** *Parked* — a parked row is a decision not to plan something, while these are planned and
-simply not now — and it is not *Next*, which is what is actually being worked on. Each row names **what brings it
-forward**, for the reason a parked row names its revisit trigger: a queue that cannot say why it is waiting is a
-graveyard. **It drains like every other section**: a row picked up moves to *Next*, and one that ships leaves for
-the changelog.
-
-**The order below is the build order**, and it is chosen so each row starts with the least it can depend on: the
-library's read-only additions first, then its own data, then its working controls, then the exercise's own screen,
-then the schema changes, then the rule that reads history, and last the migrations that need their author's word on
-every row. Each row says what it waits for where it waits for anything; a row that says nothing waits for nothing
-but the one before it. The numbers quoted here are the measurements the work was planned from, not facts to keep up
-to date: a row that ships leaves this file.
-
-### The library as a place you read
-
-Five independent rows, no storage change, each covered by the JVM tests the rules already have.
+The library's five read-only rows (N224–N228) are being built: the search learns how a lift is said, a
+searched family says how much of itself it is showing, the next-step dialog stops repeating one reason, the
+exercise states what its plan will do with the set, and a family that changed opens. None of them stores
+anything, and each lands with the JVM tests the rule it touches already has.
 
 **N224 — the search finds a lift by how you say it.** Search is substring containment over a movement's name and
 the taxonomy it inherits (P1.1a), so *Barbell Bench Press* cannot be found from "bench pr", "bbp" or "ohp". Three
@@ -79,6 +60,22 @@ so filing a movement into a family from its own editor changes a count on a fold
 compares each movement's family with the one it had on the previous composition and opens the family that gained or
 lost one, once; the same covers a movement made from the library and one whose category was cleared. No other
 family's fold is touched, and the state stays saveable so a rotation keeps it (N84).
+
+## Later — decided, and not being started
+
+Agreed work that is not next: the design is settled so it does not have to be re-argued, and nothing here is being
+built. It is **not** *Parked* — a parked row is a decision not to plan something, while these are planned and
+simply not now — and it is not *Next*, which is what is actually being worked on. Each row names **what brings it
+forward**, for the reason a parked row names its revisit trigger: a queue that cannot say why it is waiting is a
+graveyard. **It drains like every other section**: a row picked up moves to *Next*, and one that ships leaves for
+the changelog.
+
+**The order below is the build order**, and it is chosen so each row starts with the least it can depend on: the
+library's own data first, then the rows it works with, then the exercise's own screen, then the schema changes,
+then the rule that reads history, and last the migrations that need their author's word on every row. Each row says
+what it waits for where it waits for anything; a row that says nothing waits for nothing but the one before it. The
+rows the library only reads with (N224–N228) have left for *Next*. The numbers quoted here are the measurements the
+work was planned from, not facts to keep up to date: a row that ships leaves this file.
 
 ### The library's own data
 
