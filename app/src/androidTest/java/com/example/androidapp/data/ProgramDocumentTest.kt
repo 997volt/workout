@@ -662,4 +662,29 @@ class ProgramDocumentTest {
             programs.observePrograms().first().single().name,
         )
     }
+
+    @Test
+    fun aPreMergeExport_ofAHeldProgram_previewsAsAlreadyHere() = runTest {
+        // B301: the preview compared the unresolved document, so a file naming an id the library has since
+        // merged read as different work and offered a copy of the program already on the device.
+        database.exerciseDao().insertAll(listOf(exercise("conventional-deadlift")))
+        val programId = seedProgram(exerciseId = "conventional-deadlift")
+        val document = ProgramDocumentCodec.decode(exportOf(programId))
+        val preMerge = document.copy(
+            templateExercises = document.templateExercises.map { it.copy(exerciseId = "deadlift") },
+        )
+        // The merge this release runs: the old id points at the row that survived.
+        database.openHelper.writableDatabase.execSQL(
+            "INSERT INTO retired_movements (id, survivorId, at) " +
+                "VALUES ('deadlift', 'conventional-deadlift', 1)",
+        )
+
+        val preview = programs.previewProgramDocument(ProgramDocumentCodec.encode(preMerge))
+
+        assertEquals(
+            "the file is the work this device holds, under the id the merge retired",
+            ProgramDocumentPreview.Add,
+            (preview as DataResult.Success).data,
+        )
+    }
 }

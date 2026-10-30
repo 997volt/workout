@@ -617,13 +617,17 @@ class RoomProgramRepository @Inject constructor(
      */
     private suspend fun addPreview(document: ProgramDocument): ProgramDocumentPreview {
         if (dao.findProgram(document.program.id) == null) return ProgramDocumentPreview.Add
-        val sameWork = document.plansTheSameWorkAs(heldWork(database, document.program.id))
+        // The merge resolves a retired movement id before it compares and writes (N238), and the preview has to
+        // answer the same question: a file exported before the merge names the id this device no longer holds,
+        // so comparing it raw would read the program already here as a different one (B301).
+        val resolved = document.withResolvedExercises(retiredMovementIds(database))
+        val sameWork = resolved.plansTheSameWorkAs(heldWork(database, resolved.program.id))
         return if (sameWork) {
             ProgramDocumentPreview.Add
         } else {
             ProgramDocumentPreview.NameTaken(
-                name = document.program.name,
-                suggestion = freeProgramName(document.program.name, dao.names()),
+                name = resolved.program.name,
+                suggestion = freeProgramName(resolved.program.name, dao.names()),
             )
         }
     }
@@ -759,6 +763,10 @@ private suspend fun withAncestors(ids: List<String>, dao: ExerciseDao): List<Exe
     return found.values.toList()
 }
 
+/** The ids this library has merged away, as the import's map (ROADMAP N238). */
+private suspend fun retiredMovementIds(database: WorkoutDatabase): Map<String, String> =
+    database.movementMergeDao().retiredMovements().associate { it.id to it.survivorId }
+
 /**
  * Adds what [document] holds and overwrites nothing (ROADMAP N47).
  *
@@ -800,8 +808,7 @@ private suspend fun mergeProgramDocument(
     // **An id this library merged away is read as the row it became** (ROADMAP N238). The document may have been
     // exported before the merge, and a movement whose id resolves to nothing is exactly what makes the import
     // mint a duplicate — the twin the merge removed.
-    val retired = database.movementMergeDao().retiredMovements().associate { it.id to it.survivorId }
-    val resolved = document.withResolvedExercises(retired)
+    val resolved = document.withResolvedExercises(retiredMovementIds(database))
 
     // Live means this exact program is already here; nothing in the document is new (B180). The read
     // filters `deletedAt`, so a deleted one falls through to the restore below rather than stopping here.
