@@ -13,6 +13,27 @@ repeated here.
 **1.0–1.18 live in [CHANGELOG-1.x.md](CHANGELOG-1.x.md)**, kept whole rather than deleted because the
 id a 1.x commit names is still looked up by it. This file carries the current release.
 
+## [Unreleased]
+
+### Added
+
+- **Diagnostics** (N244). Crashes and failed housekeeping passes were written to disk with no way to read them,
+  so a report cost a backup and a reproduction. Settings → Support → Diagnostics shows the build, the last crash
+  and the last failed pass, with **Copy details** — frames included, never a message that could carry a value —
+  and a retry for a failed pass. It is the local-only replacement for a crash reporter, reached from Settings
+  rather than a sixth tab because it is about this device's records.
+
+### Fixed
+
+- **A failed housekeeping pass no longer takes the app down** (B324). The seed's repairs and the goals move ran
+  straight in the database-open callback, so one data-dependent throw left the app crashing on its first screen
+  until another build arrived — which is what 2.19 did on a store whose workouts were all intact. The pass is
+  caught, recorded and said once on the shell with a retry; the store is left as the pass's transaction left it.
+- **The upgrade path's tests run the app's own housekeeping** (B325). The migration-chain test opened Room
+  without the seeder callback, so every upgrade validated the schema and never the repairs; it now runs the same
+  uncaught pass a device runs. The merge repair gains the database-level shape 2.19 crashed on: a seeded row, an
+  import's duplicate under its name, a ruled source, and a session and plan naming it.
+
 ## [2.19.1] — 2026-10-30 (versionCode 40)
 
 ### Fixed

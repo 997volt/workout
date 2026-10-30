@@ -17,23 +17,20 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-Nothing is in flight. The 2.19.1 patch is in [CHANGELOG.md](CHANGELOG.md); the queued work below is the next
-batch, and it starts with the resilience rows.
+Nothing is in flight. The 2.19.1 patch and the resilience batch it earned are in [CHANGELOG.md](CHANGELOG.md);
+the queued work below is the next batch.
 
 ## Later — decided, and not being started
 
-Nine rows are queued. This section is where agreed work waits its turn: a row here has its design settled so it
+Six rows are queued. This section is where agreed work waits its turn: a row here has its design settled so it
 does not have to be re-argued, and a row in *Next* is what is actually being worked on. Both drain the same way —
 a row picked up moves to *Next*, and one that ships leaves for the changelog.
 
-The first three are the **resilience batch** the 2.19.1 crash earned, the next three are the data decisions the
-2.19 review left open, and the last three are product. The table's order is the suggested order.
+The first three are the data decisions the 2.19 review left open, and the last three are product. The table's
+order is the suggested order.
 
 | # | Change | Why it matters | Size |
 | --- | --- | --- | --- |
-| B324 | **A failed housekeeping pass must not take the app down.** Catch a throw from the seed's repairs in the database-open callback, keep the app usable, record the failure and say it once with a retry. The seed writes in one transaction, so nothing is half-done; a silent skip is not the answer. | Every upgrade runs these repairs on data no test has, and one data-dependent foreign key made 2.19 unusable. | Small |
-| B325 | **Exercise the upgrade path the app actually opens.** Run the seeder callback in the migration-chain test, and add an instrumented case with the real shape — a seeded row, an import's duplicate under a ruling's survivor name, and session/template references — asserting no constraint failure and no orphan. | 2.19's crash was invisible to both suites: the chain test opened Room without the callback and the merge test had no database. | Small |
-| N244 | **Diagnostics.** Settings shows the last crash or failed repair, its stack and a *Copy details* action. | A local-only app with no reporting needs a way to hand over what went wrong; the 2.19 report cost a backup and a reproduction. | Small |
 | B326 | **Decide the backup ceiling for a plan's hold.** Move `schemaVersion` to 8 with the helper's writer, or record the acceptance that a pre-hold build silently drops `targetDurationSeconds` on restore. The floor stays. | A new backup restored into an older build is the wrong-meaning case B322 fixed for documents. | Small |
 | B327 | **Separate "the old seeder wrote 0" from "the lifter chose off".** Give the seed's flags a one-time provenance marker (or a migration), so B299's never-edited guard stops skipping a row the lifter edited for another reason. | A Plank whose cue was edited before the repair still reads as a counted lift, which is the bug the repair exists for. | Medium |
 | B328 | **Validate a document where it is added.** Run the shared validation at the add boundary, or write down the trust rule and why; today the merge bypasses the write boundary. | The page refuses a reps-and-hold or zero-second hold the app will store. | Small |
