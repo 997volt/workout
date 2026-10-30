@@ -10,5 +10,10 @@ package com.example.androidapp.shared
  * v5 build has no constant for, and that build decodes with `ignoreUnknownKeys`, so the set would
  * arrive as an ordinary one rather than being refused: a wrong meaning, not a dropped extra. The
  * floor stays at 4, because a v5 document still means exactly what it says.
+ *
+ * **7 is N242's hold.** A planned set can now name seconds instead of reps, and a v6 build decodes
+ * with the same leniency, so the hold would arrive as a counted set with no reps — the same wrong
+ * meaning, for the same reason (B322). A v6 document still means exactly what it says, so the floor
+ * does not move.
  */
-const val PROGRAM_FORMAT_VERSION: Int = 6
+const val PROGRAM_FORMAT_VERSION: Int = 7

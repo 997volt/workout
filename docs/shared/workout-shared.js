@@ -283,7 +283,7 @@
   }
   function refuseUnreadable($this, version) {
     var tmp;
-    if (version > 6) {
+    if (version > 7) {
       tmp = new ProgramProblem(ProblemCode_NEWER_VERSION_getInstance(), VOID, version.toString());
     } else if (version < 4) {
       tmp = new ProgramProblem(ProblemCode_OLDER_VERSION_getInstance(), VOID, version.toString());
@@ -323,7 +323,7 @@
   }
   function ProgramDocumentCodec() {
     ProgramDocumentCodec_instance = this;
-    this.s1b_1 = 6;
+    this.s1b_1 = 7;
     this.t1b_1 = 4;
     var tmp = this;
     tmp.u1b_1 = Json(VOID, ProgramDocumentCodec$json$lambda);
@@ -466,7 +466,7 @@
   var json;
   function programFormatVersion() {
     _init_properties_ProgramJson_kt__8o3jdm();
-    return 6;
+    return 7;
   }
   function validateJson(documentJson) {
     _init_properties_ProgramJson_kt__8o3jdm();
