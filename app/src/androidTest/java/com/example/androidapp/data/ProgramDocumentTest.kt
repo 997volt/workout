@@ -675,8 +675,7 @@ class ProgramDocumentTest {
         )
         // The merge this release runs: the old id points at the row that survived.
         database.openHelper.writableDatabase.execSQL(
-            "INSERT INTO retired_movements (id, survivorId, at) " +
-                "VALUES ('deadlift', 'conventional-deadlift', 1)",
+            "INSERT INTO retired_movements (id, survivorId) VALUES ('deadlift', 'conventional-deadlift')",
         )
 
         val preview = programs.previewProgramDocument(ProgramDocumentCodec.encode(preMerge))

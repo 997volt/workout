@@ -363,7 +363,7 @@ internal val MERGED_MOVEMENTS = listOf(
  */
 private fun mergeRetiredMovements(db: SupportSQLiteDatabase, now: Long) {
     MERGED_MOVEMENTS.forEach { merge ->
-        rememberRetiredMovement(db, from = merge.retired, to = merge.survivor, at = now)
+        rememberRetiredMovement(db, from = merge.retired, to = merge.survivor)
         val retired = db.holdsMovement(merge.retired, merge.name)
         val survivor = db.holdsMovement(merge.survivor)
         if (!retired || !survivor) return@forEach

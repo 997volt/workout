@@ -20,6 +20,4 @@ data class RetiredMovementEntity(
     @PrimaryKey val id: String,
     /** The id it was merged into, which the library holds. */
     val survivorId: String,
-    /** When the merge ran, so the table reads as history rather than as configuration. */
-    val at: Long,
 )

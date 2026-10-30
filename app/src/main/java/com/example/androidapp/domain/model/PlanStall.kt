@@ -174,6 +174,3 @@ val MEASURABLE_KINDS: List<ProgressionMiss> = listOf(
 
 /** How many sessions in a row make a stall: three, the rule the roadmap sets (N237). */
 const val STALL_SESSIONS: Int = 3
-
-/** How many of a plan's sessions the rule looks back over — enough for three, and for the run to be visible. */
-const val STALL_SESSION_WINDOW: Int = 12

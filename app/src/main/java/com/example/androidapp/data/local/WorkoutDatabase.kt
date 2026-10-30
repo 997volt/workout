@@ -66,6 +66,10 @@ import androidx.room.TypeConverters
  * document exported before the merge resolves through it instead of minting the twin again. Empty on every
  * store that existed, because nothing had merged anything before. See [MIGRATION_15_16].
  *
+ * **Schema 17 is B316**, the same table without its `at`: the timestamp was written on every retirement and
+ * read by nobody, and dropping it before the release is cheaper than carrying a column nobody reads. The
+ * table is recreated and copied, because the supported API levels have no `DROP COLUMN`. See [MIGRATION_16_17].
+ *
  * There is deliberately **no** `fallbackToDestructiveMigration()`: it would turn
  * a forgotten migration into silent, total data loss for a user's training
  * history. A missing migration must fail loudly in development instead — which is exactly why 2.0
@@ -93,7 +97,7 @@ import androidx.room.TypeConverters
         MetricGoalEntity::class,
         RetiredMovementEntity::class,
     ],
-    version = 16,
+    version = 17,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
