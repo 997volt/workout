@@ -215,6 +215,8 @@ internal fun SessionExerciseEntity.toDto() = SessionExerciseDto(
     restSeconds = restSeconds,
     techniqueNote = techniqueNote,
     supersetGroup = supersetGroup,
+    // The declined step travels with the file (N236): it is the one record the app cannot recompute.
+    declinedDirections = declinedDirections,
     createdAt = createdAt,
     updatedAt = updatedAt,
     deletedAt = deletedAt,
@@ -230,6 +232,7 @@ internal fun SessionExerciseDto.toEntity() = SessionExerciseEntity(
     restSeconds = restSeconds,
     techniqueNote = techniqueNote,
     supersetGroup = supersetGroup,
+    declinedDirections = declinedDirections,
     createdAt = createdAt,
     updatedAt = updatedAt,
     deletedAt = deletedAt,

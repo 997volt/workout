@@ -104,6 +104,9 @@ class BackupCodecRoundTripTest {
             supersetGroup = 7,
             restSeconds = 120,
             techniqueNote = "brace hard",
+            // The column N236 added: the declined step is the record the app cannot recompute, so a
+            // restore that dropped it would lose the fact rather than re-derive it (B297).
+            declinedDirections = "REPS,LOAD",
             finishedAt = 1_700_000_000_000L,
             muscleFeel = 8,
             createdAt = 1_600_000_000_000L,
@@ -180,6 +183,30 @@ class BackupCodecRoundTripTest {
             note = "leave one in the tank",
             createdAt = 1_600_000_000_000L,
             updatedAt = 1_600_000_000_001L,
+            deletedAt = null,
+        )
+
+        assertThat(entity.toDto().toEntity()).isEqualTo(entity)
+    }
+
+    @Test
+    fun aPlannedHold_survivesTheCodec() {
+        // ROADMAP N242/B297: the format gained the column and no test pinned it, so a mapper that forgot
+        // the hold would have passed the gate and restored a carry as a counted set.
+        val entity = TemplateSetEntity(
+            id = "ts2",
+            templateExerciseId = "te1",
+            setIndex = 1,
+            role = SetType.NORMAL,
+            targetWeightGrams = null,
+            targetAssistanceGrams = null,
+            targetRepsMin = null,
+            targetRepsMax = null,
+            targetRepsCurrent = null,
+            targetDurationSeconds = 45,
+            note = null,
+            createdAt = 1_600_000_000_002L,
+            updatedAt = 1_600_000_000_003L,
             deletedAt = null,
         )
 

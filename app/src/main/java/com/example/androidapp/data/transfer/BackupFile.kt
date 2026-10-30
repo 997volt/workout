@@ -350,6 +350,14 @@ data class SessionExerciseDto(
      * reads: an ungrouped exercise is what every exercise used to be.
      */
     val supersetGroup: Int? = null,
+    /**
+     * The directions of a step the lifter was offered and declined, as the stored names (ROADMAP N236).
+     *
+     * Defaulted and unbumped, like every other added field: a file written before the column existed
+     * declined nothing, which is exactly what an absent value means. Without it a restore loses the one
+     * record the app cannot recompute, because the offer was frozen from a plan that has since moved on.
+     */
+    val declinedDirections: String? = null,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,

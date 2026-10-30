@@ -635,4 +635,43 @@ class BackupCodecTest {
 
         assertNull(dto.progressionMode)
     }
+
+    @Test
+    fun aFileWrittenBeforeADeclinedStep_decodesAsNone() {
+        // ROADMAP N236/B297: the column is defaulted and the format's version does not move, so a file
+        // written before it decodes with no declined step rather than failing.
+        val dto = Json.decodeFromString<SessionExerciseDto>(
+            """
+            {
+              "id": "se1",
+              "sessionId": "s1",
+              "exerciseId": "back-squat",
+              "position": 0,
+              "createdAt": 1,
+              "updatedAt": 1
+            }
+            """.trimIndent(),
+        )
+
+        assertNull(dto.declinedDirections)
+    }
+
+    @Test
+    fun aFileWrittenBeforeAPlanCouldPrescribeAHold_decodesAsCounted() {
+        // ROADMAP N242/B297: defaulted addition, so every set written before it is a counted one.
+        val dto = Json.decodeFromString<TemplateSetDto>(
+            """
+            {
+              "id": "ts1",
+              "templateExerciseId": "te1",
+              "setIndex": 0,
+              "role": "NORMAL",
+              "createdAt": 1,
+              "updatedAt": 1
+            }
+            """.trimIndent(),
+        )
+
+        assertNull(dto.targetDurationSeconds)
+    }
 }
