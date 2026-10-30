@@ -739,13 +739,17 @@ class ActiveWorkoutViewModel @Inject constructor(
                     .toSet()
                 _pendingProgression.value = null
                 viewModelScope.launch {
-                    if (declined.isNotEmpty()) {
-                        val written = workoutRepository.declineProgression(sessionExerciseId, declined)
-                        // A failed record does not stop the finish: the lifter declined, and the exercise is
-                        // done either way — but the failure is said rather than swallowed.
-                        if (written is DataResult.Failure) lastError.value = written.error
+                    // A failed record does not stop the finish: the lifter declined, and the exercise is done
+                    // either way. The failure is stated **after** the finish, because finishing clears the
+                    // error channel on success — saying it before is saying it to nobody (B309).
+                    val declineError = if (declined.isNotEmpty()) {
+                        (workoutRepository.declineProgression(sessionExerciseId, declined) as? DataResult.Failure)
+                            ?.error
+                    } else {
+                        null
                     }
                     finishExercise(sessionExerciseId)
+                    if (declineError != null && lastError.value == null) lastError.value = declineError
                 }
             }
 
@@ -810,7 +814,14 @@ class ActiveWorkoutViewModel @Inject constructor(
                 return@launch
             }
             _pendingProgression.value = null
+            val tookAStep = pending.chosen.isNotEmpty()
             finishExercise(pending.sessionExerciseId)
+            if (tookAStep) {
+                // The step was taken, so an earlier *Not now* no longer describes this exercise (B310). A
+                // failure here is said rather than hidden, but it cannot undo the accepted steps.
+                val cleared = workoutRepository.declineProgression(pending.sessionExerciseId, emptySet())
+                if (cleared is DataResult.Failure && lastError.value == null) lastError.value = cleared.error
+            }
         }
     }
 

@@ -818,6 +818,71 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
+    fun aFailedDeclineRecord_isSaidAfterTheFinish() = runTest(dispatcher) {
+        // B309: the decline error was set and then cleared by the successful finish, so the record had failed
+        // and the screen said nothing.
+        val repository = FakeWorkoutRepository().apply { failDecline = true }
+        val templates = answeredPlan()
+        val viewModel = viewModelFor(repository, templateId = "t1", templates = templates)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        val id = viewModel.uiState.value.exercises.single().id
+        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
+        viewModel.onFinishExercise(id)
+        settle()
+
+        // The second *Done* is *Not now*: the decline write fails, the finish does not.
+        viewModel.onFinishExercise(id)
+        settle()
+
+        assertTrue("the exercise still finishes", viewModel.uiState.value.exercises.single().isFinished)
+        assertNotNull("and the failed record is said", viewModel.uiState.value.error)
+        assertTrue("nothing was recorded", repository.declined.isEmpty())
+    }
+
+    @Test
+    fun takingTheStep_clearsAnEarlierDecline() = runTest(dispatcher) {
+        // B310: decline, Reopen, Done and accept left "step offered, not taken" on an exercise whose step was
+        // taken. The clear is written with the acceptance.
+        val repository = FakeWorkoutRepository()
+        val templates = answeredPlan()
+        val viewModel = viewModelFor(repository, templateId = "t1", templates = templates)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        val id = viewModel.uiState.value.exercises.single().id
+        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
+        viewModel.onFinishExercise(id)
+        settle()
+
+        // Not now: the decline is recorded and the exercise finishes.
+        viewModel.onFinishExercise(id)
+        settle()
+        assertTrue(
+            "the decline is on the row",
+            viewModel.uiState.value.exercises.single().declinedDirections.isNotEmpty(),
+        )
+
+        viewModel.onReopenExercise(id)
+        settle()
+        viewModel.onFinishExercise(id)
+        settle()
+        viewModel.onSelectProgression(setId = null, direction = ProgressionDirection.LOAD)
+        viewModel.onConfirmProgression()
+        settle()
+
+        assertTrue(
+            "the accepted step is no longer a decline",
+            viewModel.uiState.value.exercises.single().declinedDirections.isEmpty(),
+        )
+        assertTrue("the clear was written", repository.declined.last().second.isEmpty())
+        assertEquals("and the step reached the plan", 1, templates.updates.size)
+    }
+
+    @Test
     fun withApplyAtDone_theQuestionOpensWithEveryEarnedStepPicked() = runTest(dispatcher) {
         // P3.17: the middle answer a switch could not express — the question still opens, so the lifter
         // reads what the plan would become, but every earned step is already picked and one Done writes it.
@@ -2139,6 +2204,9 @@ class ActiveWorkoutViewModelTest {
         var previous: PreviousPerformance = PreviousPerformance(emptyList())
         var failWrites = false
 
+        /** Refuses only the decline write, so the finish can still succeed (B309). */
+        var failDecline = false
+
         /**
          * Makes [logSet] suspend before the row lands, so two logs can be made to interleave (B126).
          *
@@ -2308,7 +2376,7 @@ class ActiveWorkoutViewModelTest {
             sessionExerciseId: String,
             directions: Set<ProgressionDirection>,
         ): DataResult<Unit> {
-            if (failWrites) return DataResult.Failure(DataError.Storage(IOException("disk full")))
+            if (failWrites || failDecline) return DataResult.Failure(DataError.Storage(IOException("disk full")))
             declined += sessionExerciseId to directions
             exercises.value = exercises.value.map {
                 if (it.id == sessionExerciseId) it.copy(declinedDirections = directions) else it
