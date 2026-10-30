@@ -62,6 +62,13 @@ the rule; that one argues it.
   so a future sync stays a decision, not a migration. A session's zone offset, the piece this
   entry used to call missing, landed with N25 (`zoneOffsetMinutes`); the design beyond the
   row shape is still parked (ROADMAP P4.9).
+- **A merged movement is deleted, and its id remembered** (N238). A row that is the same movement as
+  another is re-pointed and then hard-deleted rather than tombstoned: after the re-point it holds nothing,
+  and a tombstone would be a row every library read must filter and every backup must carry for an id the
+  seed will never ship again. The exception to the sync shape above is deliberate and narrow — only the
+  duplicate repair and the seed's own retirement delete, and both write the id and its survivor to
+  `retired_movements` first, which is what a program document exported before the merge resolves through.
+  A ruled source has to be an import's leftover shape: a movement the lifter filled in is theirs.
 
 ## Templates and plans
 
@@ -322,6 +329,11 @@ the rule; that one argues it.
   the cue, keep-screen-on and the statistics range are not exported, so a fresh install returns
   the default rest to 90 s. A target is authored rather than chosen, so it rides in the backup
   and "delete everything" clears it; leaving it out was losing it on every restore, in silence.
+- **A movement's answer to *Done* is training data** (N235). *App default*, *Ask*, *Apply at Done*
+  and *Off* live on the movement rather than in the settings, because the answer decides what the
+  app writes into a plan — the same line the entry above draws. The device setting is the default
+  it overrides, and a restore must not silently return a movement to *Ask*, so the answer rides in
+  the backup while the setting does not.
 - **The default rest is a bounded choice, not a number field** (N21) — zero or a negative is
   not a rest and longer than the session is a mistake, so the repository refuses anything
   outside 5–3600 seconds as `DataError.Invalid`. (It used to argue from the value becoming an
