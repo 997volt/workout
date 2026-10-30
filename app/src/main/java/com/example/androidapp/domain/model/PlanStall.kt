@@ -57,7 +57,7 @@ data class PrescriptionHistory(
  * **The rule asks for the kinds it can still measure, not the one the offer reported.** [ProgressionMiss] is
  * stated by precedence — a set that came up short *and* was over its effort reports the reps — so counting the
  * reported reason would let "over the target" silently become "short" between two sessions failing the same
- * way. Only three kinds exist here at all: `NOT_DONE` is absence, `NOT_IN_PLAN` is extra work, and the rest
+ * way. Only four kinds exist here at all: `NOT_DONE` is absence, `NOT_IN_PLAN` is extra work, and the rest
  * describe a plan that cannot progress rather than a lifter who did not.
  *
  * A hold is the same question asked of seconds (N242).
@@ -162,7 +162,7 @@ fun PrescriptionHistory.stall(threshold: Int = STALL_SESSIONS): PlanStall? {
 /**
  * The kinds a stall is counted by, in the order a sentence would name them (ROADMAP N237).
  *
- * Exactly the three the rule allows. The list is here rather than derived from the enum so that adding a reason
+ * Exactly the four the rule allows. The list is here rather than derived from the enum so that adding a reason
  * to the offer cannot quietly start counting a lifter's absence as a failure.
  */
 val MEASURABLE_KINDS: List<ProgressionMiss> = listOf(

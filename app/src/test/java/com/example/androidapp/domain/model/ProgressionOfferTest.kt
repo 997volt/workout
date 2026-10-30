@@ -574,6 +574,42 @@ class ProgressionOfferTest {
     }
 
     @Test
+    fun twoHoldsShortByDifferentAmounts_areNotOneStatement() {
+        // B312: the hold's sentence states `asked - held`, so 15 seconds short and 5 are two facts. The number
+        // was missing from the shared-miss check, and one row's shortfall was printed above both.
+        val prompt = progressionPromptFor(
+            planned = listOf(
+                planSet(id = "ts-0", index = 0, repsMin = null, repsMax = null, durationSeconds = 45),
+                planSet(id = "ts-1", index = 1, repsMin = null, repsMax = null, durationSeconds = 45),
+            ),
+            performed = listOf(
+                done(reps = 0, weight = 0L, durationSeconds = 30),
+                done(reps = 0, weight = 0L, durationSeconds = 40),
+            ),
+        )
+
+        assertThat(prompt.sets.map { it.miss })
+            .containsExactly(ProgressionMiss.HOLD_SHORT, ProgressionMiss.HOLD_SHORT)
+        assertThat(prompt.sharedMiss).isNull()
+    }
+
+    @Test
+    fun twoHoldsShortByTheSameAmount_areOneStatement() {
+        val prompt = progressionPromptFor(
+            planned = listOf(
+                planSet(id = "ts-0", index = 0, repsMin = null, repsMax = null, durationSeconds = 45),
+                planSet(id = "ts-1", index = 1, repsMin = null, repsMax = null, durationSeconds = 45),
+            ),
+            performed = listOf(
+                done(reps = 0, weight = 0L, durationSeconds = 30),
+                done(reps = 0, weight = 0L, durationSeconds = 30),
+            ),
+        )
+
+        assertThat(prompt.sharedMiss?.miss).isEqualTo(ProgressionMiss.HOLD_SHORT)
+    }
+
+    @Test
     fun theSameReasonWithTheSameNumber_isOneStatement() {
         val prompt = progressionPromptFor(
             planned = listOf(planSet(id = "ts-0", index = 0), planSet(id = "ts-1", index = 1)),

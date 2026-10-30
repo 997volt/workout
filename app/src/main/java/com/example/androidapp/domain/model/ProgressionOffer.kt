@@ -253,6 +253,11 @@ private val ProgressionSetPrompt.statedNumber: Long?
         ProgressionMiss.REPS_SHORT -> (planned?.targetReps ?: 0).toLong() - (performed?.reps ?: 0)
         ProgressionMiss.LOAD_SHORT -> (planned?.targetWeightGrams ?: 0L) - (performed?.weightGrams ?: 0L)
         ProgressionMiss.TOPPED_OUT -> (planned?.targetRepsMax ?: 0).toLong()
+        // The hold's sentence states the seconds it fell short by (N242), so two different shortfalls are two
+        // facts like the reps and the load above (B312).
+        ProgressionMiss.HOLD_SHORT ->
+            (planned?.targetDurationSeconds ?: 0).toLong() - (performed?.durationSeconds ?: 0).toLong()
+
         else -> null
     }
 
