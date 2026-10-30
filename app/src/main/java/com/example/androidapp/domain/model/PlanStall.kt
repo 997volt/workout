@@ -102,39 +102,49 @@ private fun overEffort(planned: ProgressionPlanSet, done: ProgressionPerformance
 /**
  * The stall one exercise's plan is in, or null when it is still moving (ROADMAP N237).
  *
- * The walk is per **prescription**: the plan's Nth working set is paired with the session's Nth, warm-ups
- * removed from both sides, exactly as the offer pairs them (N17, N74) — so a plan whose second set is always the
- * one that fails says *that*, rather than saying the exercise is stuck. A set nobody logged is absence and does
- * not count; an answered set ends that kind's run, because the prescription moved.
+ * The walk is per **prescription**: the plan's sets are paired with the session's by class, warm-ups removed from
+ * both sides, through the offer's own helper (N17, N74, N79) — so a logged rung is extra rather than the stand-in
+ * for a work set the session skipped (B305), and a plan whose second set is always the one that fails says
+ * *that* rather than saying the exercise is stuck. A set nobody logged is absence and does not count; an answered
+ * set ends that kind's run, because the prescription moved. **A run the newest session no longer carries is
+ * gone**: the card asks about the plan as it stands, not about a streak it used to have (B303).
  *
  * [threshold] is three by the rule, and a parameter because the number is a judgement rather than a fact about
  * the data: it is the point where "the same thing keeps happening" stops being a coincidence.
  */
 fun PrescriptionHistory.stall(threshold: Int = STALL_SESSIONS): PlanStall? {
-    val plannedWork = planned.filterNot { it.role == SetType.WARMUP }
+    val plannedWork = planned.filterNot { it.role == SetType.WARMUP }.sortedBy { it.setIndex }
     if (plannedWork.isEmpty()) return null
 
-    // One run per (set position, kind), and the longest completed one wins: a plan can stall in two places at
-    // once, and the sentence to read first is the one that has been true longest.
+    // One run per (set position, kind). **Only a run still open at the newest session is a stall** (B303): a
+    // run a later session answered was the prescription moving, and reporting it would tell a lifter to back
+    // off a plan that is working today. A plan can stall in two places at once, and the longest open run wins,
+    // with the earlier position and the kind order breaking a tie so the sentence never depends on map order.
     val run = mutableMapOf<Pair<Int, ProgressionMiss>, Int>()
-    var longest: Triple<Int, ProgressionMiss, Int>? = null
 
     performedBySession.forEach { session ->
-        val performedWork = session.filterNot { it.role == SetType.WARMUP }
+        // The offer's own pairing (B305): a logged rung is extra, never the stand-in for a work set the
+        // session did not log, so the two surfaces cannot disagree about which set was answered.
+        val paired = pairedPerformances(planned, session)
         plannedWork.forEachIndexed { index, plannedSet ->
-            val done = performedWork.getOrNull(index)
-            val kinds = if (done == null) emptySet() else measurableKinds(plannedSet, done)
+            // A set nobody logged is absence, not a miss: it can neither start nor break a run (B304). A
+            // session that trained the movement but logged fewer sets arrives as a null pair, and the read
+            // emits an entry with no sets at all for an exercise row that was never filled.
+            val done = paired.bySetId[plannedSet.setId] ?: return@forEachIndexed
+            val kinds = measurableKinds(plannedSet, done)
             MEASURABLE_KINDS.forEach { kind ->
                 val key = index to kind
-                if (kind in kinds) {
-                    val next = (run[key] ?: 0) + 1
-                    run[key] = next
-                    if (next >= (longest?.third ?: 0) && next >= threshold) {
-                        longest = Triple(index, kind, next)
-                    }
-                } else {
-                    run[key] = 0
-                }
+                run[key] = if (kind in kinds) (run[key] ?: 0) + 1 else 0
+            }
+        }
+    }
+
+    var longest: Triple<Int, ProgressionMiss, Int>? = null
+    plannedWork.forEachIndexed { index, _ ->
+        MEASURABLE_KINDS.forEach { kind ->
+            val count = run[index to kind] ?: 0
+            if (count >= threshold && count > (longest?.third ?: 0)) {
+                longest = Triple(index, kind, count)
             }
         }
     }

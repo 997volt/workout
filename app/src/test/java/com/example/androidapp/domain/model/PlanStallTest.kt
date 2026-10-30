@@ -60,6 +60,23 @@ class PlanStallTest {
     }
 
     @Test
+    fun aRunThreeLong_thatALaterSessionAnswered_isGone() {
+        // B303: the walk used to keep the longest run it had seen, so three misses followed by a session that
+        // met the plan still asked for a deload -- for as long as the run stayed in the read's window.
+        val history = history(
+            planned = listOf(planSet(reps = 5)),
+            sessions = listOf(
+                listOf(performed(reps = 3)),
+                listOf(performed(reps = 3)),
+                listOf(performed(reps = 3)),
+                listOf(performed(reps = 5)),
+            ),
+        )
+
+        assertNull("the answering session ended the three", history.stall())
+    }
+
+    @Test
     fun theSecondSetCanBeTheOneThatFails() {
         // The counting is per prescription rather than per exercise: a plan whose second set always fails says
         // that, and the first set — which is being answered — is not blamed for it (N237).
@@ -129,6 +146,23 @@ class PlanStallTest {
     }
 
     @Test
+    fun aSetNobodyLogged_doesNotBreakTheRun() {
+        // B304: absence used to fall into the reset branch, so one session that logged no set wiped every run
+        // -- the rule says it can neither start nor break a streak, and this is the break half.
+        val history = history(
+            planned = listOf(planSet(reps = 5)),
+            sessions = listOf(
+                listOf(performed(reps = 3)),
+                emptyList(),
+                listOf(performed(reps = 3)),
+                listOf(performed(reps = 3)),
+            ),
+        )
+
+        assertEquals("the gap is not a miss", 3, history.stall()?.sessions)
+    }
+
+    @Test
     fun aPlanOfWarmUpsOnly_hasNothingToStall() {
         val history = history(
             planned = listOf(planSet(reps = 5, role = SetType.WARMUP)),
@@ -152,6 +186,34 @@ class PlanStallTest {
         )
 
         assertEquals(ProgressionMiss.HOLD_SHORT, history.stall()?.kind)
+    }
+
+    @Test
+    fun aDropWhereAWorkSetWasMissing_isNotAStallOfThatWorkSet() {
+        // B305: pairing by raw position compared the plan's second work set against the drop logged after the
+        // first, and three sessions of that read as the work set being under its prescribed load.
+        val history = history(
+            planned = listOf(
+                planSet(reps = 5, weight = 100_000L),
+                planSet(reps = 5, weight = 90_000L, index = 1),
+            ),
+            sessions = listOf(
+                listOf(
+                    performed(reps = 5, weight = 100_000L),
+                    performed(reps = 5, weight = 70_000L, role = SetType.DROP),
+                ),
+                listOf(
+                    performed(reps = 5, weight = 100_000L),
+                    performed(reps = 5, weight = 70_000L, role = SetType.DROP),
+                ),
+                listOf(
+                    performed(reps = 5, weight = 100_000L),
+                    performed(reps = 5, weight = 70_000L, role = SetType.DROP),
+                ),
+            ),
+        )
+
+        assertNull("the second work set was never logged", history.stall())
     }
 
     private fun history(
@@ -186,10 +248,12 @@ class PlanStallTest {
         weight: Long = 100_000L,
         rpe: Int? = 7,
         hold: Int? = null,
+        role: SetType = SetType.NORMAL,
     ) = ProgressionPerformance(
         reps = reps,
         weightGrams = weight,
         rpeHalves = rpe,
         durationSeconds = hold,
+        role = role,
     )
 }

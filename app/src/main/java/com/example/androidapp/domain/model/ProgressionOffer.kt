@@ -315,11 +315,45 @@ data class ProgressionOffer(
 }
 
 /**
+ * The prescribed sets and the performed ones, paired **by class** (ROADMAP N79, B305).
+ *
+ * Prescribed work sets pair with performed work sets and prescribed rungs with performed rungs, each in order —
+ * so a logged rung can only ever be extra, never a stand-in for a work set the session did not log. The offer
+ * and the stall rule read this one pairing, so the two cannot disagree about which set a session answered.
+ */
+internal data class PerformancePairs(
+    /** One entry per prescribed set, null where the session logged nothing for it. */
+    val bySetId: Map<String, ProgressionPerformance?>,
+    /** Indexes into the warm-up-filtered performed list, for the prompt's extra-work half. */
+    val usedIndexes: Set<Int>,
+)
+
+internal fun pairedPerformances(
+    planned: List<ProgressionPlanSet>,
+    performed: List<ProgressionPerformance>,
+): PerformancePairs {
+    val plannedWork = planned.plannedWork()
+    val performedWork = performed.performedWork()
+    val workIndexes = performedWork.indices.filterNot { performedWork[it].role.isRung }
+    val rungIndexes = performedWork.indices.filter { performedWork[it].role.isRung }
+    val pairs = mutableMapOf<String, ProgressionPerformance?>()
+    val used = mutableSetOf<Int>()
+    listOf(true, false).forEach { rungs ->
+        plannedWork.filter { it.role.isRung == rungs }.forEachIndexed { index, set ->
+            val at = (if (rungs) rungIndexes else workIndexes).getOrNull(index)
+            pairs[set.setId] = at?.let { performedWork[it] }
+            at?.let { used += it }
+        }
+    }
+    return PerformancePairs(bySetId = pairs, usedIndexes = used)
+}
+
+/**
  * The prompt one exercise's *Done* opens with (ROADMAP N50, N74).
  *
- * The plan's Nth working set is paired with the session's Nth, warm-ups removed from both sides
- * (N17, N20, N22), and each pair is judged on its own. Work the plan does not name is stated after
- * them with no step to offer, so the prompt accounts for the whole session. An exercise with no plan
+ * The plan's sets are paired with the session's by class, warm-ups removed from both sides (N17, N20, N22,
+ * N79 — see [pairedPerformances]), and each pair is judged on its own. Work the plan does not name is stated
+ * after them with no step to offer, so the prompt accounts for the whole session. An exercise with no plan
  * states no sets rather than failing.
  */
 fun progressionPromptFor(
@@ -333,29 +367,11 @@ fun progressionPromptFor(
 ): ProgressionPrompt {
     val plannedWork = planned.plannedWork()
     val performedWork = performed.performedWork()
+    val paired = pairedPerformances(planned, performed)
 
-    // **Paired by class, not by raw position** (ROADMAP N79). A rung logged without a plan row used
-    // to be counted as a work set, which shifted every later pair: the app compared a working set
-    // against a lighter drop's reps and offered it a heavier weight, and accepting wrote that into the
-    // plan. Prescribed work sets pair with performed work sets, and prescribed rungs with performed
-    // rungs, each in order — so an extra rung can only ever be extra.
-    val performedWorkIndexes = performedWork.indices.filterNot { performedWork[it].role.isRung }
-    val performedRungIndexes = performedWork.indices.filter { performedWork[it].role.isRung }
-    val plannedOf = { rungs: Boolean -> plannedWork.filter { it.role.isRung == rungs } }
-
-    val pairs = mutableMapOf<String, ProgressionPerformance?>()
-    val used = mutableSetOf<Int>()
-    listOf(true, false).forEach { rungs ->
-        plannedOf(rungs).forEachIndexed { index, set ->
-            val at = (if (rungs) performedRungIndexes else performedWorkIndexes).getOrNull(index)
-            pairs[set.setId] = at?.let { performedWork[it] }
-            at?.let { used += it }
-        }
-    }
-
-    val prescribed = plannedWork.map { set -> set.toPrompt(pairs[set.setId], stepGrams) }
+    val prescribed = plannedWork.map { set -> set.toPrompt(paired.bySetId[set.setId], stepGrams) }
     val extra = performedWork
-        .filterIndexed { index, _ -> index !in used }
+        .filterIndexed { index, _ -> index !in paired.usedIndexes }
         .map { ProgressionSetPrompt(planned = null, performed = it, miss = ProgressionMiss.NOT_IN_PLAN) }
     return ProgressionPrompt(sets = prescribed + extra)
 }
