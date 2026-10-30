@@ -324,4 +324,7 @@ private fun sameSet(a: TemplateSetDto, b: TemplateSetDto): Boolean =
         a.targetAssistanceGrams == b.targetAssistanceGrams &&
         a.targetRepsMin == b.targetRepsMin && a.targetRepsMax == b.targetRepsMax &&
         a.targetRepsCurrent == b.targetRepsCurrent &&
+        // The hold is a prescription like the reps are (B307): an edit that moves only a 45-second set
+        // planned nothing, and the app reported the program updated while writing nothing.
+        a.targetDurationSeconds == b.targetDurationSeconds &&
         a.dropValueGrams == b.dropValueGrams && a.note == b.note

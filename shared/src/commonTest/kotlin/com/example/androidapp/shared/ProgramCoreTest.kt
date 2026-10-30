@@ -216,6 +216,27 @@ class ProgramCoreTest {
     }
 
     @Test
+    fun an_edit_thatChangesOnlyAHold_isPlanned() {
+        // B307: the set comparison skipped the hold, so a document that moved only a prescription's seconds
+        // planned no changes -- and both hosts still reported the program updated.
+        val baseHold = setRow("set_a", "te_a", 0).copy(
+            targetWeightGrams = null,
+            targetRepsMin = null,
+            targetRepsMax = null,
+            targetDurationSeconds = 45,
+        )
+        val snapshot = baseDocument(templateSets = listOf(baseHold))
+        val edit = baseDocument(
+            templateSets = listOf(baseHold.copy(targetDurationSeconds = 60)),
+            edit = EditMarker(baseExportedAt = T),
+        )
+
+        val ready = plan(snapshot, edit) as PlanResult.Ready
+
+        assertEquals(listOf(ChangeKind.SET_UPDATED), ready.changes.map { it.kind })
+    }
+
+    @Test
     fun an_edit_plans_the_renames_adds_and_removals_it_names() {
         val snapshot = baseDocument()
         val edit = baseDocument(
