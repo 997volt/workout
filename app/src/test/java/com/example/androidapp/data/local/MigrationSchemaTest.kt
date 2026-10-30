@@ -84,10 +84,14 @@ class MigrationSchemaTest {
         val failure = openThroughRoom(name)
         if (failure != null) return "from $from: $failure"
 
-        return if (rowCount(name) == 1) {
+        // **Every** planted row, not only the exercises one (B318): the step from 14 to 15 alters
+        // `template_sets` and 13 to 14 alters `session_exercises`, and a migration that dropped either
+        // table's rows would have passed while the exercises row sat there.
+        val lost = rowCounts(name, from).filterValues { it != 1 }.keys
+        return if (lost.isEmpty()) {
             null
         } else {
-            "from $from: the row written before the chain did not survive it"
+            "from $from: the row written before the chain did not survive it in ${lost.joinToString()}"
         }
     }
 
@@ -100,16 +104,23 @@ class MigrationSchemaTest {
         return failure?.message?.lineSequence()?.firstOrNull()
     }
 
-    private fun rowCount(name: String): Int? =
-        SQLiteDatabase.openDatabase(
+    /** How many rows each table of the [from] schema holds after the chain; -1 when it cannot be read. */
+    private fun rowCounts(name: String, from: Int): Map<String, Int> {
+        val tables = entitiesOf(from).map { it.getString("tableName") }
+        return SQLiteDatabase.openDatabase(
             context.getDatabasePath(name).path,
             null,
             SQLiteDatabase.OPEN_READONLY,
         ).use { database ->
-            database.rawQuery("SELECT COUNT(*) FROM exercises WHERE id = ?", arrayOf(ROW_ID)).use { cursor ->
-                if (cursor.moveToFirst()) cursor.getInt(0) else null
+            tables.associateWith { table ->
+                runCatching {
+                    database.rawQuery("SELECT COUNT(*) FROM `$table`", null).use { cursor ->
+                        if (cursor.moveToFirst()) cursor.getInt(0) else 0
+                    }
+                }.getOrDefault(-1)
             }
         }
+    }
 
     /**
      * A store at [version], built from that version's exported schema with one row per table.

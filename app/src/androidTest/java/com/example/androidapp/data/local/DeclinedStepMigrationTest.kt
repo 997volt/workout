@@ -44,39 +44,45 @@ class DeclinedStepMigrationTest {
 
     @Test
     fun theColumnTheMigrationAdds_isNullForEveryRowThatExisted() = runTest {
+        // A row written *before* the ALTER, which is the row the migration has to leave alone (B318).
         val db = database.openHelper.writableDatabase
         db.execSQL("ALTER TABLE session_exercises DROP COLUMN declinedDirections")
-
-        MIGRATION_13_14.migrate(db)
-
         library()
         dao.insertSession(session())
-        dao.insertSessionExercise(row())
+        db.execSQL(
+            "INSERT INTO session_exercises (id, sessionId, exerciseId, position, createdAt, updatedAt) " +
+                "VALUES (?, ?, ?, ?, ?, ?)",
+            arrayOf<Any?>(ROW_ID, SESSION_ID, "back-squat", 0, 1L, 1L),
+        )
+
+        MIGRATION_13_14.migrate(db)
 
         assertNull(exercises.findSessionExercise(ROW_ID)?.declinedDirections)
     }
 
     @Test
     fun aDecline_isReadBack_inTheEnumsOwnOrder() = runTest {
+        // Through the DAO and the column, not only the codec (B318): the write, the storage and the read are
+        // the round trip the review and History depend on.
+        val db = database.openHelper.writableDatabase
+        db.execSQL("ALTER TABLE session_exercises DROP COLUMN declinedDirections")
         library()
         dao.insertSession(session())
-        dao.insertSessionExercise(row().copy(declinedDirections = encodedDirections(REPRODUCED)))
-        dao.insertSession(session(id = "s2", startedAt = 2L))
-        dao.insertSessionExercise(
-            row(id = "se2", sessionId = "s2").copy(declinedDirections = encodedDirections(REPRODUCED))
+        db.execSQL(
+            "INSERT INTO session_exercises (id, sessionId, exerciseId, position, createdAt, updatedAt) " +
+                "VALUES (?, ?, ?, ?, ?, ?)",
+            arrayOf<Any?>(ROW_ID, SESSION_ID, "back-squat", 0, 1L, 1L),
         )
+        MIGRATION_13_14.migrate(db)
 
-        REPRODUCED.forEach { direction ->
-            assertEquals(
-                "every direction round-trips",
-                true,
-                declaredDirections(encodedDirections(REPRODUCED)).contains(direction),
-            )
-        }
+        exercises.setDeclinedDirections(ROW_ID, "REPS,LOAD", 2L)
+
+        val stored = exercises.findSessionExercise(ROW_ID)?.declinedDirections
+        assertEquals("REPS,LOAD", stored)
         assertEquals(
-            "and reading one written out of order comes back in the enum's own order",
+            "reading it back is the enum's own order",
             listOf(ProgressionDirection.LOAD, ProgressionDirection.REPS),
-            declaredDirections("REPS,LOAD").toList(),
+            declaredDirections(stored).toList(),
         )
     }
 
@@ -111,21 +117,8 @@ class DeclinedStepMigrationTest {
         deletedAt = null,
     )
 
-    private fun row(id: String = ROW_ID, sessionId: String = SESSION_ID) = SessionExerciseEntity(
-        id = id,
-        sessionId = sessionId,
-        exerciseId = "back-squat",
-        position = 0,
-        finishedAt = null,
-        muscleFeel = null,
-        createdAt = 1L,
-        updatedAt = 1L,
-        deletedAt = null,
-    )
-
     private companion object {
         const val SESSION_ID = "s1"
         const val ROW_ID = "se1"
-        val REPRODUCED = setOf(ProgressionDirection.REPS)
     }
 }
