@@ -185,6 +185,73 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+One review pass over this unreleased batch — before any of it shipped — found the rows below, and each was
+fixed in the same cycle.
+
+- **The page's copy of the shared core is current** (B294). N242's field never reached the generated
+  `docs/shared` build, so the build job's status check failed and the helper could not name a hold. The build is
+  regenerated, and the gate paragraph names the command that regenerates it instead of implying the fixtures
+  command does.
+- **A hold can be taken, and the plan keeps it** (B295). N242's seconds offer had no control to take it: the
+  question drew reps and load only, the plan and done lines dropped the hold, and the write would have stored
+  null over it. A seconds chip, a bulk pick, the answer's branch, the hold in both lines and the duration in the
+  write land together — fixing only the control would have made *Done* erase the prescription.
+- **The id repair re-files a family's children** (B296). Its statement asked for a row that is its own parent
+  and matched nothing, leaving the impostor's children filed under an id that then named a movement, drawn in
+  neither the library nor the picker. The clause is gone and the test plants the shape the repair exists for.
+- **A backup carries the declined step** (B297). N236's column was not in the backup DTO, so every export
+  dropped the one record the app cannot recompute. It and the plan's hold are pinned by codec tests.
+- **A merge takes an import's leftover and keeps its settings** (B298). The ruled merges had no shape guard, so
+  a movement the lifter configured was deleted on the next open. A ruled source must now be bare, its rest, cue,
+  unit, step and answer travel to the survivor, and creation and rename refuse a duplicate name.
+- **The seed's repairs stop undoing a lifter's answer** (B299). Turning *Bodyweight* or *Timed* off, or
+  unfiling a movement, was re-asserted on every open. The repairs read the row's never-edited marker now, and
+  the seed's own repairs no longer write that marker.
+- **The retired map records the deadlift** (B300). The seed's static retirement wrote no mapping, so a
+  pre-merge document re-minted the twin and a fresh install never had the line. The retirement is recorded on
+  every open, idempotently.
+- **The load preview reads a retired id as the row it became** (B301). Comparing the raw document made an old
+  export of the program on the device look like a different plan and offered a copy. Both paths resolve through
+  one helper now.
+- **A copy drops planned work whose workout it does not carry** (B302). Its fallback wrote rows into the
+  original's workout; the planned work and its sets are dropped instead.
+- **A stall is the run still open, paired by class** (B303–B305). The rule kept the longest run it had seen,
+  reset a run when a set was simply not logged, and paired by raw position. It reports only a run open at the
+  newest session, skips absence, and reads the offer's own by-class pairing.
+- **A bodyweight hold keeps its record** (B306). The record read dropped bodyweight rows before the hold rule,
+  so a Plank had no longest hold. The rep table still excludes them, because their added weight is not a load.
+- **An edit that moves only a hold is planned** (B307). The shared set comparison skipped the duration, so the
+  app said the program was updated and wrote nothing. The hold is compared like the reps, and the page build is
+  regenerated.
+- **The shared validator refuses a hold the app refuses** (B308). A zero-second hold, or a set naming both reps
+  and a hold, passed the page's validator. Two problem codes and the two rules close it.
+- **A failed decline is said, and a taken step clears it** (B309, B310). The finish cleared the decline's error
+  before it could be shown, and accepting a step left *step offered, not taken* behind. The error survives the
+  finish, and an acceptance writes the empty value.
+- **The library's empty state is the list the body drew** (B311). The state re-derived the list without the
+  last-trained data, so *Not trained* could draw a blank page. The body asks its rows.
+- **A hold's shortfall is part of the one-reason check** (B312). Two holds short by different amounts collapsed
+  into one line stating the first one's number. The hold's measurement now has to agree.
+- **The docs state what the code does** (B313–B315). The unreleased changelog has one section per heading and
+  one entry per row, the schema story covers 14–16, and DECISIONS records the hard-delete exception with its
+  retired-id map and the movement-level answer as training data.
+- **The retired map loses what only its writer read** (B316). Four unused DAO methods, an `at` nothing read, an
+  unused stall window and duplicate test tags are gone. The `at` is dropped by schema 17, which recreates and
+  copies the table because the supported APIs have no `DROP COLUMN`.
+- **The history section reads the exercise's own unit** (B317). A pound movement had its history and best in
+  kilograms. The one helper every exercise-scoped display uses is the one it calls.
+- **The schema and transfer tests check what they claim** (B318). The chain test counts every planted row, not
+  only the exercises one; the declined column is written before the ALTER and read back through the DAO; and
+  the retired-id resolution has a JVM test.
+- **The library's and the seed's tests stop being blind spots** (B319). The ruled table pins its survivors and
+  sources against the seed, the empty-group fallback is tested, five aliases the search already answered are
+  gone, and the catalog's regeneration note names the right path.
+- **The refused load names the program the device holds** (B320). After a rename the question named the file's
+  old name. The payload carries the held program's name, the refusal is the field's supporting text, and the
+  copy path's name check is read inside its transaction.
+- **The instrumented suite ran against the batch** (B321). 433 declared, 433 executed, none skipped, on a
+  device — the report it replaced predated the newest test source.
+
 - **A seeded family no longer holds a movement's id, so *Back Extension* exists** (B292). A database written by an
   older seed holds the *category* under an id this seed uses for a movement, and `INSERT OR IGNORE` cannot take a
   taken id — so the movement never arrived and the lift could not be logged at all, while a second family of the same
