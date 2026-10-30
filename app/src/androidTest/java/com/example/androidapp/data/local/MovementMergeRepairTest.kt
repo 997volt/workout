@@ -7,6 +7,7 @@ import com.example.androidapp.domain.model.SetType
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -79,6 +80,96 @@ class MovementMergeRepairTest {
         mergeDuplicateMovements(database.openHelper.writableDatabase, at = 3L)
 
         assertEquals(afterFirst, database.exerciseDao().count() to database.movementMergeDao().retiredMovements())
+    }
+
+    @Test
+    fun aRuledSurvivorWhoseNameIsAlsoADuplicate_isMergedInOnePass() = runTest {
+        // B323's shape at the database level (B325): the seed's own row, an import's bare duplicate under its
+        // name, and a bare ruled source, with a session and a plan naming the source. Before the fix the ruling
+        // resolved its survivor to the duplicate the mechanical rule deleted, and the pass re-pointed history
+        // onto a row that no longer existed.
+        database.exerciseDao().insertAll(
+            listOf(
+                exercise(
+                    id = "overhead-triceps-extension",
+                    name = "Overhead Triceps Extension",
+                    equipment = "MACHINE",
+                    parentId = null,
+                ),
+                exercise(
+                    id = "imp-duplicate",
+                    name = "Overhead Triceps Extension",
+                    equipment = null,
+                    parentId = null,
+                ),
+                exercise(
+                    id = "imp-source",
+                    name = "Dumbbell Overhead Triceps Extension",
+                    equipment = null,
+                    parentId = null,
+                ),
+            ),
+        )
+        database.templateDao().insertTemplate(
+            TemplateEntity(id = "t1", name = "Push A", createdAt = 1L, updatedAt = 1L, deletedAt = null),
+        )
+        database.templateDao().insertTemplateExercise(
+            TemplateExerciseEntity(
+                id = "te1",
+                templateId = "t1",
+                exerciseId = "imp-source",
+                position = 0,
+                createdAt = 1L,
+                updatedAt = 1L,
+                deletedAt = null,
+            ),
+        )
+        database.workoutDao().insertSession(
+            WorkoutSessionEntity(
+                id = "s1",
+                startedAt = 1L,
+                finishedAt = 2L,
+                notes = null,
+                restEndsAt = null,
+                readinessNote = null,
+                createdAt = 1L,
+                updatedAt = 2L,
+                deletedAt = null,
+            ),
+        )
+        database.workoutDao().insertSessionExercise(
+            SessionExerciseEntity(
+                id = "se1",
+                sessionId = "s1",
+                exerciseId = "imp-source",
+                position = 0,
+                finishedAt = null,
+                muscleFeel = null,
+                createdAt = 1L,
+                updatedAt = 1L,
+                deletedAt = null,
+            ),
+        )
+
+        seedMissingExercises(database.openHelper.writableDatabase, seededAt = 9L)
+
+        assertEquals(
+            "the seed's own row is the one that survives",
+            "overhead-triceps-extension",
+            database.exerciseDao().findById("overhead-triceps-extension")?.id,
+        )
+        assertNull("the duplicate is gone", database.exerciseDao().findById("imp-duplicate"))
+        assertNull("the ruled source is gone", database.exerciseDao().findById("imp-source"))
+        assertEquals(
+            "the session follows the survivor",
+            "overhead-triceps-extension",
+            database.sessionExerciseDao().findSessionExercise("se1")?.exerciseId,
+        )
+        assertEquals(
+            "and so does the plan",
+            "overhead-triceps-extension",
+            database.templateDao().findTemplateExercises("t1").single().exerciseId,
+        )
     }
 
     /**

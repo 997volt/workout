@@ -3,10 +3,12 @@ package com.example.androidapp.data.local
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import androidx.room.Room
+import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.androidapp.data.runSeedRepairs
 import com.example.androidapp.repoRoot
 import com.google.common.truth.Truth.assertThat
 import org.json.JSONObject
@@ -87,7 +89,7 @@ class MigrationSchemaTest {
         // **Every** planted row, not only the exercises one (B318): the step from 14 to 15 alters
         // `template_sets` and 13 to 14 alters `session_exercises`, and a migration that dropped either
         // table's rows would have passed while the exercises row sat there.
-        val lost = rowCounts(name, from).filterValues { it != 1 }.keys
+        val lost = missingPlantedRows(name, from)
         return if (lost.isEmpty()) {
             null
         } else {
@@ -98,26 +100,57 @@ class MigrationSchemaTest {
     private fun openThroughRoom(name: String): String? {
         val room = Room.databaseBuilder(context, WorkoutDatabase::class.java, name)
             .addMigrations(*ALL_MIGRATIONS.toTypedArray())
+            .addCallback(
+                object : RoomDatabase.Callback() {
+                    /**
+                     * The app's own open-time pass, **uncaught** (B325): the app catches it now (B324), so a
+                     * repair bug would be silent there. Here it must fail the test — this is the same pass an
+                     * upgraded device runs, on a store the chain just produced.
+                     */
+                    override fun onOpen(db: SupportSQLiteDatabase) {
+                        super.onOpen(db)
+                        runSeedRepairs(db, context, at = 1L)
+                    }
+                },
+            )
             .build()
         val failure = runCatching { room.openHelper.writableDatabase }.exceptionOrNull()
         room.close()
         return failure?.message?.lineSequence()?.firstOrNull()
     }
 
-    /** How many rows each table of the [from] schema holds after the chain; -1 when it cannot be read. */
-    private fun rowCounts(name: String, from: Int): Map<String, Int> {
-        val tables = entitiesOf(from).map { it.getString("tableName") }
+    /**
+     * The planted row of every table of the [from] schema, missing after the chain (B318, B325).
+     *
+     * Every table got one row before the chain, so a step that emptied one would have passed while another's
+     * row sat there. The count cannot be compared to one any more: the seeder now adds the whole library on
+     * open, so the question is whether **the planted row** survived, by its id where the table has one and by
+     * a row at all where it does not.
+     */
+    private fun missingPlantedRows(name: String, from: Int): List<String> {
+        val entities = entitiesOf(from)
         return SQLiteDatabase.openDatabase(
             context.getDatabasePath(name).path,
             null,
             SQLiteDatabase.OPEN_READONLY,
         ).use { database ->
-            tables.associateWith { table ->
-                runCatching {
-                    database.rawQuery("SELECT COUNT(*) FROM `$table`", null).use { cursor ->
-                        if (cursor.moveToFirst()) cursor.getInt(0) else 0
+            entities.mapNotNull { entity ->
+                val table = entity.getString("tableName")
+                val fields = entity.getJSONArray("fields")
+                val hasId = (0 until fields.length()).any {
+                    fields.getJSONObject(it).getString("columnName") == "id"
+                }
+                val sql = if (hasId) {
+                    "SELECT COUNT(*) FROM `$table` WHERE id = ?"
+                } else {
+                    "SELECT COUNT(*) FROM `$table`"
+                }
+                val missing = runCatching {
+                    database.rawQuery(sql, if (hasId) arrayOf(ROW_ID) else null).use { cursor ->
+                        !cursor.moveToFirst() || cursor.getInt(0) == 0
                     }
-                }.getOrDefault(-1)
+                }.getOrDefault(true)
+                if (missing) table else null
             }
         }
     }
