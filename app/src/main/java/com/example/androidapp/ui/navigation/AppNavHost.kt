@@ -56,6 +56,9 @@ import com.example.androidapp.ui.workout.ExercisePickerRoute
 fun AppNavHost(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
+    // A default so a test can supply its own (the compose-rules ViewModelInjection rule); the shell is
+    // the one composable that owns the housekeeping notice, so the ViewModel belongs to it.
+    housekeepingViewModel: HousekeepingViewModel = hiltViewModel(),
 ) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val destination = backStackEntry?.destination
@@ -72,14 +75,13 @@ fun AppNavHost(
 
     // A housekeeping pass that could not finish is said once, wherever the lifter is (B324): the state is
     // produced by the database's open, before any screen has a ViewModel, and the retry is the same pass.
-    val housekeeping = hiltViewModel<HousekeepingViewModel>()
-    val repairFailure by housekeeping.failure.collectAsStateWithLifecycle()
-    val repairing by housekeeping.retrying.collectAsStateWithLifecycle()
+    val repairFailure by housekeepingViewModel.failure.collectAsStateWithLifecycle()
+    val repairing by housekeepingViewModel.retrying.collectAsStateWithLifecycle()
     HousekeepingAlert(
         failure = repairFailure,
         retrying = repairing,
-        onRetry = housekeeping::retry,
-        onDismiss = housekeeping::dismiss,
+        onRetry = housekeepingViewModel::retry,
+        onDismiss = housekeepingViewModel::dismiss,
     )
 
     val showBar = showsTabBar(destination?.route)

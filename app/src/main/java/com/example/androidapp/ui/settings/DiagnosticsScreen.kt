@@ -31,6 +31,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
+import com.example.androidapp.data.Housekeeping
+import com.example.androidapp.platform.CrashLog
 import com.example.androidapp.ui.components.AppCard
 import com.example.androidapp.ui.components.SectionHeader
 import com.example.androidapp.ui.components.TestTags
@@ -89,91 +91,100 @@ internal fun DiagnosticsScreen(
             )
         },
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+        DiagnosticsBody(
+            state = state,
+            onCopy = onCopy,
+            onRetry = onRetry,
+            modifier = Modifier.padding(innerPadding),
+        )
+    }
+}
+
+@Composable
+private fun DiagnosticsBody(
+    state: DiagnosticsUiState,
+    onCopy: (String) -> Unit,
+    onRetry: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.diagnostics_version, state.appVersion, state.versionCode),
+            style = MaterialTheme.typography.titleMedium,
+        )
+        SectionHeader(text = stringResource(R.string.diagnostics_crash_title))
+        CrashCard(crash = state.crash)
+        SectionHeader(text = stringResource(R.string.diagnostics_repair_title))
+        RepairCard(repair = state.repair, retrying = state.retrying, onRetry = onRetry)
+        Button(
+            onClick = { onCopy(diagnosticsReport(state)) },
+            modifier = Modifier.testTag(TestTags.DIAGNOSTICS_COPY),
         ) {
+            Text(stringResource(R.string.diagnostics_copy))
+        }
+    }
+}
+
+@Composable
+private fun CrashCard(crash: CrashLog?) {
+    AppCard(modifier = Modifier.testTag(TestTags.DIAGNOSTICS_CRASH)) {
+        if (crash == null) {
+            Text(stringResource(R.string.diagnostics_crash_none), style = MaterialTheme.typography.bodyMedium)
+            return@AppCard
+        }
+        Text(
+            text = stringResource(
+                R.string.diagnostics_repair_when,
+                Instant.ofEpochMilli(crash.timestamp).toString(),
+                crash.exceptionClass,
+            ),
+            style = MaterialTheme.typography.titleSmall,
+        )
+        SelectionContainer {
             Text(
-                text = stringResource(
-                    R.string.diagnostics_version,
-                    state.appVersion,
-                    state.versionCode,
-                ),
-                style = MaterialTheme.typography.titleMedium,
+                text = crash.stackTrace,
+                style = MaterialTheme.typography.bodySmall,
+                fontFamily = FontFamily.Monospace,
             )
+        }
+    }
+}
 
-            SectionHeader(text = stringResource(R.string.diagnostics_crash_title))
-            AppCard(modifier = Modifier.testTag(TestTags.DIAGNOSTICS_CRASH)) {
-                val crash = state.crash
-                if (crash == null) {
-                    Text(
-                        text = stringResource(R.string.diagnostics_crash_none),
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                } else {
-                    Text(
-                        text = stringResource(
-                            R.string.diagnostics_repair_when,
-                            Instant.ofEpochMilli(crash.timestamp).toString(),
-                            crash.exceptionClass,
-                        ),
-                        style = MaterialTheme.typography.titleSmall,
-                    )
-                    SelectionContainer {
-                        Text(
-                            text = crash.stackTrace,
-                            style = MaterialTheme.typography.bodySmall,
-                            fontFamily = FontFamily.Monospace,
-                        )
-                    }
-                }
-            }
-
-            SectionHeader(text = stringResource(R.string.diagnostics_repair_title))
-            AppCard(modifier = Modifier.testTag(TestTags.DIAGNOSTICS_REPAIR)) {
-                val repair = state.repair
-                if (repair == null) {
-                    Text(
-                        text = stringResource(R.string.diagnostics_repair_none),
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                } else {
-                    Text(
-                        text = stringResource(
-                            R.string.diagnostics_repair_when,
-                            Instant.ofEpochMilli(repair.at).toString(),
-                            repair.exceptionClass,
-                        ),
-                        style = MaterialTheme.typography.titleSmall,
-                    )
-                    Text(
-                        text = stringResource(R.string.diagnostics_repair_reason),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    OutlinedButton(
-                        onClick = onRetry,
-                        enabled = !state.retrying,
-                        modifier = Modifier.testTag(TestTags.DIAGNOSTICS_RETRY),
-                    ) {
-                        Text(
-                            stringResource(
-                                if (state.retrying) R.string.diagnostics_retrying else R.string.diagnostics_retry,
-                            ),
-                        )
-                    }
-                }
-            }
-
-            Button(
-                onClick = { onCopy(diagnosticsReport(state)) },
-                modifier = Modifier.testTag(TestTags.DIAGNOSTICS_COPY),
-            ) {
-                Text(stringResource(R.string.diagnostics_copy))
-            }
+@Composable
+private fun RepairCard(
+    repair: Housekeeping.Failure?,
+    retrying: Boolean,
+    onRetry: () -> Unit,
+) {
+    AppCard(modifier = Modifier.testTag(TestTags.DIAGNOSTICS_REPAIR)) {
+        if (repair == null) {
+            Text(stringResource(R.string.diagnostics_repair_none), style = MaterialTheme.typography.bodyMedium)
+            return@AppCard
+        }
+        Text(
+            text = stringResource(
+                R.string.diagnostics_repair_when,
+                Instant.ofEpochMilli(repair.at).toString(),
+                repair.exceptionClass,
+            ),
+            style = MaterialTheme.typography.titleSmall,
+        )
+        Text(
+            text = stringResource(R.string.diagnostics_repair_reason),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        OutlinedButton(
+            onClick = onRetry,
+            enabled = !retrying,
+            modifier = Modifier.testTag(TestTags.DIAGNOSTICS_RETRY),
+        ) {
+            Text(stringResource(if (retrying) R.string.diagnostics_retrying else R.string.diagnostics_retry))
         }
     }
 }
