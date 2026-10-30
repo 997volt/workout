@@ -356,9 +356,14 @@ internal val MERGED_MOVEMENTS = listOf(
  * A survivor this device does not hold stops the merge rather than orphaning the history: the insert that
  * puts it there runs earlier in this same transaction, and the guard is what keeps a refused statement from
  * rolling the whole seeding back.
+ *
+ * The **retirement itself** is recorded before the guard (B300): the map is what a program document exported
+ * before this release resolves through, so a store that never held the row — every fresh install, where the
+ * merge is a no-op — still needs the line. The write is idempotent, so the next open changes nothing.
  */
 private fun mergeRetiredMovements(db: SupportSQLiteDatabase, now: Long) {
     MERGED_MOVEMENTS.forEach { merge ->
+        rememberRetiredMovement(db, from = merge.retired, to = merge.survivor, at = now)
         val retired = db.holdsMovement(merge.retired, merge.name)
         val survivor = db.holdsMovement(merge.survivor)
         if (!retired || !survivor) return@forEach

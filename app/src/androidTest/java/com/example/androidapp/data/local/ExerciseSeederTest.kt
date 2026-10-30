@@ -212,6 +212,30 @@ class ExerciseSeederTest {
     }
 
     @Test
+    fun theRetiredDeadlift_isInTheMap_evenOnAStoreThatNeverHeldIt() = runTest {
+        // B300: the map is what a program document exported before the retirement resolves through. The seed
+        // records its static retirement on every open, so a fresh install — where the merge is a no-op — has
+        // the line too, and a second open does not duplicate it.
+        val database = databaseWithSeeding()
+        try {
+            val raw = database.openHelper.writableDatabase
+            val first = database.movementMergeDao().retiredMovements().single()
+            assertEquals("deadlift", first.id)
+            assertEquals("conventional-deadlift", first.survivorId)
+
+            seedMissingExercises(raw, SEEDED_AT + 1_000L)
+
+            assertEquals(
+                "a second open does not duplicate it",
+                1,
+                database.movementMergeDao().retiredMovements().size,
+            )
+        } finally {
+            database.close()
+        }
+    }
+
+    @Test
     fun theBackExtensionMovement_isSeededAndFiledUnderItsFamily() = runTest {
         // B148, on the shape the fix produces: the movement is a movement (so every picker offers it and a
         // logged set may name it) and it is filed under the family, which is where its muscles come from.

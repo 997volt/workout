@@ -42,9 +42,21 @@ internal fun mergeDuplicateMovements(db: SupportSQLiteDatabase, at: Long) {
         // gains whatever it left unset. A bare import may still carry a cue or a rest a document brought whole,
         // and after the delete this is the only row left to hold it.
         carryLifterFields(db, from = merge.sourceId, to = merge.survivorId)
-        db.execSQL(RETIRE, arrayOf<Any?>(merge.sourceId, merge.survivorId, at))
+        rememberRetiredMovement(db, from = merge.sourceId, to = merge.survivorId, at = at)
         db.execSQL(DELETE_MOVEMENT, arrayOf<Any?>(merge.sourceId))
     }
+}
+
+/**
+ * Records that [from] now means [to] (ROADMAP N238, B300).
+ *
+ * The program import resolves a document's movement ids through this map; without a row, a file exported
+ * before the retirement mints the twin again. Idempotent, so the seeder can assert its static retirement on
+ * every open — a fresh install gets the mapping even though its merge is a no-op — and the duplicate repair
+ * can record its own pair.
+ */
+internal fun rememberRetiredMovement(db: SupportSQLiteDatabase, from: String, to: String, at: Long) {
+    db.execSQL(RETIRE, arrayOf<Any?>(from, to, at))
 }
 
 /**
@@ -107,6 +119,6 @@ private const val REPOINT_TEMPLATE_EXERCISES =
     "UPDATE template_exercises SET exerciseId = ?, updatedAt = ? WHERE exerciseId = ?"
 
 private const val RETIRE =
-    "INSERT OR REPLACE INTO retired_movements (id, survivorId, at) VALUES (?, ?, ?)"
+    "INSERT OR IGNORE INTO retired_movements (id, survivorId, at) VALUES (?, ?, ?)"
 
 private const val DELETE_MOVEMENT = "DELETE FROM exercises WHERE id = ?"
