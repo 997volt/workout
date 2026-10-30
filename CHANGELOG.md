@@ -59,7 +59,7 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   sessions failing the same way. `NOT_DONE` is absence, not failure: a set nobody logged cannot start or break a
   streak. It only suggests, and nothing is written.
 
-- **A plan can prescribe a hold, and a hold can progress** (N242, schema 15). A timed set already recorded seconds
+- **A plan can prescribe a hold, and a hold can progress** (N242, schema 15, program format 7). A timed set already recorded seconds
   and wrote no reps, but a plan prescribed **reps**: a hold inside a plan ignored its target, a session saved as a
   plan wrote no rep target at all, and the next-step question answered a hold with "a hold is not measured in reps",
   so a lifter who trains carries and planks had a logged history and no prescription. A plan's set now names an
@@ -188,6 +188,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 One review pass over this unreleased batch — before any of it shipped — found the rows below, and each was
 fixed in the same cycle.
 
+- **The program document format moves for the hold** (B322). N242 added a plan set's hold to the document without
+  moving the ceiling, so a v6 build accepted a file whose sets mean seconds and dropped the field: the hold arrived
+  as a counted set with no reps, which is the wrong meaning the ceiling exists to refuse. The format is 7 now, a
+  v6 document still reads, and a v6 build refuses a hold document instead of mistaking it.
 - **The page's copy of the shared core is current** (B294). N242's field never reached the generated
   `docs/shared` build, so the build job's status check failed and the helper could not name a hold. The build is
   regenerated, and the gate paragraph names the command that regenerates it instead of implying the fixtures
@@ -206,7 +210,8 @@ fixed in the same cycle.
   unit, step and answer travel to the survivor, and creation and rename refuse a duplicate name.
 - **The seed's repairs stop undoing a lifter's answer** (B299). Turning *Bodyweight* or *Timed* off, or
   unfiling a movement, was re-asserted on every open. The repairs read the row's never-edited marker now, and
-  the seed's own repairs no longer write that marker.
+  the child re-file and the filing repair no longer write it. A row the lifter has edited is left as it is,
+  even where the old seeder wrote no flag: the repair cannot tell an old zero from the lifter's off answer.
 - **The retired map records the deadlift** (B300). The seed's static retirement wrote no mapping, so a
   pre-merge document re-minted the twin and a fresh install never had the line. The retirement is recorded on
   every open, idempotently.
@@ -266,7 +271,9 @@ fixed in the same cycle.
   a weighted pull-up was recorded, charted and record-checked as its belt alone, and a plank could not be logged as a
   hold. The seed declares both flags now — the twelve bodyweight movements, the assisted pull-up whose machine takes
   weight off, the ab wheel, the three planks and the two carries — and a device that already holds the row is raised
-  to the seed's truth and never lowered, so a flag a lifter set stays theirs. The catalog the import helper reads
+  to the seed's truth and never lowered, so a flag a lifter set stays theirs. A row the lifter has edited for another
+  reason is left as it is, the marker B299's rule reads, so an old seeder's missing flag can survive on it. The
+  catalog the import helper reads
   carries them too, which is what stops a pull-up resolved from a name arriving as an ordinary lift.
 
 - **The audited taxonomy names the lats and the upper back** (N240). The Row family named upper back and biceps and not
