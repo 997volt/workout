@@ -171,17 +171,19 @@
     ProblemCode_INVALID_POSITION_instance = new ProblemCode('INVALID_POSITION', 14);
     ProblemCode_INVALID_SET_INDEX_instance = new ProblemCode('INVALID_SET_INDEX', 15);
     ProblemCode_INVALID_REPS_instance = new ProblemCode('INVALID_REPS', 16);
-    ProblemCode_INVALID_LOAD_instance = new ProblemCode('INVALID_LOAD', 17);
-    ProblemCode_INVALID_RPE_instance = new ProblemCode('INVALID_RPE', 18);
-    ProblemCode_INVALID_REST_instance = new ProblemCode('INVALID_REST', 19);
-    ProblemCode_RUNG_WITHOUT_ANCHOR_instance = new ProblemCode('RUNG_WITHOUT_ANCHOR', 20);
-    ProblemCode_RUNG_UNDER_WARMUP_instance = new ProblemCode('RUNG_UNDER_WARMUP', 21);
-    ProblemCode_RUNG_WITHOUT_VALUE_instance = new ProblemCode('RUNG_WITHOUT_VALUE', 22);
-    ProblemCode_RUN_MIXES_KINDS_instance = new ProblemCode('RUN_MIXES_KINDS', 23);
-    ProblemCode_RUNG_CARRIES_TARGETS_instance = new ProblemCode('RUNG_CARRIES_TARGETS', 24);
-    ProblemCode_DROP_VALUE_ON_NOT_DROP_instance = new ProblemCode('DROP_VALUE_ON_NOT_DROP', 25);
-    ProblemCode_DROP_VALUE_ON_LATER_RUNG_instance = new ProblemCode('DROP_VALUE_ON_LATER_RUNG', 26);
-    ProblemCode_DROP_WITHOUT_LOAD_instance = new ProblemCode('DROP_WITHOUT_LOAD', 27);
+    ProblemCode_INVALID_HOLD_instance = new ProblemCode('INVALID_HOLD', 17);
+    ProblemCode_COUNTED_AND_HELD_instance = new ProblemCode('COUNTED_AND_HELD', 18);
+    ProblemCode_INVALID_LOAD_instance = new ProblemCode('INVALID_LOAD', 19);
+    ProblemCode_INVALID_RPE_instance = new ProblemCode('INVALID_RPE', 20);
+    ProblemCode_INVALID_REST_instance = new ProblemCode('INVALID_REST', 21);
+    ProblemCode_RUNG_WITHOUT_ANCHOR_instance = new ProblemCode('RUNG_WITHOUT_ANCHOR', 22);
+    ProblemCode_RUNG_UNDER_WARMUP_instance = new ProblemCode('RUNG_UNDER_WARMUP', 23);
+    ProblemCode_RUNG_WITHOUT_VALUE_instance = new ProblemCode('RUNG_WITHOUT_VALUE', 24);
+    ProblemCode_RUN_MIXES_KINDS_instance = new ProblemCode('RUN_MIXES_KINDS', 25);
+    ProblemCode_RUNG_CARRIES_TARGETS_instance = new ProblemCode('RUNG_CARRIES_TARGETS', 26);
+    ProblemCode_DROP_VALUE_ON_NOT_DROP_instance = new ProblemCode('DROP_VALUE_ON_NOT_DROP', 27);
+    ProblemCode_DROP_VALUE_ON_LATER_RUNG_instance = new ProblemCode('DROP_VALUE_ON_LATER_RUNG', 28);
+    ProblemCode_DROP_WITHOUT_LOAD_instance = new ProblemCode('DROP_WITHOUT_LOAD', 29);
   }
   var ProblemCode_MALFORMED_instance;
   var ProblemCode_MISSING_VERSION_instance;
@@ -200,6 +202,8 @@
   var ProblemCode_INVALID_POSITION_instance;
   var ProblemCode_INVALID_SET_INDEX_instance;
   var ProblemCode_INVALID_REPS_instance;
+  var ProblemCode_INVALID_HOLD_instance;
+  var ProblemCode_COUNTED_AND_HELD_instance;
   var ProblemCode_INVALID_LOAD_instance;
   var ProblemCode_INVALID_RPE_instance;
   var ProblemCode_INVALID_REST_instance;
@@ -402,6 +406,14 @@
   function ProblemCode_INVALID_REPS_getInstance() {
     static_init();
     return ProblemCode_INVALID_REPS_instance;
+  }
+  function ProblemCode_INVALID_HOLD_getInstance() {
+    static_init();
+    return ProblemCode_INVALID_HOLD_instance;
+  }
+  function ProblemCode_COUNTED_AND_HELD_getInstance() {
+    static_init();
+    return ProblemCode_COUNTED_AND_HELD_instance;
   }
   function ProblemCode_INVALID_LOAD_getInstance() {
     static_init();
@@ -4525,6 +4537,23 @@
         refuse.i1h(ProblemCode_INVALID_LOAD_getInstance(), path + '.dropValueGrams');
       }
       validateReps(item_0, path, refuse);
+      validateHold(item_0, path, refuse);
+    }
+  }
+  function validateHold(set, path, refuse) {
+    var tmp0_elvis_lhs = set.e1g_1;
+    var tmp;
+    if (tmp0_elvis_lhs == null) {
+      return Unit_instance;
+    } else {
+      tmp = tmp0_elvis_lhs;
+    }
+    var hold = tmp;
+    if (hold < 1) {
+      refuse.i1h(ProblemCode_INVALID_HOLD_getInstance(), path + '.targetDurationSeconds');
+    }
+    if (!(set.a1g_1 == null) || !(set.b1g_1 == null)) {
+      refuse.i1h(ProblemCode_COUNTED_AND_HELD_getInstance(), path);
     }
   }
   function validateReps(set, path, refuse) {

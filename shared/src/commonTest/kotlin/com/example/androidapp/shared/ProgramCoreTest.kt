@@ -216,6 +216,34 @@ class ProgramCoreTest {
     }
 
     @Test
+    fun a_holdBelowOneSecond_isRefused() {
+        // B308: the page could build a zero-second hold and the add merge wrote it, though the app's own write
+        // boundary refuses it. This is the shared half of that contract.
+        val document = baseDocument(
+            templateSets = listOf(
+                setRow("set_a", "te_a", 0).copy(
+                    targetWeightGrams = null,
+                    targetRepsMin = null,
+                    targetRepsMax = null,
+                    targetDurationSeconds = 0,
+                ),
+            ),
+        )
+
+        assertEquals(listOf(ProblemCode.INVALID_HOLD), validate(document).map { it.code })
+    }
+
+    @Test
+    fun a_setThatNamesBothRepsAndAHold_isRefused() {
+        // B308: a set is counted or held, never both — the exclusivity the app's write boundary already states.
+        val document = baseDocument(
+            templateSets = listOf(setRow("set_a", "te_a", 0).copy(targetDurationSeconds = 45)),
+        )
+
+        assertEquals(listOf(ProblemCode.COUNTED_AND_HELD), validate(document).map { it.code })
+    }
+
+    @Test
     fun an_edit_thatChangesOnlyAHold_isPlanned() {
         // B307: the set comparison skipped the hold, so a document that moved only a prescription's seconds
         // planned no changes -- and both hosts still reported the program updated.

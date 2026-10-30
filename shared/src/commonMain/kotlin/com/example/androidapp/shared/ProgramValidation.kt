@@ -162,6 +162,21 @@ private fun validateSetTargets(document: ProgramDocument, refuse: Refusal) {
         }
         if ((set.dropValueGrams ?: 0L) < 0L) refuse(ProblemCode.INVALID_LOAD, "$path.dropValueGrams")
         validateReps(set, path, refuse)
+        validateHold(set, path, refuse)
+    }
+}
+
+/**
+ * The hold a set prescribes, if it names one (ROADMAP N242, B308).
+ *
+ * The same two rules the app's write boundary refuses, so the page cannot build a document the app would
+ * reject: a hold is at least one second, and a set is counted **or** held, never both.
+ */
+private fun validateHold(set: TemplateSetDto, path: String, refuse: Refusal) {
+    val hold = set.targetDurationSeconds ?: return
+    if (hold < 1) refuse(ProblemCode.INVALID_HOLD, "$path.targetDurationSeconds")
+    if (set.targetRepsMin != null || set.targetRepsMax != null) {
+        refuse(ProblemCode.COUNTED_AND_HELD, path)
     }
 }
 

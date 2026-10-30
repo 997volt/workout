@@ -1125,6 +1125,11 @@ private fun editRefusal(problems: List<ProgramProblem>): String {
         ProblemCode.PROGRAM_MISSING -> "That program is not on this device."
         ProblemCode.PROGRAM_MISMATCH -> "That edit belongs to a different program."
         ProblemCode.NO_EDIT_MARKER -> "That edit does not name the export it was made from."
+        // The same two rules the write boundary refuses, worded the same way (B308).
+        ProblemCode.INVALID_HOLD -> "A hold must be at least one second."
+        ProblemCode.COUNTED_AND_HELD ->
+            "A set is either counted or held: it cannot name both reps and a hold."
+
         else ->
             "That program edit does not fit the app's rules " +
                 "(${first.code.name.lowercase().replace('_', ' ')})."

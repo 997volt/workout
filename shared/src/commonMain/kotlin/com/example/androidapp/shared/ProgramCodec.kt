@@ -67,6 +67,12 @@ enum class ProblemCode {
     /** A rep target is below one, or a range runs backwards. */
     INVALID_REPS,
 
+    /** A hold is below one second, so there is nothing to prescribe (ROADMAP N242, B308). */
+    INVALID_HOLD,
+
+    /** A set names both a rep target and a hold, and a set is one or the other (B308). */
+    COUNTED_AND_HELD,
+
     /** A load or assistance is negative. */
     INVALID_LOAD,
 

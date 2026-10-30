@@ -7869,6 +7869,8 @@
       DROP_VALUE_ON_LATER_RUNG: 'A run\'s drop value is written on its first drop.',
       DROP_WITHOUT_LOAD: 'That drop leaves the set above it nothing to take off.',
       INVALID_REPS: 'A rep target is not usable.',
+      INVALID_HOLD: 'A hold must be at least one second.',
+      COUNTED_AND_HELD: 'A set is either counted or held: it cannot name both reps and a hold.',
       INVALID_LOAD: 'A load is not usable.',
       INVALID_RPE: 'An effort target must be between 1 and 10.',
       INVALID_REST: 'Rest must be 0 to 3600 seconds.',
