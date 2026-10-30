@@ -32,6 +32,7 @@ import com.example.androidapp.ui.programs.ProgramBalanceRoute
 import com.example.androidapp.ui.programs.ProgramDeloadRoute
 import com.example.androidapp.ui.programs.ProgramEditorRoute
 import com.example.androidapp.ui.programs.ProgramsRoute
+import com.example.androidapp.ui.settings.DiagnosticsRoute
 import com.example.androidapp.ui.settings.SettingsRoute
 import com.example.androidapp.ui.settings.WeightUnitViewModel
 import com.example.androidapp.ui.statistics.StatisticsRoute
@@ -132,7 +133,14 @@ private fun NavGraphBuilder.homeDestinations(navController: NavHostController) {
     }
 
     composable<Settings> {
-        SettingsRoute(onBack = { navController.popBackStack() })
+        SettingsRoute(
+            onBack = { navController.popBackStack() },
+            onOpenDiagnostics = { navController.navigate(Diagnostics) },
+        )
+    }
+
+    composable<Diagnostics> {
+        DiagnosticsRoute(onBack = { navController.popBackStack() })
     }
 
     composable<WorkoutsHome> {

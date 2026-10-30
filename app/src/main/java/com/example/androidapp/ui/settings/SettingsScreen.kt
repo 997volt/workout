@@ -15,6 +15,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -84,6 +85,7 @@ private const val CHOICES_PER_ROW = 5
 @Composable
 fun SettingsRoute(
     onBack: () -> Unit,
+    onOpenDiagnostics: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel(),
     transferViewModel: DataTransferViewModel = hiltViewModel(),
@@ -114,6 +116,7 @@ fun SettingsRoute(
         onChooseBackupFolder = chooseBackupFolder,
         onExportData = transferActions.export,
         onImportData = transferActions.import,
+        onOpenDiagnostics = onOpenDiagnostics,
         onClearData = {
             scope.launch {
                 when (val outcome = transferViewModel.clearEverything()) {
@@ -146,6 +149,7 @@ fun SettingsScreen(
     onExportData: () -> Unit,
     onImportData: () -> Unit,
     onClearData: () -> Unit,
+    onOpenDiagnostics: () -> Unit,
     onDismissMessage: () -> Unit,
     modifier: Modifier = Modifier,
     message: String? = null,
@@ -195,6 +199,7 @@ fun SettingsScreen(
             onExportData = onExportData,
             onImportData = onImportData,
             onClearData = { confirmingClear = true },
+            onOpenDiagnostics = onOpenDiagnostics,
             modifier = Modifier.padding(innerPadding),
         )
     }
@@ -221,6 +226,7 @@ private fun SettingsBody(
     onExportData: () -> Unit,
     onImportData: () -> Unit,
     onClearData: () -> Unit,
+    onOpenDiagnostics: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -254,6 +260,8 @@ private fun SettingsBody(
             onSetSchedule = onSetBackupSchedule,
             onChooseFolder = onChooseBackupFolder,
         )
+        // Support sits above Data so the one irreversible action keeps the screen's last slot (N43).
+        SupportSection(onOpenDiagnostics = onOpenDiagnostics)
         DataSection(
             onExport = onExportData,
             onImport = onImportData,
@@ -290,6 +298,29 @@ private fun ClearConfirmation(
         onConfirm = onConfirm,
         onDismiss = onDismiss,
     )
+}
+
+/**
+ * The way to the records a local-only app keeps instead of a crash reporter (ROADMAP N244).
+ */
+@Composable
+private fun SupportSection(
+    onOpenDiagnostics: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier) {
+        SectionHeader(text = stringResource(R.string.settings_support_title))
+        AppCard {
+            AppRow(
+                headline = stringResource(R.string.settings_diagnostics),
+                supporting = stringResource(R.string.settings_diagnostics_hint),
+                leading = { IconTile(icon = Icons.Filled.Info, accent = TileAccent.Sky) },
+                onClick = onOpenDiagnostics,
+                onClickLabel = stringResource(R.string.settings_diagnostics_open),
+                testTag = TestTags.SETTINGS_DIAGNOSTICS,
+            )
+        }
+    }
 }
 
 /**

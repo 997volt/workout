@@ -47,6 +47,14 @@ data class Statistics(val exerciseId: String? = null)
 data object Settings
 
 /**
+ * Diagnostics: the last crash and the last failed housekeeping pass (ROADMAP N244).
+ *
+ * Reached from Settings → Support rather than a sixth tab: it is about this device's records, not training.
+ */
+@Serializable
+data object Diagnostics
+
+/**
  * Body measurements (ROADMAP N32).
  *
  * [openDaily] is the home row's shortcut (N114): it opens the screen with the **daily** form already up,

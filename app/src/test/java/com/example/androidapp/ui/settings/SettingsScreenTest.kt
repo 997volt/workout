@@ -15,11 +15,11 @@ import com.example.androidapp.domain.model.BackupSchedule
 import com.example.androidapp.domain.model.BackupSettings
 import com.example.androidapp.domain.model.ProgressionMode
 import com.example.androidapp.ui.components.TestTags
-import java.time.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.time.Instant
 
 /**
  * The settings screen (ROADMAP B23, N43).
@@ -39,6 +39,7 @@ class SettingsScreenTest {
     private var exported = 0
     private var imported = 0
     private var cleared = 0
+    private var diagnosticsOpened = 0
     private val restTimerWrites = mutableListOf<Boolean>()
     private val progressionWrites = mutableListOf<ProgressionMode>()
     private val unitWrites = mutableListOf<WeightUnit>()
@@ -61,12 +62,22 @@ class SettingsScreenTest {
                 onExportData = { exported++ },
                 onImportData = { imported++ },
                 onClearData = { cleared++ },
+                onOpenDiagnostics = { diagnosticsOpened++ },
                 message = message,
                 onSetRestCue = { _ -> },
                 onSetKeepScreenOn = { _ -> },
                 onDismissMessage = {},
             )
         }
+    }
+
+    @Test
+    fun theDiagnosticsRow_opensTheScreen() {
+        show(SettingsUiState())
+
+        composeTestRule.onNodeWithTag(TestTags.SETTINGS_DIAGNOSTICS).performScrollTo().performClick()
+
+        assertEquals(1, diagnosticsOpened)
     }
 
     @Test
