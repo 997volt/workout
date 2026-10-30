@@ -91,7 +91,7 @@ class ExerciseLibraryViewModelTest {
         advanceUntilIdle()
 
         val state = viewModel.uiState.value
-        assertTrue("should report an empty result, not a spinner", state.isEmpty)
+        assertTrue("should report an empty result, not a spinner", state.drawnRows().isEmpty())
         assertFalse(state.isLoading)
     }
 
@@ -240,7 +240,7 @@ class ExerciseLibraryViewModelTest {
         advanceUntilIdle()
 
         assertTrue("nothing exists at all", viewModel.uiState.value.libraryIsEmpty)
-        assertTrue(viewModel.uiState.value.isEmpty)
+        assertTrue(viewModel.uiState.value.drawnRows().isEmpty())
     }
 
     @Test
@@ -250,7 +250,7 @@ class ExerciseLibraryViewModelTest {
         viewModel.onQueryChange("zzz")
         advanceUntilIdle()
 
-        assertTrue("the search found nothing", viewModel.uiState.value.isEmpty)
+        assertTrue("the search found nothing", viewModel.uiState.value.drawnRows().isEmpty())
         assertFalse("but the library is not empty", viewModel.uiState.value.libraryIsEmpty)
     }
 
@@ -344,6 +344,20 @@ class ExerciseLibraryViewModelTest {
         assertNotNull("the failure is said", viewModel.uiState.value.writeError)
         assertTrue("and the movement arrived", viewModel.uiState.value.exercises.any { it.id == "custom-new" })
     }
+
+    /**
+     * What the screen draws, from the state's own inputs (B311).
+     *
+     * Emptiness is the list's answer, not a second derivation: this mirrors the pure function the body calls,
+     * so a filter that forgot a timestamp cannot claim there is something to draw.
+     */
+    private fun ExerciseLibraryUiState.drawnRows() = libraryRows(
+        exercises = exercises,
+        query = query,
+        filter = filter,
+        lastTrained = lastTrained,
+        notTrainedSince = notTrainedSince,
+    )
 
     private fun viewModelFor(vararg exercises: Exercise) = ExerciseLibraryViewModel(
         exerciseRepository = FakeRepository(exercises.toList()),

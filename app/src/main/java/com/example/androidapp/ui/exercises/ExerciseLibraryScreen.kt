@@ -193,7 +193,9 @@ internal fun LibraryBody(
                 modifier = Modifier.testTag(TestTags.LIBRARY_READ_ERROR),
             )
 
-            state.isEmpty -> EmptyState(
+            // The list the body drew, not a second derivation from part of the state (B311): under *Not trained*
+            // a derivation that forgot the timestamps called every movement a match and drew a blank page.
+            rows.isEmpty() -> EmptyState(
                 query = state.query,
                 libraryIsEmpty = state.libraryIsEmpty,
                 // One tap from "no exercises match front squat" to making it (N232).

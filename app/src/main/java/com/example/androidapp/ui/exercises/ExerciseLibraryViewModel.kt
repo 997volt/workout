@@ -10,7 +10,6 @@ import com.example.androidapp.domain.LibrarySort
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.getOrNull
 import com.example.androidapp.domain.libraryFilterCounts
-import com.example.androidapp.domain.libraryRows
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.repository.ExerciseRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -96,16 +95,7 @@ data class ExerciseLibraryUiState(
      * clock the screen reads.
      */
     val notTrainedSince: Instant = Instant.EPOCH,
-) {
-    /**
-     * Nothing to show — the list is empty, whether because the library is or because the search missed.
-     *
-     * **Which of the two it is** is [libraryIsEmpty]'s answer, and the screen picks its copy from that;
-     * asking it here too would be a second place for one fact to be read.
-     */
-    val isEmpty: Boolean
-        get() = !isLoading && libraryRows(exercises, query, filter = filter).isEmpty()
-}
+)
 
 /**
  * Holds the library's search state, the filtered list, and whether a workout is
