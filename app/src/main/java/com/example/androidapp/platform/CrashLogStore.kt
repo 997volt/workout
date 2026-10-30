@@ -1,8 +1,10 @@
 package com.example.androidapp.platform
 
-import java.io.File
+import android.content.Context
+import android.os.Build
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import java.io.File
 
 /**
  * One recorded crash (ROADMAP F11).
@@ -47,7 +49,10 @@ data class CrashMetadata(
  */
 class CrashLogStore(private val directory: File) {
 
-    private val json = Json { prettyPrint = true; ignoreUnknownKeys = true }
+    private val json = Json {
+        prettyPrint = true
+        ignoreUnknownKeys = true
+    }
 
     /** Best-effort: a recorder that throws while recording is worse than none. */
     fun record(log: CrashLog): Boolean = runCatching {
@@ -75,4 +80,18 @@ class CrashLogStore(private val directory: File) {
         directory.listFiles()?.forEach { it.delete() }
         true
     }.getOrDefault(false)
+}
+
+/** The device and build facts a crash -- or a repair that failed -- is recorded with. */
+internal fun androidCrashMetadata(context: Context): CrashMetadata {
+    val info = runCatching { context.packageManager.getPackageInfo(context.packageName, 0) }.getOrNull()
+
+    @Suppress("DEPRECATION") // versionCode: fine on minSdk 26, longVersionCode is 28+
+    val code = info?.versionCode ?: 0
+    return CrashMetadata(
+        appVersion = info?.versionName ?: "unknown",
+        versionCode = code,
+        androidVersion = Build.VERSION.RELEASE ?: "unknown",
+        deviceModel = Build.MODEL ?: "unknown",
+    )
 }

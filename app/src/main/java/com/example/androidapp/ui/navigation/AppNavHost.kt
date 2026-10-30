@@ -18,7 +18,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import com.example.androidapp.ui.HousekeepingViewModel
 import com.example.androidapp.ui.adherence.AdherenceRoute
+import com.example.androidapp.ui.components.HousekeepingAlert
 import com.example.androidapp.ui.components.LocalWeightUnit
 import com.example.androidapp.ui.exercises.ExerciseDetailRoute
 import com.example.androidapp.ui.exercises.ExerciseLibraryRoute
@@ -66,6 +68,18 @@ fun AppNavHost(
     // The unit every weight is read in, provided once here rather than threaded through every
     // screen between this and the field that shows a number (ROADMAP N64).
     val weightUnit by hiltViewModel<WeightUnitViewModel>().weightUnit.collectAsStateWithLifecycle()
+
+    // A housekeeping pass that could not finish is said once, wherever the lifter is (B324): the state is
+    // produced by the database's open, before any screen has a ViewModel, and the retry is the same pass.
+    val housekeeping = hiltViewModel<HousekeepingViewModel>()
+    val repairFailure by housekeeping.failure.collectAsStateWithLifecycle()
+    val repairing by housekeeping.retrying.collectAsStateWithLifecycle()
+    HousekeepingAlert(
+        failure = repairFailure,
+        retrying = repairing,
+        onRetry = housekeeping::retry,
+        onDismiss = housekeeping::dismiss,
+    )
 
     val showBar = showsTabBar(destination?.route)
     Scaffold(

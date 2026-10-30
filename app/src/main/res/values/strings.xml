@@ -926,6 +926,30 @@
     <string name="settings_keep_screen_on_hint">While a workout is open, so the rest timer stays visible.</string>
     <!-- The app's data (ROADMAP N43): export, import and delete everything, moved here from the
          home overflow, which is where the app's database is what the screen is about. -->
+    <string name="settings_support_title">Support</string>
+    <string name="settings_diagnostics">Diagnostics</string>
+    <string name="settings_diagnostics_hint">Crashes and repairs, ready to copy.</string>
+    <string name="settings_diagnostics_open">Open diagnostics</string>
+
+    <string name="housekeeping_failed_title">Some housekeeping didn\'t finish</string>
+    <string name="housekeeping_failed_text">Your workouts and measurements are untouched. The app can try the repair again now, or you can read the details in Settings → Support → Diagnostics.</string>
+    <string name="housekeeping_retry">Try again</string>
+    <string name="housekeeping_retrying">Trying…</string>
+    <string name="housekeeping_later">Later</string>
+
+    <string name="diagnostics_title">Diagnostics</string>
+    <string name="diagnostics_back">Back</string>
+    <string name="diagnostics_version">Workout %1$s (versionCode %2$d)</string>
+    <string name="diagnostics_crash_title">Last crash</string>
+    <string name="diagnostics_crash_none">No crash recorded.</string>
+    <string name="diagnostics_repair_title">Housekeeping</string>
+    <string name="diagnostics_repair_none">The last housekeeping pass finished.</string>
+    <string name="diagnostics_repair_when">%1$s · %2$s</string>
+    <string name="diagnostics_copy">Copy details</string>
+    <string name="diagnostics_retry">Try housekeeping again</string>
+    <string name="diagnostics_retrying">Trying…</string>
+    <string name="diagnostics_repair_reason">The pass that settles an older library stopped, so some rows may still be in the old shape. Your workouts are unchanged; a retry is safe.</string>
+
     <string name="settings_data_title">Data</string>
     <string name="settings_data_export_hint">Write a backup file, choosing where it goes.</string>
     <string name="settings_data_import_hint">Merge a backup into this device. Nothing is overwritten.</string>

@@ -4,10 +4,9 @@ import android.content.Context
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.example.androidapp.data.Housekeeping
 import com.example.androidapp.data.local.ALL_MIGRATIONS
 import com.example.androidapp.data.local.WorkoutDatabase
-import com.example.androidapp.data.local.seedMissingExercises
-import com.example.androidapp.data.moveLegacyGoals
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.nowEpochMillis
 import com.example.androidapp.platform.CrashLogStore
@@ -33,6 +32,7 @@ object DatabaseModule {
     fun provideDatabase(
         @ApplicationContext context: Context,
         timeSource: TimeSource,
+        housekeeping: Housekeeping,
     ): WorkoutDatabase =
         Room.databaseBuilder(context, WorkoutDatabase::class.java, WorkoutDatabase.NAME)
             // The chain itself lives in ALL_MIGRATIONS, one list the tests can inspect; what each step
@@ -57,11 +57,13 @@ object DatabaseModule {
                      */
                     override fun onOpen(db: SupportSQLiteDatabase) {
                         super.onOpen(db)
-                        seedMissingExercises(db, timeSource.nowEpochMillis())
-                        // The same kind of one-time move, of the same "what is already on disk" (N137):
-                        // the goals a lifter had live in settings, and the rows that keep their past are
-                        // here. It writes an unknown start rather than inventing the upgrade's own moment.
-                        moveLegacyGoals(db, context, timeSource.nowEpochMillis())
+                        // **Housekeeping, not the lifter's data** (B324): the seed's repairs and the goals
+                        // move settle shapes an older build left. A throw used to leave Room and kill the
+                        // process on the first screen after an update; the pass is caught, recorded and
+                        // said once, and the store is left as the seed's own transaction left it.
+                        val at = timeSource.nowEpochMillis()
+                        runCatching { housekeeping.runRepairs(db, at) }
+                            .onFailure { housekeeping.report(it, at) }
                     }
                 },
             )

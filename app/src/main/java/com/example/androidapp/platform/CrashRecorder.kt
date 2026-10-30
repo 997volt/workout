@@ -72,7 +72,7 @@ class CrashRecorder(
  * The stack trace is also the only place these types and frames appear; the message
  * is not needed to locate the fault.
  */
-private fun Throwable.framesWithTypes(): String = buildString {
+internal fun Throwable.framesWithTypes(): String = buildString {
     var current: Throwable? = this@framesWithTypes
     var depth = 0
     while (current != null && depth < MAX_CAUSE_DEPTH) {

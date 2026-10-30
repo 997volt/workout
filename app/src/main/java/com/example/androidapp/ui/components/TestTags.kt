@@ -636,6 +636,19 @@ object TestTags {
     /** The row that opens the typed delete-everything confirmation (ROADMAP N43). */
     const val SETTINGS_CLEAR_DATA = "settings_clear_data"
 
+    /** The Diagnostics screen (B324, N244): its way in, the two records and the two actions. */
+    const val SETTINGS_DIAGNOSTICS = "settings_diagnostics"
+    const val DIAGNOSTICS_SCREEN = "diagnostics_screen"
+    const val DIAGNOSTICS_CRASH = "diagnostics_crash"
+    const val DIAGNOSTICS_REPAIR = "diagnostics_repair"
+    const val DIAGNOSTICS_COPY = "diagnostics_copy"
+    const val DIAGNOSTICS_RETRY = "diagnostics_retry"
+
+    /** The one-time notice a failed housekeeping pass raises (B324). */
+    const val HOUSEKEEPING_ALERT = "housekeeping_alert"
+    const val HOUSEKEEPING_RETRY = "housekeeping_retry"
+    const val HOUSEKEEPING_LATER = "housekeeping_later"
+
     /** The backup that writes itself (ROADMAP N218): the switch, one chip per period, the folder and the date. */
     const val SETTINGS_BACKUP_SWITCH = "settings_backup_switch"
     const val SETTINGS_BACKUP_FOLDER = "settings_backup_folder"

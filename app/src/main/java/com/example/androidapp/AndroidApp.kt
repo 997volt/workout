@@ -2,12 +2,11 @@ package com.example.androidapp
 
 import android.app.Application
 import android.app.NotificationManager
-import android.os.Build
 import android.util.Log
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.platform.CrashLogStore
-import com.example.androidapp.platform.CrashMetadata
 import com.example.androidapp.platform.CrashRecorder
+import com.example.androidapp.platform.androidCrashMetadata
 import dagger.hilt.android.HiltAndroidApp
 import java.io.File
 import java.time.Instant
@@ -43,8 +42,6 @@ class AndroidApp : Application() {
             ?.deleteNotificationChannel(REST_ALERT_CHANNEL_ID)
     }
 
-
-
     /**
      * Records uncaught exceptions to a file in app-private storage (ROADMAP F11).
      *
@@ -56,21 +53,10 @@ class AndroidApp : Application() {
      * same value Android compares when deciding whether an update is installable.
      */
     private fun installCrashRecorder() {
-        val info = runCatching { packageManager.getPackageInfo(packageName, 0) }.getOrNull()
-
         CrashRecorder(
             store = CrashLogStore(File(filesDir, CRASH_DIR)),
             timeSource = TimeSource { Instant.now() },
-            metadata = {
-                @Suppress("DEPRECATION") // versionCode: fine on minSdk 26, longVersionCode is 28+
-                val code = info?.versionCode ?: 0
-                CrashMetadata(
-                    appVersion = info?.versionName ?: "unknown",
-                    versionCode = code,
-                    androidVersion = Build.VERSION.RELEASE ?: "unknown",
-                    deviceModel = Build.MODEL ?: "unknown",
-                )
-            },
+            metadata = { androidCrashMetadata(this) },
         ).install()
 
         Log.i(TAG, "crash recorder installed")
