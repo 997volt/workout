@@ -138,10 +138,10 @@ class ExerciseSeederTest {
     }
 
     @Test
-    fun aDeviceFromBeforeTheFlags_isToldWhatTheSeedDeclares_andKeepsItsOwnAnswer() = runTest {
+    fun aDeviceFromBeforeTheFlags_isRaised_andALiftersRaiseIsKept() = runTest {
         // The upgrade path (B293). A row already on the device says "not bodyweight" because no seeder ever
-        // wrote the column, so the repair raises it to what the seed declares — and it only ever raises, so a
-        // movement the lifter marked themselves is left exactly as they left it.
+        // wrote the column, and it still carries the never-edited marker, so the repair raises it to what the
+        // seed declares — and it only ever raises, so a movement the lifter marked themselves keeps it.
         val database = databaseWithSeeding()
         try {
             val dao = database.exerciseDao()
@@ -155,9 +155,56 @@ class ExerciseSeederTest {
 
             assertEquals("the seed's own truth is restored", true, dao.findById("pull-up")?.isBodyweight)
             assertEquals(
-                "and a flag the lifter set is never lowered",
+                "and a raise the lifter made is never lowered",
                 true,
                 dao.findById("barbell-bench-press")?.isBodyweight,
+            )
+        } finally {
+            database.close()
+        }
+    }
+
+    @Test
+    fun aFlagTheLifterTurnedOff_isNotRaisedAgain() = runTest {
+        // B299: an edit bumps updatedAt, the row's own record that the seed is no longer its only writer. The
+        // repair used to re-assert the seed on every open, so a movement the lifter unmarked came back.
+        val database = databaseWithSeeding()
+        try {
+            val dao = database.exerciseDao()
+            val raw = database.openHelper.writableDatabase
+            raw.execSQL(
+                "UPDATE exercises SET isBodyweight = 0, updatedAt = createdAt + 1 WHERE id = 'pull-up'",
+            )
+
+            seedMissingExercises(raw, SEEDED_AT + 1_000L)
+
+            assertEquals(
+                "the lifter's answer is not the seed's to overwrite",
+                false,
+                dao.findById("pull-up")?.isBodyweight,
+            )
+        } finally {
+            database.close()
+        }
+    }
+
+    @Test
+    fun aMovementTheLifterUnfiled_isNotFiledAgain() = runTest {
+        // B299: the filing repair has the same shape. A row the lifter put at the top level stays there.
+        val database = databaseWithSeeding()
+        try {
+            val dao = database.exerciseDao()
+            val raw = database.openHelper.writableDatabase
+            raw.execSQL(
+                "UPDATE exercises SET parentId = NULL, updatedAt = createdAt + 1 " +
+                    "WHERE id = 'reverse-hyperextension'",
+            )
+
+            seedMissingExercises(raw, SEEDED_AT + 1_000L)
+
+            assertNull(
+                "the lifter's unfile is not the seed's to undo",
+                dao.findById("reverse-hyperextension")?.parentId,
             )
         } finally {
             database.close()

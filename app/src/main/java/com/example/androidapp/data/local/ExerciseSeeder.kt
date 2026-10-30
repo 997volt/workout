@@ -35,7 +35,7 @@ internal fun seedMissingExercises(db: SupportSQLiteDatabase, seededAt: Long) {
         // **The repair runs first, so the seed can use the ids it frees** (B148, B292): a database written by
         // an older seed can hold a row under an id the seed now claims for a *movement*, and `INSERT OR IGNORE`
         // would keep it there for ever — so the impostor is resolved before the inserts, in this transaction.
-        releaseSeededMovementIds(db, seededAt)
+        releaseSeededMovementIds(db)
         insertCategories(db, converters, seededAt)
         insertMovements(db, converters, seededAt)
         writeBehindTheInsert(db, seededAt)
@@ -131,7 +131,7 @@ private fun insertMovements(db: SupportSQLiteDatabase, converters: Converters, s
  * into has just been inserted.
  */
 private fun writeBehindTheInsert(db: SupportSQLiteDatabase, seededAt: Long) {
-    fileMovementsTheSeedNowFiles(db, seededAt)
+    fileMovementsTheSeedNowFiles(db)
     correctSeededTaxonomy(db, seededAt)
     // Only ever raised, so a lifter's own answer survives.
     SeedExercises.all.forEach { exercise ->
@@ -164,7 +164,7 @@ private fun writeBehindTheInsert(db: SupportSQLiteDatabase, seededAt: Long) {
  * under, which is what a family is for (N95), and the row is **deleted** rather than soft-deleted — a
  * soft-deleted row keeps its id and would block the movement exactly as it does now.
  */
-internal fun releaseSeededMovementIds(db: SupportSQLiteDatabase, now: Long) {
+internal fun releaseSeededMovementIds(db: SupportSQLiteDatabase) {
     val claimed = SeedExercises.all.associateBy { it.id }
     val impostors = mutableListOf<String>()
     db.query(
@@ -183,8 +183,9 @@ internal fun releaseSeededMovementIds(db: SupportSQLiteDatabase, now: Long) {
             // The impostor's children are the rows still filed under the id it stole. The guard that used to
             // ride here (`parentId <> ?`, bound to the same id) asked for a row that is its own parent, so it
             // matched nothing and the children were left under an id that then named the movement (B296).
-            "UPDATE exercises SET parentId = ?, updatedAt = ? WHERE parentId = ?",
-            arrayOf<Any?>(SeedExercises.parentOf[id], now, id),
+            // Nothing here bumps `updatedAt`: a seed repair must not look like a lifter's edit (B299).
+            "UPDATE exercises SET parentId = ? WHERE parentId = ?",
+            arrayOf<Any?>(SeedExercises.parentOf[id], id),
         )
         db.execSQL(
             "DELETE FROM exercises WHERE id = ? AND rowKind <> ?",
@@ -194,21 +195,30 @@ internal fun releaseSeededMovementIds(db: SupportSQLiteDatabase, now: Long) {
 }
 
 /**
- * Fills in the two flags an older seeder never wrote (B293).
+ * Files a movement the seed now files, on a row that predates the link (N229, B299).
  *
- * The two trailing comparisons are what makes the repair one-way: a row is only touched where its own value is
- * below the seed's, so a flag a lifter set themselves is never cleared, and a row that already says what the
- * seed says is not rewritten on every open. The `name` match is the same guard the id repair uses — a row the
- * lifter renamed is theirs.
+ * The `parentId IS NULL` and `name` guards make it safe to run on every open — a movement a lifter filed
+ * themselves, or renamed, is not the seed's to move — and `createdAt = updatedAt` is the row's own record
+ * that the seed is its only writer: an edit bumps `updatedAt`, so a movement a lifter **unfiled** is left
+ * where they put it rather than re-filed on the next open. Nothing here bumps `updatedAt` either, or the
+ * repair would consume the very marker it reads.
  */
-/** Files a movement the seed now files, on a row that predates the link (N229). */
 internal const val UPDATE_SEEDED_FAMILY =
-    "UPDATE exercises SET parentId = ?, updatedAt = ? " +
-        "WHERE id = ? AND name = ? AND rowKind = ? AND parentId IS NULL"
+    "UPDATE exercises SET parentId = ? " +
+        "WHERE id = ? AND name = ? AND rowKind = ? AND parentId IS NULL AND createdAt = updatedAt"
 
+/**
+ * Fills in the two flags an older seeder never wrote (B293, B299).
+ *
+ * The two `<` comparisons make the repair one-way: a row is only touched where its own value is below the
+ * seed's, so a raise the lifter made is never lowered. `createdAt = updatedAt` keeps the other direction: an
+ * edit bumps `updatedAt`, so a flag the lifter turned **off** is theirs and is not raised again on the next
+ * open. Between the two guards only a row the seed itself last wrote is backfilled.
+ */
 internal const val UPDATE_SEEDED_FLAGS =
     "UPDATE exercises SET isBodyweight = ?, isTimed = ? " +
-        "WHERE id = ? AND name = ? AND rowKind = ? AND (isBodyweight < ? OR isTimed < ?)"
+        "WHERE id = ? AND name = ? AND rowKind = ? AND (isBodyweight < ? OR isTimed < ?) " +
+        "AND createdAt = updatedAt"
 
 /**
  * The families whose taxonomy a later seed corrected, with the list it shipped before (N240).
@@ -312,14 +322,13 @@ internal const val FILL_SEEDED_TAXONOMY =
  * Files the movements the seed now files, on a device whose rows predate the filing (N229).
  *
  * `INSERT OR IGNORE` never updates a row, so a movement that arrived unfiled keeps its null family for ever:
- * the seed's own copy of it is the same row, and nothing wrote the link at the time. The `parentId IS NULL`
- * and `name` guards are what make this safe to run on every open — a movement a lifter filed themselves, or
- * renamed, is not the seed's to move.
+ * the seed's own copy of it is the same row, and nothing wrote the link at the time. [UPDATE_SEEDED_FAMILY]
+ * carries the guards; this is only the loop over what the seed files.
  */
-private fun fileMovementsTheSeedNowFiles(db: SupportSQLiteDatabase, now: Long) {
+private fun fileMovementsTheSeedNowFiles(db: SupportSQLiteDatabase) {
     SeedExercises.all.forEach { exercise ->
         val family = SeedExercises.parentOf[exercise.id] ?: return@forEach
-        db.execSQL(UPDATE_SEEDED_FAMILY, arrayOf<Any?>(family, now, exercise.id, exercise.name, RowKind.MOVEMENT.name))
+        db.execSQL(UPDATE_SEEDED_FAMILY, arrayOf<Any?>(family, exercise.id, exercise.name, RowKind.MOVEMENT.name))
     }
 }
 
