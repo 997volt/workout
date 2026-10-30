@@ -21,7 +21,7 @@ import java.io.File
  * has to be followed by a regeneration, and a failure that prints no diff would leave the next person
  * editing 126 rows by hand. The fix is a copy:
  *
- *     cp app/build/seed-catalog-expected.js docs/seed-catalog.js
+ *     cp build/seed-catalog-expected.js docs/seed-catalog.js
  */
 class SeedCatalogTest {
 

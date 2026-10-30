@@ -2,6 +2,7 @@ package com.example.androidapp.ui.exercises
 
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
+import com.example.androidapp.domain.LibraryFilter
 import com.example.androidapp.domain.LibrarySort
 import com.example.androidapp.domain.libraryRows
 import com.example.androidapp.domain.model.Equipment
@@ -117,6 +118,11 @@ class ExerciseLibraryViewModelTest {
 
     private class FakeRepository(exercises: List<Exercise>) : ExerciseRepository {
         private val state = MutableStateFlow(exercises)
+
+        /** Replaces the library after a subscriber is listening, for a group that loses its last member (B319). */
+        fun emit(exercises: List<Exercise>) {
+            state.value = exercises
+        }
 
         /** Lets a test drive the B4 path: a read that fails rather than throws. */
         var failReads = false
@@ -252,6 +258,39 @@ class ExerciseLibraryViewModelTest {
 
         assertTrue("the search found nothing", viewModel.uiState.value.drawnRows().isEmpty())
         assertFalse("but the library is not empty", viewModel.uiState.value.libraryIsEmpty)
+    }
+
+    @Test
+    fun aChosenGroupThatEmpties_fallsBackToAll() = runTest(dispatcher) {
+        // B319: the rule the state documents — an empty group cannot stay the chosen chip — had no test.
+        val bodyweight = Exercise(
+            id = "push-up",
+            name = "Push-Up",
+            primaryMuscle = MuscleGroup.CHEST,
+            equipment = Equipment.BODYWEIGHT,
+            movementPattern = MovementPattern.PRESS,
+            isBodyweight = true,
+        )
+        val repository = FakeRepository(listOf(bodyweight))
+        val viewModel = ExerciseLibraryViewModel(
+            exerciseRepository = repository,
+            timeSource = { Instant.EPOCH },
+        )
+        observe(viewModel)
+        advanceUntilIdle()
+        viewModel.onFilterChange(LibraryFilter.BODYWEIGHT)
+        advanceUntilIdle()
+        assertEquals(LibraryFilter.BODYWEIGHT, viewModel.uiState.value.filter)
+        assertEquals(1, viewModel.uiState.value.filterCounts[LibraryFilter.BODYWEIGHT])
+
+        repository.emit(emptyList())
+        advanceUntilIdle()
+
+        assertEquals(
+            "a group with nothing in it cannot stay chosen",
+            LibraryFilter.ALL,
+            viewModel.uiState.value.filter,
+        )
     }
 
     @Test

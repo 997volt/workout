@@ -119,6 +119,19 @@ class MovementMergeTest {
             MOVEMENT_MERGE_RULINGS.map { it.away }.distinct().size,
         )
         assertTrue(MOVEMENT_MERGE_RULINGS.none { it.away == it.into })
+
+        // B319: every survivor is a movement the seed still ships, or the ruling silently never fires; and no
+        // source is a seeded name, or the seeded guard would skip the line it was written for.
+        val seeded = SeedExercises.all.map { it.name }.toSet()
+        assertEquals(
+            "every survivor is still seeded",
+            MOVEMENT_MERGE_RULINGS.map { it.into }.filter { it in seeded },
+            MOVEMENT_MERGE_RULINGS.map { it.into },
+        )
+        assertTrue(
+            "no ruled source is a seeded name",
+            MOVEMENT_MERGE_RULINGS.none { it.away in seeded },
+        )
     }
 
     private fun candidate(

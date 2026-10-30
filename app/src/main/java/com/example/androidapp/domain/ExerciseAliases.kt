@@ -26,12 +26,7 @@ internal object ExerciseAliases {
         "dumbbell-bench-press" to listOf("db bench"),
         "overhead-press" to listOf("ohp", "military press"),
         "romanian-deadlift" to listOf("rdl"),
-        "close-grip-bench-press" to listOf("cgbp"),
-        "bulgarian-split-squat" to listOf("bss"),
         "barbell-row" to listOf("bent over row"),
-        "seated-cable-row" to listOf("cable row"),
-        "hanging-leg-raise" to listOf("hlr"),
-        "turkish-get-up" to listOf("tgu"),
         "farmers-carry" to listOf("farmers walk"),
     )
 

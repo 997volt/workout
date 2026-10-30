@@ -121,6 +121,26 @@ class ExerciseSearchTest {
     }
 
     @Test
+    fun anInitialismOrASubstringTheNameProduces_needsNoAlias() {
+        // B319: these four were in the alias table although the initials rule or the name already answers them.
+        // The table is for what the name cannot say.
+        val bulgarian = exercise(
+            "bulgarian-split-squat",
+            "Bulgarian Split Squat",
+            MuscleGroup.QUADS,
+            Equipment.BARBELL,
+        )
+        val hanging = exercise("hanging-leg-raise", "Hanging Leg Raise", MuscleGroup.CORE, Equipment.BARBELL)
+        val turkish = exercise("turkish-get-up", "Turkish Get-Up", MuscleGroup.CORE, Equipment.BARBELL)
+        val seated = exercise("seated-cable-row", "Seated Cable Row", MuscleGroup.CORE, Equipment.BARBELL)
+
+        assertTrue(bulgarian.matches("bss"))
+        assertTrue(hanging.matches("hlr"))
+        assertTrue(turkish.matches("tgu"))
+        assertTrue(seated.matches("cable row"))
+    }
+
+    @Test
     fun initialsDoNotMatchALongerQuery() {
         // The initials rule is a prefix, never a wildcard: "bbps" is not an abbreviation of anything here, and
         // a search that guessed would be the fuzzy matching N224 refused.
