@@ -175,8 +175,11 @@ class RoomExerciseRepository @Inject constructor(
             ?: throw NotFoundException("exercise ${exercise.id}")
         // A rename is the other way to mint a twin, so it answers the same rule (B298) — after the row is known
         // to exist, so an edit of a missing row is NotFound rather than a name refusal about a row that is
-        // not there.
-        requireFreeName(trimmed, exercise.rowKind, exceptId = exercise.id)
+        // not there. **An edit that keeps the name is not a rename**: a library can already hold two rows
+        // under one name (the duplicate N238 exists for), and the rule must not make either uneditable.
+        if (!trimmed.equals(stored.name, ignoreCase = true)) {
+            requireFreeName(trimmed, exercise.rowKind, exceptId = exercise.id)
+        }
 
         val updated = stored.copy(
             name = trimmed,

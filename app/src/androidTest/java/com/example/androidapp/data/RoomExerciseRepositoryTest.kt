@@ -118,6 +118,29 @@ class RoomExerciseRepositoryTest {
     }
 
     @Test
+    fun editingAnExistingDuplicate_keepsItsName_andIsAllowed() = runTest {
+        // B298's follow-up: a library can already hold two rows under one name — a document's movement the
+        // merge did not take away — and the duplicate-name rule must not make either row uneditable.
+        created("Sled Push")
+        val second = created("Sled Drag")
+        database.exerciseDao().update(
+            database.exerciseDao().findById(second.id)!!.copy(name = "Sled Push"),
+        )
+
+        val duplicate = (repository.getExercise(second.id) as DataResult.Success).data!!
+        val edit = duplicate.copy(techniqueNote = "Brace, then push")
+        assertTrue(
+            "an edit that keeps the name is not a rename",
+            repository.updateExercise(edit) is DataResult.Success,
+        )
+        assertEquals("Brace, then push", stored(second.id).techniqueNote)
+
+        val third = created("Sled Pull")
+        val refused = repository.updateExercise(third.copy(name = "Sled Push"))
+        assertTrue("a real rename onto a held name is still refused", refused is DataResult.Failure)
+    }
+
+    @Test
     fun updateExercise_fillsInTheTaxonomy_keepingTheRowsIdentity() = runTest {
         val created = created("Sled Push")
         now = now.plusSeconds(60)
