@@ -701,6 +701,68 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
+    fun aHoldPlan_prefillsTheSecondsStep_andDoneKeepsTheHoldItRaises() = runTest(dispatcher) {
+        // ROADMAP N242/B295: the seconds direction had no control and the write carried no duration, so the
+        // step could be neither taken nor kept. Apply-at-Done pre-picks it, and Done writes the hold raised.
+        val repository = FakeWorkoutRepository().apply { isTimedForNextExercise = true }
+        val templates = FakeTemplateRepository(
+            planned = listOf(
+                plannedExercise(
+                    position = 0,
+                    targetRpeHalves = 8,
+                    sets = listOf(
+                        TemplateSet(
+                            id = "ts-0",
+                            templateExerciseId = "te-0",
+                            setIndex = 0,
+                            targetWeightGrams = 20_000L,
+                            targetDurationSeconds = 45,
+                        ),
+                    ),
+                ),
+            ),
+        )
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = templates,
+            settings = FakeSettingsRepository().apply { progressionMode.value = ProgressionMode.APPLY_AT_DONE },
+        )
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        val id = viewModel.uiState.value.exercises.single().id
+
+        viewModel.onLogSet(
+            id,
+            SetEdit(reps = 0, weightGrams = 20_000L, rpeHalves = 7, note = null, durationSeconds = 45),
+        )
+        settle()
+        viewModel.onFinishExercise(id)
+        settle()
+
+        val pending = viewModel.pendingProgression.value
+        assertNotNull("the hold earned a step", pending)
+        assertEquals(
+            "the row's own step is seconds",
+            ProgressionDirection.SECONDS,
+            pending!!.chosen.single().direction,
+        )
+        assertTrue("nothing is written before Done", templates.updates.isEmpty())
+
+        viewModel.onConfirmProgression()
+        settle()
+
+        val (setId, edit) = templates.updates.single()
+        assertEquals("ts-0", setId)
+        assertEquals("the hold grows by its own step", 60, edit.targetDurationSeconds)
+        assertEquals("the load the step did not name is kept", 20_000L, edit.targetWeightGrams)
+        assertNull("a hold names no reps", edit.targetRepsMin)
+        assertNull(edit.targetRepsMax)
+    }
+
+    @Test
     fun aMovementWithNoAnswer_followsTheAppSetting() = runTest(dispatcher) {
         // Null is "follow the app", which is what every row meant before a movement could answer (N235).
         val repository = FakeWorkoutRepository()

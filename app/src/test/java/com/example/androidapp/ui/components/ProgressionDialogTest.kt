@@ -281,6 +281,60 @@ class ProgressionDialogTest {
         composeTestRule.onNodeWithTag(TestTags.Progression.SHARED_MISS).assertDoesNotExist()
     }
 
+    @Test
+    fun aHoldOffer_isASecondsChip_andTheRowsStateTheHold() {
+        // ROADMAP N242/B295: the offer carried a seconds direction the dialog could not draw, and the
+        // plan and done lines dropped the hold — so a 45-second carry read as its load and "0 reps".
+        val planned = planSet("ts-0").copy(
+            targetRepsMin = null,
+            targetRepsMax = null,
+            targetDurationSeconds = 45,
+        )
+        val performed = done(reps = 0).copy(durationSeconds = 45)
+        val offer = ProgressionOffer(set = planned, seconds = ProgressionStep(45, 60))
+        show(question(row("ts-0", planned = planned, performed = performed, offer = offer)))
+
+        composeTestRule.onNodeWithTag(TestTags.Progression.plan("ts-0"))
+            .assertTextContains(text(R.string.set_hold_value, "0:45"), substring = true)
+        composeTestRule.onNodeWithTag(TestTags.Progression.done("ts-0"))
+            .assertTextContains(text(R.string.set_hold_value, "0:45"), substring = true)
+        composeTestRule.onAllNodesWithText(plural(R.plurals.progression_reps_value, 0), substring = true)
+            .assertCountEquals(0)
+
+        composeTestRule.onNodeWithTag(TestTags.Progression.seconds("ts-0"))
+            .assertIsDisplayed()
+            .assertTextContains(text(R.string.progression_choose_hold, "1:00"))
+            .performClick()
+
+        assertEquals("ts-0" to ProgressionDirection.SECONDS, toggled)
+    }
+
+    @Test
+    fun twoHolds_getOneBulkSecondsPick_andNoEveryPick() {
+        // A plan of holds has the bulk answer the reps and the load have (N74), in seconds (N242). *Every*
+        // stays away: every row offers the same direction, so the direction's own control answers it.
+        val planned = planSet("ts-0").copy(
+            targetRepsMin = null,
+            targetRepsMax = null,
+            targetDurationSeconds = 45,
+        )
+        val performed = done(reps = 0).copy(durationSeconds = 45)
+        val offer = ProgressionOffer(set = planned, seconds = ProgressionStep(45, 60))
+        show(
+            question(
+                row("ts-0", planned = planned, performed = performed, offer = offer),
+                row("ts-1", planned = planned.copy(setId = "ts-1"), performed = performed, offer = offer),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Progression.SECONDS_ALL)
+            .assertIsDisplayed()
+            .performClick()
+
+        assertEquals(ProgressionDirection.SECONDS, selectedAll)
+        composeTestRule.onNodeWithTag(TestTags.Progression.EVERY).assertDoesNotExist()
+    }
+
     private fun question(vararg sets: PendingProgression.PendingSet) = PendingProgression(
         sessionExerciseId = "se1",
         exerciseName = "Back Squat",

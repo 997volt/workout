@@ -290,6 +290,11 @@ internal fun TemplateSet.summary(
         weightLine(unit, rungLoad),
         dropValueLine(unit, holdsTheRunValue),
         repsLine(),
+        // A prescribed hold is the set's prescription, not a detail of it (N242): a 45-second carry that
+        // stated only its load read as a counted set with no reps.
+        targetDurationSeconds?.let {
+            stringResource(R.string.set_hold_value, DurationFormat.ofSeconds(it.toLong()))
+        },
         note,
     ).joinToString(" · ")
 }

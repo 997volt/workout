@@ -701,6 +701,8 @@
         <item quantity="one">Increase to %1$s %2$s, back to %3$d rep</item>
         <item quantity="other">Increase to %1$s %2$s, back to %3$d reps</item>
     </plurals>
+    <!-- A hold's step is seconds (N242), named as the value it would write like the other two. -->
+    <string name="progression_choose_hold">Hold for %1$s</string>
     <!-- The bulk picks, offered when two or more sets share a direction (N74). -->
     <plurals name="progression_all_load">
         <item quantity="one">Increase the load on %1$d set</item>
@@ -709,6 +711,10 @@
     <plurals name="progression_all_reps">
         <item quantity="one">Raise the reps on %1$d set</item>
         <item quantity="other">Raise the reps on all %1$d sets</item>
+    </plurals>
+    <plurals name="progression_all_holds">
+        <item quantity="one">Hold %1$d set longer</item>
+        <item quantity="other">Hold all %1$d sets longer</item>
     </plurals>
     <plurals name="progression_all_every">
         <item quantity="one">Take %1$d step as offered</item>
@@ -788,6 +794,8 @@
          (B245). The weight field is the *added* part, and the two must not be confused. -->
     <string name="set_summary_bodyweight">%1$s %2$s × %3$d · BW</string>
     <string name="set_summary_timed_bodyweight">%1$s %2$s · %3$s · BW</string>
+    <!-- A prescribed hold, as one part of a set's line: "1:30 hold" (ROADMAP N242). -->
+    <string name="set_hold_value">%1$s hold</string>
     <string name="set_duration_label">Hold (m:ss)</string>
     <string name="set_edit_title">Edit set</string>
     <!-- Tap action for a set row (P1.17): announces what tapping does. -->

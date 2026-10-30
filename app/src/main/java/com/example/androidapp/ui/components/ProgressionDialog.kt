@@ -148,11 +148,15 @@ private fun BulkChoices(
 ) {
     val loads = progression.offering(ProgressionDirection.LOAD)
     val reps = progression.offering(ProgressionDirection.REPS)
+    val holds = progression.offering(ProgressionDirection.SECONDS)
     val every = progression.offeringEvery()
     // The mixed plan is what the *every* control exists for: a plan whose sets share one direction is
-    // already answered by that direction's own control (P3.17).
-    val mixed = loads > 0 && reps > 0 && every >= 2
-    if (loads < 2 && reps < 2 && !mixed) return
+    // already answered by that direction's own control (P3.17). A plan that mixes holds and counted sets
+    // is mixed too — the directions are the three a set can offer.
+    val mixed = listOf(loads, reps, holds).count { it > 0 } >= 2 && every >= 2
+    // One control per direction that two or more sets share, or the mixed answer.
+    val anyBulk = loads >= 2 || reps >= 2 || holds >= 2
+    if (!anyBulk && !mixed) return
 
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         if (mixed) {
@@ -177,6 +181,14 @@ private fun BulkChoices(
                 modifier = Modifier.testTag(TestTags.Progression.REPS_ALL),
             ) {
                 Text(pluralStringResource(R.plurals.progression_all_reps, reps, reps))
+            }
+        }
+        if (holds >= 2) {
+            AppTextButton(
+                onClick = { onSelectAll(ProgressionDirection.SECONDS) },
+                modifier = Modifier.testTag(TestTags.Progression.SECONDS_ALL),
+            ) {
+                Text(pluralStringResource(R.plurals.progression_all_holds, holds, holds))
             }
         }
     }
@@ -219,7 +231,14 @@ private fun SetRow(
             Text(
                 text = stringResource(
                     R.string.progression_done,
-                    setLine(done.reps, done.weightGrams, done.assistanceGrams, done.rpeHalves, unit),
+                    setLine(
+                        reps = done.reps,
+                        weightGrams = done.weightGrams,
+                        assistanceGrams = done.assistanceGrams,
+                        rpeHalves = done.rpeHalves,
+                        unit = unit,
+                        durationSeconds = done.durationSeconds,
+                    ),
                 ),
                 modifier = planId?.let { Modifier.testTag(TestTags.Progression.done(it)) } ?: Modifier,
             )
@@ -251,6 +270,19 @@ private fun ChoiceChips(
                 onClick = { onToggle(planId, ProgressionDirection.REPS) },
                 label = pluralStringResource(R.plurals.progression_choose_reps, step.to, step.to),
                 testTag = TestTags.Progression.reps(planId),
+            )
+        }
+        // A hold's step is seconds (N242), and it is the whole of a hold offer: the same chip the rep and
+        // the load get, because a direction the app offers and cannot draw is a step nobody can take.
+        offer.seconds?.let { step ->
+            AppFilterChip(
+                selected = set.direction == ProgressionDirection.SECONDS,
+                onClick = { onToggle(planId, ProgressionDirection.SECONDS) },
+                label = stringResource(
+                    R.string.progression_choose_hold,
+                    DurationFormat.ofSeconds(step.to.toLong()),
+                ),
+                testTag = TestTags.Progression.seconds(planId),
             )
         }
         offer.load?.let { step ->
@@ -361,6 +393,7 @@ private fun plannedLine(planned: ProgressionPlanSet, unit: WeightUnit): String =
     assistanceGrams = planned.targetAssistanceGrams,
     rpeHalves = planned.targetRpeHalves,
     unit = unit,
+    durationSeconds = planned.targetDurationSeconds,
 )
 
 /**
@@ -369,6 +402,9 @@ private fun plannedLine(planned: ProgressionPlanSet, unit: WeightUnit): String =
  * Parts rather than a fixed sentence because the plan and the session can each be missing something —
  * a bodyweight movement names no load, an unrated session no RPE — and a placeholder would read as a
  * value nobody entered.
+ *
+ * A hold states its time and **not** its reps (N242): a timed set writes `reps = 0`, and "0 reps" beside
+ * the hold is the number the row did not perform.
  */
 @Composable
 private fun setLine(
@@ -377,8 +413,11 @@ private fun setLine(
     assistanceGrams: Long?,
     rpeHalves: Int?,
     unit: WeightUnit,
+    durationSeconds: Int? = null,
 ): String {
-    val repsPart = reps?.let { pluralStringResource(R.plurals.progression_reps_value, it, it) }
+    val repsPart = reps?.takeIf { durationSeconds == null }?.let {
+        pluralStringResource(R.plurals.progression_reps_value, it, it)
+    }
     val weightPart = weightGrams?.let {
         stringResource(
             R.string.progression_weight_value,
@@ -386,6 +425,9 @@ private fun setLine(
             unit.label(),
         )
     }
+    val holdPart = durationSeconds?.let {
+        stringResource(R.string.set_hold_value, DurationFormat.ofSeconds(it.toLong()))
+    }
     val rpePart = rpeHalves?.let { rpeMarker(it) }
-    return listOfNotNull(repsPart, weightPart, rpePart).joinToString(" · ")
+    return listOfNotNull(repsPart, weightPart, holdPart, rpePart).joinToString(" · ")
 }

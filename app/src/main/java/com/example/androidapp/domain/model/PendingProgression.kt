@@ -120,6 +120,8 @@ data class PendingProgression(
             when {
                 offer.reps != null -> ProgressionDirection.REPS
                 offer.load != null -> ProgressionDirection.LOAD
+                // A hold's step is time, and it is the only direction a hold offer names (N242).
+                offer.seconds != null -> ProgressionDirection.SECONDS
                 else -> null
             }
         }

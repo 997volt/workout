@@ -1736,6 +1736,9 @@ private fun ProgressionPlanSet.toTemplateEdit(): TemplateSetEdit = TemplateSetEd
     // The lifter's place in the range travels with the write (N74), or the step would be lost and
     // the next session would ask for the floor again.
     targetRepsCurrent = targetRepsCurrent,
+    // A hold's prescription travels with it too (N242): `updateSet` overwrites the set, so a seconds
+    // step that carried no duration would write null over the hold the step was taken on.
+    targetDurationSeconds = targetDurationSeconds,
     note = note,
 )
 

@@ -504,6 +504,28 @@ class TemplateEditorScreenTest {
     }
 
     @Test
+    fun aPlannedHold_statesItsTimeOnTheSetRow() {
+        // ROADMAP N242/B295: a set that prescribes seconds stated only its load, so a 45-second carry
+        // read as a counted set with no reps. The row states the prescription.
+        val hold = exerciseWithAPlannedSet().copy(
+            sets = listOf(
+                TemplateSet(
+                    id = "ts1",
+                    templateExerciseId = "te1",
+                    setIndex = 0,
+                    targetDurationSeconds = 45,
+                ),
+            ),
+        )
+        setScreen(state = twoExercises.copy(exercises = listOf(hold)))
+        openBlock("te1")
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_EXERCISE_LIST)
+            .performScrollToNode(hasText("0:45 hold", substring = true))
+        composeTestRule.onNodeWithText("0:45 hold", substring = true).assertIsDisplayed()
+    }
+
+    @Test
     fun aPlannedSetsDelete_asksForThatSetToGo() {
         // The other half of N90: what the tap reports upward is the set's own id, which is what the
         // ViewModel turns into a removal and then into an undo.

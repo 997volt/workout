@@ -164,6 +164,9 @@ object TestTags {
         const val LOAD_ALL = "progression_load_all"
         const val REPS_ALL = "progression_reps_all"
 
+        /** The bulk pick for a plan that prescribes holds (ROADMAP N242). */
+        const val SECONDS_ALL = "progression_seconds_all"
+
         /** Takes each row's own step, whatever direction it earned (P3.17). */
         const val EVERY = "progression_every"
 
@@ -176,6 +179,7 @@ object TestTags {
         fun done(setId: String) = "progression_done_$setId"
         fun load(setId: String) = "progression_load_$setId"
         fun reps(setId: String) = "progression_reps_$setId"
+        fun seconds(setId: String) = "progression_seconds_$setId"
     }
 
     /**
