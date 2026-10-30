@@ -56,7 +56,8 @@ class ProgramRenameDialogTest {
         show()
 
         composeTestRule.onNodeWithTag(TestTags.Programs.RENAME_DIALOG).assertExists()
-        // The body says which name is taken rather than leaving the lifter to guess.
+        // The body names the program the device holds under that id, rather than leaving the lifter to guess
+        // (B320: it is the held program's name, not the file's).
         composeTestRule.onNodeWithText(text(R.string.program_rename_text, "Push Pull Legs")).assertExists()
         composeTestRule.onNodeWithTag(TestTags.Programs.RENAME_NAME).assertTextContains("Push Pull Legs (2)")
         composeTestRule.onNodeWithTag(TestTags.Programs.RENAME_CONFIRM).assertIsEnabled()

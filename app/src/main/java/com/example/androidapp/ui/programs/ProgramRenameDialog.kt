@@ -65,14 +65,14 @@ internal fun ProgramRenameDialog(
                     singleLine = true,
                     isError = taken,
                     label = { Text(stringResource(R.string.program_rename_label)) },
+                    // The field's own footnote rather than a sibling line, so a screen reader reads the refusal
+                    // with the field it belongs to (B320), the way the repo's other fields do.
+                    supportingText = if (taken) {
+                        { Text(stringResource(R.string.program_rename_taken)) }
+                    } else {
+                        null
+                    },
                 )
-                if (taken) {
-                    Text(
-                        text = stringResource(R.string.program_rename_taken),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
             }
         },
         confirmButton = {

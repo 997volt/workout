@@ -686,4 +686,19 @@ class ProgramDocumentTest {
             (preview as DataResult.Success).data,
         )
     }
+
+    @Test
+    fun aRefusedLoad_namesTheProgramTheDeviceActuallyHolds() = runTest {
+        // B320: the question named the document's program, so after the device's program was renamed it said a
+        // free name was taken. The payload now carries the name the device holds under the document's id.
+        val programId = seedProgram()
+        val exported = exportOf(programId)
+        (programs.renameProgram(programId, "Renamed on device") as DataResult.Success)
+        val older = ProgramDocumentCodec.decode(exported).copy(slots = emptyList())
+
+        val preview = programs.previewProgramDocument(ProgramDocumentCodec.encode(older))
+
+        val nameTaken = (preview as DataResult.Success).data as ProgramDocumentPreview.NameTaken
+        assertEquals("the program this device holds, not the file's old name", "Renamed on device", nameTaken.name)
+    }
 }

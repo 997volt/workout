@@ -238,7 +238,7 @@ sealed interface ProgramDocumentPreview {
      * to the lifter: arrive as a second program under a name of its own, or leave the one here alone.
      */
     data class NameTaken(
-        /** The name the document asks for, which another plan holds. */
+        /** The name the program here actually holds under the document's id (B320). */
         val name: String,
         /** A name the list does not hold, offered as the rename's starting point. */
         val suggestion: String,

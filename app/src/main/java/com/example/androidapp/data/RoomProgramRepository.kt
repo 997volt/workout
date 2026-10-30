@@ -567,14 +567,15 @@ class RoomProgramRepository @Inject constructor(
         // The copy is an add: an edit is a proposal to change a program this device holds, and the question a
         // rename answers is which program the arriving document is (N243).
         if (document.edit != null) throw InvalidInputException("An edit cannot be loaded as a copy.")
-        val wanted = name.trim()
-        if (wanted.isEmpty()) throw InvalidInputException("A program needs a name.")
-        if (dao.names().any { it.equals(wanted, ignoreCase = true) }) {
-            throw InvalidInputException("A program is already called \"$wanted\".")
-        }
+        val wanted = requireName(name)
         // One timestamp inside the transaction, like the add it is (B177).
         val now = timeSource.nowEpochMillis()
         database.withTransaction {
+            // Read inside the transaction (B320): a name taken between the question and the answer is still
+            // refused, and this read cannot see a list the write would not.
+            if (dao.names().any { it.equals(wanted, ignoreCase = true) }) {
+                throw InvalidInputException("A program is already called \"$wanted\".")
+            }
             mergeProgramDocument(
                 database = database,
                 programDao = dao,
@@ -616,7 +617,7 @@ class RoomProgramRepository @Inject constructor(
      * becomes the lifter's, and the suggestion is a name the list does not hold.
      */
     private suspend fun addPreview(document: ProgramDocument): ProgramDocumentPreview {
-        if (dao.findProgram(document.program.id) == null) return ProgramDocumentPreview.Add
+        val held = dao.findProgram(document.program.id) ?: return ProgramDocumentPreview.Add
         // The merge resolves a retired movement id before it compares and writes (N238), and the preview has to
         // answer the same question: a file exported before the merge names the id this device no longer holds,
         // so comparing it raw would read the program already here as a different one (B301).
@@ -626,7 +627,10 @@ class RoomProgramRepository @Inject constructor(
             ProgramDocumentPreview.Add
         } else {
             ProgramDocumentPreview.NameTaken(
-                name = resolved.program.name,
+                // The name the device actually holds under this id (B320): the document's own name may be
+                // free, because the program here was renamed, and the question then names a program that is
+                // not called that.
+                name = held.name,
                 suggestion = freeProgramName(resolved.program.name, dao.names()),
             )
         }
