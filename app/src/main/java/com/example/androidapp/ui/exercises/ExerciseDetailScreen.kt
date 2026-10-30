@@ -327,9 +327,9 @@ private fun ExerciseDetails(
 
         ExerciseHistorySection(
             history = history,
-            // The exercise's own unit, else whatever the app is set to — the same resolution the weight
-            // rows above this section use (N64).
-            unit = exercise.weightUnit ?: LocalWeightUnit.current,
+            // The exercise's own unit, else the app's, through the one helper every exercise-scoped display
+            // uses (N64). Reading the split here is how the section got its unit wrong (B317).
+            unit = exerciseWeightUnit(exercise.weightUnit),
             error = historyError,
         )
     }

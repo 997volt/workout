@@ -21,6 +21,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.R
 import com.example.androidapp.domain.DataError
+import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.MovementPattern
@@ -137,6 +138,27 @@ class ExerciseDetailScreenTest {
             .assertIsDisplayed()
         composeTestRule.onNodeWithText("5 reps · 110 kg", substring = true).assertExists()
         composeTestRule.onNodeWithText("100 kg × 5", substring = true).assertExists()
+    }
+
+    @Test
+    fun theHistorySection_readsTheExercisesOwnUnit() {
+        // B317: the section resolved its unit itself instead of through exerciseWeightUnit, so a movement
+        // read in pounds had its best stated in kilograms.
+        show(
+            ExerciseDetailUiState(
+                isLoading = false,
+                exercise = custom.copy(weightUnit = WeightUnit.POUNDS),
+                history = ExerciseHistoryUi(
+                    lastTrainedAt = Instant.parse("2026-10-01T07:00:00Z"),
+                    records = PersonalRecords(bestByReps = mapOf(5 to 110_000L)),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithText("5 reps", substring = true)
+            .performScrollTo()
+            .assertTextContains("lb", substring = true)
+        composeTestRule.onNodeWithText("110 kg", substring = true).assertDoesNotExist()
     }
 
     @Test
