@@ -54,6 +54,18 @@ import androidx.room.TypeConverters
  * answer's name, where null means "follow the app setting" — which is what every row meant before the column
  * existed. See [MIGRATION_12_13].
  *
+ * **Schema 14 is N236**, one nullable column: a session exercise records the step directions the lifter
+ * declined, as the enum's names, so a build that does not know one skips it rather than reading a different
+ * answer. Every row that existed declined nothing. See [MIGRATION_13_14].
+ *
+ * **Schema 15 is N242**, one nullable column: a planned set can name a hold in seconds beside its reps — one
+ * or the other and never both, which the write boundary refuses — and every plan written before it is counted.
+ * See [MIGRATION_14_15].
+ *
+ * **Schema 16 is N238**, one new table: the movement ids a merge retired and the row each became, so a program
+ * document exported before the merge resolves through it instead of minting the twin again. Empty on every
+ * store that existed, because nothing had merged anything before. See [MIGRATION_15_16].
+ *
  * There is deliberately **no** `fallbackToDestructiveMigration()`: it would turn
  * a forgotten migration into silent, total data loss for a user's training
  * history. A missing migration must fail loudly in development instead — which is exactly why 2.0
