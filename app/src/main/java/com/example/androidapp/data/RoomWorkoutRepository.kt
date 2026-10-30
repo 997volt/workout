@@ -578,9 +578,15 @@ class RoomWorkoutRepository @Inject constructor(
         val rows = database.trendsDao()
             .observeExerciseTrendRows(listOf(exerciseId), limit = ALL_SESSIONS)
             .first()
+        val performed = rows.filter { it.sessionId != excludingSessionId }
+        // The rep table excludes bodyweight rows (B241): a bodyweight set's added weight is not what it was
+        // lifted at. A hold is measured in time rather than kilos, so it is read from every row — a Plank's
+        // longest hold is a record whether or not the movement loads the body (B306).
         PersonalRecords.from(
-            rows.filter { it.sessionId != excludingSessionId && it.bodyweightGrams == null }
-                .mapNotNull { it.toPerformedSetSpec() },
+            performed.filter { it.bodyweightGrams == null }.mapNotNull { it.toPerformedSetSpec() },
+        ).copy(
+            longestHoldSeconds = PersonalRecords.from(performed.mapNotNull { it.toPerformedSetSpec() })
+                .longestHoldSeconds,
         )
     }
 

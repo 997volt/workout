@@ -791,6 +791,33 @@ class WorkoutEditingTest {
     }
 
     @Test
+    fun personalRecords_keepABodyweightHold() = runTest {
+        // B306: the read dropped every bodyweight row before the record rule, so a bodyweight timed movement
+        // never had a longest hold — though the changelog says a bodyweight carry still has one.
+        seedFinishedWorkout()
+        database.workoutDao().insertSet(
+            SetEntryEntity(
+                id = "hold",
+                sessionExerciseId = "se1",
+                setIndex = 2,
+                reps = 0,
+                weightGrams = 0L,
+                bodyweightGrams = 75_000L,
+                durationSeconds = 90,
+                setType = SetType.NORMAL,
+                createdAt = 1L,
+                updatedAt = 1L,
+                deletedAt = null,
+            ),
+        )
+
+        val records = (repository.personalRecords("back-squat") as DataResult.Success).data
+
+        assertEquals("the hold is measured in time, not kilos", 90, records.longestHoldSeconds)
+        assertNull("and a bodyweight set is still not a load record", records.bestAt(0))
+    }
+
+    @Test
     fun setSupersetGroup_isReadBackThroughTheProjection() = runTest {
         // The session projection already shipped once without selecting this column, so the row
         // arrived ungrouped while the write succeeded — a defect no fake could show, because a fake
