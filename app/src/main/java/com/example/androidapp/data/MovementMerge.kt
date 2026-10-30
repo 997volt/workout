@@ -45,13 +45,19 @@ data class MergeCandidate(
  *
  * [seedNames] is what the seed ships *now*. A row whose name is in it and which is not itself seeded is a
  * mechanical duplicate; the seed's own row is the survivor.
+ *
+ * **A name can be held by more than one row** (B323). The survivor is the seed's own row when it ships the
+ * name — an import's duplicate beside it is merged away in the same pass — and every survivor is followed to
+ * the row that survives the whole pass, so no pair re-points history onto a row another pair deletes.
  */
 fun mergedMovementPairs(
     library: List<MergeCandidate>,
     /** What the seed ships **now**, by name. Defaulted to the seed itself, which is what the repair passes. */
     seedNames: Set<String> = SeedExercises.all.map { it.name }.toSet(),
 ): List<MovementMerge> {
-    val byName = library.associateBy { it.name }
+    // Grouped rather than one per name: the duplicate this repair exists for can share its name with the row the
+    // ruling names as the survivor, and "last wins" chose the duplicate (B323).
+    val byName = library.groupBy { it.name }
     val seededByName = library.filter { it.seeded && it.name in seedNames }.associateBy { it.name }
     val merged = linkedMapOf<String, MovementMerge>()
 
@@ -68,14 +74,32 @@ fun mergedMovementPairs(
     }
 
     MOVEMENT_MERGE_RULINGS.forEach { ruling ->
-        val source = byName[ruling.away] ?: return@forEach
-        val survivor = byName[ruling.into] ?: return@forEach
+        // The seed's row when it ships the name: a duplicate beside it is merged away below, and a ruling that
+        // pointed at the duplicate would re-point onto a row this pass deletes (B323).
+        val survivor = seededByName[ruling.into] ?: byName[ruling.into]?.lastOrNull() ?: return@forEach
         // The table is about import leftovers, which is the shape the mechanical rule reads (B298). A row the
         // lifter configured -- a taxonomy, a family -- is theirs, and deleting it would take what they made.
-        if (source.isBare) add(source, survivor)
+        val source = byName[ruling.away]?.firstOrNull { !it.seeded && it.isBare } ?: return@forEach
+        add(source, survivor)
     }
 
-    return merged.values.toList()
+    // A survivor can itself be a source: the rulings name rows, and one line's target may be another line's
+    // leftover. Follow each chain to the row that survives the whole pass, so the repair never writes a
+    // reference onto a row it deletes later in the same transaction (B323).
+    return merged.values.mapNotNull { merge ->
+        val survivor = finalSurvivor(merge.survivorId, merged)
+        if (survivor == merge.sourceId) null else MovementMerge(merge.sourceId, survivor)
+    }
+}
+
+/** The last row of [merged]'s chain from [id], or [id] itself when it is not merged away. */
+private fun finalSurvivor(id: String, merged: Map<String, MovementMerge>): String {
+    var current = id
+    val seen = mutableSetOf<String>()
+    while (seen.add(current)) {
+        current = merged[current]?.survivorId ?: return current
+    }
+    return current
 }
 
 /**

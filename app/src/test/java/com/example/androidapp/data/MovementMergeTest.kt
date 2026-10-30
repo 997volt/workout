@@ -134,6 +134,31 @@ class MovementMergeTest {
         )
     }
 
+    @Test
+    fun aRuledSurvivorThatIsAlsoADuplicate_mergesOntoTheSeededRow() {
+        // B323: a real store had an import's bare duplicate under the survivor's name, and the ruling resolved
+        // "last wins" to that duplicate — which the mechanical rule deletes in the same pass. The upgrade then
+        // re-pointed history onto a row that no longer existed and died on a foreign key.
+        val seeded = candidate("seeded-ohp", "Overhead Triceps Extension", seeded = true)
+        val duplicate = candidate("imp-duplicate", "Overhead Triceps Extension", bare = true)
+        val source = candidate("imp-source", "Dumbbell Overhead Triceps Extension", bare = true)
+
+        val pairs = mergedMovementPairs(listOf(seeded, duplicate, source))
+
+        assertEquals(
+            "the duplicate and the ruling both settle on the seed's row",
+            setOf(
+                MovementMerge("imp-duplicate", "seeded-ohp"),
+                MovementMerge("imp-source", "seeded-ohp"),
+            ),
+            pairs.toSet(),
+        )
+        assertTrue(
+            "no pair re-points onto a row another pair deletes",
+            pairs.none { merge -> pairs.any { it.sourceId == merge.survivorId } },
+        )
+    }
+
     private fun candidate(
         id: String,
         name: String,
