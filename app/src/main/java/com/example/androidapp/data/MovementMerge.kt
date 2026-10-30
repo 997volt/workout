@@ -39,7 +39,9 @@ data class MergeCandidate(
  * **The ruled ones** are the author's: the roadmap's table, where a retired seed row and its twin, or two names
  * for one machine, are one movement. A ruling names the rows by **name**, because that is what the ruling is
  * about, and a name is resolved against what is on this device: a table line whose source is not here is
- * nothing to do, and one whose survivor is not here is skipped rather than merged into nothing.
+ * nothing to do, and one whose survivor is not here is skipped rather than merged into nothing. A ruled source
+ * is held to the **mechanical rule's shape** too (B298): the table was derived from import leftovers, so a row
+ * the lifter configured states something and is theirs whatever its name.
  *
  * [seedNames] is what the seed ships *now*. A row whose name is in it and which is not itself seeded is a
  * mechanical duplicate; the seed's own row is the survivor.
@@ -68,7 +70,9 @@ fun mergedMovementPairs(
     MOVEMENT_MERGE_RULINGS.forEach { ruling ->
         val source = byName[ruling.away] ?: return@forEach
         val survivor = byName[ruling.into] ?: return@forEach
-        add(source, survivor)
+        // The table is about import leftovers, which is the shape the mechanical rule reads (B298). A row the
+        // lifter configured -- a taxonomy, a family -- is theirs, and deleting it would take what they made.
+        if (source.isBare) add(source, survivor)
     }
 
     return merged.values.toList()

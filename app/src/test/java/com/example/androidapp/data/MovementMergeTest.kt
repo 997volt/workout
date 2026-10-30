@@ -67,6 +67,18 @@ class MovementMergeTest {
     }
 
     @Test
+    fun aRuledSourceTheLifterConfigured_isNotMerged() {
+        // B298: the table was derived from import leftovers, which is the shape the mechanical rule reads. A
+        // row the lifter filled in is theirs whatever its name, and the old rule deleted it on the next open.
+        val library = listOf(
+            candidate("pec-deck", "Pec Deck", seeded = true),
+            candidate("machine-fly", "Machine Fly", bare = false),
+        )
+
+        assertTrue(mergedMovementPairs(library, seed).isEmpty())
+    }
+
+    @Test
     fun aRulingWhoseSourceIsNotHere_isNothingToDo() {
         val library = listOf(candidate("pec-deck", "Pec Deck", seeded = true))
 

@@ -38,10 +38,36 @@ internal fun mergeDuplicateMovements(db: SupportSQLiteDatabase, at: Long) {
     pairs.forEach { merge ->
         db.execSQL(REPOINT_SESSION_EXERCISES, arrayOf<Any?>(merge.survivorId, at, merge.sourceId))
         db.execSQL(REPOINT_TEMPLATE_EXERCISES, arrayOf<Any?>(merge.survivorId, at, merge.sourceId))
+        // What only the source stated is the lifter's own (B298): the survivor keeps every value it has and
+        // gains whatever it left unset. A bare import may still carry a cue or a rest a document brought whole,
+        // and after the delete this is the only row left to hold it.
+        carryLifterFields(db, from = merge.sourceId, to = merge.survivorId)
         db.execSQL(RETIRE, arrayOf<Any?>(merge.sourceId, merge.survivorId, at))
         db.execSQL(DELETE_MOVEMENT, arrayOf<Any?>(merge.sourceId))
     }
 }
+
+/**
+ * Moves the lifter-authored columns a merge would otherwise delete onto the survivor (B298).
+ *
+ * The five are the row's own settings rather than its taxonomy: rest, cue, display unit, weight step and
+ * movement-level progression answer. The survivor's value always wins — a merge fills a gap, it does not
+ * overwrite — and the columns travel before the source row is deleted.
+ */
+internal fun carryLifterFields(db: SupportSQLiteDatabase, from: String, to: String) {
+    db.execSQL(CARRY_LIFTER_FIELDS, arrayOf<Any?>(from, from, from, from, from, to))
+}
+
+/** Each column keeps the survivor's own value and takes the source's only where the survivor states none. */
+private const val CARRY_LIFTER_FIELDS = """
+    UPDATE exercises SET
+        restSeconds = COALESCE(restSeconds, (SELECT restSeconds FROM exercises WHERE id = ?)),
+        techniqueNote = COALESCE(techniqueNote, (SELECT techniqueNote FROM exercises WHERE id = ?)),
+        weightUnit = COALESCE(weightUnit, (SELECT weightUnit FROM exercises WHERE id = ?)),
+        stepGrams = COALESCE(stepGrams, (SELECT stepGrams FROM exercises WHERE id = ?)),
+        progressionMode = COALESCE(progressionMode, (SELECT progressionMode FROM exercises WHERE id = ?))
+    WHERE id = ?
+"""
 
 /** The ids the seed ships, which are never sources of a merge. */
 private val seededIds: Set<String> by lazy {

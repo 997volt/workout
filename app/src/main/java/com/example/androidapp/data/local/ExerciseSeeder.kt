@@ -363,6 +363,9 @@ private fun mergeRetiredMovements(db: SupportSQLiteDatabase, now: Long) {
             "UPDATE template_exercises SET exerciseId = ?, updatedAt = ? WHERE exerciseId = ?",
             arrayOf<Any?>(merge.survivor, now, merge.retired),
         )
+        // The row being retired is the seed's, but a lifter may have set its rest, cue or answer (B298), and
+        // deleting it would be the only copy of those facts. The survivor fills only what it left unset.
+        carryLifterFields(db, from = merge.retired, to = merge.survivor)
         db.execSQL(
             "DELETE FROM exercises WHERE id = ? AND name = ? AND rowKind = ?",
             arrayOf<Any?>(merge.retired, merge.name, RowKind.MOVEMENT.name),

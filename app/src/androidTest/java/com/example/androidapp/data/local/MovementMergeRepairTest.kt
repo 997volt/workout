@@ -63,6 +63,12 @@ class MovementMergeRepairTest {
             "back-squat",
             database.movementMergeDao().retiredMovements().single().survivorId,
         )
+        val survivor = database.exerciseDao().findById("back-squat")!!
+        assertEquals("the survivor keeps the rest it stated", 120, survivor.restSeconds)
+        assertEquals("a cue only the twin carried is not deleted with it", "brace hard", survivor.techniqueNote)
+        assertEquals("and neither is its unit", "POUNDS", survivor.weightUnit)
+        assertEquals("its step", 2_500L, survivor.stepGrams)
+        assertEquals("or the answer it gave Done", "APPLY_AT_DONE", survivor.progressionMode)
     }
 
     @Test
@@ -82,8 +88,26 @@ class MovementMergeRepairTest {
     private suspend fun seedBoth(): List<String> {
         database.exerciseDao().insertAll(
             listOf(
-                exercise(id = "back-squat", name = "Back Squat", equipment = "BARBELL", parentId = "squat"),
-                exercise(id = "custom-back-squat", name = "Back Squat", equipment = null, parentId = null),
+                // The survivor states a rest of its own, which wins; the twin's other settings have nowhere
+                // else to go once it is deleted (B298).
+                exercise(
+                    id = "back-squat",
+                    name = "Back Squat",
+                    equipment = "BARBELL",
+                    parentId = "squat",
+                    restSeconds = 120
+                ),
+                exercise(
+                    id = "custom-back-squat",
+                    name = "Back Squat",
+                    equipment = null,
+                    parentId = null,
+                    restSeconds = 90,
+                    techniqueNote = "brace hard",
+                    weightUnit = "POUNDS",
+                    stepGrams = 2_500L,
+                    progressionMode = "APPLY_AT_DONE",
+                ),
             ),
         )
         database.templateDao().insertTemplate(
@@ -145,7 +169,17 @@ class MovementMergeRepairTest {
         return database.exerciseDao().findAllIncludingDeleted().map { it.id }
     }
 
-    private fun exercise(id: String, name: String, equipment: String?, parentId: String?) = ExerciseEntity(
+    private fun exercise(
+        id: String,
+        name: String,
+        equipment: String?,
+        parentId: String?,
+        restSeconds: Int? = null,
+        techniqueNote: String? = null,
+        weightUnit: String? = null,
+        stepGrams: Long? = null,
+        progressionMode: String? = null,
+    ) = ExerciseEntity(
         id = id,
         name = name,
         primaryMuscle = null,
@@ -153,6 +187,11 @@ class MovementMergeRepairTest {
         equipment = equipment?.let { com.example.androidapp.domain.model.Equipment.valueOf(it) },
         movementPattern = null,
         parentId = parentId,
+        restSeconds = restSeconds,
+        techniqueNote = techniqueNote,
+        weightUnit = weightUnit,
+        stepGrams = stepGrams,
+        progressionMode = progressionMode,
         createdAt = 1L,
         updatedAt = 1L,
         deletedAt = null,

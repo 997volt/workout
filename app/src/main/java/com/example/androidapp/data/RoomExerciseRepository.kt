@@ -115,6 +115,9 @@ class RoomExerciseRepository @Inject constructor(
     private suspend fun create(name: String, rowKind: RowKind): DataResult<Exercise> = dataResultOf {
         val trimmed = name.trim()
         if (trimmed.isEmpty()) throw InvalidInputException("Give the exercise a name.")
+        // A second row under one name is the twin N238's merge exists to settle, and creation must not mint
+        // one: the repair would later delete the row the lifter just made (B298).
+        requireFreeName(trimmed, rowKind)
 
         // Nothing is stated yet (ROADMAP N103): a custom exercise, and a category a lifter makes, start with
         // a name and nothing else. `null` is *unstated* — the fields a head supplies are read from it, and a
@@ -129,9 +132,29 @@ class RoomExerciseRepository @Inject constructor(
         exercise
     }
 
+    /**
+     * Refuses a name a live row of the same kind already holds, ignoring case and surrounding space (B298).
+     *
+     * The check is per row kind: a family and a movement may share a name — the library draws them as
+     * different things — while two movements under one name are exactly the duplicate the merge removes.
+     * A soft-deleted row does not hold its name: the lifter removed it, and the name is free.
+     */
+    private suspend fun requireFreeName(trimmed: String, rowKind: RowKind, exceptId: String? = null) {
+        val taken = dao.findAllIncludingDeleted().any {
+            it.id != exceptId && it.deletedAt == null && it.rowKind == rowKind &&
+                it.name.equals(trimmed, ignoreCase = true)
+        }
+        if (taken) {
+            val what = if (rowKind == RowKind.MOVEMENT) "movement" else "family"
+            throw InvalidInputException("The library already holds a $what called \"$trimmed\".")
+        }
+    }
+
     override suspend fun updateExercise(exercise: Exercise): DataResult<Unit> = dataResultOf {
         val trimmed = exercise.name.trim()
         if (trimmed.isEmpty()) throw InvalidInputException("Give the exercise a name.")
+        // A rename is the other way to mint a twin, so it answers the same rule (B298).
+        requireFreeName(trimmed, exercise.rowKind, exceptId = exercise.id)
         // Zero is a value — "this exercise has no rest" — and leaving it unset is how "use the app
         // default" is expressed, so only a negative is input we cannot use (ROADMAP N5, N45).
         if (exercise.restSeconds != null && exercise.restSeconds < RestTimer.MIN_PRESCRIBED_SECONDS) {

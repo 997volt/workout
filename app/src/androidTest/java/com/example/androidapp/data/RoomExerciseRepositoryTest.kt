@@ -11,10 +11,8 @@ import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.MovementPattern
-import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.MuscleGroup
-import java.time.Instant
-import java.util.UUID
+import com.example.androidapp.domain.model.RowKind
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -25,6 +23,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.time.Instant
+import java.util.UUID
 
 /**
  * Custom exercises, end to end through the repository (ROADMAP N2).
@@ -89,6 +89,35 @@ class RoomExerciseRepositoryTest {
     }
 
     @Test
+    fun createCustomExercise_refusesANameTheLibraryHolds() = runTest {
+        // B298: a second row under one name is the twin N238's merge exists to settle. Creation must not mint
+        // one, or the repair deletes the movement the lifter just made.
+        created("Sled Push")
+
+        val failure = repository.createCustomExercise("  sled push ") as DataResult.Failure
+
+        assertTrue(failure.error is DataError.Invalid)
+        val library = (repository.observeExercises().first() as DataResult.Success).data
+        assertEquals("the refused row is not stored", 1, library.size)
+    }
+
+    @Test
+    fun aRenameToANameTheLibraryHolds_isRefused_andKeepsTheRow() = runTest {
+        val first = created("Sled Push")
+        val second = created("Sled Drag")
+
+        val refused = repository.updateExercise(second.copy(name = "sled push")) as DataResult.Failure
+
+        assertTrue(refused.error is DataError.Invalid)
+        assertEquals("Sled Drag", stored(second.id).name)
+        assertTrue("the row it collided with is untouched", repository.getExercise(first.id) is DataResult.Success)
+        assertTrue(
+            "its own name, in another case, is not a collision",
+            repository.updateExercise(first.copy(name = "Sled Push ")) is DataResult.Success,
+        )
+    }
+
+    @Test
     fun updateExercise_fillsInTheTaxonomy_keepingTheRowsIdentity() = runTest {
         val created = created("Sled Push")
         now = now.plusSeconds(60)
@@ -132,7 +161,7 @@ class RoomExerciseRepositoryTest {
 
         assertTrue(
             repository.updateExercise(created.copy(isBodyweight = true, isTimed = true))
-                is DataResult.Success,
+            is DataResult.Success,
         )
 
         val stored = stored(created.id)
@@ -187,7 +216,7 @@ class RoomExerciseRepositoryTest {
 
         assertTrue(
             repository.updateExercise(created.copy(weightUnit = WeightUnit.POUNDS))
-                is DataResult.Success,
+            is DataResult.Success,
         )
         assertEquals(WeightUnit.POUNDS, stored(created.id).weightUnit)
 
