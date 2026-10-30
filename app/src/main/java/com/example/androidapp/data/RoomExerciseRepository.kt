@@ -153,8 +153,6 @@ class RoomExerciseRepository @Inject constructor(
     override suspend fun updateExercise(exercise: Exercise): DataResult<Unit> = dataResultOf {
         val trimmed = exercise.name.trim()
         if (trimmed.isEmpty()) throw InvalidInputException("Give the exercise a name.")
-        // A rename is the other way to mint a twin, so it answers the same rule (B298).
-        requireFreeName(trimmed, exercise.rowKind, exceptId = exercise.id)
         // Zero is a value — "this exercise has no rest" — and leaving it unset is how "use the app
         // default" is expressed, so only a negative is input we cannot use (ROADMAP N5, N45).
         if (exercise.restSeconds != null && exercise.restSeconds < RestTimer.MIN_PRESCRIBED_SECONDS) {
@@ -175,6 +173,10 @@ class RoomExerciseRepository @Inject constructor(
         // soft-deleted rows, which is what stops an edit resurrecting one.
         val stored = dao.findById(exercise.id)
             ?: throw NotFoundException("exercise ${exercise.id}")
+        // A rename is the other way to mint a twin, so it answers the same rule (B298) — after the row is known
+        // to exist, so an edit of a missing row is NotFound rather than a name refusal about a row that is
+        // not there.
+        requireFreeName(trimmed, exercise.rowKind, exceptId = exercise.id)
 
         val updated = stored.copy(
             name = trimmed,
