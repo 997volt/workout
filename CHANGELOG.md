@@ -17,6 +17,16 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Added
 
+- **A refused program load can arrive under a name of its own** (N243). A program document whose id is already
+  here carrying a *different* plan could only be refused: the merge is insert-only and never edits a program, so
+  the lifter's ways out were renaming the program already on the device or editing the file by hand. The load now
+  stops at a question instead — a name the list does not hold, offered as "Push Pull Legs (2)" and editable, with
+  a name another program holds refused while the lifter is looking at the field. Confirming writes a **copy**: the
+  plan as the document describes it, with an id of its own for the program and new ids for its workouts, planned
+  exercises and sets, because a copy that shared its days with the original would not be a separate program —
+  editing one day would rewrite both, and a document exported before the copy would then be refused as stale. The
+  movements keep their library ids, which name rows rather than copying them.
+
 - **The lifter's own movements join the seeded library** (N239). Twenty-seven rows this library trained — the ones
   the seed never shipped and that N238's merge does not take away — were **bare**: no muscle, no equipment, no
   pattern, so they were not found by "barbell", did not roll into a family's muscle total and could not be sorted
@@ -26,7 +36,6 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   that had no head to hold them — and it ships with them rather than before they exist. A repair writes the
   taxonomy onto a row that states none, guarded by the same shape rule the merge reads, so a movement a lifter has
   filled in is theirs; the generated seed catalogue in `docs/` is regenerated with it.
-
 
 - **A movement the library holds twice is merged** (N238, schema 16). A program document that names a lift the
   device does not have creates a movement of its own, so loading one leaves a second *Back Squat* beside the seeded
@@ -40,7 +49,6 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   so an old backup is re-merged rather than left as a duplicate. Idempotent: a store with nothing to merge writes
   nothing.
 
-
 - **Three misses on one plan suggest a deload** (N237). The app could already say what each set missed and why, and
   said nothing about the pattern. For one plan, the sessions are taken in order and each prescribed set is paired
   with the session's own, so a plan whose *second* set is always the one that fails says that rather than blaming
@@ -50,7 +58,6 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   precedence and counting the *reported* one would let "over the target" silently become "short" between two
   sessions failing the same way. `NOT_DONE` is absence, not failure: a set nobody logged cannot start or break a
   streak. It only suggests, and nothing is written.
-
 
 - **A plan can prescribe a hold, and a hold can progress** (N242, schema 15). A timed set already recorded seconds
   and wrote no reps, but a plan prescribed **reps**: a hold inside a plan ignored its target, a session saved as a
@@ -62,14 +69,12 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   both, which is the exclusivity the rep and weight directions already have. The plan editor's sentence states it,
   the program document carries it (a document describes a plan), and a deload that copies a plan keeps it.
 
-
 - **A step that was offered and not taken is recorded** (N236, schema 14). *Not now* dropped the question and
   wrote nothing, so a week later History could not say a step was there to take — and it cannot be recomputed,
   because the offer is frozen from the plan as it stood and the plan has moved on since. The session exercise now
   records the directions it declined, written the moment the lifter declines, and both the workout's review and
   History's detail state it as *step offered, not taken*. **A declined step is not a miss**: the sets failed
   nothing, the lifter declined the answer, which is why the deload rule counts the work rather than this column.
-
 
 - **A movement can answer *Done* its own way** (N235, schema 13). The progression mode was one device preference
   for the whole app, so a 5/3/1 squat and a movement being gently worked back were told the same thing. A movement
@@ -83,14 +88,12 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   program document does not carry it, because a document describes a plan while this is the receiving library's
   view of a movement.
 
-
 - **The workout's ⋮ opens the exercise** (N234, reversing N121). The shared menu already carried an *Open exercise*
   entry that the template editor supplied, and the live workout withheld it on purpose — with a test that asserted
   its absence. The alternative was left unstated: to look at a lift mid-session you switched to Library, found the
   movement, opened it and switched back, a larger interruption than two deliberate taps in an overflow that sits at
   the block's corner, away from the set fields. Opening it **pushes**, so the session's ViewModel, its running rest
   timer and the draft in the next set's fields are untouched and one back tap returns to them.
-
 
 - **The exercise's own screen says when it was last trained and what its best is** (N233). The screen carried an
   honest apology instead of history. It now has the section: the date of the newest finished session that trained
@@ -99,7 +102,6 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   prefill's *previous performance* (which now also says when that session was) and the record rule the workout
   screen checks against. No schema change, and the record rule now sees a hold's seconds: a warm-up hold is not a
   record, and a bodyweight carry still has a longest one.
-
 
 - **The library can be sorted by when a lift was last trained** (N230). Order was alphabetical by family and then
   by movement, and nothing offered another, so the one question the list could not answer was "what have I not
@@ -123,7 +125,8 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   the library is the screen in front of you. The library's action is now a menu: a movement, and the family it has
   always made. A search that found nothing offers to create exactly what was typed, so "no exercises match *front
   squat*" is one tap from the movement. The dialog also files it while it is made, because an unfiled movement is
-  the shape the library's filters exist to clean up.
+  the shape the library's filters exist to clean up. It reverses B94's rule that creation belongs to the workout
+  picker alone.
 
 - **A lift is found by how it is said, not only by its name** (N224). Search was substring containment over the name
   and the taxonomy, so *Barbell Bench Press* answered "bench" and not "bench pr", "bbp" or "pullup" — and the words a
@@ -160,6 +163,7 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   had on the previous composition and opens what changed — the family joined, the one left, both when a movement
   moves between them. The library arriving is not the library changing, so the first composition opens nothing, and a
   movement that arrived unfiled names no family at all.
+
 - **Plyometric movements** (N241). Seven arrive — box jump, jump squat, broad jump, depth jump, pogo hop, skater bound
   and a medicine-ball throw — as body-loaded movements, so a set prefills as added weight and one at its rep ceiling
   earns nothing rather than a heavier bar it does not load. The movement pattern enum gained `JUMP` for the family to
@@ -168,10 +172,6 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   power and the family's quads would be a fact invented about the movement.
 
 ### Changed
-
-- **The library makes movements, which it used to refuse** (N232, reversing B94). The old rule sent creation to the
-  workout picker alone; planning a lift you have never trained is where it is felt second, and that screen is the
-  library.
 
 - **The seeded library files its movements, and one deadlift means one lift** (N229). Eight of the seed's movements sat
   at the top level, so a fresh install drew a flat alphabetical pile of loose lifts under its families. A face pull is
@@ -208,17 +208,6 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   blades. Both corrections are written behind the insert, matched on the list the seed shipped before, so a lifter who
   set their own list keeps it — and because a family's muscles are what its members read live, the whole family moves
   and the balance numbers of plans already authored are reshaped.
-### Added
-
-- **A refused program load can arrive under a name of its own** (N243). A program document whose id is already
-  here carrying a *different* plan could only be refused: the merge is insert-only and never edits a program, so
-  the lifter's ways out were renaming the program already on the device or editing the file by hand. The load now
-  stops at a question instead — a name the list does not hold, offered as "Push Pull Legs (2)" and editable, with
-  a name another program holds refused while the lifter is looking at the field. Confirming writes a **copy**: the
-  plan as the document describes it, with an id of its own for the program and new ids for its workouts, planned
-  exercises and sets, because a copy that shared its days with the original would not be a separate program —
-  editing one day would rewrite both, and a document exported before the copy would then be refused as stale. The
-  movements keep their library ids, which name rows rather than copying them.
 
 ## [2.18] — 2026-10-29 (versionCode 38)
 
