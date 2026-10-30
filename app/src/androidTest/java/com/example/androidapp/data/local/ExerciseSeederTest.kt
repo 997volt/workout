@@ -205,6 +205,17 @@ class ExerciseSeederTest {
                 "UPDATE exercises SET id = 'back-extension', parentId = NULL " +
                     "WHERE id = 'back-extension-family'",
             )
+            // The children are the other half of the 2.6 shape: they point at the category whose id the
+            // movement now claims. Planting them on the seed's family instead is what made this test pass
+            // before the repair ran (B296).
+            raw.execSQL(
+                "UPDATE exercises SET parentId = 'back-extension' WHERE id = 'reverse-hyperextension'",
+            )
+            assertEquals(
+                "the children start under the id the movement claims",
+                "back-extension",
+                dao.findById("reverse-hyperextension")?.parentId,
+            )
             assertNull("the broken shape is the starting point", dao.findById("back-extension-family"))
 
             seedMissingExercises(raw, SEEDED_AT + 1_000L)

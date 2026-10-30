@@ -180,8 +180,11 @@ internal fun releaseSeededMovementIds(db: SupportSQLiteDatabase, now: Long) {
     }
     impostors.forEach { id ->
         db.execSQL(
-            "UPDATE exercises SET parentId = ?, updatedAt = ? WHERE parentId = ? AND parentId <> ?",
-            arrayOf<Any?>(SeedExercises.parentOf[id], now, id, id),
+            // The impostor's children are the rows still filed under the id it stole. The guard that used to
+            // ride here (`parentId <> ?`, bound to the same id) asked for a row that is its own parent, so it
+            // matched nothing and the children were left under an id that then named the movement (B296).
+            "UPDATE exercises SET parentId = ?, updatedAt = ? WHERE parentId = ?",
+            arrayOf<Any?>(SeedExercises.parentOf[id], now, id),
         )
         db.execSQL(
             "DELETE FROM exercises WHERE id = ? AND rowKind <> ?",
