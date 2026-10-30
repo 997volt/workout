@@ -129,6 +129,34 @@ class ProgramDocumentCopyTest {
         assertThat(copyOf(shared).slots.single().templateId).isEqualTo("device-workout")
     }
 
+    @Test
+    fun plannedWorkWhoseWorkoutTheDocumentDoesNotCarry_isDropped() {
+        // B302: a planned exercise used to fall back to the document's own template id, which for the original
+        // is a live device workout — so the "copy" wrote rows into the program it was copied from.
+        val dangling = document.copy(
+            templateExercises = document.templateExercises + planned(
+                "pe3",
+                templateId = "device-workout",
+                exerciseId = "barbell-row",
+                position = 1,
+            ),
+            templateSets = document.templateSets + set("s3", plannedId = "pe3", setIndex = 0),
+        )
+
+        val copy = copyOf(dangling)
+        val copyTemplateIds = copy.templates.map { it.id }.toSet()
+        val copyPlannedIds = copy.templateExercises.map { it.id }.toSet()
+
+        assertThat(copy.templateExercises).hasSize(2)
+        assertThat(copy.templateSets).hasSize(2)
+        assertWithMessage("no planned exercise hangs off a workout the copy does not hold")
+            .that(copy.templateExercises.map { it.templateId }.all { it in copyTemplateIds })
+            .isTrue()
+        assertWithMessage("and every set follows a planned exercise the copy holds")
+            .that(copy.templateSets.map { it.templateExerciseId }.all { it in copyPlannedIds })
+            .isTrue()
+    }
+
     /** Minting ids in order, so a test can read which row got which. */
     private fun copyOf(original: ProgramDocument): ProgramDocument {
         var next = 0

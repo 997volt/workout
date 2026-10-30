@@ -13,8 +13,9 @@ package com.example.androidapp.data.transfer
  * documents for the other. The **exercise ids are kept**, because those name library movements rather than
  * copying them: a copy of a program trains the movements the library already has.
  *
- * A reference the document does not carry is left alone, which is the merge's own rule: a slot may name a
- * workout the device holds, and a document never describes one it does not.
+ * A **slot** may name a workout the device holds without the document describing it, and the copy keeps that
+ * reference. A planned exercise cannot: it belongs to its workout, and a workout the copy does not carry is the
+ * original's, so those rows are dropped rather than written into the program the copy came from (B302).
  *
  * [newId] is a parameter rather than a call to `UUID` so this is a pure function of its inputs — the caller
  * mints and this decides.
@@ -26,7 +27,10 @@ fun programDocumentCopy(
 ): ProgramDocument {
     val programId = newId()
     val templateIds = document.templates.associate { it.id to newId() }
-    val plannedIds = document.templateExercises.associate { it.id to newId() }
+    // Only planned work whose workout the document carries is the copy's; the rest named a template the
+    // device holds (the original's own), and copying that reference would share rows between two programs.
+    val carriedPlanned = document.templateExercises.filter { it.templateId in templateIds }
+    val plannedIds = carriedPlanned.associate { it.id to newId() }
     return document.copy(
         // A document is an *add*, so a copy is one too: the edit marker is what turns a load into a proposal
         // to change a program this device holds (N171).
@@ -54,16 +58,16 @@ fun programDocumentCopy(
                 versionOf = null,
             )
         },
-        templateExercises = document.templateExercises.map { planned ->
+        templateExercises = carriedPlanned.map { planned ->
             planned.copy(
                 id = plannedIds.getValue(planned.id),
-                templateId = templateIds[planned.templateId] ?: planned.templateId,
+                templateId = templateIds.getValue(planned.templateId),
             )
         },
-        templateSets = document.templateSets.map { set ->
+        templateSets = document.templateSets.filter { it.templateExerciseId in plannedIds }.map { set ->
             set.copy(
                 id = newId(),
-                templateExerciseId = plannedIds[set.templateExerciseId] ?: set.templateExerciseId,
+                templateExerciseId = plannedIds.getValue(set.templateExerciseId),
             )
         },
         // **The library's rows are not copied**: a movement a document carries is the same movement, and the
