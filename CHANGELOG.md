@@ -13,6 +13,19 @@ repeated here.
 **1.0–1.18 live in [CHANGELOG-1.x.md](CHANGELOG-1.x.md)**, kept whole rather than deleted because the
 id a 1.x commit names is still looked up by it. This file carries the current release.
 
+## [2.19.1] — 2026-10-30 (versionCode 40)
+
+### Fixed
+
+- **An upgrade no longer crashes when an imported duplicate shares a ruling's survivor name** (B323). The merge
+  read its rows by name with "last wins", so a ruling could resolve its survivor to an import's bare duplicate —
+  a row the mechanical rule deletes in the same pass. The repair then re-pointed that movement's sessions and
+  plans onto the deleted row and the database refused the write, crashing the app on the first screen after the
+  update. A ruling now prefers the seed's own row, and every survivor is followed to the row that survives the
+  whole pass, so no pair can target a row another pair deletes. A store that already hit the crash is intact:
+  the seed's writes are one transaction, so the failed pass left nothing behind and the fixed build repairs it
+  on the next open.
+
 ## [2.19] — 2026-10-30 (versionCode 39)
 
 ### Added
