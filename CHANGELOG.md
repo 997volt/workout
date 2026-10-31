@@ -29,6 +29,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   straight in the database-open callback, so one data-dependent throw left the app crashing on its first screen
   until another build arrived — which is what 2.19 did on a store whose workouts were all intact. The pass is
   caught, recorded and said once on the shell with a retry; the store is left as the pass's transaction left it.
+- **A program document is checked where it is opened** (B328). The import merges a document's rows straight
+  into the store, bypassing the template write boundary, so a hand-edited set that named both reps and a hold —
+  or a hold for no time — was written and only found later. A load and a copy now run the shared validator's two
+  set rules before the merge. The problems that are about this device (a movement whose exercise is missing, a
+  dangling slot) stay the merge's to drop, which is what the import's summary already reports.
 - **The seed's flags reach a row the lifter edited for another reason** (B327). The repair inferred "the seed
   wrote this" from `updatedAt == createdAt`, so a cue or rest edit on a seeded Pull-Up or Plank blocked the flag
   raise and the row kept the old seeder's zero — the bug the repair exists for. A nullable `seedFlagsAt` records

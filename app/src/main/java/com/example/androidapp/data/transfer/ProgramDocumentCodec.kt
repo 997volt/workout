@@ -3,6 +3,8 @@ package com.example.androidapp.data.transfer
 import com.example.androidapp.domain.InvalidInputException
 import com.example.androidapp.shared.ProblemCode
 import com.example.androidapp.shared.ProgramFormatException
+import com.example.androidapp.shared.ProgramProblem
+import com.example.androidapp.shared.validate
 import com.example.androidapp.shared.ProgramDocumentCodec as SharedProgramDocumentCodec
 
 /**
@@ -34,6 +36,15 @@ object ProgramDocumentCodec {
      * The shared gate answers with codes, not English, because the page renders its own sentences.
      * Turning a code into the app's wording is this object's one job.
      */
+    /**
+     * The shared validator's problems for a decoded document (B328).
+     *
+     * The document is a write path: the import merges its rows straight into the store, so the rules the page
+     * checks before it writes have to run here too. A hand-edited set that is counted and held, a duplicate id
+     * or a dangling reference must be refused before the merge rather than written and found later.
+     */
+    fun problems(document: ProgramDocument): List<ProgramProblem> = validate(document.toShared())
+
     fun decode(text: String): ProgramDocument =
         try {
             SharedProgramDocumentCodec.decode(text).toApp()

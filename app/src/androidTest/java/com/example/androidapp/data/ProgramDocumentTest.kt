@@ -6,6 +6,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.data.local.ExerciseEntity
 import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.data.transfer.ProgramDocumentCodec
+import com.example.androidapp.data.transfer.programDocumentCopy
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
@@ -36,6 +37,7 @@ import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.util.UUID
 
 /**
  * Carrying one program to another device, end to end through the schema (ROADMAP N47).
@@ -333,6 +335,43 @@ class ProgramDocumentTest {
         val stored = database.programDao().findProgram("pgm_block")
         assertEquals(ProgramKind.SEQUENCE, stored?.kind)
         assertEquals(20_305L, stored?.startDate)
+    }
+
+    @Test
+    fun aSetThatIsCountedAndHeld_isRefused_atTheDoor() = runTest {
+        // B328: the merge writes rows directly, bypassing the template write boundary, so the document's own
+        // rules have to run before it. The page refuses this; the app used to write it.
+        val failure = programs.importProgramDocument(aCountedAndHeldCopy()) as DataResult.Failure
+
+        val invalid = failure.error as DataError.Invalid
+        assertTrue(invalid.message.contains("either counted or held"))
+        assertEquals(
+            "nothing was written",
+            listOf("Heavy lower"),
+            programs.observePrograms().first().map { it.name },
+        )
+    }
+
+    @Test
+    fun aCopyOfASetThatIsCountedAndHeld_isRefused_too() = runTest {
+        val failure = programs.importProgramDocumentCopy(aCountedAndHeldCopy(), "Copy") as DataResult.Failure
+
+        val invalid = failure.error as DataError.Invalid
+        assertTrue(invalid.message.contains("either counted or held"))
+        assertEquals("nothing was written", 1, programs.observePrograms().first().size)
+    }
+
+    /** A fresh-id copy of the seeded program whose first set is both counted and held (B328). */
+    private suspend fun aCountedAndHeldCopy(): String {
+        val original = ProgramDocumentCodec.decode(exportOf(seedProgram()))
+        val copy = programDocumentCopy(original, "Broken block") { UUID.randomUUID().toString() }
+        return ProgramDocumentCodec.encode(
+            copy.copy(
+                templateSets = copy.templateSets.mapIndexed { index, set ->
+                    if (index == 0) set.copy(targetDurationSeconds = 30) else set
+                },
+            ),
+        )
     }
 
     private suspend fun seedProgram(exerciseId: String = "back-squat"): String {

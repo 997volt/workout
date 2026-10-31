@@ -547,6 +547,9 @@ class RoomProgramRepository @Inject constructor(
             // Throws InvalidInputException for a file we cannot use, before touching anything: a
             // rejected document must leave the database exactly as it was.
             val document = ProgramDocumentCodec.decode(text)
+            // The document's own rules run here, not just in the page (B328): the merge writes its rows
+            // straight into the store, bypassing the template write boundary.
+            requireValidDocument(document)
             // One timestamp inside the transaction, so a restore and the rows it counts agree (B177).
             val now = timeSource.nowEpochMillis()
             database.withTransaction {
@@ -567,6 +570,7 @@ class RoomProgramRepository @Inject constructor(
         // The copy is an add: an edit is a proposal to change a program this device holds, and the question a
         // rename answers is which program the arriving document is (N243).
         if (document.edit != null) throw InvalidInputException("An edit cannot be loaded as a copy.")
+        requireValidDocument(document)
         val wanted = requireName(name)
         // One timestamp inside the transaction, like the add it is (B177).
         val now = timeSource.nowEpochMillis()
@@ -1119,6 +1123,39 @@ private suspend fun otherProgramsUsing(
  * The shared core answers with codes because the page renders its own sentences; this is where the
  * app's are chosen. Stale and missing are the two the lifter can act on, so they get their own.
  */
+/**
+ * Refuses a document whose **set targets** break the write boundary, before either import path writes (B328).
+ *
+ * Only the two set rules are refused here, not every problem the shared validator can name: a document that
+ * names an exercise this device does not hold is a case the merge handles by dropping the movement, and the
+ * import has always accepted it (and says so in its summary). A set that is counted and held, or held for no
+ * time, is different — the merge writes it straight into `template_sets`, bypassing the boundary that refuses
+ * it, and the row is invalid the moment it exists.
+ */
+private fun requireValidDocument(document: ProgramDocument) {
+    val problems = ProgramDocumentCodec.problems(document)
+        .filter { it.code == ProblemCode.INVALID_HOLD || it.code == ProblemCode.COUNTED_AND_HELD }
+    if (problems.isEmpty()) return
+    throw InvalidInputException(
+        if (document.edit != null) editRefusal(problems) else loadRefusal(problems),
+    )
+}
+
+/** A file being opened, in the same two write-boundary sentences an edit gets (B308, B328). */
+private fun loadRefusal(problems: List<ProgramProblem>): String {
+    val first = problems.firstOrNull() ?: return "That program file cannot be loaded."
+    return when (first.code) {
+        ProblemCode.INVALID_HOLD -> "A hold must be at least one second."
+        ProblemCode.COUNTED_AND_HELD ->
+            "A set is either counted or held: it cannot name both reps and a hold."
+
+        ProblemCode.EMPTY_NAME -> "Give the program a name."
+        else ->
+            "That program file does not fit the app's rules " +
+                "(${first.code.name.lowercase().replace('_', ' ')})."
+    }
+}
+
 private fun editRefusal(problems: List<ProgramProblem>): String {
     val first = problems.firstOrNull() ?: return "That program edit cannot be applied."
     return when (first.code) {
