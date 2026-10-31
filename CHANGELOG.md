@@ -29,6 +29,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   straight in the database-open callback, so one data-dependent throw left the app crashing on its first screen
   until another build arrived — which is what 2.19 did on a store whose workouts were all intact. The pass is
   caught, recorded and said once on the shell with a retry; the store is left as the pass's transaction left it.
+- **The backup ceiling moves for a plan's hold** (B326). N242's plan hold travels in a backup as
+  `targetDurationSeconds`, and the schema stayed at 7, so a build that predates the hold accepted a new file and
+  silently dropped the prescription. It is 8 now: a v7 file still reads, and a v7 build refuses a plan-hold file
+  instead of reading it as a counted set. The helper's own writer stays at the floor (B288), so the backups it
+  writes still reach every supported build.
 - **The upgrade path's tests run the app's own housekeeping** (B325). The migration-chain test opened Room
   without the seeder callback, so every upgrade validated the schema and never the repairs; it now runs the same
   uncaught pass a device runs. The merge repair gains the database-level shape 2.19 crashed on: a seeded row, an

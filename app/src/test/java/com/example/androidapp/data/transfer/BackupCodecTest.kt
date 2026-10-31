@@ -264,6 +264,20 @@ class BackupCodecTest {
     }
 
     @Test
+    fun theCeilingIsEight_forAPlanHold_andAV7FileStillReads() {
+        // B326: a plan's hold is a prescription a v7 build cannot represent, so the ceiling moved the way
+        // B253 moved it for performed holds. The fixed value makes the next move deliberate; a v7 file has no
+        // plan hold and reads exactly as it did.
+        assertEquals(8, BackupCodec.CURRENT_SCHEMA_VERSION)
+
+        val fromBeforeThePlanHold = sample.copy(schemaVersion = 7)
+
+        val decoded = BackupCodec.decode(BackupCodec.encode(fromBeforeThePlanHold))
+
+        assertEquals(7, decoded.schemaVersion)
+    }
+
+    @Test
     fun aFileFromBeforeHolds_isRead_asTheCountedSetsItHolds() {
         // B253 moved the ceiling to 7 because a hold cannot be represented by a v6 build. The floor stays
         // at 5, which is the other half of that decision: every older file still reads, and a set without a

@@ -521,8 +521,10 @@ data class TemplateSetDto(
     /**
      * The hold this set prescribes, in seconds, or null for a counted set (ROADMAP N242).
      *
-     * Defaulted and unbumped: a file written before a plan could prescribe a hold decodes with every set
-     * counted, which is exactly what it was.
+     * Defaulted, so a file written before a plan could prescribe a hold decodes with every set counted — which
+     * is exactly what it was. **The ceiling moved for it** (B326): a build without the field would otherwise
+     * accept a new file, drop the hold and read it as a counted set with no reps, the wrong meaning the
+     * backup's version exists to refuse.
      */
     val targetDurationSeconds: Int? = null,
     val note: String? = null,

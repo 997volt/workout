@@ -59,8 +59,14 @@ object BackupCodec {
      * editor clamps to a single rep on the next save. That is data an older build cannot represent, which
      * is what this ceiling is for. The floor does not move: a v6 file simply has no holds, so this build
      * reads every older backup.
+     *
+     * **N242 moves it to 8 and leaves the floor at 5** (B326). A **plan** can prescribe a hold now, as
+     * `targetDurationSeconds` on a template set. A v7 build has never heard of the field, so it would accept
+     * the file, drop it and read the hold as a counted set with no reps — the same wrong meaning, one
+     * level up. The floor does not move: a v7 file has no plan hold, so this build reads every older backup.
+     * The helper's own writer stays at the floor (B288): its backups are meant for every supported build.
      */
-    const val CURRENT_SCHEMA_VERSION = 7
+    const val CURRENT_SCHEMA_VERSION = 8
 
     /** The oldest file this build reads: a shape whose meaning is still this one (ROADMAP N104, N185). */
     const val MINIMUM_SCHEMA_VERSION = 5
