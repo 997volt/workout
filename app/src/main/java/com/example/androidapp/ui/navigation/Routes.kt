@@ -15,6 +15,10 @@ import kotlinx.serialization.Serializable
 @Serializable
 data object WorkoutsHome
 
+/** The week in review (ROADMAP N247): planned against done, and what stalled. */
+@Serializable
+data object WeeklyReview
+
 /** The exercise library: a reference you navigate to, not where the app opens. */
 @Serializable
 data object ExerciseLibrary

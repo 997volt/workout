@@ -18,25 +18,17 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 ## Next
 
 Nothing is in flight. The 2.19.1 patch and the resilience batch it earned are in [CHANGELOG.md](CHANGELOG.md);
-the queued work below is the next batch.
+nothing is queued behind them.
 
 ## Later — decided, and not being started
 
-Six rows are queued. This section is where agreed work waits its turn: a row here has its design settled so it
+Nothing is queued. This section is where agreed work waits its turn: a row here has its design settled so it
 does not have to be re-argued, and a row in *Next* is what is actually being worked on. Both drain the same way —
 a row picked up moves to *Next*, and one that ships leaves for the changelog.
 
-The first three are the data decisions the 2.19 review left open, and the last three are product. The table's
-order is the suggested order.
-
-| # | Change | Why it matters | Size |
-| --- | --- | --- | --- |
-| B326 | **Decide the backup ceiling for a plan's hold.** Move `schemaVersion` to 8 with the helper's writer, or record the acceptance that a pre-hold build silently drops `targetDurationSeconds` on restore. The floor stays. | A new backup restored into an older build is the wrong-meaning case B322 fixed for documents. | Small |
-| B327 | **Separate "the old seeder wrote 0" from "the lifter chose off".** Give the seed's flags a one-time provenance marker (or a migration), so B299's never-edited guard stops skipping a row the lifter edited for another reason. | A Plank whose cue was edited before the repair still reads as a counted lift, which is the bug the repair exists for. | Medium |
-| B328 | **Validate a document where it is added.** Run the shared validation at the add boundary, or write down the trust rule and why; today the merge bypasses the write boundary. | The page refuses a reps-and-hold or zero-second hold the app will store. | Small |
-| N245 | **Merge movements.** A screen to combine two library rows: pick the survivor, move the sessions and templates, record the retired mapping. | N238's auto-merge deliberately leaves a configured row alone, and deleting one is the only way to settle it — which takes its history. | Medium |
-| N246 | **A restore preview.** Say what a backup will add (sessions, sets, measurements) and that nothing is overwritten, before the merge. | The import is the app's riskiest write and currently says nothing first. | Small |
-| N247 | **A weekly review.** One screen of planned versus done for the week, what moved and what stalled. | The deload, stall and plan-review rules already compute the pieces; the app stops one step short of its promise. | Medium |
+The batch that was here — the 2.19 review's three data decisions (B326–B328) and three product rows (N245–N247)
+— is in the unreleased changelog. A row returns here only once its design is settled and it is agreed to be
+next.
 
 ## Parked — deliberately not planned
 

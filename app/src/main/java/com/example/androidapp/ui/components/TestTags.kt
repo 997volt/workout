@@ -644,6 +644,12 @@ object TestTags {
     const val DIAGNOSTICS_COPY = "diagnostics_copy"
     const val DIAGNOSTICS_RETRY = "diagnostics_retry"
 
+    /** The week in review (ROADMAP N247): its way in, the summary and the stall. */
+    const val HOME_WEEKLY_REVIEW = "home_weekly_review"
+    const val WEEKLY_REVIEW_SCREEN = "weekly_review_screen"
+    const val WEEKLY_REVIEW_SUMMARY = "weekly_review_summary"
+    const val WEEKLY_REVIEW_STALL = "weekly_review_stall"
+
     /** The backup preview's question (ROADMAP N246). */
     const val IMPORT_PREVIEW_DIALOG = "import_preview_dialog"
     const val IMPORT_PREVIEW_CONFIRM = "import_preview_confirm"

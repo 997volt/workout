@@ -8,19 +8,15 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
+import com.example.androidapp.domain.PlanStallFinder
 import com.example.androidapp.domain.model.PlanStall
-import com.example.androidapp.domain.model.PrescriptionHistory
 import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.model.ProgramSlot
-import com.example.androidapp.domain.model.STALL_SESSIONS
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.WorkoutTemplate
-import com.example.androidapp.domain.model.progressionSets
-import com.example.androidapp.domain.model.stall
 import com.example.androidapp.domain.repository.ProgramRepository
 import com.example.androidapp.domain.repository.TemplateRepository
-import com.example.androidapp.domain.repository.TrendsRepository
 import com.example.androidapp.platform.DocumentIo
 import com.example.androidapp.ui.navigation.ProgramEditor
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -31,7 +27,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -107,7 +102,7 @@ data class ProgramEditorUiState(
 class ProgramEditorViewModel @Inject constructor(
     private val repository: ProgramRepository,
     private val templateRepository: TemplateRepository,
-    private val trends: TrendsRepository,
+    private val stallFinder: PlanStallFinder,
     private val documentIo: DocumentIo,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
@@ -207,30 +202,7 @@ class ProgramEditorViewModel @Inject constructor(
      * template is not one of these.
      */
     private fun stallForProgram(): Flow<PlanStall?> =
-        repository.observeSlots(programId).mapLatest { slots ->
-            slots.mapNotNull { slot -> slot.templateId }
-                .distinct()
-                .firstNotNullOfOrNull { templateId -> stallForTemplate(templateId) }
-        }
-
-    /** One template's first stalled prescription, or null when none of its plans has stopped moving. */
-    private suspend fun stallForTemplate(templateId: String): PlanStall? {
-        val planned = templateRepository.observeExercises(templateId).first()
-        val sessions = (trends.templateSessions(templateId) as? DataResult.Success)?.data.orEmpty()
-        // Three sessions is the rule's own threshold (N237), and a plan with fewer cannot have one yet.
-        return planned.takeIf { it.isNotEmpty() && sessions.size >= STALL_SESSIONS }
-            ?.firstNotNullOfOrNull { exercise ->
-                // One entry per session that **trained** the movement: absence is not a failure (N237).
-                val performed = sessions.mapNotNull { session ->
-                    session.performed.firstOrNull { it.exerciseId == exercise.exerciseId }?.sets
-                }
-                PrescriptionHistory(
-                    exerciseName = exercise.exerciseName,
-                    planned = exercise.progressionSets(),
-                    performedBySession = performed,
-                ).stall()
-            }
-    }
+        repository.observeSlots(programId).mapLatest { stallFinder.firstStall(programId) }
 
     fun onRename(name: String) = write { repository.renameProgram(programId, name) }
 

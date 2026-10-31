@@ -71,13 +71,14 @@ fun WorkoutsHomeRoute(
      * The way into today's daily measurement (ROADMAP N114), which opens that form rather than the list.
      */
     onMeasureToday: () -> Unit,
+    /** The week's plan against what happened (ROADMAP N247). */
+    onOpenWeeklyReview: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: WorkoutsHomeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     // Not unwrapped with `by`: reading it here would rebuild the list every second.
     val clock = viewModel.clock.collectAsStateWithLifecycle()
-    val plannedWorkout by viewModel.plannedWorkout.collectAsStateWithLifecycle()
 
     // The substitute pick is the one write this screen still makes, and a failure has to be said
     // rather than swallowed (F7). The data actions that used to share this host now live in
@@ -118,8 +119,9 @@ fun WorkoutsHomeRoute(
         onError = { message = it },
     )
 
+    // The plan editor's offer to start from a weekday card (ROADMAP N55).
     PlannedWorkoutDialog(
-        planned = plannedWorkout,
+        planned = viewModel.plannedWorkout.collectAsStateWithLifecycle().value,
         onDismiss = viewModel::onDismissPlannedWorkout,
     )
 
@@ -152,6 +154,7 @@ fun WorkoutsHomeRoute(
         onOpenPrograms = onOpenPrograms,
         onOpenMeasurements = onOpenMeasurements,
         onMeasureToday = onMeasureToday,
+        onOpenWeeklyReview = onOpenWeeklyReview,
         onOpenPlannedWorkout = viewModel::onOpenPlannedWorkout,
         message = message,
         onDismissMessage = { message = null },
@@ -203,6 +206,8 @@ fun WorkoutsHomeScreen(
      * while today has no entry to read.
      */
     onMeasureToday: () -> Unit,
+    /** Opens the week in review (ROADMAP N247). */
+    onOpenWeeklyReview: () -> Unit,
     /**
      * Opens what a card has planned, without starting it (ROADMAP N55, N127).
      *
@@ -265,6 +270,7 @@ fun WorkoutsHomeScreen(
             onOpenTemplates = onOpenTemplates,
             onOpenMeasurements = onOpenMeasurements,
             onMeasureToday = onMeasureToday,
+            onOpenWeeklyReview = onOpenWeeklyReview,
             onStartTemplate = onStartTemplate,
             onSubstitute = { plan -> substituting = SubstituteRequest(plan) },
             onSkipBlock = onSkipBlock,
@@ -377,6 +383,7 @@ private fun HomeContent(
     onOpenTemplates: () -> Unit,
     onOpenMeasurements: () -> Unit,
     onMeasureToday: () -> Unit,
+    onOpenWeeklyReview: () -> Unit,
     onStartTemplate: (TodayPlan) -> Unit,
     onSubstitute: (TodayPlan) -> Unit,
     onSkipBlock: (TodayPlan) -> Unit,
@@ -396,6 +403,7 @@ private fun HomeContent(
             onOpenTemplates = onOpenTemplates,
             onOpenMeasurements = onOpenMeasurements,
             onMeasureToday = onMeasureToday,
+            onOpenWeeklyReview = onOpenWeeklyReview,
             onStartTemplate = onStartTemplate,
             onSubstitute = onSubstitute,
             onSkipBlock = onSkipBlock,
@@ -494,6 +502,7 @@ private fun WorkoutsHomeScreenPreview() {
             onOpenMeasurements = {},
             onStartTemplate = { _ -> },
             onMeasureToday = {},
+            onOpenWeeklyReview = {},
             onOpenPlannedWorkout = {},
             onDismissMessage = {},
             onSubstituteTemplate = { _, _, _ -> },

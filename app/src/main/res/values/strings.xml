@@ -129,6 +129,39 @@
     <string name="exercise_detail_not_found">That exercise is no longer in the library.</string>
     <!-- The exercise's own record (ROADMAP N233): what the last session held, and the best at each rep
          count or, for a movement that is held, the longest hold. -->
+    <string name="weekly_review_entry">This week in review</string>
+    <string name="weekly_review_entry_hint">Planned vs done, what moved, what stalled</string>
+    <string name="weekly_review_open">Open this week in review</string>
+    <string name="weekly_review_title">This week</string>
+    <string name="weekly_review_back">Back</string>
+    <string name="weekly_review_range">%1$s – %2$s</string>
+    <string name="weekly_review_summary_title">The week</string>
+    <string name="weekly_review_no_plan">No program is being followed, so there is nothing scheduled to compare with.</string>
+    <string name="weekly_review_totals">%1$s · %2$s · %3$s</string>
+    <string name="weekly_review_last_week">Last week: %1$s, %2$s</string>
+    <plurals name="weekly_review_planned">
+        <item quantity="one">%1$d of %2$d scheduled session done</item>
+        <item quantity="other">%1$d of %2$d scheduled sessions done</item>
+    </plurals>
+    <plurals name="weekly_review_session_count">
+        <item quantity="one">%1$d session</item>
+        <item quantity="other">%1$d sessions</item>
+    </plurals>
+    <plurals name="weekly_review_set_count">
+        <item quantity="one">%1$d set</item>
+        <item quantity="other">%1$d sets</item>
+    </plurals>
+    <string name="weekly_review_days_title">Planned days</string>
+    <string name="weekly_review_no_days">No scheduled days this week.</string>
+    <string name="weekly_review_stall_title">What stalled</string>
+    <string name="weekly_review_no_stall">No plan has stopped moving.</string>
+    <string name="weekly_review_retry">Try again</string>
+    <string name="weekly_review_done">Done</string>
+    <string name="weekly_review_missed">Missed</string>
+    <string name="weekly_review_skipped">Skipped</string>
+    <string name="weekly_review_upcoming">Upcoming</string>
+    <string name="weekly_review_deload">Deload</string>
+
     <string name="import_preview_title">Import this backup?</string>
     <string name="import_preview_text">It holds %1$s, %2$s, %3$s and %4$s. Nothing on this device is overwritten — rows it already has are left alone.</string>
     <string name="import_preview_confirm">Merge</string>

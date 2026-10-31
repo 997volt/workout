@@ -17,9 +17,11 @@ import com.example.androidapp.ui.theme.AndroidAppTheme
 import com.example.androidapp.ui.workout.WorkoutClock
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 import java.time.DayOfWeek
 import java.time.Instant
 
@@ -33,10 +35,15 @@ import java.time.Instant
  * Matched by tag, so a translation cannot break them.
  */
 @RunWith(AndroidJUnit4::class)
+// A window tall enough that the body's rows are composed together: two tests compare a foot row's bounds with
+// the first way in, and a recycled top row would make that comparison impossible rather than untrue.
+@Config(qualifiers = "w411dp-h1600dp")
 class WorkoutsHomeScreenTest {
 
     @get:Rule
     val composeTestRule = createComposeRule()
+
+    private var weeklyOpened = 0
 
     /**
      * Every callback the screen takes, grouped: the helper is a screen setter, and
@@ -101,11 +108,22 @@ class WorkoutsHomeScreenTest {
                     onOpenPrograms = actions.onOpenPrograms,
                     onOpenMeasurements = actions.onOpenMeasurements,
                     onMeasureToday = actions.onMeasureToday,
+                    onOpenWeeklyReview = { weeklyOpened++ },
                     message = message,
                     onDismissMessage = {},
                 )
             }
         }
+    }
+
+    @Test
+    fun theWeekInReviewRow_isAtTheFoot_andOpens() {
+        setScreen(WorkoutsHomeUiState(isLoading = false))
+
+        scrollTo(TestTags.HOME_WEEKLY_REVIEW)
+        composeTestRule.onNodeWithTag(TestTags.HOME_WEEKLY_REVIEW).performClick()
+
+        assertEquals(1, weeklyOpened)
     }
 
     @Test

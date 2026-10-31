@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.EventAvailable
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.Straighten
@@ -66,6 +67,7 @@ internal fun HomeBody(
     onOpenTemplates: () -> Unit,
     onOpenMeasurements: () -> Unit,
     onMeasureToday: () -> Unit,
+    onOpenWeeklyReview: () -> Unit,
     onStartTemplate: (TodayPlan) -> Unit,
     onSubstitute: (TodayPlan) -> Unit,
     onSkipBlock: (TodayPlan) -> Unit,
@@ -104,6 +106,18 @@ internal fun HomeBody(
             ),
         )
         planItems(state, actions)
+        // The week's read, at the foot with the day's block: a screen about training is also the place to
+        // look back over it (N247).
+        item(key = "weekly_review") {
+            AppRow(
+                headline = stringResource(R.string.weekly_review_entry),
+                supporting = stringResource(R.string.weekly_review_entry_hint),
+                leading = { IconTile(icon = Icons.Filled.DateRange, accent = ZONE_TODAY) },
+                onClick = onOpenWeeklyReview,
+                onClickLabel = stringResource(R.string.weekly_review_open),
+                testTag = TestTags.HOME_WEEKLY_REVIEW,
+            )
+        }
     }
 }
 

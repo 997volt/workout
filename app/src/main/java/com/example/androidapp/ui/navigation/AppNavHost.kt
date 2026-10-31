@@ -38,6 +38,7 @@ import com.example.androidapp.ui.settings.WeightUnitViewModel
 import com.example.androidapp.ui.statistics.StatisticsRoute
 import com.example.androidapp.ui.templates.TemplateEditorRoute
 import com.example.androidapp.ui.templates.TemplatesRoute
+import com.example.androidapp.ui.weekly.WeeklyReviewRoute
 import com.example.androidapp.ui.workout.ActiveWorkoutRoute
 import com.example.androidapp.ui.workout.ExercisePickerRoute
 
@@ -134,6 +135,13 @@ private fun NavGraphBuilder.homeDestinations(navController: NavHostController) {
         AdherenceRoute(onBack = { navController.popBackStack() })
     }
 
+    composable<WeeklyReview> {
+        WeeklyReviewRoute(
+            onBack = { navController.popBackStack() },
+            onOpenDeload = { programId -> navController.navigate(ProgramDeload(programId)) },
+        )
+    }
+
     composable<Settings> {
         SettingsRoute(
             onBack = { navController.popBackStack() },
@@ -163,6 +171,7 @@ private fun NavGraphBuilder.homeDestinations(navController: NavHostController) {
             // and while today has none, the row above it opens the daily form directly (N114).
             onOpenMeasurements = { navController.navigate(Measurements()) },
             onMeasureToday = { navController.navigate(Measurements(openDaily = true)) },
+            onOpenWeeklyReview = { navController.navigate(WeeklyReview) },
         )
     }
 
