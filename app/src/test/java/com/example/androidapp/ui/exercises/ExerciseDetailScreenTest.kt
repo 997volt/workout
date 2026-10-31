@@ -58,6 +58,8 @@ class ExerciseDetailScreenTest {
     @get:Rule
     val composeTestRule = createComposeRule()
 
+    private var mergeRequested = 0
+
     private fun show(
         state: ExerciseDetailUiState,
         onEdit: () -> Unit = {},
@@ -71,9 +73,29 @@ class ExerciseDetailScreenTest {
                 onEdit = onEdit,
                 onCancelEdit = onCancelEdit,
                 onSave = onSave,
+                onMerge = { mergeRequested++ },
                 onOpenTrends = { _ -> },
             )
         }
+    }
+
+    @Test
+    fun aMovementsMergeAction_isOffered_andReported() {
+        // ROADMAP N245: the action lives in the overflow so the top bar keeps Trends and Edit, and it is only
+        // offered for a movement — a category has no history to move.
+        val movement = Exercise(
+            id = "custom-1",
+            name = "Sled Push",
+            primaryMuscle = MuscleGroup.OTHER,
+            equipment = Equipment.OTHER,
+            movementPattern = MovementPattern.OTHER,
+        )
+        show(ExerciseDetailUiState(isLoading = false, exercise = movement))
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_MORE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_MERGE).performClick()
+
+        assertEquals("the menu's action reached the route", 1, mergeRequested)
     }
 
     @Test

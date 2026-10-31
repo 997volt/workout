@@ -1,8 +1,10 @@
 package com.example.androidapp.data
 
+import androidx.room.withTransaction
 import com.example.androidapp.data.local.ExerciseEntity
 import com.example.androidapp.data.local.LastTrainedRow
 import com.example.androidapp.data.local.WorkoutDatabase
+import com.example.androidapp.data.local.mergeMovementsInto
 import com.example.androidapp.data.local.toDomain
 import com.example.androidapp.data.local.toEntity
 import com.example.androidapp.domain.DataResult
@@ -40,7 +42,7 @@ import javax.inject.Singleton
  */
 @Singleton
 class RoomExerciseRepository @Inject constructor(
-    database: WorkoutDatabase,
+    private val database: WorkoutDatabase,
     private val timeSource: TimeSource,
 ) : ExerciseRepository {
 
@@ -147,6 +149,21 @@ class RoomExerciseRepository @Inject constructor(
         if (taken) {
             val what = if (rowKind == RowKind.MOVEMENT) "movement" else "family"
             throw InvalidInputException("The library already holds a $what called \"$trimmed\".")
+        }
+    }
+
+    override suspend fun mergeExercises(sourceId: String, survivorId: String): DataResult<Unit> = dataResultOf {
+        if (sourceId == survivorId) throw InvalidInputException("A movement cannot be merged into itself.")
+        val source = dao.findById(sourceId) ?: throw NotFoundException("exercise $sourceId")
+        val survivor = dao.findById(survivorId) ?: throw NotFoundException("exercise $survivorId")
+        if (source.rowKind != RowKind.MOVEMENT || survivor.rowKind != RowKind.MOVEMENT) {
+            throw InvalidInputException("Only movements can be merged.")
+        }
+        val at = timeSource.nowEpochMillis()
+        // One transaction: a merge that moved the history but not the plan, or the reverse, is a library
+        // with a row that no longer means anything (N238's four statements are one unit there too).
+        database.withTransaction {
+            mergeMovementsInto(database.openHelper.writableDatabase, sourceId, survivorId, at)
         }
     }
 

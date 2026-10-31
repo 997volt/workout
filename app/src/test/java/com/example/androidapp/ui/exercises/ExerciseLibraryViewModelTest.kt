@@ -205,6 +205,9 @@ class ExerciseLibraryViewModelTest {
                 DataResult.Success(Unit)
             }
         }
+
+        override suspend fun mergeExercises(sourceId: String, survivorId: String): DataResult<Unit> =
+            DataResult.Failure(DataError.NotFound)
     }
 
     private companion object {

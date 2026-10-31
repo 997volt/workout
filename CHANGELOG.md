@@ -17,6 +17,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Added
 
+- **Merge movements** (N245). N238's automatic repair deliberately leaves a row the lifter configured alone, and
+  the only way to settle a duplicate was to delete one row and its history with it. A movement's overflow now
+  offers *Merge into another movement…*: choose the survivor, and the sessions and plans move, the source's own
+  settings fill the survivor's gaps, the retired id is recorded and the row is removed — the deliberate twin of
+  the repair, with the cost stated before the confirm and a search over the library to choose.
 - **Diagnostics** (N244). Crashes and failed housekeeping passes were written to disk with no way to read them,
   so a report cost a backup and a reproduction. Settings → Support → Diagnostics shows the build, the last crash
   and the last failed pass, with **Copy details** — frames included, never a message that could carry a value —

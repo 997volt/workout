@@ -83,4 +83,16 @@ interface ExerciseRepository {
      * no longer exists, so a stale detail screen cannot silently write nothing.
      */
     suspend fun updateExercise(exercise: Exercise): DataResult<Unit>
+
+    /**
+     * Merges [sourceId] into [survivorId] (ROADMAP N245).
+     *
+     * The deliberate twin of the automatic repair: sessions and plans move to the survivor, the source's own
+     * settings fill the survivor's gaps, the retired id is recorded and the source row is deleted. The repair
+     * deliberately leaves a row the lifter configured alone; this is how they settle it without deleting a
+     * row's history.
+     *
+     * Both ids must name live movements; a category, a missing row or a merge into itself is refused.
+     */
+    suspend fun mergeExercises(sourceId: String, survivorId: String): DataResult<Unit>
 }

@@ -644,6 +644,16 @@ object TestTags {
     const val DIAGNOSTICS_COPY = "diagnostics_copy"
     const val DIAGNOSTICS_RETRY = "diagnostics_retry"
 
+    /** Merging one movement into another (ROADMAP N245): the detail's action and the picker. */
+    const val EXERCISE_MORE = "exercise_more"
+    const val EXERCISE_MERGE = "exercise_merge"
+    const val MERGE_DIALOG = "merge_dialog"
+    const val MERGE_SEARCH = "merge_search"
+    const val MERGE_CONFIRM = "merge_confirm"
+    const val MERGE_CANCEL = "merge_cancel"
+
+    fun mergeCandidate(id: String) = "merge_candidate_$id"
+
     /** The one-time notice a failed housekeeping pass raises (B324). */
     const val HOUSEKEEPING_ALERT = "housekeeping_alert"
     const val HOUSEKEEPING_RETRY = "housekeeping_retry"

@@ -538,6 +538,9 @@ class ExercisePickerViewModelTest {
 
         override suspend fun updateExercise(exercise: Exercise): DataResult<Unit> =
             DataResult.Success(Unit)
+
+        override suspend fun mergeExercises(sourceId: String, survivorId: String): DataResult<Unit> =
+            DataResult.Failure(DataError.NotFound)
     }
 
     /** Records which template an exercise landed in (ROADMAP N3). */

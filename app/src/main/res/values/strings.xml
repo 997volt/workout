@@ -129,6 +129,16 @@
     <string name="exercise_detail_not_found">That exercise is no longer in the library.</string>
     <!-- The exercise's own record (ROADMAP N233): what the last session held, and the best at each rep
          count or, for a movement that is held, the longest hold. -->
+    <string name="exercise_more">More</string>
+    <string name="exercise_merge_action">Merge into another movement…</string>
+    <string name="exercise_merge_title">Merge “%1$s” into…</string>
+    <string name="exercise_merge_text">Its sessions and plans move to the movement you choose, and this row is removed. The choice cannot be undone.</string>
+    <string name="exercise_merge_search">Search movements</string>
+    <string name="exercise_merge_confirm">Merge</string>
+    <string name="exercise_merge_cancel">Cancel</string>
+    <string name="exercise_merge_empty">No other movement matches.</string>
+    <string name="exercise_merge_into">Merge into %1$s</string>
+
     <string name="exercise_history_title">History</string>
     <string name="exercise_history_empty">No sessions yet.</string>
     <string name="exercise_history_last_trained">Last trained %1$s</string>

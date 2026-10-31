@@ -11,25 +11,23 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -74,6 +72,15 @@ fun ExerciseDetailRoute(
     viewModel: ExerciseDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val candidates by viewModel.mergeCandidates.collectAsStateWithLifecycle()
+    val merged by viewModel.merged.collectAsStateWithLifecycle()
+    var merging by rememberSaveable { mutableStateOf(false) }
+
+    // The row this screen shows no longer exists once a merge lands, so leave its screen (N245). The
+    // callback is read through a state holder so the effect is not restarted by a new lambda identity.
+    val leaveAfterMerge by rememberUpdatedState(onBack)
+    LaunchedEffect(merged) { if (merged) leaveAfterMerge() }
+
     ExerciseDetailScreen(
         state = state,
         onBack = onBack,
@@ -81,8 +88,19 @@ fun ExerciseDetailRoute(
         onEdit = viewModel::onEdit,
         onCancelEdit = viewModel::onCancelEdit,
         onSave = viewModel::onSave,
+        onMerge = { merging = true },
         modifier = modifier,
     )
+
+    if (merging) {
+        MergeMovementDialog(
+            sourceName = state.exercise?.name.orEmpty(),
+            candidates = candidates,
+            error = state.mergeError?.let { dataErrorMessage(it) },
+            onConfirm = viewModel::onMerge,
+            onDismiss = { merging = false },
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -94,45 +112,18 @@ fun ExerciseDetailScreen(
     onEdit: () -> Unit,
     onCancelEdit: () -> Unit,
     onSave: (ExerciseEdit) -> Unit,
+    onMerge: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(state.exercise?.name ?: stringResource(R.string.exercise_detail_title))
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.exercise_detail_back),
-                        )
-                    }
-                },
-                actions = {
-                    // The lift's own trends (ROADMAP N17): the narrow question a lifter
-                    // asks is about one movement, not about everything at once.
-                    state.exercise?.let { exercise ->
-                        AppTextButton(
-                            onClick = { onOpenTrends(exercise.id) },
-                            modifier = Modifier.testTag(TestTags.EXERCISE_TRENDS),
-                        ) {
-                            Text(stringResource(R.string.exercise_trends_open_short))
-                        }
-                    }
-                    // Only a custom exercise is editable here (ROADMAP N2), and the
-                    // action disappears while the form is already open.
-                    if (state.canEdit) {
-                        AppTextButton(
-                            onClick = onEdit,
-                            modifier = Modifier.testTag(TestTags.EXERCISE_EDIT),
-                        ) {
-                            Text(stringResource(R.string.exercise_edit))
-                        }
-                    }
-                },
+            ExerciseDetailTopBar(
+                state = state,
+                onBack = onBack,
+                onOpenTrends = onOpenTrends,
+                onEdit = onEdit,
+                onMerge = onMerge,
             )
         },
     ) { innerPadding ->
@@ -147,6 +138,12 @@ fun ExerciseDetailScreen(
     }
 }
 
+/**
+ * The detail's top bar: the lift's trends, the editor, and the overflow a merge lives in (ROADMAP N17, N2, N245).
+ *
+ * Split from the screen because the screen crossed the method budget when the merge action arrived — and the
+ * bar is the part that changes with the row's kind, which is worth reading on its own.
+ */
 /**
  * What the screen shows once it has a state: a spinner, a failure, "no such
  * exercise", the edit form, or the exercise itself.
@@ -922,6 +919,7 @@ private fun ExerciseDetailScreenPreview() {
             onEdit = {},
             onCancelEdit = {},
             onSave = { _ -> },
+            onMerge = {},
         )
     }
 }
@@ -947,6 +945,7 @@ private fun ExerciseDetailEditPreview() {
             onEdit = {},
             onCancelEdit = {},
             onSave = { _ -> },
+            onMerge = {},
         )
     }
 }

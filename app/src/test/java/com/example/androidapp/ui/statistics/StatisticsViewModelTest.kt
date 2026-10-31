@@ -1015,6 +1015,9 @@ private class FakeExerciseRepository(private val lifts: List<Exercise>) : Exerci
         DataResult.Success(lifts)
 
     override suspend fun updateExercise(exercise: Exercise): DataResult<Unit> = DataResult.Success(Unit)
+
+    override suspend fun mergeExercises(sourceId: String, survivorId: String): DataResult<Unit> =
+        DataResult.Failure(DataError.NotFound)
 }
 
 /** The goal history these tests write to and read from (ROADMAP N137). */

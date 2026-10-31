@@ -3,7 +3,11 @@ package com.example.androidapp.data
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.androidapp.data.local.SessionExerciseEntity
+import com.example.androidapp.data.local.TemplateEntity
+import com.example.androidapp.data.local.TemplateExerciseEntity
 import com.example.androidapp.data.local.WorkoutDatabase
+import com.example.androidapp.data.local.WorkoutSessionEntity
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
@@ -399,6 +403,94 @@ class RoomExerciseRepositoryTest {
 
     private suspend fun library(): List<Exercise> =
         (repository.observeExercises().first() as DataResult.Success).data
+
+    @Test
+    fun merging_movesTheHistory_keepsTheSurvivorsSettings_andRetiresTheSource() = runTest {
+        val source = created("Sled Push")
+        val survivor = created("Sled Drag")
+        // Only the source states the cue, so the merge carries it into the survivor's gap (B298, N245).
+        assertTrue(
+            repository.updateExercise(source.copy(techniqueNote = "Brace, then push")) is DataResult.Success,
+        )
+
+        database.workoutDao().insertSession(
+            WorkoutSessionEntity(
+                id = "s1",
+                startedAt = 1L,
+                finishedAt = 2L,
+                notes = null,
+                restEndsAt = null,
+                readinessNote = null,
+                createdAt = 1L,
+                updatedAt = 2L,
+                deletedAt = null,
+            ),
+        )
+        database.workoutDao().insertSessionExercise(
+            SessionExerciseEntity(
+                id = "se1",
+                sessionId = "s1",
+                exerciseId = source.id,
+                position = 0,
+                finishedAt = null,
+                muscleFeel = null,
+                createdAt = 1L,
+                updatedAt = 1L,
+                deletedAt = null,
+            ),
+        )
+        database.templateDao().insertTemplate(
+            TemplateEntity(id = "t1", name = "Push", createdAt = 1L, updatedAt = 1L, deletedAt = null),
+        )
+        database.templateDao().insertTemplateExercise(
+            TemplateExerciseEntity(
+                id = "te1",
+                templateId = "t1",
+                exerciseId = source.id,
+                position = 0,
+                createdAt = 1L,
+                updatedAt = 1L,
+                deletedAt = null,
+            ),
+        )
+
+        val result = repository.mergeExercises(source.id, survivor.id)
+
+        assertTrue(result is DataResult.Success)
+        assertEquals(
+            "the session follows",
+            survivor.id,
+            database.sessionExerciseDao().findSessionExercise("se1")?.exerciseId,
+        )
+        assertEquals(
+            "and the plan",
+            survivor.id,
+            database.templateDao().findTemplateExercises("t1").single().exerciseId,
+        )
+        assertNull("the source row is gone", database.exerciseDao().findById(source.id))
+        assertEquals(
+            "the retired id maps to the survivor",
+            survivor.id,
+            database.movementMergeDao().retiredMovements().single { it.id == source.id }.survivorId,
+        )
+        assertEquals(
+            "the source's cue fills the survivor's gap",
+            "Brace, then push",
+            database.exerciseDao().findById(survivor.id)?.techniqueNote,
+        )
+    }
+
+    @Test
+    fun mergingAMovementIntoItself_orACategory_isRefused() = runTest {
+        val movement = created("Sled Push")
+        val category = (repository.createCategory("Sleds") as DataResult.Success<Exercise>).data
+
+        val self = repository.mergeExercises(movement.id, movement.id) as DataResult.Failure
+        assertTrue(self.error is DataError.Invalid)
+        val intoCategory = repository.mergeExercises(movement.id, category.id) as DataResult.Failure
+        assertTrue(intoCategory.error is DataError.Invalid)
+        assertTrue("the source is still there", repository.getExercise(movement.id) is DataResult.Success)
+    }
 
     private suspend fun created(name: String): Exercise =
         (repository.createCustomExercise(name) as DataResult.Success<Exercise>).data

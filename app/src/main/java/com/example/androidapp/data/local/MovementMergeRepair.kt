@@ -36,15 +36,29 @@ internal fun mergeDuplicateMovements(db: SupportSQLiteDatabase, at: Long) {
     if (pairs.isEmpty()) return
 
     pairs.forEach { merge ->
-        db.execSQL(REPOINT_SESSION_EXERCISES, arrayOf<Any?>(merge.survivorId, at, merge.sourceId))
-        db.execSQL(REPOINT_TEMPLATE_EXERCISES, arrayOf<Any?>(merge.survivorId, at, merge.sourceId))
-        // What only the source stated is the lifter's own (B298): the survivor keeps every value it has and
-        // gains whatever it left unset. A bare import may still carry a cue or a rest a document brought whole,
-        // and after the delete this is the only row left to hold it.
-        carryLifterFields(db, from = merge.sourceId, to = merge.survivorId)
-        rememberRetiredMovement(db, from = merge.sourceId, to = merge.survivorId)
-        db.execSQL(DELETE_MOVEMENT, arrayOf<Any?>(merge.sourceId))
+        mergeMovementsInto(db, merge.sourceId, merge.survivorId, at)
     }
+}
+
+/**
+ * The four statements one merge takes, in the order that keeps the library valid (N238, N245).
+ *
+ * The caller owns the transaction and has already validated both rows: the repair from its rule, the detail
+ * screen from what the lifter chose. Sessions and plans are re-pointed first, so the delete cannot leave a
+ * reference behind; the source's settings travel into the survivor's gaps (B298); and the retired id is
+ * recorded so a program document exported before this still resolves.
+ */
+internal fun mergeMovementsInto(
+    db: SupportSQLiteDatabase,
+    sourceId: String,
+    survivorId: String,
+    at: Long,
+) {
+    db.execSQL(REPOINT_SESSION_EXERCISES, arrayOf<Any?>(survivorId, at, sourceId))
+    db.execSQL(REPOINT_TEMPLATE_EXERCISES, arrayOf<Any?>(survivorId, at, sourceId))
+    carryLifterFields(db, from = sourceId, to = survivorId)
+    rememberRetiredMovement(db, from = sourceId, to = survivorId)
+    db.execSQL(DELETE_MOVEMENT, arrayOf<Any?>(sourceId))
 }
 
 /**

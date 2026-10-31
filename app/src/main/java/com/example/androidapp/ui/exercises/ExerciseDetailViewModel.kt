@@ -20,9 +20,12 @@ import com.example.androidapp.domain.repository.WorkoutRepository
 import com.example.androidapp.ui.navigation.ExerciseDetail
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -126,6 +129,8 @@ data class ExerciseDetailUiState(
      * about the training rather than about the read.
      */
     val historyError: DataError? = null,
+    /** Why the last merge did not happen, shown inside the merge dialog (ROADMAP N245). */
+    val mergeError: DataError? = null,
 ) {
     /**
      * Loaded, but no such exercise — a real state, not an error to hide.
@@ -320,6 +325,36 @@ class ExerciseDetailViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Every other live movement, as the merge dialog's candidates (ROADMAP N245).
+     *
+     * A category is never a candidate — a merge moves history, and a category has none — and neither is the
+     * row the screen is on. Alphabetical because the dialog searches within it.
+     */
+    val mergeCandidates: StateFlow<List<Exercise>> = repository.observeExercises()
+        .map { result -> (result as? DataResult.Success)?.data.orEmpty() }
+        .map { rows ->
+            rows.filter { it.id != exerciseId && it.rowKind == RowKind.MOVEMENT }
+                .sortedBy { it.name.lowercase() }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(MERGE_CANDIDATE_STOP_MILLIS), emptyList())
+
+    private val _merged = MutableStateFlow(false)
+
+    /** True once a merge landed; the route leaves the screen of the row that no longer exists. */
+    val merged: StateFlow<Boolean> = _merged.asStateFlow()
+
+    /** Merges this row into [intoId]; a failure stays in the dialog rather than replacing the screen. */
+    fun onMerge(intoId: String) {
+        _uiState.update { it.copy(mergeError = null) }
+        viewModelScope.launch {
+            when (val result = repository.mergeExercises(exerciseId, intoId)) {
+                is DataResult.Success -> _merged.value = true
+                is DataResult.Failure -> _uiState.update { it.copy(mergeError = result.error) }
+            }
+        }
+    }
+
     /** Writes [row], returning it on success so the screen can hold what was stored. */
     private suspend fun write(row: Exercise): DataResult<Exercise> =
         when (val result = repository.updateExercise(row)) {
@@ -344,3 +379,6 @@ class ExerciseDetailViewModel @Inject constructor(
         parentId = edit.parentId,
     )
 }
+
+/** The candidate flow stops a moment after the dialog closes: one screen's read, not a live watch (N245). */
+private const val MERGE_CANDIDATE_STOP_MILLIS = 5_000L

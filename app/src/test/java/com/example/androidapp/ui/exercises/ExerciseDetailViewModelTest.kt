@@ -303,6 +303,36 @@ class ExerciseDetailViewModelTest {
         )
     }
 
+    @Test
+    fun merging_reportsTheIds_andSignalsTheRoute() = runTest(dispatcher) {
+        val repository = FakeRepository(mutableListOf(custom, seeded))
+        val viewModel = viewModelFor(repository)
+        advanceUntilIdle()
+
+        viewModel.onMerge("back-squat")
+        advanceUntilIdle()
+
+        assertEquals("custom-1" to "back-squat", repository.merge)
+        assertTrue(viewModel.merged.value)
+    }
+
+    @Test
+    fun aRefusedMerge_keepsTheScreen_andShowsTheReason() = runTest(dispatcher) {
+        val repository = FakeRepository(mutableListOf(custom, seeded))
+        repository.mergeResult = DataResult.Failure(DataError.Invalid("Only movements can be merged."))
+        val viewModel = viewModelFor(repository)
+        advanceUntilIdle()
+
+        viewModel.onMerge("back-squat")
+        advanceUntilIdle()
+
+        assertEquals(
+            "Only movements can be merged.",
+            (viewModel.uiState.value.mergeError as DataError.Invalid).message,
+        )
+        assertFalse("the route must not leave a row that is still here", viewModel.merged.value)
+    }
+
     private val seeded = Exercise(
         id = "back-squat",
         name = "Back Squat",
@@ -363,6 +393,14 @@ class ExerciseDetailViewModelTest {
             saved = exercise
             state.value = state.value.map { if (it.id == exercise.id) exercise else it }
             return DataResult.Success(Unit)
+        }
+
+        var merge: Pair<String, String>? = null
+        var mergeResult: DataResult<Unit> = DataResult.Success(Unit)
+
+        override suspend fun mergeExercises(sourceId: String, survivorId: String): DataResult<Unit> {
+            merge = sourceId to survivorId
+            return mergeResult
         }
     }
 
