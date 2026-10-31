@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Added
 
+- **A backup is previewed before it is merged** (N246). *Import data* read the file and merged it at once; what it
+  held was never shown. The file is decoded first now, and a sheet says how many sessions, sets, measurements and
+  movements it carries and that nothing on the device is overwritten, before the merge. A file that cannot be
+  read or decoded still says so at once.
 - **Merge movements** (N245). N238's automatic repair deliberately leaves a row the lifter configured alone, and
   the only way to settle a duplicate was to delete one row and its history with it. A movement's overflow now
   offers *Merge into another movement…*: choose the survivor, and the sessions and plans move, the source's own

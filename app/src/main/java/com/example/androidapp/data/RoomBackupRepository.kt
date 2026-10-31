@@ -22,6 +22,7 @@ import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.dataResultOf
 import com.example.androidapp.domain.model.localDayBounds
 import com.example.androidapp.domain.nowEpochMillis
+import com.example.androidapp.domain.repository.BackupPreview
 import com.example.androidapp.domain.repository.BackupRepository
 import com.example.androidapp.domain.repository.ImportSummary
 import com.example.androidapp.platform.CrashLogStore
@@ -166,6 +167,18 @@ class RoomBackupRepository @Inject constructor(
             // `clearAllTables` above is what takes them. The loop that emptied the settings string went with
             // the string.
         }
+    }
+
+    override suspend fun preview(text: String): DataResult<BackupPreview> = dataResultOf {
+        val file = BackupCodec.decode(text)
+        BackupPreview(
+            sessions = file.sessions.size,
+            sets = file.sets.size,
+            measurements = file.measurements.size,
+            exercises = file.exercises.size,
+            templates = file.templates.size,
+            programs = file.programs.size,
+        )
     }
 
     override suspend fun import(text: String): DataResult<ImportSummary> = dataResultOf {

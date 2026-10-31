@@ -65,6 +65,7 @@ import com.example.androidapp.ui.components.label
 import com.example.androidapp.ui.theme.TileAccent
 import com.example.androidapp.ui.transfer.ClearOutcome
 import com.example.androidapp.ui.transfer.DataTransferViewModel
+import com.example.androidapp.ui.transfer.ImportPreviewDialog
 import com.example.androidapp.ui.transfer.rememberDataTransferActions
 import kotlinx.coroutines.launch
 import java.time.ZoneId
@@ -91,6 +92,14 @@ fun SettingsRoute(
     transferViewModel: DataTransferViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val pendingImport by transferViewModel.pendingImport.collectAsStateWithLifecycle()
+    pendingImport?.let { pending ->
+        ImportPreviewDialog(
+            preview = pending.preview,
+            onConfirm = transferViewModel::confirmImport,
+            onDismiss = transferViewModel::cancelImport,
+        )
+    }
 
     // The data actions report into a snackbar and a held failure, the shape the home screen used
     // before they moved (F7, F8). The clear is suspending and its sentence is a resource, so it

@@ -129,6 +129,27 @@
     <string name="exercise_detail_not_found">That exercise is no longer in the library.</string>
     <!-- The exercise's own record (ROADMAP N233): what the last session held, and the best at each rep
          count or, for a movement that is held, the longest hold. -->
+    <string name="import_preview_title">Import this backup?</string>
+    <string name="import_preview_text">It holds %1$s, %2$s, %3$s and %4$s. Nothing on this device is overwritten — rows it already has are left alone.</string>
+    <string name="import_preview_confirm">Merge</string>
+    <string name="import_preview_cancel">Cancel</string>
+    <plurals name="import_preview_sessions">
+        <item quantity="one">%1$d session</item>
+        <item quantity="other">%1$d sessions</item>
+    </plurals>
+    <plurals name="import_preview_sets">
+        <item quantity="one">%1$d set</item>
+        <item quantity="other">%1$d sets</item>
+    </plurals>
+    <plurals name="import_preview_measurements">
+        <item quantity="one">%1$d measurement</item>
+        <item quantity="other">%1$d measurements</item>
+    </plurals>
+    <plurals name="import_preview_movements">
+        <item quantity="one">%1$d movement</item>
+        <item quantity="other">%1$d movements</item>
+    </plurals>
+
     <string name="exercise_more">More</string>
     <string name="exercise_merge_action">Merge into another movement…</string>
     <string name="exercise_merge_title">Merge “%1$s” into…</string>

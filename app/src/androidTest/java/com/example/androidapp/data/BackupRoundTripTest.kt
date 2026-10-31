@@ -960,4 +960,25 @@ class BackupRoundTripTest {
             restored.getValue("back-squat").parentId,
         )
     }
+
+    @Test
+    fun thePreview_countsTheFile_andWritesNothing() = runTest {
+        // ROADMAP N246: the import asks before it merges, and the question is about the file rather than about
+        // what the merge would add. Reading it must not write.
+        val text = (repository.export() as DataResult.Success).data
+        val sessionsBefore = database.workoutDao().observeHistory().first().size
+        val exercises = database.exerciseDao().findAllIncludingDeleted().size
+
+        val preview = (repository.preview(text) as DataResult.Success).data
+
+        assertEquals("the file's sessions are counted", sessionsBefore, preview.sessions)
+        assertEquals("and its movements", exercises, preview.exercises)
+        assertEquals(
+            "and the preview wrote nothing",
+            sessionsBefore,
+            database.workoutDao().observeHistory().first().size,
+        )
+        val summary = (repository.import(text) as DataResult.Success).data
+        assertTrue("the preview did not add what the import would have", summary.wasAlreadyComplete)
+    }
 }

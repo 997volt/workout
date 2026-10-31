@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
+import com.example.androidapp.domain.repository.BackupPreview
 import com.example.androidapp.domain.repository.BackupRepository
 import com.example.androidapp.domain.repository.ImportSummary
 import com.example.androidapp.platform.DocumentIo
@@ -89,6 +90,31 @@ class DataTransferViewModel @Inject constructor(
         is DataResult.Failure -> ImportOutcome.Failed(result.error)
     }
 
+    /** The file waiting for the lifter's confirmation, with what the preview read (ROADMAP N246). */
+    data class PendingImport(val text: String, val preview: BackupPreview)
+
+    private val _pendingImport = MutableStateFlow<PendingImport?>(null)
+
+    /** The file the picker returned, held until the sheet is answered. */
+    val pendingImport: StateFlow<PendingImport?> = _pendingImport.asStateFlow()
+
+    /** Merges the file that was previewed, after the lifter confirmed what it holds. */
+    fun confirmImport() {
+        val pending = _pendingImport.value ?: return
+        _pendingImport.value = null
+        viewModelScope.launch {
+            _outcome.value = when (val merged = import(pending.text)) {
+                is ImportOutcome.Imported -> TransferOutcome.Merged(merged.summary)
+                is ImportOutcome.Failed -> TransferOutcome.Refused(merged.error)
+            }
+        }
+    }
+
+    /** The picker's answer was no: forget the file without reading further. */
+    fun cancelImport() {
+        _pendingImport.value = null
+    }
+
     /** Writes the backup to the document the picker returned, and reports what happened. */
     fun writeBackup(context: Context, uri: Uri) {
         viewModelScope.launch {
@@ -104,17 +130,23 @@ class DataTransferViewModel @Inject constructor(
         }
     }
 
-    /** Reads the document the picker returned and merges it, reporting what happened. */
+    /**
+     * Reads the document the picker returned and **asks** before merging it (ROADMAP N246).
+     *
+     * The read is the risky half — the file is someone else's, and the merge is the app's biggest write — so
+     * the counts come first. A file that cannot be read or decoded is still reported at once; only a file with
+     * something to merge becomes a question.
+     */
     fun readBackup(context: Context, uri: Uri) {
         viewModelScope.launch {
             val text = documentIo.read(context, uri)
-            _outcome.value = if (text == null) {
-                TransferOutcome.StorageFailure
-            } else {
-                when (val merged = import(text)) {
-                    is ImportOutcome.Imported -> TransferOutcome.Merged(merged.summary)
-                    is ImportOutcome.Failed -> TransferOutcome.Refused(merged.error)
-                }
+            if (text == null) {
+                _outcome.value = TransferOutcome.StorageFailure
+                return@launch
+            }
+            when (val preview = backupRepository.preview(text)) {
+                is DataResult.Success -> _pendingImport.value = PendingImport(text, preview.data)
+                is DataResult.Failure -> _outcome.value = TransferOutcome.Refused(preview.error)
             }
         }
     }

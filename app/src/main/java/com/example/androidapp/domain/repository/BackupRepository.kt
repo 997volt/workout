@@ -38,6 +38,15 @@ interface BackupRepository {
     suspend fun import(text: String): DataResult<ImportSummary>
 
     /**
+     * What a backup file holds, before anything is merged (ROADMAP N246).
+     *
+     * The same decode the import runs, so a file the import would refuse is refused here too. It is a question,
+     * not a dry run: nothing is written, and the counts are the file's rows rather than what the merge will
+     * change — the import leaves a row the device already has alone.
+     */
+    suspend fun preview(text: String): DataResult<BackupPreview>
+
+    /**
      * Deletes everything the user made and puts the seeded library back (ROADMAP N18).
      *
      * **Hard, not soft.** Every other delete in this app sets `deletedAt`, which is right
@@ -68,3 +77,13 @@ data class ImportSummary(
     /** Everything in the file was already present and live. A success, not a no-op. */
     val wasAlreadyComplete: Boolean get() = total == 0
 }
+
+/** The rows a backup file carries, for the question asked before it is merged (ROADMAP N246). */
+data class BackupPreview(
+    val sessions: Int,
+    val sets: Int,
+    val measurements: Int,
+    val exercises: Int,
+    val templates: Int,
+    val programs: Int,
+)

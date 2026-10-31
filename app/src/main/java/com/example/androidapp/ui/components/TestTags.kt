@@ -644,6 +644,11 @@ object TestTags {
     const val DIAGNOSTICS_COPY = "diagnostics_copy"
     const val DIAGNOSTICS_RETRY = "diagnostics_retry"
 
+    /** The backup preview's question (ROADMAP N246). */
+    const val IMPORT_PREVIEW_DIALOG = "import_preview_dialog"
+    const val IMPORT_PREVIEW_CONFIRM = "import_preview_confirm"
+    const val IMPORT_PREVIEW_CANCEL = "import_preview_cancel"
+
     /** Merging one movement into another (ROADMAP N245): the detail's action and the picker. */
     const val EXERCISE_MORE = "exercise_more"
     const val EXERCISE_MERGE = "exercise_merge"
