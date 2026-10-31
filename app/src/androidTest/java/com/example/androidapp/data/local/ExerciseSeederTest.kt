@@ -139,9 +139,9 @@ class ExerciseSeederTest {
 
     @Test
     fun aDeviceFromBeforeTheFlags_isRaised_andALiftersRaiseIsKept() = runTest {
-        // The upgrade path (B293). A row already on the device says "not bodyweight" because no seeder ever
-        // wrote the column, and it still carries the never-edited marker, so the repair raises it to what the
-        // seed declares — and it only ever raises, so a movement the lifter marked themselves keeps it.
+        // The upgrade path (B293, B327). A row already on the device says "not bodyweight" because no seeder
+        // ever wrote the column, and it carries no provenance marker, so the repair raises it to what the seed
+        // declares — and it only ever raises, so a movement the lifter marked themselves keeps it.
         val database = databaseWithSeeding()
         try {
             val dao = database.exerciseDao()
@@ -149,6 +149,10 @@ class ExerciseSeederTest {
 
             raw.execSQL("UPDATE exercises SET isBodyweight = 0 WHERE id = 'pull-up'")
             raw.execSQL("UPDATE exercises SET isBodyweight = 1 WHERE id = 'barbell-bench-press'")
+            // The rows predate the marker, which is what says the seed has not written their flags (B327).
+            raw.execSQL(
+                "UPDATE exercises SET seedFlagsAt = NULL WHERE id IN ('pull-up', 'barbell-bench-press')",
+            )
             assertEquals(false, dao.findById("pull-up")?.isBodyweight)
 
             seedMissingExercises(raw, SEEDED_AT + 1_000L)
@@ -166,14 +170,16 @@ class ExerciseSeederTest {
 
     @Test
     fun aFlagTheLifterTurnedOff_isNotRaisedAgain() = runTest {
-        // B299: an edit bumps updatedAt, the row's own record that the seed is no longer its only writer. The
-        // repair used to re-assert the seed on every open, so a movement the lifter unmarked came back.
+        // B299, B327: the repository stamps a flag change as the lifter's (seedFlagsAt = 0), and that is the
+        // row's own record that the seed is no longer its only writer. The repair used to re-assert the seed
+        // on every open, so a movement the lifter unmarked came back.
         val database = databaseWithSeeding()
         try {
             val dao = database.exerciseDao()
             val raw = database.openHelper.writableDatabase
             raw.execSQL(
-                "UPDATE exercises SET isBodyweight = 0, updatedAt = createdAt + 1 WHERE id = 'pull-up'",
+                "UPDATE exercises SET isBodyweight = 0, seedFlagsAt = 0, updatedAt = createdAt + 1 " +
+                    "WHERE id = 'pull-up'",
             )
 
             seedMissingExercises(raw, SEEDED_AT + 1_000L)
@@ -183,6 +189,55 @@ class ExerciseSeederTest {
                 false,
                 dao.findById("pull-up")?.isBodyweight,
             )
+        } finally {
+            database.close()
+        }
+    }
+
+    @Test
+    fun aRowEditedForAnotherReason_isRaisedOnce_andStamped() = runTest {
+        // B327: a cue edit is not a flag answer. The old guard read any edit as "the lifter's", so an edited
+        // pull-up or plank kept the old seeder's zero and read as a counted lift. The marker makes the raise
+        // one-time per row instead of either per-open or never.
+        val database = databaseWithSeeding()
+        try {
+            val dao = database.exerciseDao()
+            val raw = database.openHelper.writableDatabase
+            raw.execSQL(
+                "UPDATE exercises SET isBodyweight = 0, seedFlagsAt = NULL, " +
+                    "updatedAt = createdAt + 1 WHERE id = 'pull-up'",
+            )
+
+            seedMissingExercises(raw, SEEDED_AT + 1_000L)
+
+            assertEquals("the seed raises it anyway", true, dao.findById("pull-up")?.isBodyweight)
+            assertEquals(
+                "and stamps the row, so the pass is one-time",
+                SEEDED_AT + 1_000L,
+                dao.findById("pull-up")?.seedFlagsAt,
+            )
+
+            raw.execSQL("UPDATE exercises SET isBodyweight = 0 WHERE id = 'pull-up'")
+            seedMissingExercises(raw, SEEDED_AT + 2_000L)
+
+            assertEquals(
+                "a later open does not raise a stamped row again",
+                false,
+                dao.findById("pull-up")?.isBodyweight,
+            )
+        } finally {
+            database.close()
+        }
+    }
+
+    @Test
+    fun theSeedStampsItsFlags_atInsert() = runTest {
+        // A row the seed inserted itself has nothing to repair, and says so (B327).
+        val database = databaseWithSeeding()
+        try {
+            val dao = database.exerciseDao()
+            assertEquals(SEEDED_AT, dao.findById("pull-up")?.seedFlagsAt)
+            assertEquals(SEEDED_AT, dao.findById("barbell-bench-press")?.seedFlagsAt)
         } finally {
             database.close()
         }

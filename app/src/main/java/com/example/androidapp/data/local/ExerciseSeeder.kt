@@ -78,6 +78,9 @@ private fun insertCategories(db: SupportSQLiteDatabase, converters: Converters, 
                 // movements a set is logged against (B293).
                 0,
                 0,
+                // The seed wrote the flags at insert (B327); a row that predates the column is null and the
+                // repair below raises it once.
+                seededAt,
                 seededAt,
                 seededAt,
             ),
@@ -112,6 +115,8 @@ private fun insertMovements(db: SupportSQLiteDatabase, converters: Converters, s
                 // loaded one (B293): a weighted pull-up read as its belt alone, a plank offered reps.
                 if (exercise.isBodyweight) 1 else 0,
                 if (exercise.isTimed) 1 else 0,
+                // The flags' provenance (B327): the seed wrote them, so the repair leaves the row alone.
+                seededAt,
                 // One timestamp per batch, so seeded rows are recognisable as
                 // seed rather than as something the user created.
                 seededAt,
@@ -140,7 +145,14 @@ private fun writeBehindTheInsert(db: SupportSQLiteDatabase, seededAt: Long) {
         val timed = if (exercise.isTimed) 1 else 0
         db.execSQL(
             UPDATE_SEEDED_FLAGS,
-            arrayOf<Any?>(bodyweight, timed, exercise.id, exercise.name, RowKind.MOVEMENT.name, bodyweight, timed),
+            arrayOf<Any?>(
+                bodyweight,
+                timed,
+                seededAt,
+                exercise.id,
+                exercise.name,
+                RowKind.MOVEMENT.name,
+            ),
         )
     }
     mergeRetiredMovements(db, seededAt)
@@ -208,17 +220,18 @@ internal const val UPDATE_SEEDED_FAMILY =
         "WHERE id = ? AND name = ? AND rowKind = ? AND parentId IS NULL AND createdAt = updatedAt"
 
 /**
- * Fills in the two flags an older seeder never wrote (B293, B299).
+ * Raises the two flags an older seeder never wrote (B293, B327).
  *
- * The two `<` comparisons make the repair one-way: a row is only touched where its own value is below the
- * seed's, so a raise the lifter made is never lowered. `createdAt = updatedAt` keeps the other direction: an
- * edit bumps `updatedAt`, so a flag the lifter turned **off** is theirs and is not raised again on the next
- * open. Between the two guards only a row the seed itself last wrote is backfilled.
+ * `MAX` makes the repair one-way **per flag**: a value the lifter raised is never lowered, even where the
+ * other flag on the row is below the seed's. `seedFlagsAt IS NULL` is the provenance: an edit to a cue or a
+ * rest is not a flag answer, so it no longer blocks the repair (B299's `createdAt = updatedAt` guard made
+ * every edit look like one, B327); a flag the lifter changed stamps `seedFlagsAt` to 0, and this leaves it
+ * alone. The stamp makes the repair one-time per row: a later seed change does not re-assert itself over the
+ * row the seed has already written.
  */
 internal const val UPDATE_SEEDED_FLAGS =
-    "UPDATE exercises SET isBodyweight = ?, isTimed = ? " +
-        "WHERE id = ? AND name = ? AND rowKind = ? AND (isBodyweight < ? OR isTimed < ?) " +
-        "AND createdAt = updatedAt"
+    "UPDATE exercises SET isBodyweight = MAX(isBodyweight, ?), isTimed = MAX(isTimed, ?), seedFlagsAt = ? " +
+        "WHERE id = ? AND name = ? AND rowKind = ? AND seedFlagsAt IS NULL"
 
 /**
  * The families whose taxonomy a later seed corrected, with the list it shipped before (N240).
@@ -399,4 +412,5 @@ private fun SupportSQLiteDatabase.holdsMovement(id: String, name: String? = null
 internal const val INSERT_EXERCISE =
     "INSERT OR IGNORE INTO exercises " +
         "(id, name, primaryMuscle, secondaryMuscles, equipment, movementPattern, " +
-        "parentId, rowKind, isBodyweight, isTimed, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        "parentId, rowKind, isBodyweight, isTimed, seedFlagsAt, createdAt, updatedAt) " +
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"

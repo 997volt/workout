@@ -96,6 +96,9 @@ internal fun ExerciseEntity.toDto() = ExerciseDto(
     stepGrams = stepGrams,
     isBodyweight = isBodyweight,
     isTimed = isTimed,
+    // The flags' provenance (B327): a restore that dropped it would let the one-time repair raise a row
+    // whose flags the backup says the lifter set.
+    seedFlagsAt = seedFlagsAt,
     parentId = parentId,
     rowKind = rowKind,
     progressionMode = progressionMode,
@@ -120,6 +123,8 @@ internal fun ExerciseDto.toEntity() = ExerciseEntity(
     // ordinary movement, and its sets would then read as their added weight alone.
     isBodyweight = isBodyweight,
     isTimed = isTimed,
+    // The flags' provenance (B327): kept, so a restored row the lifter had set stays theirs.
+    seedFlagsAt = seedFlagsAt,
     // The library's shape (ROADMAP N95). Dropping `parentId` would flatten a restored library into a list,
     // and dropping `rowKind` would turn every head into a lift a picker offers — the two halves of the
     // feature that a round trip has to carry or it is not a round trip.

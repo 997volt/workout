@@ -209,6 +209,15 @@ class RoomExerciseRepository @Inject constructor(
             // the screen became a lie: the edit is the only way a movement is ever marked (B240).
             isBodyweight = exercise.isBodyweight,
             isTimed = exercise.isTimed,
+            // A flag change is the lifter's answer, not an edit to some other field (B327): stamp the row so
+            // the one-time seed repair never raises it again. Any other edit keeps the marker as it was.
+            seedFlagsAt = if (
+                exercise.isBodyweight != stored.isBodyweight || exercise.isTimed != stored.isTimed
+            ) {
+                0L
+            } else {
+                stored.seedFlagsAt
+            },
             // The movement's own answer to Done by name, or null for the app setting (ROADMAP N235).
             // `stored.copy` keeps what it is not told, so leaving this out would silently put back the
             // old answer while the screen showed the new one — the failure B240 recorded for the flags.

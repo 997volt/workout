@@ -70,6 +70,11 @@ import androidx.room.TypeConverters
  * read by nobody, and dropping it before the release is cheaper than carrying a column nobody reads. The
  * table is recreated and copied, because the supported API levels have no `DROP COLUMN`. See [MIGRATION_16_17].
  *
+ * **Schema 18 is B327**, the flags' provenance: a nullable `seedFlagsAt` records that the seed wrote
+ * isBodyweight/isTimed, so the one-time repair can raise a row the lifter edited for another reason without
+ * overwriting a flag they set. Null for every row that predates it; the next open raises and stamps them. See
+ * [MIGRATION_17_18].
+ *
  * There is deliberately **no** `fallbackToDestructiveMigration()`: it would turn
  * a forgotten migration into silent, total data loss for a user's training
  * history. A missing migration must fail loudly in development instead — which is exactly why 2.0
@@ -97,7 +102,7 @@ import androidx.room.TypeConverters
         MetricGoalEntity::class,
         RetiredMovementEntity::class,
     ],
-    version = 17,
+    version = 18,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)

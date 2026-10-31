@@ -220,6 +220,14 @@ data class ExerciseDto(
      */
     val isTimed: Boolean = false,
     /**
+     * When the seed last wrote the two flags, or null (ROADMAP B327).
+     *
+     * Defaulted, so an old file decodes; and carried, so a restore keeps the difference between a flag the
+     * seed wrote and one the lifter set. Without it a restore would look like an unmarked row to the repair,
+     * and a lifter's own answer in the backup would be raised again.
+     */
+    val seedFlagsAt: Long? = null,
+    /**
      * The row this exercise hangs under, or null (ROADMAP N95).
      *
      * Defaulted and unbumped, like the two fields above: a file written before categories existed decodes

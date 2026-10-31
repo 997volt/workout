@@ -455,6 +455,9 @@ class BackupCodecRoundTripTest {
             // And N235's: dropped, a movement the app deliberately never asks comes back as one it asks
             // every session — the override this field exists for.
             progressionMode = "APPLY_AT_DONE",
+            // And B327's: the flags' provenance. Dropped, a restored row the lifter had set would look
+            // unmarked to the seed's one-time repair, which would then raise it again.
+            seedFlagsAt = 0L,
             createdAt = 1_600_000_000_000L,
             updatedAt = 1_600_000_000_001L,
             deletedAt = null,

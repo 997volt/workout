@@ -141,6 +141,27 @@ class RoomExerciseRepositoryTest {
     }
 
     @Test
+    fun aCueEdit_keepsTheSeedsMarker_andAFlagChange_stampsTheLifters() = runTest {
+        // B327: the repair must not treat every edit as a flag answer, and must treat a flag change as one.
+        val created = created("Sled Push")
+        assertNull("a custom row starts unmarked", database.exerciseDao().findById(created.id)?.seedFlagsAt)
+
+        val cue = created.copy(techniqueNote = "Brace, then push")
+        assertTrue(repository.updateExercise(cue) is DataResult.Success)
+        assertNull(
+            "an edit that is not a flag answer keeps the marker",
+            database.exerciseDao().findById(created.id)?.seedFlagsAt,
+        )
+
+        assertTrue(repository.updateExercise(cue.copy(isBodyweight = true)) is DataResult.Success)
+        assertEquals(
+            "a flag change is the lifter's answer",
+            0L,
+            database.exerciseDao().findById(created.id)?.seedFlagsAt,
+        )
+    }
+
+    @Test
     fun updateExercise_fillsInTheTaxonomy_keepingTheRowsIdentity() = runTest {
         val created = created("Sled Push")
         now = now.plusSeconds(60)

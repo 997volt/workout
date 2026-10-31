@@ -110,6 +110,16 @@ data class ExerciseEntity(
     @ColumnInfo(defaultValue = "0")
     val isTimed: Boolean = false,
     /**
+     * When the seed last wrote the two flags, or null while it has not (ROADMAP B327).
+     *
+     * A provenance marker rather than an inference from `updatedAt`: a lifter's cue edit is not a flag
+     * answer, and B299's never-edited guard made the two indistinguishable. **Null** means the seed has not
+     * written this row's flags since the marker existed — the one-time repair raises them and stamps this.
+     * **0** means the lifter set them, and no repair touches them again. A new seed row is inserted stamped,
+     * and a backup carries the marker so a restore keeps the distinction.
+     */
+    val seedFlagsAt: Long? = null,
+    /**
      * How *Done* answers for this movement, or null to follow the app setting (ROADMAP N235).
      *
      * A nullable TEXT column holding the enum's **name**, so a build that does not know a name reads it as

@@ -29,6 +29,12 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   straight in the database-open callback, so one data-dependent throw left the app crashing on its first screen
   until another build arrived — which is what 2.19 did on a store whose workouts were all intact. The pass is
   caught, recorded and said once on the shell with a retry; the store is left as the pass's transaction left it.
+- **The seed's flags reach a row the lifter edited for another reason** (B327). The repair inferred "the seed
+  wrote this" from `updatedAt == createdAt`, so a cue or rest edit on a seeded Pull-Up or Plank blocked the flag
+  raise and the row kept the old seeder's zero — the bug the repair exists for. A nullable `seedFlagsAt` records
+  who wrote them: the seed stamps its inserts and its one-time raise, the editor stamps a lifter's flag change,
+  and the repair raises only an unmarked row, with `MAX` so a flag the lifter raised is never lowered. The
+  marker travels in the backup, so a restore keeps the distinction.
 - **The backup ceiling moves for a plan's hold** (B326). N242's plan hold travels in a backup as
   `targetDurationSeconds`, and the schema stayed at 7, so a build that predates the hold accepted a new file and
   silently dropped the prescription. It is 8 now: a v7 file still reads, and a v7 build refuses a plan-hold file
