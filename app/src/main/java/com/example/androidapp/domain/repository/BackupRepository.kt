@@ -42,7 +42,8 @@ interface BackupRepository {
      *
      * The same decode the import runs, so a file the import would refuse is refused here too. It is a question,
      * not a dry run: nothing is written, and each count is split into what is already here, what would come
-     * back and what would be added (N248).
+     * back and what would be added (N248). Only rows that will be live are counted, so the question and the
+     * import's own summary say the same thing (B330).
      */
     suspend fun preview(text: String): DataResult<BackupPreview>
 
@@ -67,34 +68,46 @@ interface BackupRepository {
  * there.
  */
 data class ImportSummary(
-    /** Rows the file had and the database did not. */
+    /**
+     * Rows that became live here and were not live before (B330).
+     *
+     * A row the file records as deleted is written hidden, so a later restore can bring it back — fidelity
+     * rather than something anyone can see, and therefore not one of these.
+     */
     val added: Int,
     /** Rows that were deleted locally and came back from the file. */
     val restored: Int,
 ) {
     val total: Int get() = added + restored
 
-    /** Everything in the file was already present and live. A success, not a no-op. */
+    /**
+     * Nothing the file held live became live here: a success, not a no-op.
+     *
+     * Hidden rows the file also records as deleted may still have been carried across (B330), which is why
+     * this counts what became live rather than what was written.
+     */
     val wasAlreadyComplete: Boolean get() = total == 0
 }
 
 /**
- * What one kind of row in a backup would do on this device (ROADMAP N246, N248).
+ * What one kind of row in a backup would do on this device (ROADMAP N246, N248, B330).
  *
- * The buckets are the merge's own three cases: a row that is already live here, a row this device hid and the
- * merge would bring back, and a row it does not have. They partition [inFile].
+ * The buckets are the merge's outcome for the rows it can make live — a row that is already live here, a row
+ * this device hid and the merge would bring back, and a row it does not have — and they partition [inFile]. A
+ * row the file records as deleted is carried across hidden but stays hidden, so no bucket counts it;
+ * [ImportSummary] counts by the same rule after the write.
  */
 data class PreviewCounts(
-    /** Rows the file holds. */
+    /** Rows the file holds **live** — the ones the merge can make something of. */
     val inFile: Int,
     /**
-     * Rows this device already has live — or, for [BackupPreview.measurements], rows whose day it already has:
+     * Rows that are already live here — or, for [BackupPreview.measurements], rows whose day it already has:
      * the merge yields to the day, so calling that "here" is what the row will do.
      */
     val alreadyHere: Int,
-    /** Rows this device has hidden; the merge would bring them back. */
+    /** Rows this device hid; the merge would bring them back. */
     val restored: Int,
-    /** Rows this device does not have. */
+    /** Rows this device does not have live; the merge would add them. */
     val added: Int,
 )
 

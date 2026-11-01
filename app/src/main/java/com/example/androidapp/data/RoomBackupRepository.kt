@@ -174,70 +174,98 @@ class RoomBackupRepository @Inject constructor(
         val file = BackupCodec.decode(text)
         BackupPreview(
             sessions = previewCounts(
-                file.sessions.map { it.id },
-                dao.allSessions().associate { it.id to it.deletedAt }
+                file.sessions.map { FileRow(it.id, it.deletedAt) },
+                dao.allSessions().associate { it.id to it.deletedAt },
             ),
-            sets = previewCounts(file.sets.map { it.id }, dao.allSets().associate { it.id to it.deletedAt }),
+            sets = previewCounts(
+                file.sets.map { FileRow(it.id, it.deletedAt) },
+                dao.allSets().associate { it.id to it.deletedAt },
+            ),
             measurements = previewMeasurements(file.measurements),
             exercises = previewCounts(
-                file.exercises.map { it.id },
+                file.exercises.map { FileRow(it.id, it.deletedAt) },
                 dao.allExercises().associate { it.id to it.deletedAt },
             ),
         )
     }
 
     /**
-     * Splits the file's ids into the merge's three cases against the local rows (N248).
-     *
-     * The local map carries every row, hidden ones included: a hidden row is the restore case, and an absent
-     * one is the insert case. The import's own restore is exactly this split, so the question cannot promise a
-     * different set from the one the merge writes.
+     * One row the file carries, as the question about it asks: its id, and whether the file holds it deleted
+     * (B330).
      */
-    private fun previewCounts(ids: List<String>, local: Map<String, Long?>): PreviewCounts {
+    private data class FileRow(val id: String, val deletedAt: Long?)
+
+    /**
+     * Splits the file's live rows into the merge's three cases against the local rows (N248, B330).
+     *
+     * A row the file records as deleted is carried across so a later restore can bring it back, and it stays
+     * hidden: on a device that lacks it the merge writes a hidden row, and on one that holds it nothing
+     * changes. Neither is a row that becomes live, so the question does not count it — the counts are the rows
+     * the merge makes live, which is the same rule [ImportSummary] reports after the write.
+     *
+     * The local map carries every row, hidden ones included: a live file row this device holds hidden is the
+     * restore case, and an absent one is the insert case. That is the import's own split.
+     */
+    private fun previewCounts(rows: List<FileRow>, local: Map<String, Long?>): PreviewCounts {
+        var live = 0
         var here = 0
         var restored = 0
         var added = 0
-        ids.distinct().forEach { id ->
+        rows.distinctBy { it.id }.forEach { row ->
+            if (row.deletedAt != null) return@forEach
+            live++
             when {
-                !local.containsKey(id) -> added++
-                local.getValue(id) == null -> here++
+                !local.containsKey(row.id) -> added++
+                local[row.id] == null -> here++
                 else -> restored++
             }
         }
-        return PreviewCounts(inFile = ids.size, alreadyHere = here, restored = restored, added = added)
+        return PreviewCounts(inFile = live, alreadyHere = here, restored = restored, added = added)
     }
 
     /**
-     * The daily record's counts, by **day** rather than only by id (ROADMAP N113, B178, N248).
+     * The daily record's counts, by **day** rather than only by id (ROADMAP N113, B178, N248, B330).
      *
      * A measurement is one entry of each kind per day, and the merge yields to a day this device already has:
-     * a file row whose day is taken is "here" even when its id is different, because the merge will not write
-     * it. A hidden local row only comes back when no live row already owns its day (B269).
+     * a file row whose day is taken changes nothing, so it counts as here. The rows are walked in the import's
+     * own two steps — the restores, then the inserts — because each step reserves the days it takes, and one
+     * order would disagree with the other about a file that names a day twice.
+     *
+     * A row the file records as deleted is carried across hidden and changes nothing the lifter can see, so it
+     * is not one of the rows this counts (B330).
      */
     private suspend fun previewMeasurements(file: List<MeasurementDto>): PreviewCounts {
         val local = measurements.allForExport()
         val zone = ZoneId.systemDefault()
         val byId = local.associateBy { it.id }
-        val liveDays = local.filter { it.deletedAt == null }
+        val taken = local.filter { it.deletedAt == null }
             .mapTo(mutableSetOf()) { row ->
                 Instant.ofEpochMilli(row.measuredAt).localDayBounds(zone).first to row.kind
             }
         fun day(row: MeasurementDto) =
             Instant.ofEpochMilli(row.measuredAt).localDayBounds(zone).first to row.kind
 
+        val live = file.filter { it.deletedAt == null }.distinctBy { it.id }
+        var inFile = 0
         var here = 0
         var restored = 0
         var added = 0
-        file.forEach { row ->
-            val sameId = byId[row.id]
-            when {
-                sameId == null -> if (day(row) in liveDays) here++ else added++
-                sameId.deletedAt == null -> here++
-                day(row) in liveDays -> here++
-                else -> restored++
-            }
+        // The restore step: a hidden local row comes back only when no live entry already owns its day.
+        live.forEach { row ->
+            val sameId = byId[row.id] ?: return@forEach
+            if (sameId.deletedAt == null) return@forEach
+            inFile++
+            if (taken.add(day(row))) restored++ else here++
         }
-        return PreviewCounts(inFile = file.size, alreadyHere = here, restored = restored, added = added)
+        // The insert step: an absent row is added only when its day is free after the restores.
+        live.forEach { row ->
+            val sameId = byId[row.id]
+            if (sameId != null && sameId.deletedAt != null) return@forEach
+            inFile++
+            val free = taken.add(day(row))
+            if (sameId != null || !free) here++ else added++
+        }
+        return PreviewCounts(inFile = inFile, alreadyHere = here, restored = restored, added = added)
     }
 
     override suspend fun import(text: String): DataResult<ImportSummary> = dataResultOf {
@@ -410,9 +438,10 @@ class RoomBackupRepository @Inject constructor(
     }
 
     /**
-     * Inserts what the file has and this device does not, counting only the genuinely new
-     * rows: `IGNORE` skips live rows and the ones just restored, and Room returns -1 for a
-     * skipped row.
+     * Inserts what the file has and this device does not, counting only the rows that became live (B330).
+     *
+     * `IGNORE` skips live rows and the ones just restored, and Room returns -1 for a skipped row; a row the
+     * file records as deleted goes in hidden and did not become live, so it is not counted.
      *
      * Parents before children, so the foreign keys hold as rows go in.
      */
@@ -422,28 +451,35 @@ class RoomBackupRepository @Inject constructor(
         measurementParents += measurements.allForExport()
             .filter { it.deletedAt == null }
             .map { it.id }
-        return dao.insertExercises(file.exercises.map { it.toEntity() }).count { it != SKIPPED } +
-            dao.insertSessions(file.sessions.map { it.toEntity() }).count { it != SKIPPED } +
-            dao.insertSessionExercises(file.sessionExercises.map { it.toEntity() }).count { it != SKIPPED } +
+        val measurementSoreRows = file.measurementSoreMuscles.filter { it.measurementId in measurementParents }
+        return dao.insertExercises(file.exercises.map { it.toEntity() })
+            .countLive(file.exercises) { it.deletedAt == null } +
+            dao.insertSessions(file.sessions.map { it.toEntity() })
+                .countLive(file.sessions) { it.deletedAt == null } +
+            dao.insertSessionExercises(file.sessionExercises.map { it.toEntity() })
+                .countLive(file.sessionExercises) { it.deletedAt == null } +
             // The joint rows go in after the exercises they hang off, which the line above wrote (N63).
-            joints.insert(file.sessionExerciseJoints.map { it.toEntity() }).count { it != SKIPPED } +
+            joints.insert(file.sessionExerciseJoints.map { it.toEntity() })
+                .countLive(file.sessionExerciseJoints) { it.deletedAt == null } +
             // The sore-muscle rows go in after their sessions, which the lines above already wrote (N62).
-            soreMuscles.insert(file.sessionSoreMuscles.map { it.toEntity() }).count { it != SKIPPED } +
-            dao.insertSets(file.sets.map { it.toEntity() }).count { it != SKIPPED } +
-            dao.insertTemplates(file.templates.map { it.toEntity() }).count { it != SKIPPED } +
-            dao.insertTemplateExercises(file.templateExercises.map { it.toEntity() }).count { it != SKIPPED } +
-            dao.insertTemplateSets(file.templateSets.map { it.toEntity() }).count { it != SKIPPED } +
+            soreMuscles.insert(file.sessionSoreMuscles.map { it.toEntity() })
+                .countLive(file.sessionSoreMuscles) { it.deletedAt == null } +
+            dao.insertSets(file.sets.map { it.toEntity() })
+                .countLive(file.sets) { it.deletedAt == null } +
+            dao.insertTemplates(file.templates.map { it.toEntity() })
+                .countLive(file.templates) { it.deletedAt == null } +
+            dao.insertTemplateExercises(file.templateExercises.map { it.toEntity() })
+                .countLive(file.templateExercises) { it.deletedAt == null } +
+            dao.insertTemplateSets(file.templateSets.map { it.toEntity() })
+                .countLive(file.templateSets) { it.deletedAt == null } +
             // One entry of each kind per day, so a file's row yields to the day this device already has (B178).
             measurements.insertAll(attemptedMeasurements.map { it.toEntity() })
-                .count { it != SKIPPED } +
+                .countLive(attemptedMeasurements) { it.deletedAt == null } +
             // The sore rows hang off a daily measurement, so they go in after the entries above, and only
             // for a measurement that is actually here afterwards (B269): inserting one whose entry yielded
             // to the device's own day violates the foreign key, and the whole import rolls back with it.
-            measurementSore.insert(
-                file.measurementSoreMuscles
-                    .filter { it.measurementId in measurementParents }
-                    .map { it.toEntity() },
-            ).count { it != SKIPPED }
+            measurementSore.insert(measurementSoreRows.map { it.toEntity() })
+                .countLive(measurementSoreRows) { it.deletedAt == null }
     }
 
     /**
@@ -483,17 +519,17 @@ class RoomBackupRepository @Inject constructor(
             substitutionsToRestore.count { it.deletedAt == null }
 
         val added = programBackup.insertPrograms(file.programs.map { it.toEntity() })
-            .count { it != SKIPPED } +
+            .countLive(file.programs) { it.deletedAt == null } +
             programBackup.insertProgramSlots(file.programSlots.map { it.toEntity() })
-                .count { it != SKIPPED } +
+                .countLive(file.programSlots) { it.deletedAt == null } +
             programBackup.insertProgramSkips(file.programSkips.map { it.toEntity() })
-                .count { it != SKIPPED } +
+                .countLive(file.programSkips) { it.deletedAt == null } +
             programBackup.insertProgramDeloads(file.programDeloads.map { it.toEntity() })
-                .count { it != SKIPPED } +
+                .countLive(file.programDeloads) { it.deletedAt == null } +
             programBackup.insertProgramDeloadDays(file.programDeloadDays.map { it.toEntity() })
-                .count { it != SKIPPED } +
+                .countLive(file.programDeloadDays) { it.deletedAt == null } +
             programBackup.insertProgramSubstitutions(file.programSubstitutions.map { it.toEntity() })
-                .count { it != SKIPPED }
+                .countLive(file.programSubstitutions) { it.deletedAt == null }
 
         return Imported(added = added, restored = restored)
     }
@@ -533,6 +569,16 @@ class RoomBackupRepository @Inject constructor(
             },
         ).count { it != SKIPPED }
     }
+
+    /**
+     * How many of these inserts Room actually wrote became live rows (B330).
+     *
+     * `@Insert` answers one rowid per input row — [SKIPPED] for one it left alone — so the result lines up with
+     * the file's rows. A row the file records as deleted is written hidden: it is carried so a later restore can
+     * bring it back, which is fidelity rather than a row that became live, so [ImportSummary] does not count it.
+     */
+    private fun <T> List<Long>.countLive(rows: List<T>, isLive: (T) -> Boolean): Int =
+        indices.count { this[it] != SKIPPED && isLive(rows[it]) }
 
     private companion object {
         /** Room's rowid for a row an `OnConflictStrategy.IGNORE` insert skipped. */

@@ -1014,4 +1014,59 @@ class BackupRoundTripTest {
             database.workoutDao().observeHistory().first().size,
         )
     }
+
+    @Test
+    fun aFileThatRecordsARowDeleted_isCarriedButNotPromised() = runTest {
+        // B330: the export carries a soft delete so a restore stays exact, but a row the file itself records
+        // as deleted becomes nothing the lifter can find — not "new" on a fresh device and not "back" on one
+        // that hid it too. The summary has to say the same thing as the question.
+        seedAWorkout()
+        val sessionId = database.backupDao().allSessions().single().id
+        workouts.deleteSession(sessionId)
+        val text = exportedJson()
+
+        database.clearAllTables()
+
+        val preview = (repository.preview(text) as DataResult.Success).data
+
+        assertEquals("the file holds no live session", 0, preview.sessions.inFile)
+        assertEquals(0, preview.sessions.added)
+        assertEquals(0, preview.sessions.restored)
+        assertEquals(
+            "the sets under it are live rows, and the merge does write those",
+            1,
+            preview.sets.inFile,
+        )
+
+        val summary = (repository.import(text) as DataResult.Success).data
+
+        assertEquals(
+            "the hidden session and its exercise are carried, not counted: " +
+                "the exercise, set, plan and its two plan rows are what became live",
+            5,
+            summary.added,
+        )
+        assertEquals(0, summary.restored)
+        assertEquals(1, database.backupDao().allSessions().size)
+        assertNotNull(
+            "the row is still carried, hidden, so a later restore can bring it back",
+            database.backupDao().allSessions().single().deletedAt,
+        )
+    }
+
+    @Test
+    fun aHiddenRowTheFileAlsoRecordsDeleted_isNotPreviewedAsComingBack() = runTest {
+        // The same rule on the device that hid the row: the file agrees it is deleted, so the merge restores
+        // nothing and the sheet must not say it would (B330).
+        seedAWorkout()
+        val sessionId = database.backupDao().allSessions().single().id
+        workouts.deleteSession(sessionId)
+        val text = exportedJson()
+
+        val preview = (repository.preview(text) as DataResult.Success).data
+
+        assertEquals(0, preview.sessions.inFile)
+        assertEquals(0, preview.sessions.restored)
+        assertEquals(0, preview.sessions.alreadyHere)
+    }
 }

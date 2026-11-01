@@ -171,7 +171,7 @@
     <string name="weekly_review_deload">Deload</string>
 
     <string name="import_preview_title">Import this backup?</string>
-    <string name="import_preview_text">Nothing on this device is overwritten — rows it already has are left alone. The columns say what is in the file, what is already here, what would come back and what would be added.</string>
+    <string name="import_preview_text">Nothing on this device is overwritten — rows it already has are left alone. The columns count what the file would make live here: what is already here, what would come back and what would be added. A row the file records as deleted stays hidden and is not counted.</string>
     <string name="import_preview_file">File</string>
     <string name="import_preview_here">Here</string>
     <string name="import_preview_back">Back</string>

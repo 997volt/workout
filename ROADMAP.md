@@ -18,15 +18,14 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 ## Next
 
 The review of the unreleased batch (N248–N254, B329), grouped by the unit a fix touches so one group is one
-sitting. The four `B` rows (B330–B333) are claims the code does not keep and the ones to take first; the rest is
-what the batch left behind. One row is picked up at a time; a row that ships leaves this file for
+sitting. The `B` rows are claims the code does not keep and the ones to take first; the rest is what the batch
+left behind. One row is picked up at a time; a row that ships leaves this file for
 [CHANGELOG.md](CHANGELOG.md).
 
 ### The restore preview
 
 | # | Change | Why it matters | Size |
 | --- | --- | --- | --- |
-| B330 | **The preview counts what the merge will do.** Split each count on the file row's own `deletedAt`, not only on whether the local id exists: a row the file records as deleted is neither "here" nor "back". `previewCounts` and `previewMeasurements` in `RoomBackupRepository` bucket it as one of those. | A backup written after a delete carries the hidden row. N248's sheet then says *Back 1* and the merge restores nothing — or *New 1* on a fresh install and no session appears. `restoreSoftDeleted` already counts only file-live rows, so the question and the write disagree by construction. `ImportSummary` has the same blind spot, so the fix has to settle which side moves rather than making the two disagree the other way. | Medium |
 | N257 | **The preview's inventory belongs off the caller's thread.** `preview()` now reads four whole tables and builds its maps on the caller's Main dispatcher; wrap it in `withContext(Dispatchers.IO)` the way export already is (B158). | `documentIo.read` hops to IO but the decode and the new scans do not, so the dialog hitches in proportion to the history the app carries — the size export was moved for exactly this reason. | Small |
 | N258 | **The preview table for a screen reader.** Four numbers per row read as "Sessions, 509, 506, 2, 1"; give each row one spoken sentence, or the column headers as semantics. | The per-screen rule is not a later pass, and this table's whole meaning is in a column association a reader cannot hear. | Small |
 

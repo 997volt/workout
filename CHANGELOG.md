@@ -48,7 +48,8 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   answers what the merge would do — for sessions, sets, measurements and movements, how many are already here,
   how many would come back from a delete, and how many are new — from a read-only inventory of both sides, with
   no writes. A measurement whose day is already recorded counts as here, because that is what the merge does
-  with it.
+  with it. Only rows the merge makes live are counted (B330), so a row the file itself records as deleted is
+  carried across hidden rather than promised, and the import's own summary counts by the same rule afterwards.
 
 ### Fixed
 
