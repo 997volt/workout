@@ -962,23 +962,56 @@ class BackupRoundTripTest {
     }
 
     @Test
-    fun thePreview_countsTheFile_andWritesNothing() = runTest {
-        // ROADMAP N246: the import asks before it merges, and the question is about the file rather than about
-        // what the merge would add. Reading it must not write.
-        val text = (repository.export() as DataResult.Success).data
-        val sessionsBefore = database.workoutDao().observeHistory().first().size
+    fun thePreview_countsTheFile_andWhatWouldChange_andWritesNothing() = runTest {
+        // ROADMAP N246, N248: the question is what the merge would do, and reading the file must not write.
+        seedAWorkout()
+        val text = exportedJson()
+        val sessions = database.workoutDao().observeHistory().first().size
         val exercises = database.exerciseDao().findAllIncludingDeleted().size
 
         val preview = (repository.preview(text) as DataResult.Success).data
 
-        assertEquals("the file's sessions are counted", sessionsBefore, preview.sessions)
-        assertEquals("and its movements", exercises, preview.exercises)
+        assertEquals("the file's sessions are counted", sessions, preview.sessions.inFile)
+        assertEquals("and all of them are already here", sessions, preview.sessions.alreadyHere)
+        assertEquals(0, preview.sessions.restored)
+        assertEquals(0, preview.sessions.added)
+        assertEquals("and its movements", exercises, preview.exercises.inFile)
         assertEquals(
             "and the preview wrote nothing",
-            sessionsBefore,
+            sessions,
             database.workoutDao().observeHistory().first().size,
         )
         val summary = (repository.import(text) as DataResult.Success).data
         assertTrue("the preview did not add what the import would have", summary.wasAlreadyComplete)
+    }
+
+    @Test
+    fun aDeletedSession_isPreviewedAsComingBack_andTheMergeRestoresIt() = runTest {
+        // The promise N248 adds: "back" is not a guess about the file, it is what the import's own restore
+        // will do with the row.
+        seedAWorkout()
+        val text = exportedJson()
+        val sessionId = database.backupDao().allSessions().single().id
+        workouts.deleteSession(sessionId)
+
+        val preview = (repository.preview(text) as DataResult.Success).data
+
+        assertEquals(1, preview.sessions.inFile)
+        assertEquals("the deleted session would come back", 1, preview.sessions.restored)
+        assertEquals(0, preview.sessions.alreadyHere)
+        assertEquals(0, preview.sessions.added)
+        assertEquals(
+            "reading the file wrote nothing",
+            0,
+            database.workoutDao().observeHistory().first().size,
+        )
+
+        repository.import(text)
+
+        assertEquals(
+            "and the merge did bring it back",
+            1,
+            database.workoutDao().observeHistory().first().size,
+        )
     }
 }

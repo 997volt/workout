@@ -11,6 +11,7 @@ import com.example.androidapp.domain.model.BackupSchedule
 import com.example.androidapp.domain.repository.BackupPreview
 import com.example.androidapp.domain.repository.BackupRepository
 import com.example.androidapp.domain.repository.ImportSummary
+import com.example.androidapp.domain.repository.PreviewCounts
 import com.example.androidapp.platform.BackupFolderFiles
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
@@ -324,8 +325,12 @@ private class FakeBackupRepository(
     override suspend fun import(text: String): DataResult<ImportSummary> =
         DataResult.Success(ImportSummary(added = 0, restored = 0))
 
-    override suspend fun preview(text: String): DataResult<BackupPreview> =
-        DataResult.Success(BackupPreview(0, 0, 0, 0, 0, 0))
+    override suspend fun preview(text: String): DataResult<BackupPreview> {
+        val none = PreviewCounts(inFile = 0, alreadyHere = 0, restored = 0, added = 0)
+        return DataResult.Success(
+            BackupPreview(sessions = none, sets = none, measurements = none, exercises = none),
+        )
+    }
 
     override suspend fun clearAllUserData(): DataResult<Unit> = DataResult.Success(Unit)
 }

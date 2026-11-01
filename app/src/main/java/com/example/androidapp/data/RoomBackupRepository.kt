@@ -25,6 +25,7 @@ import com.example.androidapp.domain.nowEpochMillis
 import com.example.androidapp.domain.repository.BackupPreview
 import com.example.androidapp.domain.repository.BackupRepository
 import com.example.androidapp.domain.repository.ImportSummary
+import com.example.androidapp.domain.repository.PreviewCounts
 import com.example.androidapp.platform.CrashLogStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -172,13 +173,71 @@ class RoomBackupRepository @Inject constructor(
     override suspend fun preview(text: String): DataResult<BackupPreview> = dataResultOf {
         val file = BackupCodec.decode(text)
         BackupPreview(
-            sessions = file.sessions.size,
-            sets = file.sets.size,
-            measurements = file.measurements.size,
-            exercises = file.exercises.size,
-            templates = file.templates.size,
-            programs = file.programs.size,
+            sessions = previewCounts(
+                file.sessions.map { it.id },
+                dao.allSessions().associate { it.id to it.deletedAt }
+            ),
+            sets = previewCounts(file.sets.map { it.id }, dao.allSets().associate { it.id to it.deletedAt }),
+            measurements = previewMeasurements(file.measurements),
+            exercises = previewCounts(
+                file.exercises.map { it.id },
+                dao.allExercises().associate { it.id to it.deletedAt },
+            ),
         )
+    }
+
+    /**
+     * Splits the file's ids into the merge's three cases against the local rows (N248).
+     *
+     * The local map carries every row, hidden ones included: a hidden row is the restore case, and an absent
+     * one is the insert case. The import's own restore is exactly this split, so the question cannot promise a
+     * different set from the one the merge writes.
+     */
+    private fun previewCounts(ids: List<String>, local: Map<String, Long?>): PreviewCounts {
+        var here = 0
+        var restored = 0
+        var added = 0
+        ids.distinct().forEach { id ->
+            when {
+                !local.containsKey(id) -> added++
+                local.getValue(id) == null -> here++
+                else -> restored++
+            }
+        }
+        return PreviewCounts(inFile = ids.size, alreadyHere = here, restored = restored, added = added)
+    }
+
+    /**
+     * The daily record's counts, by **day** rather than only by id (ROADMAP N113, B178, N248).
+     *
+     * A measurement is one entry of each kind per day, and the merge yields to a day this device already has:
+     * a file row whose day is taken is "here" even when its id is different, because the merge will not write
+     * it. A hidden local row only comes back when no live row already owns its day (B269).
+     */
+    private suspend fun previewMeasurements(file: List<MeasurementDto>): PreviewCounts {
+        val local = measurements.allForExport()
+        val zone = ZoneId.systemDefault()
+        val byId = local.associateBy { it.id }
+        val liveDays = local.filter { it.deletedAt == null }
+            .mapTo(mutableSetOf()) { row ->
+                Instant.ofEpochMilli(row.measuredAt).localDayBounds(zone).first to row.kind
+            }
+        fun day(row: MeasurementDto) =
+            Instant.ofEpochMilli(row.measuredAt).localDayBounds(zone).first to row.kind
+
+        var here = 0
+        var restored = 0
+        var added = 0
+        file.forEach { row ->
+            val sameId = byId[row.id]
+            when {
+                sameId == null -> if (day(row) in liveDays) here++ else added++
+                sameId.deletedAt == null -> here++
+                day(row) in liveDays -> here++
+                else -> restored++
+            }
+        }
+        return PreviewCounts(inFile = file.size, alreadyHere = here, restored = restored, added = added)
     }
 
     override suspend fun import(text: String): DataResult<ImportSummary> = dataResultOf {

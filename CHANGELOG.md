@@ -13,6 +13,16 @@ repeated here.
 **1.0–1.18 live in [CHANGELOG-1.x.md](CHANGELOG-1.x.md)**, kept whole rather than deleted because the
 id a 1.x commit names is still looked up by it. This file carries the current release.
 
+## [Unreleased]
+
+### Changed
+
+- **The restore preview says what will change** (N248). N246's sheet answered what the file holds; it now also
+  answers what the merge would do — for sessions, sets, measurements and movements, how many are already here,
+  how many would come back from a delete, and how many are new — from a read-only inventory of both sides, with
+  no writes. A measurement whose day is already recorded counts as here, because that is what the merge does
+  with it.
+
 ## [2.20] — 2026-10-31 (versionCode 41)
 
 ### Added

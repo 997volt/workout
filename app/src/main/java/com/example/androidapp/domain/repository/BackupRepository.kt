@@ -41,8 +41,8 @@ interface BackupRepository {
      * What a backup file holds, before anything is merged (ROADMAP N246).
      *
      * The same decode the import runs, so a file the import would refuse is refused here too. It is a question,
-     * not a dry run: nothing is written, and the counts are the file's rows rather than what the merge will
-     * change — the import leaves a row the device already has alone.
+     * not a dry run: nothing is written, and each count is split into what is already here, what would come
+     * back and what would be added (N248).
      */
     suspend fun preview(text: String): DataResult<BackupPreview>
 
@@ -78,12 +78,36 @@ data class ImportSummary(
     val wasAlreadyComplete: Boolean get() = total == 0
 }
 
-/** The rows a backup file carries, for the question asked before it is merged (ROADMAP N246). */
+/**
+ * What one kind of row in a backup would do on this device (ROADMAP N246, N248).
+ *
+ * The buckets are the merge's own three cases: a row that is already live here, a row this device hid and the
+ * merge would bring back, and a row it does not have. They partition [inFile].
+ */
+data class PreviewCounts(
+    /** Rows the file holds. */
+    val inFile: Int,
+    /**
+     * Rows this device already has live — or, for [BackupPreview.measurements], rows whose day it already has:
+     * the merge yields to the day, so calling that "here" is what the row will do.
+     */
+    val alreadyHere: Int,
+    /** Rows this device has hidden; the merge would bring them back. */
+    val restored: Int,
+    /** Rows this device does not have. */
+    val added: Int,
+)
+
+/**
+ * What a backup file would do to this device, for the question asked before it is merged (ROADMAP N246, N248).
+ *
+ * Read-only: the counts come from decoding the file and listing what is here, never from a dry-run write. The
+ * four kinds are the ones the question names; plans and programs ride along in the merge but are not part of
+ * the question.
+ */
 data class BackupPreview(
-    val sessions: Int,
-    val sets: Int,
-    val measurements: Int,
-    val exercises: Int,
-    val templates: Int,
-    val programs: Int,
+    val sessions: PreviewCounts,
+    val sets: PreviewCounts,
+    val measurements: PreviewCounts,
+    val exercises: PreviewCounts,
 )
