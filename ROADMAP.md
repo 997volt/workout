@@ -17,12 +17,8 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-One row is queued. The 2.20 follow-up batch (N248–N253) and the block fix (B329) are in the unreleased
-[CHANGELOG.md](CHANGELOG.md).
-
-| # | Change | Why it matters | Size |
-| --- | --- | --- | --- |
-| N254 | **The measurement keyboard's accept key moves to the next field.** Give the decimal measurement fields `ImeAction.Next` and advance focus on it: daily weight → body fat → muscle; tape neck → chest → waist → hips → upper arm → thigh → calf. The last numeric field in each form stays `Done` and closes the keyboard — on the daily form that is **muscle**, which must not move into the sore-muscle list; on the tape form it is **calf**. The next field is focused and scrolled into view, and the keyboard stays up until Done. Both the add and edit paths use the same fields, so both get it. | The numeric keyboard's one action key currently dismisses after every number, so entering a tape day means reopening the keyboard seven times. "Next" should mean next, not dismiss. | Small |
+Nothing is in flight. The 2.20 follow-up batch (N248–N253), the block fix (B329) and the measurement keyboard
+change (N254) are in the unreleased [CHANGELOG.md](CHANGELOG.md); nothing is queued behind them.
 
 ## Later — decided, and not being started
 

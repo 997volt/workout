@@ -17,6 +17,13 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Changed
 
+- **The measurement keyboard's accept key moves to the next field** (N254). The decimal fields left the IME
+  action at Done, so every number ended by closing the keyboard — a tape day meant reopening it seven times.
+  Each field now says Next and moves focus down the form (weight → body fat → muscle; neck → … → calf), scrolling
+  the next field into view. The last field in each form keeps Done, and muscle does not move into the
+  sore-muscle editor.
+### Changed
+
 - **The combined gate stops the emulator first** (N253). `lintAnalyzeDebug*` has failed intermittently with no
   findings whenever a booted emulator competes with the Gradle daemons for this sandbox's memory. `tools/gate.sh`
   now runs the same task set as CI after stopping attached emulators — never a physical phone — with

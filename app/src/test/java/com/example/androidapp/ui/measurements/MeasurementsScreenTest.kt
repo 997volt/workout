@@ -4,7 +4,9 @@ import android.content.Context
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsNotFocused
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasTestTag
@@ -13,6 +15,8 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performImeAction
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
@@ -768,6 +772,40 @@ class MeasurementsScreenTest {
         assertEquals(MeasurementKind.TAPE, saved?.kind)
         assertEquals(864L, saved?.tape?.get(TapeSite.WAIST))
         assertNull("and no weight is claimed by the tape record", saved?.weightGrams)
+    }
+
+    @Test
+    fun theDailyNumbers_advanceOnNext_andMuscleClosesTheKeyboard() {
+        // N254: the numeric keyboard's action key means the next field, not "dismiss" — and muscle is the
+        // form's last number, so its Done closes rather than moving into the sore-muscle editor.
+        setScreen(initialAdd = MeasurementKind.DAILY)
+
+        composeTestRule.onNodeWithTag(TestTags.Measurements.WEIGHT).performTextInput("82.4")
+        composeTestRule.onNodeWithTag(TestTags.Measurements.WEIGHT).performImeAction()
+        composeTestRule.onNodeWithTag(TestTags.Measurements.BODY_FAT).assertIsFocused()
+
+        composeTestRule.onNodeWithTag(TestTags.Measurements.BODY_FAT).performTextInput("18.3")
+        composeTestRule.onNodeWithTag(TestTags.Measurements.BODY_FAT).performImeAction()
+        composeTestRule.onNodeWithTag(TestTags.Measurements.MUSCLE).assertIsFocused()
+
+        composeTestRule.onNodeWithTag(TestTags.Measurements.MUSCLE).performImeAction()
+        composeTestRule.onNodeWithTag(TestTags.Measurements.MUSCLE).assertIsNotFocused()
+    }
+
+    @Test
+    fun theTapeNumbers_advanceOnNext_andCalfClosesTheKeyboard() {
+        setScreen(state = MeasurementsUiState(isLoading = false))
+        startAdding(MeasurementKind.TAPE)
+
+        composeTestRule.onNodeWithTag(TestTags.Measurements.tape(TapeSite.NECK)).performTextInput("38")
+        composeTestRule.onNodeWithTag(TestTags.Measurements.tape(TapeSite.NECK)).performImeAction()
+        composeTestRule.onNodeWithTag(TestTags.Measurements.tape(TapeSite.CHEST)).assertIsFocused()
+
+        composeTestRule.onNodeWithTag(TestTags.Measurements.tape(TapeSite.CALF))
+            .performScrollTo()
+            .performClick()
+        composeTestRule.onNodeWithTag(TestTags.Measurements.tape(TapeSite.CALF)).performImeAction()
+        composeTestRule.onNodeWithTag(TestTags.Measurements.tape(TapeSite.CALF)).assertIsNotFocused()
     }
 
     @Test

@@ -9,7 +9,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -32,12 +35,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -70,6 +78,7 @@ import com.example.androidapp.ui.statistics.EnergyAdjustment
 import com.example.androidapp.ui.statistics.MetricKey
 import com.example.androidapp.ui.statistics.MetricRegistry
 import com.example.androidapp.ui.statistics.WeightGoalRow
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.ZoneId
 
@@ -648,18 +657,23 @@ internal fun DailyFields(
             value = weight,
             onValueChange = onWeightChange,
             testTag = TestTags.Measurements.WEIGHT,
+            imeAction = ImeAction.Next,
         )
         NumberField(
             label = stringResource(R.string.measurements_body_fat),
             value = bodyFat,
             onValueChange = onBodyFatChange,
             testTag = TestTags.Measurements.BODY_FAT,
+            imeAction = ImeAction.Next,
         )
+        // Muscle is the form's last number: its action closes the keyboard rather than moving into the
+        // sore-muscle editor, which is not a numeric field (N254).
         NumberField(
             label = stringResource(R.string.measurements_muscle),
             value = muscle,
             onValueChange = onMuscleChange,
             testTag = TestTags.Measurements.MUSCLE,
+            imeAction = ImeAction.Done,
         )
         // The sore list, moved here from the workout's readiness note (N113): the same shared editor and
         // the same taxonomy, so the vocabulary is the app's one list of muscles either way.
@@ -694,12 +708,14 @@ internal fun TapeFields(tape: Map<TapeSite, String>, onTapeChange: (TapeSite, St
         modifier = Modifier.verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        TapeSite.entries.forEach { site ->
+        TapeSite.entries.forEachIndexed { index, site ->
             NumberField(
                 label = stringResource(tapeLabel(site)),
                 value = tape[site].orEmpty(),
                 onValueChange = { onTapeChange(site, it) },
                 testTag = TestTags.Measurements.tape(site),
+                // Calf is the last site: Done, like every form's last field (N254).
+                imeAction = if (index == TapeSite.entries.lastIndex) ImeAction.Done else ImeAction.Next,
             )
         }
     }
@@ -716,13 +732,24 @@ private val SoreMusclesSaver = listSaver<List<SoreMuscle>, String>(
     },
 )
 
+/**
+ * One decimal measurement field, with the form's own action key (N254).
+ *
+ * A numeric keyboard's one large action key used to be Done, so every number ended by dismissing the
+ * keyboard and a tape day meant reopening it seven times. Next keeps it up and moves down the form; Done
+ * stays on the last field. Focus pulls the field into view, because the forms scroll.
+ */
 @Composable
 private fun NumberField(
     label: String,
     value: String,
     onValueChange: (String) -> Unit,
     testTag: String,
+    imeAction: ImeAction,
 ) {
+    val focusManager = LocalFocusManager.current
+    val bringIntoView = remember { BringIntoViewRequester() }
+    val scope = rememberCoroutineScope()
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
@@ -730,8 +757,18 @@ private fun NumberField(
         label = { Text(label) },
         // Every field this renders is decimal — 82.5 kg, 18.3 %, 86.4 cm — and a digits-only keyboard
         // offers no separator on the IMEs that honour it (B290).
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-        modifier = Modifier.fillMaxWidth().testTag(testTag),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = imeAction),
+        keyboardActions = KeyboardActions(
+            onNext = { focusManager.moveFocus(FocusDirection.Down) },
+            onDone = { focusManager.clearFocus() },
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .bringIntoViewRequester(bringIntoView)
+            .onFocusChanged { focus ->
+                if (focus.isFocused) scope.launch { bringIntoView.bringIntoView() }
+            }
+            .testTag(testTag),
     )
 }
 
