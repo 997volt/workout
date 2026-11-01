@@ -17,8 +17,7 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-Nothing is in flight. The 2.19.1 patch and the resilience batch it earned are in [CHANGELOG.md](CHANGELOG.md);
-nothing is queued behind them.
+Nothing is in flight. 2.20 shipped the resilience batch the 2.19.1 crash earned; nothing is queued behind it.
 
 ## Later — decided, and not being started
 
@@ -27,7 +26,7 @@ does not have to be re-argued, and a row in *Next* is what is actually being wor
 a row picked up moves to *Next*, and one that ships leaves for the changelog.
 
 The batch that was here — the 2.19 review's three data decisions (B326–B328) and three product rows (N245–N247)
-— is in the unreleased changelog. A row returns here only once its design is settled and it is agreed to be
+— shipped in [2.20](CHANGELOG.md). A row returns here only once its design is settled and it is agreed to be
 next.
 
 ## Parked — deliberately not planned
