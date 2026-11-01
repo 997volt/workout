@@ -17,8 +17,46 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-Nothing is in flight. The 2.20 follow-up batch (N248–N253), the block fix (B329) and the measurement keyboard
-change (N254) are in the unreleased [CHANGELOG.md](CHANGELOG.md); nothing is queued behind them.
+The review of the unreleased batch (N248–N254, B329), grouped by the unit a fix touches so one group is one
+sitting. The four `B` rows (B330–B333) are claims the code does not keep and the ones to take first; the rest is
+what the batch left behind. One row is picked up at a time; a row that ships leaves this file for
+[CHANGELOG.md](CHANGELOG.md).
+
+### The restore preview
+
+| # | Change | Why it matters | Size |
+| --- | --- | --- | --- |
+| B330 | **The preview counts what the merge will do.** Split each count on the file row's own `deletedAt`, not only on whether the local id exists: a row the file records as deleted is neither "here" nor "back". `previewCounts` and `previewMeasurements` in `RoomBackupRepository` bucket it as one of those. | A backup written after a delete carries the hidden row. N248's sheet then says *Back 1* and the merge restores nothing — or *New 1* on a fresh install and no session appears. `restoreSoftDeleted` already counts only file-live rows, so the question and the write disagree by construction. `ImportSummary` has the same blind spot, so the fix has to settle which side moves rather than making the two disagree the other way. | Medium |
+| N257 | **The preview's inventory belongs off the caller's thread.** `preview()` now reads four whole tables and builds its maps on the caller's Main dispatcher; wrap it in `withContext(Dispatchers.IO)` the way export already is (B158). | `documentIo.read` hops to IO but the decode and the new scans do not, so the dialog hitches in proportion to the history the app carries — the size export was moved for exactly this reason. | Small |
+| N258 | **The preview table for a screen reader.** Four numbers per row read as "Sessions, 509, 506, 2, 1"; give each row one spoken sentence, or the column headers as semantics. | The per-screen rule is not a later pass, and this table's whole meaning is in a column association a reader cannot hear. | Small |
+
+### The week in review
+
+| # | Change | Why it matters | Size |
+| --- | --- | --- | --- |
+| B331 | **What moved counts working sets.** Restrict the week aggregate to `SetType.recordsEffort` roles, passed as a parameter the way `StatisticsDao` passes them, instead of the raw top-and-count over every role; cover it with a DAO case where a warm-up is heavier than the work and is no gain. | B17's rule is that a heavy warm-up is not a best, and the new *What moved* section reintroduces the defect it fixed: a 120 kg ramp set over 100 kg of work produces a gain, and the same row inflates the top before the week and hides a real one. | Small |
+| B332 | **What moved does not claim "was 0 kg".** A movement trained before only at bodyweight has prior sets and a zero top, so its first weighted week prints "(was 0 kg)". Treat an unbacked previous weight as no number, or name the bodyweight case; cover the return in the gain test. | The entry's own rule is that a bodyweight row "does not claim a number it cannot back"; this is that number, on the most common way a lifter starts loading a pull-up or a dip. | Small |
+| N255 | **The week's reads do not lie on failure.** A failed `activePrograms()` becomes `hasActivePlan = false`, so the screen asserts "No program is being followed"; propagate the error like the other reads. In the same area, `WeeklyReviewDao`'s doc says "live exercises" but the query has no `deletedAt` filter — add it or drop the claim. | N252's point was one `DataResult` end to end; the one read still swallowed now feeds a factual sentence, and documentation that promises a filter no query applies is how the next reader adds the bug it describes. | Small |
+| N256 | **The week's units and its duplicated sentence.** Pass `unit.label()` as a format argument instead of concatenating "number unit" in Kotlin (the volume and moved lines), give the volume unit the changelog line it needs, and drop one of the two "no weekday schedule" sentences that can show together. | Every other screen formats the unit through the string, so the concatenation is the one place a localization would have to find; the volume label is a user-visible change no entry mentions. | Small |
+
+### Merge movements
+
+| # | Change | Why it matters | Size |
+| --- | --- | --- | --- |
+| B333 | **The confirmation counts sessions, not rows.** `countForExercise` is `COUNT(*)` over soft-deleted and duplicate `session_exercises`, while the picker beside it shows distinct finished sessions; the template count is plan entries, not plans. Use the same distinct read, or relabel the sentence as entries, and assert the two agree for one history. | The picker's number and the confirmation's number are both "sessions" and differ by the rows the merge re-points, so a source with a repeated movement or a deleted session is told a bigger number after the merge than before it. | Small |
+
+### Docs and the gate
+
+| # | Change | Why it matters | Size |
+| --- | --- | --- | --- |
+| B334 | **One `### Changed` under `[Unreleased]`.** `97e49e3b` inserted N254 above the existing heading, so the section appears twice, with no blank line between the bullet and the second heading. | The changelog's structure is the release's outline, and `DocsConsistencyTest` checks links and task sets, not headings, so nothing else notices. | Small |
+| N259 | **Keep `tools/gate.sh` in step, and survivable.** It repeats the task list `DocsConsistencyTest` compares only between AGENTS.md and the workflow, so a CI change leaves the script stale; and `set -e` aborts the gate when `adb devices` fails though stopping emulators is best-effort. | N253 exists to make the gate reliable, and a workaround that drifts from CI or refuses to run is the same flake wearing a different coat. | Small |
+
+### The tests the batch left behind
+
+| # | Change | Why it matters | Size |
+| --- | --- | --- | --- |
+| N260 | **The batch's test debts.** Truth in the new ViewModel test rather than JUnit assertions, and a gain assertion that checks the row rather than that the list is not empty; a DAO case for a deleted session, since "deleted session or set" deletes a set; a per-block test tag instead of one `WEEKLY_REVIEW_BLOCK` on every line. | These are the shapes the rows above slipped through: the batch's happy paths are covered and its claims are not, so a regression would pass the suite that is meant to guard them. | Small |
 
 ## Later — decided, and not being started
 
