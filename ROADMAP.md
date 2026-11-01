@@ -22,12 +22,6 @@ sitting. The `B` rows are claims the code does not keep and the ones to take fir
 left behind. One row is picked up at a time; a row that ships leaves this file for
 [CHANGELOG.md](CHANGELOG.md).
 
-### The restore preview
-
-| # | Change | Why it matters | Size |
-| --- | --- | --- | --- |
-| N258 | **The preview table for a screen reader.** Four numbers per row read as "Sessions, 509, 506, 2, 1"; give each row one spoken sentence, or the column headers as semantics. | The per-screen rule is not a later pass, and this table's whole meaning is in a column association a reader cannot hear. | Small |
-
 ### The week in review
 
 | # | Change | Why it matters | Size |

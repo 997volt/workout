@@ -180,6 +180,10 @@
     <string name="import_preview_sets_label">Sets</string>
     <string name="import_preview_measurements_label">Measurements</string>
     <string name="import_preview_movements_label">Movements</string>
+    <!-- The four numbers of one row, said as the row rather than as four loose cells (N258). Label/value
+         pairs rather than "509 in the file": a number followed by a word reads as a quantity that needs a
+         plural, and the row's label already names the rows being counted. -->
+    <string name="import_preview_row_spoken">%1$s — in the file: %2$d, already here: %3$d, would come back: %4$d, new: %5$d</string>
     <string name="import_preview_confirm">Merge</string>
     <string name="import_preview_cancel">Cancel</string>
 

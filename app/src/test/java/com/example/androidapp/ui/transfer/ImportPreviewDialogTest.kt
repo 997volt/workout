@@ -1,6 +1,7 @@
 package com.example.androidapp.ui.transfer
 
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -14,9 +15,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * The question a backup asks before it is merged (ROADMAP N246).
+ * The question a backup asks before it is merged (ROADMAP N246, N258).
  *
- * It has to name what the file holds and that nothing is overwritten, and both answers have to travel.
+ * It has to name what the file holds and that nothing is overwritten, both answers have to travel, and each row
+ * has to say itself — four bare numbers are four numbers a reader cannot attribute to a column.
  */
 @RunWith(AndroidJUnit4::class)
 class ImportPreviewDialogTest {
@@ -49,18 +51,15 @@ class ImportPreviewDialogTest {
         )
 
         composeTestRule.onNodeWithTag(TestTags.IMPORT_PREVIEW_DIALOG).assertExists()
-        // The four kinds and the four columns are the question: what the file holds, and what the merge would
-        // do with it (N248).
-        composeTestRule.onNodeWithText("Sessions").assertExists()
-        composeTestRule.onNodeWithText("Measurements").assertExists()
+        // The columns are the legend, and each row says itself in one sentence (N248, N258).
         composeTestRule.onNodeWithText("File").assertExists()
         composeTestRule.onNodeWithText("Back").assertExists()
-        composeTestRule.onNodeWithText("509").assertExists()
-        composeTestRule.onNodeWithText("506").assertExists()
-        composeTestRule.onNodeWithText("2").assertExists()
-        composeTestRule.onNodeWithText("1").assertExists()
-        composeTestRule.onNodeWithText("863").assertExists()
-        composeTestRule.onNodeWithText("186").assertExists()
+        composeTestRule.onNodeWithContentDescription(
+            "Sessions — in the file: 509, already here: 506, would come back: 2, new: 1",
+        ).assertExists()
+        composeTestRule.onNodeWithContentDescription(
+            "Measurements — in the file: 864, already here: 863, would come back: 0, new: 0",
+        ).assertExists()
 
         composeTestRule.onNodeWithTag(TestTags.IMPORT_PREVIEW_CONFIRM).performClick()
         assertEquals(1, confirmed)

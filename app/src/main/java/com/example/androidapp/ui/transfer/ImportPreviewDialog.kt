@@ -11,6 +11,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
@@ -103,7 +105,22 @@ private fun PreviewHeader() {
 
 @Composable
 private fun PreviewLine(label: String, counts: PreviewCounts) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+    // One sentence per row (N258): four bare numbers are four numbers a reader cannot attribute to a column,
+    // and the row is the unit the lifter is asking about, so the row states itself and its cells stay visual.
+    val spoken = stringResource(
+        R.string.import_preview_row_spoken,
+        label,
+        counts.inFile,
+        counts.alreadyHere,
+        counts.restored,
+        counts.added,
+    )
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clearAndSetSemantics { contentDescription = spoken },
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
         Text(
             text = label,
             modifier = Modifier.weight(LABEL_WEIGHT),
