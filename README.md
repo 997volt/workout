@@ -192,11 +192,11 @@ occurrence and the same sequences have since passed repeatedly, so it is **not**
 reproducible and nothing is worked around speculatively.
 
 **If a build fails in one of these tasks with an error that does not point at your own code, re-run
-before investigating.** If it becomes frequent, free memory (stop the emulator), cap concurrency
-with `--max-workers=2`, or drop `org.gradle.parallel` from
-[`gradle.properties`](gradle.properties). The `build` job runs on a dedicated runner with no
-emulator and should not hit this; the `instrumented` job does run an emulator, so it is the one to
-watch.
+before investigating.** The combined gate has one deliberate workaround (N253): run
+[`tools/gate.sh`](tools/gate.sh) instead of the raw command. It stops attached **emulators** before running
+the same task set — never a physical phone — because that is the memory pressure the table describes; pass
+`--keep-emulator` on a machine with room. The `build` job runs on a dedicated runner with no emulator and
+does not hit this; the `instrumented` job does run an emulator, so it is the one to watch.
 
 ## Local toolchain in `.toolchain/`
 

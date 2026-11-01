@@ -85,6 +85,9 @@ Match these — they are the existing ones. Reasons, scope and rejected alternat
 ./gradlew testDebugUnitTest :shared:jvmTest :shared:jsNodeTest lint detekt :shared:detekt assembleDebug assembleRelease --console=plain
 ```
 
+Or run `tools/gate.sh`, the same task set with any attached emulator stopped first — the
+workaround for the `lintAnalyze*` memory-pressure flake (N253).
+
 [`DocsConsistencyTest`](app/src/test/java/com/example/androidapp/DocsConsistencyTest.kt)
 keeps that task set equal to CI's and these links resolving. The configuration cache is on
 by default, so reruns are fast.

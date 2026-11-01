@@ -17,12 +17,8 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-The 2.20 follow-up batch: the unfinished edges of what shipped, in the suggested order. One row is picked up at
-a time; a row that ships leaves this file for [CHANGELOG.md](CHANGELOG.md).
-
-| # | Change | Why it matters | Size |
-| --- | --- | --- | --- |
-| N253 | **Make the combined gate reliable.** Stop the emulator before the gate, or state and automate the workaround for the `lintAnalyze*` failure that appears only under its memory pressure. | The same flake has cost a re-run on most batches, and a release is the wrong place to discover it again. | Small |
+Nothing is in flight. The 2.20 follow-up batch (N248–N253) is in the unreleased
+[CHANGELOG.md](CHANGELOG.md); nothing is queued behind it.
 
 ## Later — decided, and not being started
 

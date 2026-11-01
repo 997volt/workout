@@ -24,6 +24,12 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   included.
 ### Changed
 
+- **The combined gate stops the emulator first** (N253). `lintAnalyzeDebug*` has failed intermittently with no
+  findings whenever a booted emulator competes with the Gradle daemons for this sandbox's memory. `tools/gate.sh`
+  now runs the same task set as CI after stopping attached emulators — never a physical phone — with
+  `--keep-emulator` as the opt-out, and the README's flakiness section points at it.
+### Changed
+
 - **The week in review's orchestration is tested** (N252). The ViewModel now reads its week through one
   `WeeklyReviewRepository` facade instead of four repositories, and a ViewModel test covers the seven-day loop,
   the two totals, the plan, the gains and the stall — plus a failed day's read and its retry. The domain math
