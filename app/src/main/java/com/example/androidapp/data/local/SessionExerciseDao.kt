@@ -34,19 +34,12 @@ interface SessionExerciseDao {
     suspend fun setSupersetGroup(ids: List<String>, group: Int?, at: Long): Int
 
     /**
-     * Session-exercise rows naming one movement, soft-deleted ones included (ROADMAP N249).
-     *
-     * The merge re-points every row that names the source, so the count behind its confirmation is the same
-     * set the write touches rather than only the live half.
-     */
-    @Query("SELECT COUNT(*) FROM session_exercises WHERE exerciseId = :exerciseId")
-    suspend fun countForExercise(exerciseId: String): Int
-
-    /**
      * How many finished, live sessions trained each movement (ROADMAP N249).
      *
-     * The count a merge's picker shows beside a candidate: a deleted or open session is not history a lifter
-     * would count, and two exercise rows in one session are still one session.
+     * The count a merge's picker shows beside a candidate, and the one its confirmation reports (B333): a
+     * deleted or open session is not history a lifter would count, and two exercise rows in one session are
+     * still one session. The merge counts its source with this same read, so the confirmation and the picker
+     * cannot define "sessions" differently.
      */
     @Query(
         """

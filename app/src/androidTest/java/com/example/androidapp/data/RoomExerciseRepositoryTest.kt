@@ -461,7 +461,7 @@ class RoomExerciseRepositoryTest {
 
         assertEquals("Sled Drag", summary.survivorName)
         assertEquals("the session-exercise row moved", 1, summary.sessions)
-        assertEquals("the plan entry moved", 1, summary.planEntries)
+        assertEquals("the plan moved", 1, summary.plans)
         assertEquals(
             "the session follows",
             survivor.id,
@@ -486,6 +486,46 @@ class RoomExerciseRepositoryTest {
     }
 
     @Test
+    fun theMergeSummary_countsTheWayThePickerDoes() = runTest {
+        // B333: the confirmation and the survivor picker are two readings of one history, so they cannot say
+        // two different numbers. Sessions are the picker's finished live ones, and a plan is a plan, not an
+        // entry — while the write itself still re-points every row, the deleted session's included.
+        val source = created("Sled Push")
+        val survivor = created("Sled Drag")
+
+        session("s1", finishedAt = 2L)
+        session("s2", finishedAt = 3L)
+        // A deleted session's rows are still re-pointed; the picker never counted them.
+        session("s3", finishedAt = 4L, deletedAt = 5L)
+        sessionExercise("se1a", "s1", source.id, position = 0)
+        sessionExercise("se1b", "s1", source.id, position = 1)
+        sessionExercise("se2", "s2", source.id, position = 0)
+        sessionExercise("se3", "s3", source.id, position = 0)
+
+        // One plan names it twice; a deleted plan is not one the lifter has.
+        template("t1", deletedAt = null)
+        template("t2", deletedAt = 5L)
+        templateExercise("te1a", "t1", source.id, position = 0)
+        templateExercise("te1b", "t1", source.id, position = 1)
+        templateExercise("te2", "t2", source.id, position = 0)
+
+        val counts = (repository.sessionCounts() as DataResult.Success).data
+
+        val summary = (repository.mergeExercises(source.id, survivor.id) as DataResult.Success).data
+
+        assertEquals("two finished sessions, one of them naming it twice", 2, counts[source.id])
+        assertEquals("the confirmation counts sessions as the picker does", counts[source.id], summary.sessions)
+        assertEquals("a plan holding it twice is one plan", 1, summary.plans)
+        assertEquals(
+            "and the write still moves every row, the deleted session's included",
+            setOf(survivor.id),
+            listOf("se1a", "se1b", "se2", "se3")
+                .map { database.sessionExerciseDao().findSessionExercise(it)?.exerciseId }
+                .toSet(),
+        )
+    }
+
+    @Test
     fun mergingAMovementIntoItself_orACategory_isRefused() = runTest {
         val movement = created("Sled Push")
         val category = (repository.createCategory("Sleds") as DataResult.Success<Exercise>).data
@@ -499,4 +539,56 @@ class RoomExerciseRepositoryTest {
 
     private suspend fun created(name: String): Exercise =
         (repository.createCustomExercise(name) as DataResult.Success<Exercise>).data
+
+    /** A finished session in the history, or a deleted one whose rows still move (B333). */
+    private suspend fun session(id: String, finishedAt: Long, deletedAt: Long? = null) {
+        database.workoutDao().insertSession(
+            WorkoutSessionEntity(
+                id = id,
+                startedAt = 1L,
+                finishedAt = finishedAt,
+                notes = null,
+                restEndsAt = null,
+                createdAt = 1L,
+                updatedAt = 1L,
+                deletedAt = deletedAt,
+            ),
+        )
+    }
+
+    private suspend fun sessionExercise(id: String, sessionId: String, exerciseId: String, position: Int) {
+        database.workoutDao().insertSessionExercise(
+            SessionExerciseEntity(
+                id = id,
+                sessionId = sessionId,
+                exerciseId = exerciseId,
+                position = position,
+                finishedAt = null,
+                muscleFeel = null,
+                createdAt = 1L,
+                updatedAt = 1L,
+                deletedAt = null,
+            ),
+        )
+    }
+
+    private suspend fun template(id: String, deletedAt: Long?) {
+        database.templateDao().insertTemplate(
+            TemplateEntity(id = id, name = id, createdAt = 1L, updatedAt = 1L, deletedAt = deletedAt),
+        )
+    }
+
+    private suspend fun templateExercise(id: String, templateId: String, exerciseId: String, position: Int) {
+        database.templateDao().insertTemplateExercise(
+            TemplateExerciseEntity(
+                id = id,
+                templateId = templateId,
+                exerciseId = exerciseId,
+                position = position,
+                createdAt = 1L,
+                updatedAt = 1L,
+                deletedAt = null,
+            ),
+        )
+    }
 }

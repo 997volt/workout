@@ -34,7 +34,7 @@ class MergeConfirmedDialogTest {
 
     @Test
     fun itSaysWhatMoved_andDoneLeaves() {
-        show(MergeSummary(survivorName = "Back Squat", sessions = 12, planEntries = 3))
+        show(MergeSummary(survivorName = "Back Squat", sessions = 12, plans = 3))
 
         composeTestRule.onNodeWithTag(TestTags.MERGE_CONFIRMED).assertExists()
         composeTestRule.onNodeWithText("Merged into Back Squat").assertExists()
@@ -47,7 +47,7 @@ class MergeConfirmedDialogTest {
 
     @Test
     fun aSingleSessionAndPlan_readAsOne() {
-        show(MergeSummary(survivorName = "Sled Drag", sessions = 1, planEntries = 1))
+        show(MergeSummary(survivorName = "Sled Drag", sessions = 1, plans = 1))
 
         composeTestRule.onNodeWithText("Moved 1 session and 1 plan.").assertExists()
     }

@@ -39,8 +39,8 @@ internal fun MergeConfirmedDialog(
                     ),
                     pluralStringResource(
                         R.plurals.merge_confirmed_plans,
-                        summary.planEntries,
-                        summary.planEntries,
+                        summary.plans,
+                        summary.plans,
                     ),
                 ),
             )

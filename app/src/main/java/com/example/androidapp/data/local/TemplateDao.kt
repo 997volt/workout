@@ -17,12 +17,20 @@ import kotlinx.coroutines.flow.Flow
 interface TemplateDao {
 
     /**
-     * Template-exercise rows naming one movement (ROADMAP N249).
+     * How many live plans name one movement (ROADMAP N249, B333).
      *
-     * The merge re-points every one of them, so the count is what the confirmation reports as plans moved.
+     * Distinct by template because the confirmation says "plans", not "entries": a plan holding the movement
+     * twice is one plan. A deleted plan is not one the lifter has, so its entries are not counted either.
      */
-    @Query("SELECT COUNT(*) FROM template_exercises WHERE exerciseId = :exerciseId")
-    suspend fun countForExercise(exerciseId: String): Int
+    @Query(
+        """
+        SELECT COUNT(DISTINCT te.templateId)
+        FROM template_exercises te
+        JOIN templates t ON t.id = te.templateId
+        WHERE te.exerciseId = :exerciseId AND te.deletedAt IS NULL AND t.deletedAt IS NULL
+        """,
+    )
+    suspend fun countPlansForExercise(exerciseId: String): Int
 
     /**
      * Plans an exercise into a superset, or leaves one (ROADMAP B16).

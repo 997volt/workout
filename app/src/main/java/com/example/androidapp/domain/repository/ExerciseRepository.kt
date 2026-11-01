@@ -106,12 +106,18 @@ interface ExerciseRepository {
     suspend fun mergeExercises(sourceId: String, survivorId: String): DataResult<MergeSummary>
 }
 
-/** What a merge did, so the screen can say it (ROADMAP N249). */
+/** What a merge did, so the screen can say it (ROADMAP N249, B333). */
 data class MergeSummary(
     /** The row that survived and now holds the history. */
     val survivorName: String,
-    /** Session-exercise rows moved, soft-deleted ones included: the merge re-points all of them. */
+    /**
+     * Finished sessions that trained the source, counted by the picker's own read (B333).
+     *
+     * The merge re-points every session-exercise row, a deleted or open session's included, but the number
+     * the screen says is the history a lifter recognises — counted the way the survivor picker counts every
+     * candidate.
+     */
     val sessions: Int,
-    /** Template-exercise rows moved, the plan entries that now name the survivor. */
-    val planEntries: Int,
+    /** Live plans that named the source and now name the survivor; a plan holding it twice is one plan. */
+    val plans: Int,
 )

@@ -164,16 +164,17 @@ class RoomExerciseRepository @Inject constructor(
             throw InvalidInputException("Only movements can be merged.")
         }
         val at = timeSource.nowEpochMillis()
-        // Counted before the write, and over every row the write touches: the confirmation is about what
-        // moved, not about a live-only subset (N249).
-        val sessions = database.sessionExerciseDao().countForExercise(sourceId)
-        val plans = database.templateDao().countForExercise(sourceId)
+        // The picker's own reads, so the confirmation cannot say a different number for the same history
+        // (B333): the sessions a lifter would recognise, and the plans that held the row.
+        val sessions = database.sessionExerciseDao().sessionCounts()
+            .firstOrNull { it.exerciseId == sourceId }?.sessions ?: 0
+        val plans = database.templateDao().countPlansForExercise(sourceId)
         // One transaction: a merge that moved the history but not the plan, or the reverse, is a library
         // with a row that no longer means anything (N238's four statements are one unit there too).
         database.withTransaction {
             mergeMovementsInto(database.openHelper.writableDatabase, sourceId, survivorId, at)
         }
-        MergeSummary(survivorName = survivor.name, sessions = sessions, planEntries = plans)
+        MergeSummary(survivorName = survivor.name, sessions = sessions, plans = plans)
     }
 
     override suspend fun sessionCounts(): DataResult<Map<String, Int>> = dataResultOf {

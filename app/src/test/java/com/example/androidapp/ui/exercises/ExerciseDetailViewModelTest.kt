@@ -413,7 +413,7 @@ class ExerciseDetailViewModelTest {
 
         var merge: Pair<String, String>? = null
         var mergeResult: DataResult<MergeSummary> =
-            DataResult.Success(MergeSummary(survivorName = "Back Squat", sessions = 1, planEntries = 0))
+            DataResult.Success(MergeSummary(survivorName = "Back Squat", sessions = 1, plans = 0))
         var counts: Map<String, Int> = emptyMap()
 
         override suspend fun mergeExercises(
