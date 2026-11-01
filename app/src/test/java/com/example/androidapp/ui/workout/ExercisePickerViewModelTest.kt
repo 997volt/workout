@@ -17,6 +17,7 @@ import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.WorkoutTemplate
 import com.example.androidapp.domain.repository.ExerciseRepository
+import com.example.androidapp.domain.repository.MergeSummary
 import com.example.androidapp.domain.repository.TemplateRepository
 import com.example.androidapp.domain.repository.TemplateSetEdit
 import com.example.androidapp.domain.repository.WorkoutRepository
@@ -539,8 +540,12 @@ class ExercisePickerViewModelTest {
         override suspend fun updateExercise(exercise: Exercise): DataResult<Unit> =
             DataResult.Success(Unit)
 
-        override suspend fun mergeExercises(sourceId: String, survivorId: String): DataResult<Unit> =
-            DataResult.Failure(DataError.NotFound)
+        override suspend fun mergeExercises(
+            sourceId: String,
+            survivorId: String,
+        ): DataResult<MergeSummary> = DataResult.Failure(DataError.NotFound)
+
+        override suspend fun sessionCounts(): DataResult<Map<String, Int>> = DataResult.Success(emptyMap())
     }
 
     /** Records which template an exercise landed in (ROADMAP N3). */

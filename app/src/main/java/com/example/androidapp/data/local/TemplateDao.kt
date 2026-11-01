@@ -17,6 +17,14 @@ import kotlinx.coroutines.flow.Flow
 interface TemplateDao {
 
     /**
+     * Template-exercise rows naming one movement (ROADMAP N249).
+     *
+     * The merge re-points every one of them, so the count is what the confirmation reports as plans moved.
+     */
+    @Query("SELECT COUNT(*) FROM template_exercises WHERE exerciseId = :exerciseId")
+    suspend fun countForExercise(exerciseId: String): Int
+
+    /**
      * Plans an exercise into a superset, or leaves one (ROADMAP B16).
      *
      * A nullable group, so grouping and ungrouping are the same write. One statement for the whole

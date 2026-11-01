@@ -38,6 +38,7 @@ import com.example.androidapp.domain.repository.ExerciseRepository
 import com.example.androidapp.domain.repository.GoalPeriod
 import com.example.androidapp.domain.repository.GoalRepository
 import com.example.androidapp.domain.repository.MeasurementRepository
+import com.example.androidapp.domain.repository.MergeSummary
 import com.example.androidapp.domain.repository.SettingsRepository
 import com.example.androidapp.domain.repository.StatisticsRepository
 import com.example.androidapp.domain.repository.TrendsRepository
@@ -1016,8 +1017,12 @@ private class FakeExerciseRepository(private val lifts: List<Exercise>) : Exerci
 
     override suspend fun updateExercise(exercise: Exercise): DataResult<Unit> = DataResult.Success(Unit)
 
-    override suspend fun mergeExercises(sourceId: String, survivorId: String): DataResult<Unit> =
-        DataResult.Failure(DataError.NotFound)
+    override suspend fun mergeExercises(
+        sourceId: String,
+        survivorId: String,
+    ): DataResult<MergeSummary> = DataResult.Failure(DataError.NotFound)
+
+    override suspend fun sessionCounts(): DataResult<Map<String, Int>> = DataResult.Success(emptyMap())
 }
 
 /** The goal history these tests write to and read from (ROADMAP N137). */

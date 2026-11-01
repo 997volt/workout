@@ -16,6 +16,7 @@ import com.example.androidapp.domain.model.ProgressionMode
 import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.domain.repository.ExerciseRepository
+import com.example.androidapp.domain.repository.MergeSummary
 import com.example.androidapp.domain.repository.WorkoutRepository
 import com.example.androidapp.ui.navigation.ExerciseDetail
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -23,6 +24,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -87,6 +89,13 @@ data class ExerciseHistoryUi(
     val lastSets: List<SetEntry> = emptyList(),
     /** Best at each rep count, and the longest hold (ROADMAP N23, N233). */
     val records: PersonalRecords = PersonalRecords(),
+)
+
+/** A possible survivor for a manual merge, with what makes the choice informed (ROADMAP N249). */
+data class MergeCandidate(
+    val exercise: Exercise,
+    val sessions: Int,
+    val lastTrained: Instant?,
 )
 
 data class ExerciseDetailUiState(
@@ -187,6 +196,10 @@ class ExerciseDetailViewModel @Inject constructor(
             }
             loadLibraryContext()
             loadHistory()
+        }
+        viewModelScope.launch {
+            // A one-shot read: the picker's counts do not need to tick while the dialog is open (N249).
+            (repository.sessionCounts() as? DataResult.Success)?.let { sessionCounts.value = it.data }
         }
     }
 
@@ -331,25 +344,38 @@ class ExerciseDetailViewModel @Inject constructor(
      * A category is never a candidate — a merge moves history, and a category has none — and neither is the
      * row the screen is on. Alphabetical because the dialog searches within it.
      */
-    val mergeCandidates: StateFlow<List<Exercise>> = repository.observeExercises()
-        .map { result -> (result as? DataResult.Success)?.data.orEmpty() }
-        .map { rows ->
-            rows.filter { it.id != exerciseId && it.rowKind == RowKind.MOVEMENT }
-                .sortedBy { it.name.lowercase() }
-        }
+    private val sessionCounts = MutableStateFlow<Map<String, Int>>(emptyMap())
+
+    val mergeCandidates: StateFlow<List<MergeCandidate>> = combine(
+        repository.observeExercises(),
+        repository.observeLastTrained(),
+        sessionCounts,
+    ) { exercises, trained, counts ->
+        val rows = (exercises as? DataResult.Success)?.data.orEmpty()
+        val lastTrained = (trained as? DataResult.Success)?.data.orEmpty()
+        rows.filter { it.id != exerciseId && it.rowKind == RowKind.MOVEMENT }
+            .map { row ->
+                MergeCandidate(
+                    exercise = row,
+                    sessions = counts[row.id] ?: 0,
+                    lastTrained = lastTrained[row.id],
+                )
+            }
+            .sortedBy { it.exercise.name.lowercase() }
+    }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(MERGE_CANDIDATE_STOP_MILLIS), emptyList())
 
-    private val _merged = MutableStateFlow(false)
+    private val _mergeSummary = MutableStateFlow<MergeSummary?>(null)
 
-    /** True once a merge landed; the route leaves the screen of the row that no longer exists. */
-    val merged: StateFlow<Boolean> = _merged.asStateFlow()
+    /** What the last merge did, once it landed; the route says it before leaving (N249). */
+    val mergeSummary: StateFlow<MergeSummary?> = _mergeSummary.asStateFlow()
 
     /** Merges this row into [intoId]; a failure stays in the dialog rather than replacing the screen. */
     fun onMerge(intoId: String) {
         _uiState.update { it.copy(mergeError = null) }
         viewModelScope.launch {
             when (val result = repository.mergeExercises(exerciseId, intoId)) {
-                is DataResult.Success -> _merged.value = true
+                is DataResult.Success -> _mergeSummary.value = result.data
                 is DataResult.Failure -> _uiState.update { it.copy(mergeError = result.error) }
             }
         }

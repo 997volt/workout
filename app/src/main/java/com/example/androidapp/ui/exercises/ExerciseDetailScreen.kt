@@ -22,11 +22,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -73,13 +71,8 @@ fun ExerciseDetailRoute(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val candidates by viewModel.mergeCandidates.collectAsStateWithLifecycle()
-    val merged by viewModel.merged.collectAsStateWithLifecycle()
+    val mergeSummary by viewModel.mergeSummary.collectAsStateWithLifecycle()
     var merging by rememberSaveable { mutableStateOf(false) }
-
-    // The row this screen shows no longer exists once a merge lands, so leave its screen (N245). The
-    // callback is read through a state holder so the effect is not restarted by a new lambda identity.
-    val leaveAfterMerge by rememberUpdatedState(onBack)
-    LaunchedEffect(merged) { if (merged) leaveAfterMerge() }
 
     ExerciseDetailScreen(
         state = state,
@@ -92,7 +85,7 @@ fun ExerciseDetailRoute(
         modifier = modifier,
     )
 
-    if (merging) {
+    if (merging && mergeSummary == null) {
         MergeMovementDialog(
             sourceName = state.exercise?.name.orEmpty(),
             candidates = candidates,
@@ -100,6 +93,10 @@ fun ExerciseDetailRoute(
             onConfirm = viewModel::onMerge,
             onDismiss = { merging = false },
         )
+    }
+    // The row this screen shows no longer exists once the merge lands; say what moved, then leave (N249).
+    mergeSummary?.let { settled ->
+        MergeConfirmedDialog(summary = settled, onDismiss = onBack)
     }
 }
 

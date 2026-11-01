@@ -11,6 +11,7 @@ import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.repository.ExerciseRepository
+import com.example.androidapp.domain.repository.MergeSummary
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -206,8 +207,12 @@ class ExerciseLibraryViewModelTest {
             }
         }
 
-        override suspend fun mergeExercises(sourceId: String, survivorId: String): DataResult<Unit> =
-            DataResult.Failure(DataError.NotFound)
+        override suspend fun mergeExercises(
+            sourceId: String,
+            survivorId: String,
+        ): DataResult<MergeSummary> = DataResult.Failure(DataError.NotFound)
+
+        override suspend fun sessionCounts(): DataResult<Map<String, Int>> = DataResult.Success(emptyMap())
     }
 
     private companion object {

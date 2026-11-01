@@ -14,11 +14,13 @@ import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.repository.ExerciseRepository
+import com.example.androidapp.domain.repository.MergeSummary
 import com.example.androidapp.ui.workout.FakeWorkoutRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -304,6 +306,20 @@ class ExerciseDetailViewModelTest {
     }
 
     @Test
+    fun mergeCandidates_carryTheirSessionCount() = runTest(dispatcher) {
+        val repository = FakeRepository(mutableListOf(custom, seeded)).apply {
+            counts = mapOf("back-squat" to 12)
+        }
+        val viewModel = viewModelFor(repository)
+        advanceUntilIdle()
+
+        val candidate = viewModel.mergeCandidates.first { it.isNotEmpty() }
+            .single { it.exercise.id == "back-squat" }
+
+        assertEquals(12, candidate.sessions)
+    }
+
+    @Test
     fun merging_reportsTheIds_andSignalsTheRoute() = runTest(dispatcher) {
         val repository = FakeRepository(mutableListOf(custom, seeded))
         val viewModel = viewModelFor(repository)
@@ -313,7 +329,7 @@ class ExerciseDetailViewModelTest {
         advanceUntilIdle()
 
         assertEquals("custom-1" to "back-squat", repository.merge)
-        assertTrue(viewModel.merged.value)
+        assertEquals("Back Squat", viewModel.mergeSummary.value?.survivorName)
     }
 
     @Test
@@ -330,7 +346,7 @@ class ExerciseDetailViewModelTest {
             "Only movements can be merged.",
             (viewModel.uiState.value.mergeError as DataError.Invalid).message,
         )
-        assertFalse("the route must not leave a row that is still here", viewModel.merged.value)
+        assertNull("the route must not say a merge happened", viewModel.mergeSummary.value)
     }
 
     private val seeded = Exercise(
@@ -396,12 +412,19 @@ class ExerciseDetailViewModelTest {
         }
 
         var merge: Pair<String, String>? = null
-        var mergeResult: DataResult<Unit> = DataResult.Success(Unit)
+        var mergeResult: DataResult<MergeSummary> =
+            DataResult.Success(MergeSummary(survivorName = "Back Squat", sessions = 1, planEntries = 0))
+        var counts: Map<String, Int> = emptyMap()
 
-        override suspend fun mergeExercises(sourceId: String, survivorId: String): DataResult<Unit> {
+        override suspend fun mergeExercises(
+            sourceId: String,
+            survivorId: String,
+        ): DataResult<MergeSummary> {
             merge = sourceId to survivorId
             return mergeResult
         }
+
+        override suspend fun sessionCounts(): DataResult<Map<String, Int>> = DataResult.Success(counts)
     }
 
     private companion object {

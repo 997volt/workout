@@ -21,13 +21,16 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
-import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.ui.components.AppRow
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.TestTags
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 
 /**
  * The question a manual merge asks: which movement does this one become (ROADMAP N245).
@@ -43,7 +46,7 @@ import com.example.androidapp.ui.components.TestTags
 @Composable
 internal fun MergeMovementDialog(
     sourceName: String,
-    candidates: List<Exercise>,
+    candidates: List<MergeCandidate>,
     error: String?,
     onConfirm: (String) -> Unit,
     onDismiss: () -> Unit,
@@ -51,9 +54,10 @@ internal fun MergeMovementDialog(
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
+    val dateFormat = remember { DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM) }
     val needle = query.trim()
     val filtered = remember(candidates, needle) {
-        candidates.filter { needle.isEmpty() || it.name.contains(needle, ignoreCase = true) }
+        candidates.filter { needle.isEmpty() || it.exercise.name.contains(needle, ignoreCase = true) }
     }
 
     AlertDialog(
@@ -68,6 +72,7 @@ internal fun MergeMovementDialog(
                 selectedId = selectedId,
                 onSelect = { selectedId = it },
                 error = error,
+                dateFormat = dateFormat,
             )
         },
         confirmButton = {
@@ -95,10 +100,11 @@ internal fun MergeMovementDialog(
 private fun MergeDialogBody(
     query: String,
     onQueryChange: (String) -> Unit,
-    candidates: List<Exercise>,
+    candidates: List<MergeCandidate>,
     selectedId: String?,
     onSelect: (String) -> Unit,
     error: String?,
+    dateFormat: DateTimeFormatter,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
@@ -122,6 +128,7 @@ private fun MergeDialogBody(
                 candidates = candidates,
                 selectedId = selectedId,
                 onSelect = onSelect,
+                dateFormat = dateFormat,
             )
         }
         error?.let {
@@ -137,17 +144,31 @@ private fun MergeDialogBody(
 /** The searchable list of survivors: a row per movement, with the chosen one checked (N245). */
 @Composable
 private fun MergeCandidateList(
-    candidates: List<Exercise>,
+    candidates: List<MergeCandidate>,
     selectedId: String?,
     onSelect: (String) -> Unit,
+    dateFormat: DateTimeFormatter,
 ) {
+    val zone = ZoneId.systemDefault()
     LazyColumn(modifier = Modifier.heightIn(max = 280.dp)) {
-        items(candidates, key = { it.id }) { candidate ->
+        items(candidates, key = { it.exercise.id }) { candidate ->
+            val sessions = pluralStringResource(
+                R.plurals.merge_candidate_sessions,
+                candidate.sessions,
+                candidate.sessions,
+            )
+            val trained = candidate.lastTrained?.let {
+                stringResource(
+                    R.string.merge_candidate_last_trained,
+                    it.atZone(zone).toLocalDate().format(dateFormat),
+                )
+            } ?: stringResource(R.string.merge_candidate_never)
             AppRow(
-                headline = candidate.name,
-                onClick = { onSelect(candidate.id) },
-                onClickLabel = stringResource(R.string.exercise_merge_into, candidate.name),
-                trailing = if (candidate.id == selectedId) {
+                headline = candidate.exercise.name,
+                supporting = stringResource(R.string.merge_candidate_supporting, sessions, trained),
+                onClick = { onSelect(candidate.exercise.id) },
+                onClickLabel = stringResource(R.string.exercise_merge_into, candidate.exercise.name),
+                trailing = if (candidate.exercise.id == selectedId) {
                     {
                         Icon(
                             imageVector = Icons.Filled.Check,
@@ -158,7 +179,7 @@ private fun MergeCandidateList(
                 } else {
                     null
                 },
-                testTag = TestTags.mergeCandidate(candidate.id),
+                testTag = TestTags.mergeCandidate(candidate.exercise.id),
             )
         }
     }

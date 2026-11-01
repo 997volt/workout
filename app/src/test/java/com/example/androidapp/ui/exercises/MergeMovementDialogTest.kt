@@ -16,6 +16,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.time.Instant
 
 /**
  * The question a manual merge asks (ROADMAP N245).
@@ -50,6 +51,8 @@ class MergeMovementDialogTest {
 
         composeTestRule.onNodeWithTag(TestTags.MERGE_DIALOG).assertExists()
         composeTestRule.onNodeWithTag(TestTags.MERGE_CONFIRM).assertIsNotEnabled()
+        composeTestRule.onNodeWithText("12 sessions", substring = true).assertExists()
+        composeTestRule.onNodeWithText("Never trained", substring = true).assertExists()
 
         composeTestRule.onNodeWithTag(TestTags.mergeCandidate("barbell-bench-press")).performClick()
         composeTestRule.onNodeWithTag(TestTags.MERGE_CONFIRM).performClick()
@@ -77,19 +80,27 @@ class MergeMovementDialogTest {
         assertEquals(1, dismissed)
     }
 
-    private val squat = Exercise(
-        id = "back-squat",
-        name = "Back Squat",
-        primaryMuscle = MuscleGroup.QUADS,
-        equipment = Equipment.BARBELL,
-        movementPattern = MovementPattern.SQUAT,
+    private val squat = MergeCandidate(
+        exercise = Exercise(
+            id = "back-squat",
+            name = "Back Squat",
+            primaryMuscle = MuscleGroup.QUADS,
+            equipment = Equipment.BARBELL,
+            movementPattern = MovementPattern.SQUAT,
+        ),
+        sessions = 12,
+        lastTrained = Instant.parse("2026-10-20T10:15:00Z"),
     )
 
-    private val bench = Exercise(
-        id = "barbell-bench-press",
-        name = "Barbell Bench Press",
-        primaryMuscle = MuscleGroup.CHEST,
-        equipment = Equipment.BARBELL,
-        movementPattern = MovementPattern.PRESS,
+    private val bench = MergeCandidate(
+        exercise = Exercise(
+            id = "barbell-bench-press",
+            name = "Barbell Bench Press",
+            primaryMuscle = MuscleGroup.CHEST,
+            equipment = Equipment.BARBELL,
+            movementPattern = MovementPattern.PRESS,
+        ),
+        sessions = 0,
+        lastTrained = null,
     )
 }

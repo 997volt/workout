@@ -41,6 +41,14 @@ interface ExerciseRepository {
     suspend fun getAllIncludingDeleted(): DataResult<List<Exercise>>
 
     /**
+     * How many finished sessions trained each movement, keyed by movement id (ROADMAP N249).
+     *
+     * Only live, finished sessions count: a deleted workout and a soft-deleted exercise row are not history
+     * a lifter would recognise. A movement with no sessions is simply absent.
+     */
+    suspend fun sessionCounts(): DataResult<Map<String, Int>>
+
+    /**
      * When each movement was last trained, keyed by movement id (ROADMAP N230).
      *
      * The newest **finished** session that names it, and nothing for a movement never trained — which is a
@@ -92,7 +100,18 @@ interface ExerciseRepository {
      * deliberately leaves a row the lifter configured alone; this is how they settle it without deleting a
      * row's history.
      *
-     * Both ids must name live movements; a category, a missing row or a merge into itself is refused.
+     * Both ids must name live movements; a category, a missing row or a merge into itself is refused. The
+     * summary is what the screen says happened (N249): the survivor's name and how much moved.
      */
-    suspend fun mergeExercises(sourceId: String, survivorId: String): DataResult<Unit>
+    suspend fun mergeExercises(sourceId: String, survivorId: String): DataResult<MergeSummary>
 }
+
+/** What a merge did, so the screen can say it (ROADMAP N249). */
+data class MergeSummary(
+    /** The row that survived and now holds the history. */
+    val survivorName: String,
+    /** Session-exercise rows moved, soft-deleted ones included: the merge re-points all of them. */
+    val sessions: Int,
+    /** Template-exercise rows moved, the plan entries that now name the survivor. */
+    val planEntries: Int,
+)

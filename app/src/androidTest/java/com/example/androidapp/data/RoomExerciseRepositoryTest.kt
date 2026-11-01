@@ -454,9 +454,14 @@ class RoomExerciseRepositoryTest {
             ),
         )
 
-        val result = repository.mergeExercises(source.id, survivor.id)
+        val counts = (repository.sessionCounts() as DataResult.Success).data
+        assertEquals("one finished session trained the source", 1, counts[source.id])
 
-        assertTrue(result is DataResult.Success)
+        val summary = (repository.mergeExercises(source.id, survivor.id) as DataResult.Success).data
+
+        assertEquals("Sled Drag", summary.survivorName)
+        assertEquals("the session-exercise row moved", 1, summary.sessions)
+        assertEquals("the plan entry moved", 1, summary.planEntries)
         assertEquals(
             "the session follows",
             survivor.id,

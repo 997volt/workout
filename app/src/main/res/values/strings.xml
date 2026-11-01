@@ -182,6 +182,24 @@
     <string name="exercise_merge_search">Search movements</string>
     <string name="exercise_merge_confirm">Merge</string>
     <string name="exercise_merge_cancel">Cancel</string>
+    <string name="merge_candidate_last_trained">Last trained %1$s</string>
+    <string name="merge_candidate_never">Never trained</string>
+    <string name="merge_candidate_supporting">%1$s · %2$s</string>
+    <plurals name="merge_candidate_sessions">
+        <item quantity="one">%1$d session</item>
+        <item quantity="other">%1$d sessions</item>
+    </plurals>
+    <string name="merge_confirmed_title">Merged into %1$s</string>
+    <string name="merge_confirmed_text">Moved %1$s and %2$s.</string>
+    <string name="merge_confirmed_done">Done</string>
+    <plurals name="merge_confirmed_sessions">
+        <item quantity="one">%1$d session</item>
+        <item quantity="other">%1$d sessions</item>
+    </plurals>
+    <plurals name="merge_confirmed_plans">
+        <item quantity="one">%1$d plan</item>
+        <item quantity="other">%1$d plans</item>
+    </plurals>
     <string name="exercise_merge_empty">No other movement matches.</string>
     <string name="exercise_merge_into">Merge into %1$s</string>
 

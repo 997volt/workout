@@ -17,6 +17,7 @@ import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.nowEpochMillis
 import com.example.androidapp.domain.repository.ExerciseRepository
+import com.example.androidapp.domain.repository.MergeSummary
 import com.example.androidapp.domain.toDataError
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
@@ -152,7 +153,10 @@ class RoomExerciseRepository @Inject constructor(
         }
     }
 
-    override suspend fun mergeExercises(sourceId: String, survivorId: String): DataResult<Unit> = dataResultOf {
+    override suspend fun mergeExercises(
+        sourceId: String,
+        survivorId: String,
+    ): DataResult<MergeSummary> = dataResultOf {
         if (sourceId == survivorId) throw InvalidInputException("A movement cannot be merged into itself.")
         val source = dao.findById(sourceId) ?: throw NotFoundException("exercise $sourceId")
         val survivor = dao.findById(survivorId) ?: throw NotFoundException("exercise $survivorId")
@@ -160,11 +164,21 @@ class RoomExerciseRepository @Inject constructor(
             throw InvalidInputException("Only movements can be merged.")
         }
         val at = timeSource.nowEpochMillis()
+        // Counted before the write, and over every row the write touches: the confirmation is about what
+        // moved, not about a live-only subset (N249).
+        val sessions = database.sessionExerciseDao().countForExercise(sourceId)
+        val plans = database.templateDao().countForExercise(sourceId)
         // One transaction: a merge that moved the history but not the plan, or the reverse, is a library
         // with a row that no longer means anything (N238's four statements are one unit there too).
         database.withTransaction {
             mergeMovementsInto(database.openHelper.writableDatabase, sourceId, survivorId, at)
         }
+        MergeSummary(survivorName = survivor.name, sessions = sessions, planEntries = plans)
+    }
+
+    override suspend fun sessionCounts(): DataResult<Map<String, Int>> = dataResultOf {
+        database.sessionExerciseDao().sessionCounts()
+            .associate { it.exerciseId to it.sessions }
     }
 
     override suspend fun updateExercise(exercise: Exercise): DataResult<Unit> = dataResultOf {

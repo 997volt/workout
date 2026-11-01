@@ -662,6 +662,8 @@ object TestTags {
     const val MERGE_SEARCH = "merge_search"
     const val MERGE_CONFIRM = "merge_confirm"
     const val MERGE_CANCEL = "merge_cancel"
+    const val MERGE_CONFIRMED = "merge_confirmed"
+    const val MERGE_CONFIRMED_OK = "merge_confirmed_ok"
 
     fun mergeCandidate(id: String) = "merge_candidate_$id"
 
