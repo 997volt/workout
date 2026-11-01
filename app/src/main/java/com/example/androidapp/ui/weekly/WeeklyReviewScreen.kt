@@ -28,6 +28,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
 import com.example.androidapp.domain.Weight
+import com.example.androidapp.domain.model.BlockProgress
 import com.example.androidapp.domain.model.MovementGain
 import com.example.androidapp.domain.model.OccurrenceState
 import com.example.androidapp.domain.model.PlanStall
@@ -149,8 +150,16 @@ private fun WeeklyReviewBody(
         }
         SectionHeader(text = stringResource(R.string.weekly_review_summary_title))
         WeekSummaryCard(state = state)
+        if (state.blocks.isNotEmpty()) {
+            SectionHeader(text = stringResource(R.string.weekly_review_block_title))
+            BlockLines(blocks = state.blocks)
+        }
         SectionHeader(text = stringResource(R.string.weekly_review_days_title))
-        PlannedDaysSection(days = state.days, dateFormat = dateFormat)
+        PlannedDaysSection(
+            days = state.days,
+            dateFormat = dateFormat,
+            noWeekdayPlan = state.blocks.isNotEmpty() || state.hasActivePlan,
+        )
         SectionHeader(text = stringResource(R.string.weekly_review_moved_title))
         MovedSection(movements = state.movements)
         SectionHeader(text = stringResource(R.string.weekly_review_stall_title))
@@ -167,15 +176,17 @@ private fun WeeklyReviewBody(
 private fun WeekSummaryCard(state: WeeklyReviewUiState) {
     AppCard(modifier = Modifier.testTag(TestTags.WEEKLY_REVIEW_SUMMARY)) {
         Text(
-            text = if (state.plan.planned == 0) {
-                stringResource(R.string.weekly_review_no_plan)
-            } else {
-                pluralStringResource(
+            text = when {
+                state.plan.planned > 0 -> pluralStringResource(
                     R.plurals.weekly_review_planned,
                     state.plan.planned,
                     state.plan.done,
                     state.plan.planned,
                 )
+
+                state.blocks.isNotEmpty() -> stringResource(R.string.weekly_review_block_summary)
+                state.hasActivePlan -> stringResource(R.string.weekly_review_order_summary)
+                else -> stringResource(R.string.weekly_review_no_plan)
             },
             style = MaterialTheme.typography.titleSmall,
         )
@@ -219,16 +230,45 @@ private fun WeekSummaryCard(state: WeeklyReviewUiState) {
 
 /** The planned days, each with what became of its occurrences (N247). */
 @Composable
-private fun PlannedDaysSection(days: List<ReviewDay>, dateFormat: DateTimeFormatter) {
+private fun PlannedDaysSection(
+    days: List<ReviewDay>,
+    dateFormat: DateTimeFormatter,
+    noWeekdayPlan: Boolean,
+) {
     val plannedDays = days.filter { it.occurrences.isNotEmpty() }
     if (plannedDays.isEmpty()) {
         Text(
-            text = stringResource(R.string.weekly_review_no_days),
+            text = stringResource(
+                if (noWeekdayPlan) R.string.weekly_review_no_weekdays else R.string.weekly_review_no_days,
+            ),
             style = MaterialTheme.typography.bodyMedium,
         )
     } else {
         plannedDays.forEach { day ->
             PlannedDay(day = day, dateFormat = dateFormat)
+        }
+    }
+}
+
+/** One line per followed block, so a plan without weekdays is still in the review (B329). */
+@Composable
+private fun BlockLines(blocks: List<BlockProgress>) {
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        blocks.forEach { block ->
+            Text(
+                text = if (block.complete) {
+                    stringResource(R.string.adherence_block_complete, block.name)
+                } else {
+                    stringResource(
+                        R.string.adherence_block_progress,
+                        block.name,
+                        block.position,
+                        block.length,
+                    )
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.testTag(TestTags.WEEKLY_REVIEW_BLOCK),
+            )
         }
     }
 }

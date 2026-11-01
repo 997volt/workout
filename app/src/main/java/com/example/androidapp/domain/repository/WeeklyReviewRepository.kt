@@ -1,6 +1,7 @@
 package com.example.androidapp.domain.repository
 
 import com.example.androidapp.domain.DataResult
+import com.example.androidapp.domain.model.BlockProgress
 import com.example.androidapp.domain.model.DayOccurrence
 import com.example.androidapp.domain.model.MovementGain
 import com.example.androidapp.domain.model.PlanStall
@@ -45,4 +46,12 @@ interface WeeklyReviewRepository {
 
     /** The first stopped prescription in [programId], or null. */
     suspend fun firstStall(programId: String): PlanStall?
+
+    /**
+     * The followed blocks — sequence programs — and how far through each one is (ROADMAP N189, B329).
+     *
+     * A block has no weekday schedule, so the adherence record has no occurrences for it; this is the read
+     * that shows it in the review instead of letting the screen say nothing is followed.
+     */
+    suspend fun blocks(): DataResult<List<BlockProgress>>
 }

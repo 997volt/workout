@@ -4,6 +4,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
+import com.example.androidapp.domain.model.BlockProgress
 import com.example.androidapp.domain.model.DayOccurrence
 import com.example.androidapp.domain.model.MovementGain
 import com.example.androidapp.domain.model.OccurrenceState
@@ -72,6 +73,7 @@ class WeeklyReviewViewModelTest {
                 monday.plusDays(1) to listOf(occurrence(monday.plusDays(1), OccurrenceState.MISSED)),
             ),
             programs = listOf(program()),
+            blocks = listOf(BlockProgress(name = "Push Pull Legs", position = 3, length = 9, complete = false)),
             stall = PlanStall(
                 exerciseName = "Back Squat",
                 setNumber = 2,
@@ -97,6 +99,8 @@ class WeeklyReviewViewModelTest {
         assertEquals(7, state.days.size)
         assertEquals("Back Squat", state.stall?.exerciseName)
         assertEquals("p1", state.stallProgramId)
+        assertEquals("the block is part of the week", "Push Pull Legs", state.blocks.single().name)
+        assertTrue("an active program is followed even without weekdays", state.hasActivePlan)
         assertTrue("the gains are the week's", state.movements.isNotEmpty())
     }
 
@@ -155,6 +159,7 @@ class WeeklyReviewViewModelTest {
         private val history: List<WorkoutSummary>,
         private val occurrences: Map<LocalDate, List<DayOccurrence>>,
         private val programs: List<WorkoutProgram> = emptyList(),
+        private val blocks: List<BlockProgress> = emptyList(),
         private val stall: PlanStall? = null,
         var failDate: LocalDate? = null,
     ) : WeeklyReviewRepository {
@@ -191,5 +196,7 @@ class WeeklyReviewViewModelTest {
             DataResult.Success(programs)
 
         override suspend fun firstStall(programId: String): PlanStall? = stall
+
+        override suspend fun blocks(): DataResult<List<BlockProgress>> = DataResult.Success(blocks)
     }
 }

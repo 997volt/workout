@@ -43,6 +43,14 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   no writes. A measurement whose day is already recorded counts as here, because that is what the merge does
   with it.
 
+### Fixed
+
+- **A block plan appears in the week in review** (B329). The review read planned versus done only from the
+  weekday adherence record, so an active **block** — a sequence program, whose sessions are taken in order —
+  produced no planned occurrences, and the screen said no program was being followed. The review now reads the
+  followed blocks and shows each one's progress ("day 3 of 9", or complete), says that a plan without weekdays
+  has no weekday schedule, and keeps the "nothing followed" sentence for the case where it is true.
+
 ## [2.20] — 2026-10-31 (versionCode 41)
 
 ### Added

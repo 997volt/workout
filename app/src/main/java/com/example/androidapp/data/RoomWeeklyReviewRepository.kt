@@ -5,6 +5,7 @@ import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.PlanStallFinder
 import com.example.androidapp.domain.dataResultOf
+import com.example.androidapp.domain.model.BlockProgress
 import com.example.androidapp.domain.model.DayOccurrence
 import com.example.androidapp.domain.model.MovementGain
 import com.example.androidapp.domain.model.PlanStall
@@ -56,6 +57,10 @@ class RoomWeeklyReviewRepository @Inject constructor(
     }
 
     override suspend fun firstStall(programId: String): PlanStall? = stalls.firstStall(programId)
+
+    override suspend fun blocks(): DataResult<List<BlockProgress>> = dataResultOf {
+        adherence.observeBlockProgress().first()
+    }
 
     private companion object {
         const val DAYS_IN_WEEK = 7L

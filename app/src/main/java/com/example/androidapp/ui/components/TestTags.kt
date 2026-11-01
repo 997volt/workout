@@ -649,6 +649,7 @@ object TestTags {
     const val WEEKLY_REVIEW_SCREEN = "weekly_review_screen"
     const val WEEKLY_REVIEW_SUMMARY = "weekly_review_summary"
     const val WEEKLY_REVIEW_STALL = "weekly_review_stall"
+    const val WEEKLY_REVIEW_BLOCK = "weekly_review_block"
 
     /** The backup preview's question (ROADMAP N246). */
     const val IMPORT_PREVIEW_DIALOG = "import_preview_dialog"

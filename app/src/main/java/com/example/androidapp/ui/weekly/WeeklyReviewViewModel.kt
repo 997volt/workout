@@ -6,6 +6,7 @@ import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.PlanStallFinder
 import com.example.androidapp.domain.TimeSource
+import com.example.androidapp.domain.model.BlockProgress
 import com.example.androidapp.domain.model.DayOccurrence
 import com.example.androidapp.domain.model.MovementGain
 import com.example.androidapp.domain.model.PlanStall
@@ -13,6 +14,7 @@ import com.example.androidapp.domain.model.ProgramSchedule
 import com.example.androidapp.domain.model.ReviewDay
 import com.example.androidapp.domain.model.WeekPlan
 import com.example.androidapp.domain.model.WeekTotals
+import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.weekPlan
 import com.example.androidapp.domain.model.weekTotals
 import com.example.androidapp.domain.repository.WeeklyReviewRepository
@@ -36,6 +38,10 @@ data class WeeklyReviewUiState(
     val plan: WeekPlan = WeekPlan(planned = 0, done = 0),
     /** The lifts that moved this week (N251), alphabetically. */
     val movements: List<MovementGain> = emptyList(),
+    /** The followed blocks, whose days are taken in order rather than on weekdays (B329). */
+    val blocks: List<BlockProgress> = emptyList(),
+    /** True when any program is followed, even one with no weekday schedule (B329). */
+    val hasActivePlan: Boolean = false,
     val stall: PlanStall? = null,
     val stallProgramId: String? = null,
     val error: DataError? = null,
@@ -101,7 +107,15 @@ class WeeklyReviewViewModel @Inject constructor(
                 }
             }
 
-            val stalled = firstStall()
+            val blocks = when (val read = weekly.blocks()) {
+                is DataResult.Success -> read.data
+                is DataResult.Failure -> {
+                    _state.value = WeeklyReviewUiState(isLoading = false, error = read.error)
+                    return@launch
+                }
+            }
+            val active = (weekly.activePrograms() as? DataResult.Success)?.data.orEmpty()
+            val stalled = firstStall(active)
 
             _state.value = WeeklyReviewUiState(
                 isLoading = false,
@@ -112,6 +126,8 @@ class WeeklyReviewViewModel @Inject constructor(
                 days = days,
                 plan = weekPlan(occurrences),
                 movements = movements,
+                blocks = blocks,
+                hasActivePlan = active.isNotEmpty(),
                 stall = stalled?.first,
                 stallProgramId = stalled?.second,
             )
@@ -119,8 +135,7 @@ class WeeklyReviewViewModel @Inject constructor(
     }
 
     /** The first programme whose plan has stopped moving, with its id, or null. */
-    private suspend fun firstStall(): Pair<PlanStall, String>? {
-        val active = (weekly.activePrograms() as? DataResult.Success)?.data.orEmpty()
+    private suspend fun firstStall(active: List<WorkoutProgram>): Pair<PlanStall, String>? {
         for (program in active) {
             val found = weekly.firstStall(program.id)
             if (found != null) return found to program.id

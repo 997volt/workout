@@ -151,6 +151,10 @@
         <item quantity="one">%1$d set</item>
         <item quantity="other">%1$d sets</item>
     </plurals>
+    <string name="weekly_review_block_title">The block</string>
+    <string name="weekly_review_block_summary">This block runs in order, not on weekdays.</string>
+    <string name="weekly_review_order_summary">This plan has no weekday schedule.</string>
+    <string name="weekly_review_no_weekdays">No weekday sessions are scheduled for this plan.</string>
     <string name="weekly_review_days_title">Planned days</string>
     <string name="weekly_review_no_days">No scheduled days this week.</string>
     <string name="weekly_review_moved_title">What moved</string>

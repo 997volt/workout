@@ -5,6 +5,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.androidapp.domain.model.BlockProgress
 import com.example.androidapp.domain.model.DayOccurrence
 import com.example.androidapp.domain.model.MovementGain
 import com.example.androidapp.domain.model.OccurrenceState
@@ -92,6 +93,30 @@ class WeeklyReviewScreenTest {
         composeTestRule.onNodeWithText("Back Squat — 120 kg (was 115 kg)").assertExists()
         composeTestRule.onNodeWithText("Sled Push — first time").assertExists()
         composeTestRule.onNodeWithTag(TestTags.WEEKLY_REVIEW_STALL).performScrollTo().assertExists()
+    }
+
+    @Test
+    fun anActiveBlock_isShown_evenThoughItHasNoWeekdays() {
+        // B329: a sequence plan has no weekday occurrences, and the review used to read that as "no program".
+        show(
+            WeeklyReviewUiState(
+                isLoading = false,
+                weekStart = monday,
+                weekEnd = monday.plusDays(6),
+                blocks = listOf(
+                    BlockProgress(name = "Push Pull Legs", position = 3, length = 9, complete = false),
+                ),
+                hasActivePlan = true,
+            ),
+        )
+
+        composeTestRule.onNodeWithText("The block").assertExists()
+        composeTestRule.onNodeWithText("Push Pull Legs · day 3 of 9").assertExists()
+        composeTestRule.onNodeWithTag(TestTags.WEEKLY_REVIEW_BLOCK).assertExists()
+        composeTestRule.onNodeWithText("This block runs in order, not on weekdays.").assertExists()
+        composeTestRule.onNodeWithText(
+            "No program is being followed, so there is nothing scheduled to compare with.",
+        ).assertDoesNotExist()
     }
 
     @Test
