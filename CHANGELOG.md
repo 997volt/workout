@@ -17,19 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Changed
 
-- **A merge says what it did** (N249). The survivor picker now shows each candidate's finished-session count and
-  when it was last trained, so the choice is between histories rather than names. Once the merge lands, a
-  confirmation says how many sessions and plans moved and into which movement — the screen used to pop back with
-  no evidence at all. The counts are taken from the rows the write actually re-points, soft-deleted ones
-  included.
-### Changed
-
 - **The combined gate stops the emulator first** (N253). `lintAnalyzeDebug*` has failed intermittently with no
   findings whenever a booted emulator competes with the Gradle daemons for this sandbox's memory. `tools/gate.sh`
   now runs the same task set as CI after stopping attached emulators — never a physical phone — with
   `--keep-emulator` as the opt-out, and the README's flakiness section points at it.
-### Changed
-
 - **The week in review's orchestration is tested** (N252). The ViewModel now reads its week through one
   `WeeklyReviewRepository` facade instead of four repositories, and a ViewModel test covers the seven-day loop,
   the two totals, the plan, the gains and the stall — plus a failed day's read and its retry. The domain math
@@ -41,6 +32,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 - **A failed housekeeping pass opens Diagnostics** (N250). The B324 notice can now take the lifter to the
   recorded failure — its class, its frames and the last pass — instead of offering only retry and later. The
   notice dismisses as it opens the screen, so two dialogs never stack over one failure.
+- **A merge says what it did** (N249). The survivor picker now shows each candidate's finished-session count and
+  when it was last trained, so the choice is between histories rather than names. Once the merge lands, a
+  confirmation says how many sessions and plans moved and into which movement — the screen used to pop back with
+  no evidence at all. The counts are taken from the rows the write actually re-points, soft-deleted ones
+  included.
 - **The restore preview says what will change** (N248). N246's sheet answered what the file holds; it now also
   answers what the merge would do — for sessions, sets, measurements and movements, how many are already here,
   how many would come back from a delete, and how many are new — from a read-only inventory of both sides, with
