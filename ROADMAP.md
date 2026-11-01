@@ -26,7 +26,6 @@ left behind. One row is picked up at a time; a row that ships leaves this file f
 
 | # | Change | Why it matters | Size |
 | --- | --- | --- | --- |
-| N257 | **The preview's inventory belongs off the caller's thread.** `preview()` now reads four whole tables and builds its maps on the caller's Main dispatcher; wrap it in `withContext(Dispatchers.IO)` the way export already is (B158). | `documentIo.read` hops to IO but the decode and the new scans do not, so the dialog hitches in proportion to the history the app carries — the size export was moved for exactly this reason. | Small |
 | N258 | **The preview table for a screen reader.** Four numbers per row read as "Sessions, 509, 506, 2, 1"; give each row one spoken sentence, or the column headers as semantics. | The per-screen rule is not a later pass, and this table's whole meaning is in a column association a reader cannot hear. | Small |
 
 ### The week in review

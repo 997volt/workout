@@ -171,22 +171,26 @@ class RoomBackupRepository @Inject constructor(
     }
 
     override suspend fun preview(text: String): DataResult<BackupPreview> = dataResultOf {
-        val file = BackupCodec.decode(text)
-        BackupPreview(
-            sessions = previewCounts(
-                file.sessions.map { FileRow(it.id, it.deletedAt) },
-                dao.allSessions().associate { it.id to it.deletedAt },
-            ),
-            sets = previewCounts(
-                file.sets.map { FileRow(it.id, it.deletedAt) },
-                dao.allSets().associate { it.id to it.deletedAt },
-            ),
-            measurements = previewMeasurements(file.measurements),
-            exercises = previewCounts(
-                file.exercises.map { FileRow(it.id, it.deletedAt) },
-                dao.allExercises().associate { it.id to it.deletedAt },
-            ),
-        )
+        // The switch export already makes (B158): decoding a backup and inventorying this device are CPU and
+        // memory work, and every caller is a UI scope, so they run off that thread (N257).
+        withContext(Dispatchers.IO) {
+            val file = BackupCodec.decode(text)
+            BackupPreview(
+                sessions = previewCounts(
+                    file.sessions.map { FileRow(it.id, it.deletedAt) },
+                    dao.allSessions().associate { it.id to it.deletedAt },
+                ),
+                sets = previewCounts(
+                    file.sets.map { FileRow(it.id, it.deletedAt) },
+                    dao.allSets().associate { it.id to it.deletedAt },
+                ),
+                measurements = previewMeasurements(file.measurements),
+                exercises = previewCounts(
+                    file.exercises.map { FileRow(it.id, it.deletedAt) },
+                    dao.allExercises().associate { it.id to it.deletedAt },
+                ),
+            )
+        }
     }
 
     /**
