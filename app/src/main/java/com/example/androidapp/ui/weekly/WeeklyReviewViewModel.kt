@@ -7,6 +7,7 @@ import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.PlanStallFinder
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.model.DayOccurrence
+import com.example.androidapp.domain.model.MovementGain
 import com.example.androidapp.domain.model.PlanStall
 import com.example.androidapp.domain.model.ProgramSchedule
 import com.example.androidapp.domain.model.ReviewDay
@@ -16,6 +17,7 @@ import com.example.androidapp.domain.model.weekPlan
 import com.example.androidapp.domain.model.weekTotals
 import com.example.androidapp.domain.repository.AdherenceRepository
 import com.example.androidapp.domain.repository.ProgramRepository
+import com.example.androidapp.domain.repository.WeeklyReviewRepository
 import com.example.androidapp.domain.repository.WorkoutRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,6 +38,8 @@ data class WeeklyReviewUiState(
     val lastWeek: WeekTotals = WeekTotals(sessions = 0, sets = 0, volumeGrams = 0),
     val days: List<ReviewDay> = emptyList(),
     val plan: WeekPlan = WeekPlan(planned = 0, done = 0),
+    /** The lifts that moved this week (N251), alphabetically. */
+    val movements: List<MovementGain> = emptyList(),
     val stall: PlanStall? = null,
     val stallProgramId: String? = null,
     val error: DataError? = null,
@@ -54,6 +58,7 @@ class WeeklyReviewViewModel @Inject constructor(
     private val adherence: AdherenceRepository,
     private val programs: ProgramRepository,
     private val stalls: PlanStallFinder,
+    private val weekly: WeeklyReviewRepository,
     private val timeSource: TimeSource,
 ) : ViewModel() {
 
@@ -96,6 +101,14 @@ class WeeklyReviewViewModel @Inject constructor(
                 }
             }
 
+            val movements = when (val read = weekly.movementGains(weekStart, zone)) {
+                is DataResult.Success -> read.data
+                is DataResult.Failure -> {
+                    _state.value = WeeklyReviewUiState(isLoading = false, error = read.error)
+                    return@launch
+                }
+            }
+
             val stalled = firstStall()
 
             _state.value = WeeklyReviewUiState(
@@ -106,6 +119,7 @@ class WeeklyReviewViewModel @Inject constructor(
                 lastWeek = weekTotals(history, weekStart.minusWeeks(1), zone),
                 days = days,
                 plan = weekPlan(occurrences),
+                movements = movements,
                 stall = stalled?.first,
                 stallProgramId = stalled?.second,
             )

@@ -10,6 +10,7 @@ import com.example.androidapp.data.RoomProgramRepository
 import com.example.androidapp.data.RoomStatisticsRepository
 import com.example.androidapp.data.RoomTemplateRepository
 import com.example.androidapp.data.RoomTrendsRepository
+import com.example.androidapp.data.RoomWeeklyReviewRepository
 import com.example.androidapp.data.RoomWorkoutRepository
 import com.example.androidapp.domain.repository.AdherenceRepository
 import com.example.androidapp.domain.repository.BackupRepository
@@ -21,6 +22,7 @@ import com.example.androidapp.domain.repository.ProgramRepository
 import com.example.androidapp.domain.repository.StatisticsRepository
 import com.example.androidapp.domain.repository.TemplateRepository
 import com.example.androidapp.domain.repository.TrendsRepository
+import com.example.androidapp.domain.repository.WeeklyReviewRepository
 import com.example.androidapp.domain.repository.WorkoutRepository
 import com.example.androidapp.platform.BackupFolderFiles
 import com.example.androidapp.platform.SafBackupFolderFiles
@@ -99,6 +101,11 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindBackupRepository(impl: RoomBackupRepository): BackupRepository
+
+    /** The week's lift-level read (N251), a small aggregate over sessions rather than the history itself. */
+    @Binds
+    @Singleton
+    abstract fun bindWeeklyReviewRepository(impl: RoomWeeklyReviewRepository): WeeklyReviewRepository
 
     /** The goal history, which is rows rather than a setting since N137. */
     @Binds

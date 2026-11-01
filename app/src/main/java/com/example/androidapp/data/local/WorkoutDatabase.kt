@@ -139,6 +139,9 @@ abstract class WorkoutDatabase : RoomDatabase() {
     /** The occurrences a lifter consciously passed over (ROADMAP P3.3, P3.13). */
     abstract fun programSkipDao(): ProgramSkipDao
 
+    /** What moved in one week (ROADMAP N251), split from the history's own DAO. */
+    abstract fun weeklyReviewDao(): WeeklyReviewDao
+
     /** The sessions and skips a program's run is derived from (ROADMAP P3.9). */
     abstract fun programRunDao(): ProgramRunDao
 

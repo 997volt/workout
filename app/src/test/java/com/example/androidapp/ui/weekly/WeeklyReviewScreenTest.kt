@@ -6,6 +6,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.model.DayOccurrence
+import com.example.androidapp.domain.model.MovementGain
 import com.example.androidapp.domain.model.OccurrenceState
 import com.example.androidapp.domain.model.PlanStall
 import com.example.androidapp.domain.model.ProgressionMiss
@@ -57,6 +58,22 @@ class WeeklyReviewScreenTest {
                     ReviewDay(monday.plusDays(1), listOf(occurrence(OccurrenceState.MISSED))),
                 ),
                 plan = WeekPlan(planned = 4, done = 3),
+                movements = listOf(
+                    MovementGain(
+                        exerciseId = "back-squat",
+                        name = "Back Squat",
+                        topGrams = 120_000,
+                        previousGrams = 115_000,
+                        firstTime = false,
+                    ),
+                    MovementGain(
+                        exerciseId = "sled-push",
+                        name = "Sled Push",
+                        topGrams = 0,
+                        previousGrams = null,
+                        firstTime = true,
+                    ),
+                ),
                 stall = PlanStall(
                     exerciseName = "Back Squat",
                     setNumber = 2,
@@ -72,6 +89,8 @@ class WeeklyReviewScreenTest {
         composeTestRule.onNodeWithText("3 of 4 scheduled sessions done").assertExists()
         composeTestRule.onNodeWithText("Squat day · Done", substring = true).assertExists()
         composeTestRule.onNodeWithText("Squat day · Missed", substring = true).assertExists()
+        composeTestRule.onNodeWithText("Back Squat — 120 kg (was 115 kg)").assertExists()
+        composeTestRule.onNodeWithText("Sled Push — first time").assertExists()
         composeTestRule.onNodeWithTag(TestTags.WEEKLY_REVIEW_STALL).performScrollTo().assertExists()
     }
 
@@ -89,6 +108,7 @@ class WeeklyReviewScreenTest {
             "No program is being followed, so there is nothing scheduled to compare with.",
         ).assertExists()
         composeTestRule.onNodeWithText("No plan has stopped moving.").performScrollTo().assertExists()
+        composeTestRule.onNodeWithText("No lift moved this week.").performScrollTo().assertExists()
     }
 
     private fun occurrence(state: OccurrenceState) = DayOccurrence(

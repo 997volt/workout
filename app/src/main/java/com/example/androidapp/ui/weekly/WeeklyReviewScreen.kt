@@ -28,6 +28,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
 import com.example.androidapp.domain.Weight
+import com.example.androidapp.domain.model.MovementGain
 import com.example.androidapp.domain.model.OccurrenceState
 import com.example.androidapp.domain.model.PlanStall
 import com.example.androidapp.domain.model.ReviewDay
@@ -39,6 +40,7 @@ import com.example.androidapp.ui.components.SectionHeader
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.TopBarTitle
 import com.example.androidapp.ui.components.dataErrorMessage
+import com.example.androidapp.ui.components.label
 import com.example.androidapp.ui.programs.PlanStallCard
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -149,6 +151,8 @@ private fun WeeklyReviewBody(
         WeekSummaryCard(state = state)
         SectionHeader(text = stringResource(R.string.weekly_review_days_title))
         PlannedDaysSection(days = state.days, dateFormat = dateFormat)
+        SectionHeader(text = stringResource(R.string.weekly_review_moved_title))
+        MovedSection(movements = state.movements)
         SectionHeader(text = stringResource(R.string.weekly_review_stall_title))
         StallSection(
             stall = state.stall,
@@ -188,7 +192,8 @@ private fun WeekSummaryCard(state: WeeklyReviewUiState) {
                     state.thisWeek.sets,
                     state.thisWeek.sets,
                 ),
-                Weight.format(state.thisWeek.volumeGrams, LocalWeightUnit.current),
+                "${Weight.format(state.thisWeek.volumeGrams, LocalWeightUnit.current)} " +
+                    LocalWeightUnit.current.label(),
             ),
             style = MaterialTheme.typography.bodyMedium,
         )
@@ -225,6 +230,35 @@ private fun PlannedDaysSection(days: List<ReviewDay>, dateFormat: DateTimeFormat
         plannedDays.forEach { day ->
             PlannedDay(day = day, dateFormat = dateFormat)
         }
+    }
+}
+
+/** The lifts that beat themselves this week, or the sentence that says none did (N251). */
+@Composable
+private fun MovedSection(movements: List<MovementGain>) {
+    if (movements.isEmpty()) {
+        Text(
+            text = stringResource(R.string.weekly_review_no_moved),
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        return
+    }
+    val unit = LocalWeightUnit.current
+    val label = unit.label()
+    movements.forEach { gain ->
+        Text(
+            text = if (gain.firstTime) {
+                stringResource(R.string.weekly_review_moved_first, gain.name)
+            } else {
+                stringResource(
+                    R.string.weekly_review_moved_line,
+                    gain.name,
+                    "${Weight.format(gain.topGrams, unit)} $label",
+                    "${Weight.format(gain.previousGrams ?: 0L, unit)} $label",
+                )
+            },
+            style = MaterialTheme.typography.bodyMedium,
+        )
     }
 }
 
