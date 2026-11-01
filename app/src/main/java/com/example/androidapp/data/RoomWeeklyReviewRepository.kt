@@ -3,9 +3,18 @@ package com.example.androidapp.data
 import com.example.androidapp.data.local.WeeklyMovementRow
 import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.domain.DataResult
+import com.example.androidapp.domain.PlanStallFinder
 import com.example.androidapp.domain.dataResultOf
+import com.example.androidapp.domain.model.DayOccurrence
 import com.example.androidapp.domain.model.MovementGain
+import com.example.androidapp.domain.model.PlanStall
+import com.example.androidapp.domain.model.WorkoutProgram
+import com.example.androidapp.domain.model.WorkoutSummary
+import com.example.androidapp.domain.repository.AdherenceRepository
+import com.example.androidapp.domain.repository.ProgramRepository
 import com.example.androidapp.domain.repository.WeeklyReviewRepository
+import com.example.androidapp.domain.repository.WorkoutRepository
+import kotlinx.coroutines.flow.first
 import java.time.LocalDate
 import java.time.ZoneId
 import javax.inject.Inject
@@ -15,6 +24,10 @@ import javax.inject.Singleton
 @Singleton
 class RoomWeeklyReviewRepository @Inject constructor(
     private val database: WorkoutDatabase,
+    private val workouts: WorkoutRepository,
+    private val adherence: AdherenceRepository,
+    private val programs: ProgramRepository,
+    private val stalls: PlanStallFinder,
 ) : WeeklyReviewRepository {
 
     override suspend fun movementGains(
@@ -27,6 +40,22 @@ class RoomWeeklyReviewRepository @Inject constructor(
             .mapNotNull { it.toGainOrNull() }
             .sortedBy { it.name.lowercase() }
     }
+
+    override suspend fun history(): DataResult<List<WorkoutSummary>> = dataResultOf {
+        workouts.observeHistory().first()
+    }
+
+    override suspend fun occurrencesOn(
+        date: LocalDate,
+        today: LocalDate,
+        zone: ZoneId,
+    ): DataResult<List<DayOccurrence>> = adherence.occurrencesOn(date, today, zone)
+
+    override suspend fun activePrograms(): DataResult<List<WorkoutProgram>> = dataResultOf {
+        programs.observeActivePrograms().first()
+    }
+
+    override suspend fun firstStall(programId: String): PlanStall? = stalls.firstStall(programId)
 
     private companion object {
         const val DAYS_IN_WEEK = 7L

@@ -15,15 +15,11 @@ import com.example.androidapp.domain.model.WeekPlan
 import com.example.androidapp.domain.model.WeekTotals
 import com.example.androidapp.domain.model.weekPlan
 import com.example.androidapp.domain.model.weekTotals
-import com.example.androidapp.domain.repository.AdherenceRepository
-import com.example.androidapp.domain.repository.ProgramRepository
 import com.example.androidapp.domain.repository.WeeklyReviewRepository
-import com.example.androidapp.domain.repository.WorkoutRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.ZoneId
@@ -54,10 +50,6 @@ data class WeeklyReviewUiState(
  */
 @HiltViewModel
 class WeeklyReviewViewModel @Inject constructor(
-    private val workouts: WorkoutRepository,
-    private val adherence: AdherenceRepository,
-    private val programs: ProgramRepository,
-    private val stalls: PlanStallFinder,
     private val weekly: WeeklyReviewRepository,
     private val timeSource: TimeSource,
 ) : ViewModel() {
@@ -76,19 +68,19 @@ class WeeklyReviewViewModel @Inject constructor(
             val today = timeSource.now().atZone(zone).toLocalDate()
             val weekStart = ProgramSchedule.weekStartOf(today)
 
-            val history = runCatching { workouts.observeHistory().first() }.getOrElse { error ->
-                _state.value = WeeklyReviewUiState(
-                    isLoading = false,
-                    error = DataError.Storage(error),
-                )
-                return@launch
+            val history = when (val read = weekly.history()) {
+                is DataResult.Success -> read.data
+                is DataResult.Failure -> {
+                    _state.value = WeeklyReviewUiState(isLoading = false, error = read.error)
+                    return@launch
+                }
             }
 
             val days = mutableListOf<ReviewDay>()
             val occurrences = mutableListOf<DayOccurrence>()
             for (offset in 0 until DAYS_IN_WEEK) {
                 val date = weekStart.plusDays(offset.toLong())
-                when (val read = adherence.occurrencesOn(date, today, zone)) {
+                when (val read = weekly.occurrencesOn(date, today, zone)) {
                     is DataResult.Success -> {
                         days += ReviewDay(date = date, occurrences = read.data)
                         occurrences += read.data
@@ -128,9 +120,9 @@ class WeeklyReviewViewModel @Inject constructor(
 
     /** The first programme whose plan has stopped moving, with its id, or null. */
     private suspend fun firstStall(): Pair<PlanStall, String>? {
-        val active = runCatching { programs.observeActivePrograms().first() }.getOrDefault(emptyList())
+        val active = (weekly.activePrograms() as? DataResult.Success)?.data.orEmpty()
         for (program in active) {
-            val found = stalls.firstStall(program.id)
+            val found = weekly.firstStall(program.id)
             if (found != null) return found to program.id
         }
         return null

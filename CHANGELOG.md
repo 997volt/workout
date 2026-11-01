@@ -24,6 +24,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   included.
 ### Changed
 
+- **The week in review's orchestration is tested** (N252). The ViewModel now reads its week through one
+  `WeeklyReviewRepository` facade instead of four repositories, and a ViewModel test covers the seven-day loop,
+  the two totals, the plan, the gains and the stall — plus a failed day's read and its retry. The domain math
+  and the screen were already covered; this closes the glue between them.
 - **The week says which lifts moved** (N251). The review named the week's plan and its stall but not the lifts
   themselves. *What moved* lists the movements trained for the first time and the ones whose heaviest set beat
   their best before the week, with both numbers; a bodyweight first training appears as itself rather than

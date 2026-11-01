@@ -22,7 +22,6 @@ a time; a row that ships leaves this file for [CHANGELOG.md](CHANGELOG.md).
 
 | # | Change | Why it matters | Size |
 | --- | --- | --- | --- |
-| N252 | **Close the week review's test gap.** A ViewModel test for the weekly review; its domain math and its screen are covered, its glue is not. | The review is the batch's one piece whose orchestration has no test, and the failure it would catch is a wrong day count, not a crash. | Small |
 | N253 | **Make the combined gate reliable.** Stop the emulator before the gate, or state and automate the workaround for the `lintAnalyze*` failure that appears only under its memory pressure. | The same flake has cost a re-run on most batches, and a release is the wrong place to discover it again. | Small |
 
 ## Later — decided, and not being started
