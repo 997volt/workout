@@ -24,6 +24,9 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   included.
 ### Changed
 
+- **A failed housekeeping pass opens Diagnostics** (N250). The B324 notice can now take the lifter to the
+  recorded failure — its class, its frames and the last pass — instead of offering only retry and later. The
+  notice dismisses as it opens the screen, so two dialogs never stack over one failure.
 - **The restore preview says what will change** (N248). N246's sheet answered what the file holds; it now also
   answers what the merge would do — for sessions, sets, measurements and movements, how many are already here,
   how many would come back from a delete, and how many are new — from a read-only inventory of both sides, with

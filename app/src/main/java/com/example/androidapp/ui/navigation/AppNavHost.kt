@@ -83,6 +83,11 @@ fun AppNavHost(
         retrying = repairing,
         onRetry = housekeepingViewModel::retry,
         onDismiss = housekeepingViewModel::dismiss,
+        onOpenDiagnostics = {
+            // The notice goes as it opens the record: two dialogs over one failure would be one too many.
+            housekeepingViewModel.dismiss()
+            navController.navigate(Diagnostics)
+        },
     )
 
     val showBar = showsTabBar(destination?.route)

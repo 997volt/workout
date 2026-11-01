@@ -1010,6 +1010,7 @@
     <string name="housekeeping_retry">Try again</string>
     <string name="housekeeping_retrying">Trying…</string>
     <string name="housekeeping_later">Later</string>
+    <string name="housekeeping_details">Details</string>
 
     <string name="diagnostics_title">Diagnostics</string>
     <string name="diagnostics_back">Back</string>

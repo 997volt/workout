@@ -671,6 +671,7 @@ object TestTags {
     const val HOUSEKEEPING_ALERT = "housekeeping_alert"
     const val HOUSEKEEPING_RETRY = "housekeeping_retry"
     const val HOUSEKEEPING_LATER = "housekeeping_later"
+    const val HOUSEKEEPING_DETAILS = "housekeeping_details"
 
     /** The backup that writes itself (ROADMAP N218): the switch, one chip per period, the folder and the date. */
     const val SETTINGS_BACKUP_SWITCH = "settings_backup_switch"

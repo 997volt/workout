@@ -30,6 +30,7 @@ class HousekeepingAlertTest {
     fun aFailedPass_isSaidOnce_withRetryAndLater() {
         var retried = 0
         var dismissed = 0
+        var opened = 0
         composeTestRule.setContent {
             HousekeepingAlert(
                 failure = Housekeeping.Failure(
@@ -40,6 +41,7 @@ class HousekeepingAlertTest {
                 retrying = false,
                 onRetry = { retried++ },
                 onDismiss = { dismissed++ },
+                onOpenDiagnostics = { opened++ },
             )
         }
 
@@ -52,12 +54,22 @@ class HousekeepingAlertTest {
 
         composeTestRule.onNodeWithTag(TestTags.HOUSEKEEPING_LATER).performClick()
         assertEquals(1, dismissed)
+
+        // The failure's own record is a tap away rather than a remembered screen (N250).
+        composeTestRule.onNodeWithTag(TestTags.HOUSEKEEPING_DETAILS).performClick()
+        assertEquals(1, opened)
     }
 
     @Test
     fun nothingIsShown_whenThePassFinished() {
         composeTestRule.setContent {
-            HousekeepingAlert(failure = null, retrying = false, onRetry = {}, onDismiss = {})
+            HousekeepingAlert(
+                failure = null,
+                retrying = false,
+                onRetry = {},
+                onDismiss = {},
+                onOpenDiagnostics = {},
+            )
         }
 
         composeTestRule.onNodeWithTag(TestTags.HOUSEKEEPING_ALERT).assertDoesNotExist()
