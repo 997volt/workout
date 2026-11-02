@@ -17,8 +17,8 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-Nothing is in flight. The 2.20 follow-up batch (N248–N254, B329) is in the unreleased
-[CHANGELOG.md](CHANGELOG.md); nothing is queued behind it.
+Nothing is in flight. 2.21 shipped the 2.20 follow-up batch (N248–N254, B329) and the review's fixes;
+nothing is queued behind it.
 
 ## Later — decided, and not being started
 
