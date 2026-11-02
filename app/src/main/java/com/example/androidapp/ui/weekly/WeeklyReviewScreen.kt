@@ -155,11 +155,7 @@ private fun WeeklyReviewBody(
             BlockLines(blocks = state.blocks)
         }
         SectionHeader(text = stringResource(R.string.weekly_review_days_title))
-        PlannedDaysSection(
-            days = state.days,
-            dateFormat = dateFormat,
-            noWeekdayPlan = state.blocks.isNotEmpty() || state.hasActivePlan,
-        )
+        PlannedDaysSection(days = state.days, dateFormat = dateFormat)
         SectionHeader(text = stringResource(R.string.weekly_review_moved_title))
         MovedSection(movements = state.movements)
         SectionHeader(text = stringResource(R.string.weekly_review_stall_title))
@@ -203,8 +199,8 @@ private fun WeekSummaryCard(state: WeeklyReviewUiState) {
                     state.thisWeek.sets,
                     state.thisWeek.sets,
                 ),
-                "${Weight.format(state.thisWeek.volumeGrams, LocalWeightUnit.current)} " +
-                    LocalWeightUnit.current.label(),
+                Weight.format(state.thisWeek.volumeGrams, LocalWeightUnit.current),
+                LocalWeightUnit.current.label(),
             ),
             style = MaterialTheme.typography.bodyMedium,
         )
@@ -230,17 +226,13 @@ private fun WeekSummaryCard(state: WeeklyReviewUiState) {
 
 /** The planned days, each with what became of its occurrences (N247). */
 @Composable
-private fun PlannedDaysSection(
-    days: List<ReviewDay>,
-    dateFormat: DateTimeFormatter,
-    noWeekdayPlan: Boolean,
-) {
+private fun PlannedDaysSection(days: List<ReviewDay>, dateFormat: DateTimeFormatter) {
     val plannedDays = days.filter { it.occurrences.isNotEmpty() }
     if (plannedDays.isEmpty()) {
+        // The card above already says why a plan schedules no weekdays, so this sentence stays generic
+        // (N256): two versions of "no weekday schedule" in one screen is one too many.
         Text(
-            text = stringResource(
-                if (noWeekdayPlan) R.string.weekly_review_no_weekdays else R.string.weekly_review_no_days,
-            ),
+            text = stringResource(R.string.weekly_review_no_days),
             style = MaterialTheme.typography.bodyMedium,
         )
     } else {
@@ -286,19 +278,21 @@ private fun MovedSection(movements: List<MovementGain>) {
     val unit = LocalWeightUnit.current
     val label = unit.label()
     movements.forEach { gain ->
-        val top = "${Weight.format(gain.topGrams, unit)} $label"
+        val top = Weight.format(gain.topGrams, unit)
         val previous = gain.previousGrams
         Text(
             text = when {
                 gain.firstTime -> stringResource(R.string.weekly_review_moved_first, gain.name)
                 // Nothing to compare the week against: a movement trained before only at bodyweight, assisted
                 // or held. The line says the number it has rather than dressing a zero as a "was" (B332).
-                previous == null -> stringResource(R.string.weekly_review_moved_top, gain.name, top)
+                previous == null -> stringResource(R.string.weekly_review_moved_top, gain.name, top, label)
                 else -> stringResource(
                     R.string.weekly_review_moved_line,
                     gain.name,
                     top,
-                    "${Weight.format(previous, unit)} $label",
+                    label,
+                    Weight.format(previous, unit),
+                    label,
                 )
             },
             style = MaterialTheme.typography.bodyMedium,

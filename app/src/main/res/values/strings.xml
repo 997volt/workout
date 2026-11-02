@@ -137,7 +137,7 @@
     <string name="weekly_review_range">%1$s – %2$s</string>
     <string name="weekly_review_summary_title">The week</string>
     <string name="weekly_review_no_plan">No program is being followed, so there is nothing scheduled to compare with.</string>
-    <string name="weekly_review_totals">%1$s · %2$s · %3$s</string>
+    <string name="weekly_review_totals">%1$s · %2$s · %3$s %4$s</string>
     <string name="weekly_review_last_week">Last week: %1$s, %2$s</string>
     <plurals name="weekly_review_planned">
         <item quantity="one">%1$d of %2$d scheduled session done</item>
@@ -154,14 +154,13 @@
     <string name="weekly_review_block_title">The block</string>
     <string name="weekly_review_block_summary">This block runs in order, not on weekdays.</string>
     <string name="weekly_review_order_summary">This plan has no weekday schedule.</string>
-    <string name="weekly_review_no_weekdays">No weekday sessions are scheduled for this plan.</string>
     <string name="weekly_review_days_title">Planned days</string>
     <string name="weekly_review_no_days">No scheduled days this week.</string>
     <string name="weekly_review_moved_title">What moved</string>
     <string name="weekly_review_no_moved">No lift moved this week.</string>
     <string name="weekly_review_moved_first">%1$s — first time</string>
-    <string name="weekly_review_moved_top">%1$s — %2$s</string>
-    <string name="weekly_review_moved_line">%1$s — %2$s (was %3$s)</string>
+    <string name="weekly_review_moved_top">%1$s — %2$s %3$s</string>
+    <string name="weekly_review_moved_line">%1$s — %2$s %3$s (was %4$s %5$s)</string>
     <string name="weekly_review_stall_title">What stalled</string>
     <string name="weekly_review_no_stall">No plan has stopped moving.</string>
     <string name="weekly_review_retry">Try again</string>

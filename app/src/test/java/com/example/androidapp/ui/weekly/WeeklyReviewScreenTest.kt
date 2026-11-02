@@ -97,6 +97,9 @@ class WeeklyReviewScreenTest {
         composeTestRule.onNodeWithTag(TestTags.WEEKLY_REVIEW_SCREEN).assertExists()
         composeTestRule.onNodeWithTag(TestTags.WEEKLY_REVIEW_SUMMARY).assertExists()
         composeTestRule.onNodeWithText("3 of 4 scheduled sessions done").assertExists()
+        // The volume and its unit come through one string (N256), so the line reads as a sentence rather
+        // than a number with a label appended in code.
+        composeTestRule.onNodeWithText("3 sessions · 30 sets · 30 kg").assertExists()
         composeTestRule.onNodeWithText("Squat day · Done", substring = true).assertExists()
         composeTestRule.onNodeWithText("Squat day · Missed", substring = true).assertExists()
         composeTestRule.onNodeWithText("Back Squat — 120 kg (was 115 kg)").assertExists()
@@ -125,6 +128,9 @@ class WeeklyReviewScreenTest {
         composeTestRule.onNodeWithText("Push Pull Legs · day 3 of 9").assertExists()
         composeTestRule.onNodeWithTag(TestTags.WEEKLY_REVIEW_BLOCK).assertExists()
         composeTestRule.onNodeWithText("This block runs in order, not on weekdays.").assertExists()
+        // The card says why there are no weekdays; the days section stays generic (N256), so the screen
+        // does not say "no weekday schedule" twice.
+        composeTestRule.onNodeWithText("No scheduled days this week.").assertExists()
         composeTestRule.onNodeWithText(
             "No program is being followed, so there is nothing scheduled to compare with.",
         ).assertDoesNotExist()

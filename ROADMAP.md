@@ -22,12 +22,6 @@ sitting. The `B` rows are claims the code does not keep and the ones to take fir
 left behind. One row is picked up at a time; a row that ships leaves this file for
 [CHANGELOG.md](CHANGELOG.md).
 
-### The week in review
-
-| # | Change | Why it matters | Size |
-| --- | --- | --- | --- |
-| N256 | **The week's units and its duplicated sentence.** Pass `unit.label()` as a format argument instead of concatenating "number unit" in Kotlin (the volume and moved lines), give the volume unit the changelog line it needs, and drop one of the two "no weekday schedule" sentences that can show together. | Every other screen formats the unit through the string, so the concatenation is the one place a localization would have to find; the volume label is a user-visible change no entry mentions. | Small |
-
 ### Docs and the gate
 
 | # | Change | Why it matters | Size |

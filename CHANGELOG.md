@@ -37,7 +37,8 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   their best before the week, with both numbers where both exist; a bodyweight first training appears as itself
   rather than inventing a weight, and a movement only ever trained at bodyweight shows its new number without a
   "was 0 kg" (B332). It is one read over the sets, and a repeat is not progress. Only the roles that record
-  effort count, so a heavy warm-up cannot manufacture a gain — the same rule the records use (B331).
+  effort count, so a heavy warm-up cannot manufacture a gain — the same rule the records use (B331). The week's
+  volume names its unit, and a plan with no weekday schedule says so once rather than twice (N256).
 - **A failed housekeeping pass opens Diagnostics** (N250). The B324 notice can now take the lifter to the
   recorded failure — its class, its frames and the last pass — instead of offering only retry and later. The
   notice dismisses as it opens the screen, so two dialogs never stack over one failure.
