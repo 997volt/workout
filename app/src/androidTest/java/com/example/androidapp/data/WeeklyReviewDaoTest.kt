@@ -17,6 +17,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -106,6 +107,23 @@ class WeeklyReviewDaoTest {
         assertEquals("the warm-up is not the week's top", 100_000L, row.weekTop)
         assertEquals("and it is not one of the week's sets", 1, row.weekSets)
         assertNull("a repeat of the best is not a gain", row.toGainOrNull())
+    }
+
+    @Test
+    fun aHiddenMovement_isNotInTheWeek() = runTest {
+        // A restored file can hide a movement; the review lists the library's live rows, which is what its
+        // doc promises (N255).
+        database.exerciseDao().insertAll(listOf(exercise("squat", "Back Squat")))
+        database.exerciseDao().softDelete("squat", deletedAt = 9L)
+        set(session = "this", at = 1_500L, exercise = "squat", weightGrams = 100_000)
+
+        val rows = database.weeklyReviewDao().movementGains(
+            from = 1_000L,
+            to = 2_000L,
+            recordableRoles = recordableRoles,
+        )
+
+        assertTrue("a hidden movement is not a lift the week can report", rows.isEmpty())
     }
 
     private suspend fun set(

@@ -37,6 +37,7 @@ interface WeeklyReviewDao {
           AND ws.deletedAt IS NULL
           AND se.deletedAt IS NULL
           AND s.deletedAt IS NULL
+          AND e.deletedAt IS NULL
           AND s.setType IN (:recordableRoles)
         GROUP BY se.exerciseId, e.name
         HAVING weekSets > 0

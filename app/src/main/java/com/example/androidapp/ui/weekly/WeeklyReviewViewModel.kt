@@ -82,22 +82,14 @@ class WeeklyReviewViewModel @Inject constructor(
                 }
             }
 
-            val days = mutableListOf<ReviewDay>()
-            val occurrences = mutableListOf<DayOccurrence>()
-            for (offset in 0 until DAYS_IN_WEEK) {
-                val date = weekStart.plusDays(offset.toLong())
-                when (val read = weekly.occurrencesOn(date, today, zone)) {
-                    is DataResult.Success -> {
-                        days += ReviewDay(date = date, occurrences = read.data)
-                        occurrences += read.data
-                    }
-
-                    is DataResult.Failure -> {
-                        _state.value = WeeklyReviewUiState(isLoading = false, error = read.error)
-                        return@launch
-                    }
+            val week = when (val read = readDays(weekStart, today, zone)) {
+                is DataResult.Success -> read.data
+                is DataResult.Failure -> {
+                    _state.value = WeeklyReviewUiState(isLoading = false, error = read.error)
+                    return@launch
                 }
             }
+            val (days, occurrences) = week
 
             val movements = when (val read = weekly.movementGains(weekStart, zone)) {
                 is DataResult.Success -> read.data
@@ -114,7 +106,15 @@ class WeeklyReviewViewModel @Inject constructor(
                     return@launch
                 }
             }
-            val active = (weekly.activePrograms() as? DataResult.Success)?.data.orEmpty()
+            val active = when (val read = weekly.activePrograms()) {
+                is DataResult.Success -> read.data
+                is DataResult.Failure -> {
+                    // The same rule as the reads above (N255): `hasActivePlan` feeds a sentence — "no program
+                    // is being followed" — so a failed read must not answer it.
+                    _state.value = WeeklyReviewUiState(isLoading = false, error = read.error)
+                    return@launch
+                }
+            }
             val stalled = firstStall(active)
 
             _state.value = WeeklyReviewUiState(
@@ -132,6 +132,33 @@ class WeeklyReviewViewModel @Inject constructor(
                 stallProgramId = stalled?.second,
             )
         }
+    }
+
+    /**
+     * The week's seven days and the occurrences each holds, or the first day that could not be read (N252).
+     *
+     * One read because a partial week is not a week: the totals and the plan ratio are computed from these
+     * two lists, and a day missing from either would quietly change what the screen claims.
+     */
+    private suspend fun readDays(
+        weekStart: LocalDate,
+        today: LocalDate,
+        zone: ZoneId,
+    ): DataResult<Pair<List<ReviewDay>, List<DayOccurrence>>> {
+        val days = mutableListOf<ReviewDay>()
+        val occurrences = mutableListOf<DayOccurrence>()
+        for (offset in 0 until DAYS_IN_WEEK) {
+            val date = weekStart.plusDays(offset.toLong())
+            when (val read = weekly.occurrencesOn(date, today, zone)) {
+                is DataResult.Success -> {
+                    days += ReviewDay(date = date, occurrences = read.data)
+                    occurrences += read.data
+                }
+
+                is DataResult.Failure -> return DataResult.Failure(read.error)
+            }
+        }
+        return DataResult.Success(days to occurrences)
     }
 
     /** The first programme whose plan has stopped moving, with its id, or null. */

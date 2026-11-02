@@ -60,6 +60,9 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   produced no planned occurrences, and the screen said no program was being followed. The review now reads the
   followed blocks and shows each one's progress ("day 3 of 9", or complete), says that a plan without weekdays
   has no weekday schedule, and keeps the "nothing followed" sentence for the case where it is true.
+- **A failed week read says so** (N255). The review swallowed a failed read of the followed programs and drew
+  "No program is being followed" — a claim the read never made. It now reports the failure like its other reads,
+  with the same retry, and the week's lift read honours the live-library rule its own comment promised.
 
 ## [2.20] — 2026-10-31 (versionCode 41)
 

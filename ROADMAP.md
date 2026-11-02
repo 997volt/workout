@@ -26,7 +26,6 @@ left behind. One row is picked up at a time; a row that ships leaves this file f
 
 | # | Change | Why it matters | Size |
 | --- | --- | --- | --- |
-| N255 | **The week's reads do not lie on failure.** A failed `activePrograms()` becomes `hasActivePlan = false`, so the screen asserts "No program is being followed"; propagate the error like the other reads. In the same area, `WeeklyReviewDao`'s doc says "live exercises" but the query has no `deletedAt` filter — add it or drop the claim. | N252's point was one `DataResult` end to end; the one read still swallowed now feeds a factual sentence, and documentation that promises a filter no query applies is how the next reader adds the bug it describes. | Small |
 | N256 | **The week's units and its duplicated sentence.** Pass `unit.label()` as a format argument instead of concatenating "number unit" in Kotlin (the volume and moved lines), give the volume unit the changelog line it needs, and drop one of the two "no weekday schedule" sentences that can show together. | Every other screen formats the unit through the string, so the concatenation is the one place a localization would have to find; the volume label is a user-visible change no entry mentions. | Small |
 
 ### Docs and the gate

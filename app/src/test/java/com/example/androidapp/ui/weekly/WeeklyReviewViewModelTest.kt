@@ -127,6 +127,23 @@ class WeeklyReviewViewModelTest {
         assertEquals(7, state.days.size)
     }
 
+    @Test
+    fun aFailedProgramRead_isAnError_ratherThanNoProgramFollowed() = runTest(dispatcher) {
+        // N255: `hasActivePlan` feeds the sentence "No program is being followed", so a failed read cannot
+        // answer it with false.
+        val fake = FakeWeekly(
+            history = emptyList(),
+            occurrences = mapOf(monday to listOf(occurrence(monday, OccurrenceState.DONE))),
+            failPrograms = true,
+        )
+        val viewModel = WeeklyReviewViewModel(weekly = fake, timeSource = TimeSource { now })
+        advanceUntilIdle()
+
+        val state = viewModel.state.value
+        assertNotNull("a failed read must not be drawn as a statement about the plan", state.error)
+        assertNull(state.weekStart)
+    }
+
     private fun session(id: String, at: java.time.LocalDateTime, sets: Int, volume: Long) = WorkoutSummary(
         id = id,
         startedAt = at.atZone(zone).toInstant(),
@@ -162,6 +179,7 @@ class WeeklyReviewViewModelTest {
         private val blocks: List<BlockProgress> = emptyList(),
         private val stall: PlanStall? = null,
         var failDate: LocalDate? = null,
+        var failPrograms: Boolean = false,
     ) : WeeklyReviewRepository {
         override suspend fun movementGains(
             weekStart: LocalDate,
@@ -193,7 +211,11 @@ class WeeklyReviewViewModelTest {
             }
 
         override suspend fun activePrograms(): DataResult<List<WorkoutProgram>> =
-            DataResult.Success(programs)
+            if (failPrograms) {
+                DataResult.Failure(DataError.Storage(IllegalStateException("the programs could not be read")))
+            } else {
+                DataResult.Success(programs)
+            }
 
         override suspend fun firstStall(programId: String): PlanStall? = stall
 
