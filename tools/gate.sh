@@ -5,7 +5,8 @@
 # `lintAnalyzeDebug*` sometimes fails with no findings while a booted emulator competes with the Gradle and
 # Kotlin daemons for this sandbox's memory. The gate stops attached **emulators** first — never a physical
 # phone, whose data is not ours to drop — and then runs exactly the task set CI runs. Pass --keep-emulator on
-# a machine with room.
+# a machine with room. Stopping them is best-effort (N259): an adb that cannot answer must not take the gate
+# down with it, so every read of the device list is allowed to fail and answer "none".
 set -euo pipefail
 
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
@@ -29,14 +30,16 @@ for arg in "$@"; do
 done
 
 if [ "$keep" -eq 0 ] && command -v adb >/dev/null 2>&1; then
-    # `adb emu kill` is only meaningful to an emulator; a USB serial is left attached and untouched.
-    emulators=$(adb devices | awk '$2 == "device" && $1 ~ /^emulator-/ {print $1}')
+    # `adb emu kill` is only meaningful to an emulator; a USB serial is left attached and untouched. The
+    # `|| true` keeps pipefail from turning a dead adb server into a refused gate (N259).
+    emulators=$( { adb devices 2>/dev/null || true; } | awk '$2 == "device" && $1 ~ /^emulator-/ {print $1}')
     for serial in $emulators; do
         echo "stopping $serial: the combined gate flakes under its memory pressure (N253)"
         adb -s "$serial" emu kill >/dev/null 2>&1 || true
     done
     for _ in $(seq 1 10); do
-        [ -z "$(adb devices | awk '$2 == "device" && $1 ~ /^emulator-/ {print $1}')" ] && break
+        remaining=$( { adb devices 2>/dev/null || true; } | awk '$2 == "device" && $1 ~ /^emulator-/ {print $1}')
+        [ -z "$remaining" ] && break
         sleep 1
     done
 fi

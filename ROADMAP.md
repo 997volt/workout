@@ -22,12 +22,6 @@ sitting. The `B` rows are claims the code does not keep and the ones to take fir
 left behind. One row is picked up at a time; a row that ships leaves this file for
 [CHANGELOG.md](CHANGELOG.md).
 
-### Docs and the gate
-
-| # | Change | Why it matters | Size |
-| --- | --- | --- | --- |
-| N259 | **Keep `tools/gate.sh` in step, and survivable.** It repeats the task list `DocsConsistencyTest` compares only between AGENTS.md and the workflow, so a CI change leaves the script stale; and `set -e` aborts the gate when `adb devices` fails though stopping emulators is best-effort. | N253 exists to make the gate reliable, and a workaround that drifts from CI or refuses to run is the same flake wearing a different coat. | Small |
-
 ### The tests the batch left behind
 
 | # | Change | Why it matters | Size |

@@ -38,6 +38,20 @@ class DocsConsistencyTest {
     }
 
     @Test
+    fun the_gate_script_runs_the_task_set_ci_builds() {
+        // N253's workaround repeats the gate's task list, so it can drift from the workflow that defines it
+        // (N259). The same parser as AGENTS.md, so the two readings cannot disagree about "the same task set".
+        val ciBuildJob = read(".github/workflows/android.yml")
+            .substringAfter("\n  build:")
+            .substringBefore("\n  instrumented:")
+
+        val scriptTasks = gradleTasks(read("tools/gate.sh"))
+
+        assertThat(scriptTasks).isNotEmpty()
+        assertThat(scriptTasks).containsExactlyElementsIn(gradleTasks(ciBuildJob))
+    }
+
+    @Test
     fun every_path_the_docs_link_resolves() {
         val missing = DOCS.flatMap { doc ->
             linkTargets(read(doc))
