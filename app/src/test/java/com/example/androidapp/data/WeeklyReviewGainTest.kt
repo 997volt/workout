@@ -40,6 +40,17 @@ class WeeklyReviewGainTest {
         assertThat(row(weekTop = 95_000, beforeTop = 100_000, priorSets = 3).toGainOrNull()).isNull()
     }
 
+    @Test
+    fun aFirstWeightedWeek_carriesNoPreviousNumber() {
+        // B332: the movement was trained before, but only at bodyweight — there is no weight to report as
+        // "was", and reporting zero would be a number nobody lifted.
+        val gain = row(weekTop = 20_000, beforeTop = 0, priorSets = 3).toGainOrNull()
+
+        assertThat(gain?.firstTime).isFalse()
+        assertThat(gain?.previousGrams).isNull()
+        assertThat(gain?.topGrams).isEqualTo(20_000)
+    }
+
     private fun row(weekTop: Long, beforeTop: Long, priorSets: Int) = WeeklyMovementRow(
         exerciseId = "back-squat",
         name = "Back Squat",

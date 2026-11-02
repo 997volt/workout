@@ -74,6 +74,15 @@ class WeeklyReviewScreenTest {
                         previousGrams = null,
                         firstTime = true,
                     ),
+                    // Trained before only at bodyweight: a number to show, but none to compare it with
+                    // (B332).
+                    MovementGain(
+                        exerciseId = "pull-up",
+                        name = "Pull-Up",
+                        topGrams = 20_000,
+                        previousGrams = null,
+                        firstTime = false,
+                    ),
                 ),
                 stall = PlanStall(
                     exerciseName = "Back Squat",
@@ -92,6 +101,8 @@ class WeeklyReviewScreenTest {
         composeTestRule.onNodeWithText("Squat day · Missed", substring = true).assertExists()
         composeTestRule.onNodeWithText("Back Squat — 120 kg (was 115 kg)").assertExists()
         composeTestRule.onNodeWithText("Sled Push — first time").assertExists()
+        composeTestRule.onNodeWithText("Pull-Up — 20 kg").assertExists()
+        composeTestRule.onNodeWithText("was 0 kg", substring = true).assertDoesNotExist()
         composeTestRule.onNodeWithTag(TestTags.WEEKLY_REVIEW_STALL).performScrollTo().assertExists()
     }
 

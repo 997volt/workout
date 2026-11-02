@@ -75,7 +75,9 @@ class RoomWeeklyReviewRepository @Inject constructor(
  * The row a gain is, or null when the week did not move it (ROADMAP N251).
  *
  * A first training is a gain even at bodyweight; a later week is a gain only when its heaviest set is strictly
- * heavier than the heaviest before. A repeat is not progress.
+ * heavier than the heaviest before. A repeat is not progress. A movement trained before without a weight — at
+ * bodyweight, assisted or held — has nothing to compare the week against, so the gain carries no previous
+ * number rather than a zero dressed up as one (B332).
  */
 internal fun WeeklyMovementRow.toGainOrNull(): MovementGain? {
     val firstTime = priorSets == 0
@@ -84,7 +86,7 @@ internal fun WeeklyMovementRow.toGainOrNull(): MovementGain? {
         exerciseId = exerciseId,
         name = name,
         topGrams = weekTop,
-        previousGrams = if (firstTime) null else beforeTop,
+        previousGrams = if (firstTime || beforeTop == 0L) null else beforeTop,
         firstTime = firstTime,
     )
 }

@@ -286,15 +286,19 @@ private fun MovedSection(movements: List<MovementGain>) {
     val unit = LocalWeightUnit.current
     val label = unit.label()
     movements.forEach { gain ->
+        val top = "${Weight.format(gain.topGrams, unit)} $label"
+        val previous = gain.previousGrams
         Text(
-            text = if (gain.firstTime) {
-                stringResource(R.string.weekly_review_moved_first, gain.name)
-            } else {
-                stringResource(
+            text = when {
+                gain.firstTime -> stringResource(R.string.weekly_review_moved_first, gain.name)
+                // Nothing to compare the week against: a movement trained before only at bodyweight, assisted
+                // or held. The line says the number it has rather than dressing a zero as a "was" (B332).
+                previous == null -> stringResource(R.string.weekly_review_moved_top, gain.name, top)
+                else -> stringResource(
                     R.string.weekly_review_moved_line,
                     gain.name,
-                    "${Weight.format(gain.topGrams, unit)} $label",
-                    "${Weight.format(gain.previousGrams ?: 0L, unit)} $label",
+                    top,
+                    "${Weight.format(previous, unit)} $label",
                 )
             },
             style = MaterialTheme.typography.bodyMedium,

@@ -160,6 +160,7 @@
     <string name="weekly_review_moved_title">What moved</string>
     <string name="weekly_review_no_moved">No lift moved this week.</string>
     <string name="weekly_review_moved_first">%1$s — first time</string>
+    <string name="weekly_review_moved_top">%1$s — %2$s</string>
     <string name="weekly_review_moved_line">%1$s — %2$s (was %3$s)</string>
     <string name="weekly_review_stall_title">What stalled</string>
     <string name="weekly_review_no_stall">No plan has stopped moving.</string>
