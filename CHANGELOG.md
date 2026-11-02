@@ -13,6 +13,14 @@ repeated here.
 **1.0–1.18 live in [CHANGELOG-1.x.md](CHANGELOG-1.x.md)**, kept whole rather than deleted because the
 id a 1.x commit names is still looked up by it. This file carries the current release.
 
+## [Unreleased]
+
+### Fixed
+
+- **A merge with no finished history says so** (N262). The confirmation read "Moved 0 sessions and 0 plans"
+  when every session the source held was deleted or still open — the same sentence it gave a movement with no
+  history at all — so it now states that no finished session moved, and never prints a zero count.
+
 ## [2.21] — 2026-11-02 (versionCode 42)
 
 ### Changed

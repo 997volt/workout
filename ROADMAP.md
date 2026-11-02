@@ -18,15 +18,13 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 ## Next
 
 2.21 shipped the 2.20 follow-up batch (N248–N254, B329) and the review's fixes. What is left is small and
-named below: one counting rule's blind spot, one confirmation that can read as "nothing moved", and the
-decisions those rules belong in. A new product direction is not queued — the Parked triggers have not fired,
-so the next feature is a decision rather than a row. One row is picked up at a time; a row that ships leaves
-this file for [CHANGELOG.md](CHANGELOG.md).
+named below: one counting rule's blind spot and the decisions those rules belong in. A new product direction
+is not queued — the Parked triggers have not fired, so the next feature is a decision rather than a row. One
+row is picked up at a time; a row that ships leaves this file for [CHANGELOG.md](CHANGELOG.md).
 
 | # | Change | Why it matters | Size |
 | --- | --- | --- | --- |
 | N261 | **The preview counts a set whose session the file hides.** A live set under a hidden session is a live row the merge writes, but the history draws nothing; count only rows that will be visible — the set, its session exercise and its session — in the preview and in `ImportSummary`. | B330 settled "rows that become live", and this is where that rule and the lifter's reading part ways: a backup taken after a delete says "Sets N new" and no session ever appears. The current behaviour is asserted by a test, so the question and the summary have to move together. | Medium |
-| N262 | **A merge's confirmation says what it can see.** When every row the merge moved is hidden or unfinished, the summary reads "Moved 0 sessions and 0 plans"; say that no finished session moved, or report the entries separately. | B333 made the count agree with the picker, so the pair is consistent — but "Moved 0 sessions" after a merge that did move rows reads as nothing happened, and that sentence is the only evidence the lifter gets. | Small |
 | N263 | **Put this batch's settled rules in DECISIONS.** A warm-up is never a week's best, the backup preview and its summary count rows that become live, and a merge counts sessions by the picker's read — the rules B331, B330 and B333 settled, recorded so far only in KDoc, tests and the changelog. | DECISIONS is where a rule that binds every change lives; a future change that re-derives one of these from scratch is how the KDoc and the code drift apart again. | Small |
 
 ## Later — decided, and not being started

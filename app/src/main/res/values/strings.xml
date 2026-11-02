@@ -203,6 +203,10 @@
     </plurals>
     <string name="merge_confirmed_title">Merged into %1$s</string>
     <string name="merge_confirmed_text">Moved %1$s and %2$s.</string>
+    <!-- One count never prints a zero (N262): a lone count, or the sentence that names the case outright. -->
+    <string name="merge_confirmed_sessions_only">Moved %1$s.</string>
+    <string name="merge_confirmed_plans_only">Moved %1$s; no finished session moved.</string>
+    <string name="merge_confirmed_nothing">No finished session or plan moved.</string>
     <string name="merge_confirmed_done">Done</string>
     <plurals name="merge_confirmed_sessions">
         <item quantity="one">%1$d session</item>
