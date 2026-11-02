@@ -26,7 +26,6 @@ left behind. One row is picked up at a time; a row that ships leaves this file f
 
 | # | Change | Why it matters | Size |
 | --- | --- | --- | --- |
-| B334 | **One `### Changed` under `[Unreleased]`.** `97e49e3b` inserted N254 above the existing heading, so the section appears twice, with no blank line between the bullet and the second heading. | The changelog's structure is the release's outline, and `DocsConsistencyTest` checks links and task sets, not headings, so nothing else notices. | Small |
 | N259 | **Keep `tools/gate.sh` in step, and survivable.** It repeats the task list `DocsConsistencyTest` compares only between AGENTS.md and the workflow, so a CI change leaves the script stale; and `set -e` aborts the gate when `adb devices` fails though stopping emulators is best-effort. | N253 exists to make the gate reliable, and a workaround that drifts from CI or refuses to run is the same flake wearing a different coat. | Small |
 
 ### The tests the batch left behind
