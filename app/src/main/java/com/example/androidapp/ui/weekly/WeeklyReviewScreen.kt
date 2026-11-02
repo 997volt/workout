@@ -259,7 +259,7 @@ private fun BlockLines(blocks: List<BlockProgress>) {
                     )
                 },
                 style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.testTag(TestTags.WEEKLY_REVIEW_BLOCK),
+                modifier = Modifier.testTag(TestTags.weeklyReviewBlock(block.name)),
             )
         }
     }

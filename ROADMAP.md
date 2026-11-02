@@ -17,16 +17,8 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-The review of the unreleased batch (N248–N254, B329), grouped by the unit a fix touches so one group is one
-sitting. The `B` rows are claims the code does not keep and the ones to take first; the rest is what the batch
-left behind. One row is picked up at a time; a row that ships leaves this file for
-[CHANGELOG.md](CHANGELOG.md).
-
-### The tests the batch left behind
-
-| # | Change | Why it matters | Size |
-| --- | --- | --- | --- |
-| N260 | **The batch's test debts.** Truth in the new ViewModel test rather than JUnit assertions, and a gain assertion that checks the row rather than that the list is not empty; a DAO case for a deleted session, since "deleted session or set" deletes a set; a per-block test tag instead of one `WEEKLY_REVIEW_BLOCK` on every line. | These are the shapes the rows above slipped through: the batch's happy paths are covered and its claims are not, so a regression would pass the suite that is meant to guard them. | Small |
+Nothing is in flight. The 2.20 follow-up batch (N248–N254, B329) is in the unreleased
+[CHANGELOG.md](CHANGELOG.md); nothing is queued behind it.
 
 ## Later — decided, and not being started
 

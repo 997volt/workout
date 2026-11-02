@@ -76,8 +76,17 @@ class WeeklyReviewDaoTest {
 
     @Test
     fun aDeletedSessionOrSet_isNotCounted() = runTest {
+        // N260: the case used to delete a set only. A session delete hides the session and its exercise rows
+        // but leaves the sets live, so a set under a deleted session is the shape worth pinning.
         database.exerciseDao().insertAll(listOf(exercise("squat", "Back Squat")))
-        set(session = "deleted", at = 1_500L, exercise = "squat", weightGrams = 200_000, deletedAt = 1L)
+        set(session = "deleted-set", at = 1_500L, exercise = "squat", weightGrams = 200_000, deletedAt = 1L)
+        set(
+            session = "deleted-session",
+            at = 1_700L,
+            exercise = "squat",
+            weightGrams = 300_000,
+            sessionDeletedAt = 1L,
+        )
         set(session = "live", at = 1_600L, exercise = "squat", weightGrams = 100_000)
 
         val rows = database.weeklyReviewDao().movementGains(
@@ -133,6 +142,7 @@ class WeeklyReviewDaoTest {
         weightGrams: Long,
         setType: SetType = SetType.TOP_SET,
         deletedAt: Long? = null,
+        sessionDeletedAt: Long? = null,
     ) {
         val sessionExerciseId = "se-$session-$exercise"
         database.workoutDao().insertSession(
@@ -145,7 +155,7 @@ class WeeklyReviewDaoTest {
                 readinessNote = null,
                 createdAt = at,
                 updatedAt = at,
-                deletedAt = null,
+                deletedAt = sessionDeletedAt,
             ),
         )
         database.workoutDao().insertSessionExercise(

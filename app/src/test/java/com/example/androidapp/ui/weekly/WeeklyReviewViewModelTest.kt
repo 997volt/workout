@@ -15,6 +15,8 @@ import com.example.androidapp.domain.model.ProgressionMiss
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.WorkoutSummary
 import com.example.androidapp.domain.repository.WeeklyReviewRepository
+import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -23,10 +25,6 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -86,22 +84,36 @@ class WeeklyReviewViewModelTest {
         advanceUntilIdle()
 
         val state = viewModel.state.value
-        assertEquals(false, state.isLoading)
-        assertNull(state.error)
-        assertEquals(monday, state.weekStart)
-        assertEquals(monday.plusDays(6), state.weekEnd)
-        assertEquals(1, state.thisWeek.sessions)
-        assertEquals(6, state.thisWeek.sets)
-        assertEquals(1, state.lastWeek.sessions)
-        assertEquals(4, state.lastWeek.sets)
-        assertEquals(2, state.plan.planned)
-        assertEquals(1, state.plan.done)
-        assertEquals(7, state.days.size)
-        assertEquals("Back Squat", state.stall?.exerciseName)
-        assertEquals("p1", state.stallProgramId)
-        assertEquals("the block is part of the week", "Push Pull Legs", state.blocks.single().name)
-        assertTrue("an active program is followed even without weekdays", state.hasActivePlan)
-        assertTrue("the gains are the week's", state.movements.isNotEmpty())
+        assertThat(state.isLoading).isFalse()
+        assertThat(state.error).isNull()
+        assertThat(state.weekStart).isEqualTo(monday)
+        assertThat(state.weekEnd).isEqualTo(monday.plusDays(6))
+        assertThat(state.thisWeek.sessions).isEqualTo(1)
+        assertThat(state.thisWeek.sets).isEqualTo(6)
+        assertThat(state.lastWeek.sessions).isEqualTo(1)
+        assertThat(state.lastWeek.sets).isEqualTo(4)
+        assertThat(state.plan.planned).isEqualTo(2)
+        assertThat(state.plan.done).isEqualTo(1)
+        assertThat(state.days).hasSize(7)
+        assertThat(state.stall?.exerciseName).isEqualTo("Back Squat")
+        assertThat(state.stallProgramId).isEqualTo("p1")
+        assertWithMessage("the block is part of the week")
+            .that(state.blocks.map { it.name })
+            .containsExactly("Push Pull Legs")
+        assertWithMessage("an active program is followed even without weekdays")
+            .that(state.hasActivePlan)
+            .isTrue()
+        // The row itself, not "something was returned": the gain is the one read this test cannot reach
+        // through a database, so its shape is pinned here (N260).
+        assertThat(state.movements).containsExactly(
+            MovementGain(
+                exerciseId = "back-squat",
+                name = "Back Squat",
+                topGrams = 120_000,
+                previousGrams = 115_000,
+                firstTime = false,
+            ),
+        )
     }
 
     @Test
@@ -114,17 +126,19 @@ class WeeklyReviewViewModelTest {
         val viewModel = WeeklyReviewViewModel(weekly = fake, timeSource = TimeSource { now })
         advanceUntilIdle()
 
-        assertNotNull("a failed read must be said rather than drawn as an empty week", viewModel.state.value.error)
-        assertTrue(viewModel.state.value.weekStart == null)
+        assertWithMessage("a failed read must be said rather than drawn as an empty week")
+            .that(viewModel.state.value.error)
+            .isNotNull()
+        assertThat(viewModel.state.value.weekStart).isNull()
 
         fake.failDate = null
         viewModel.load()
         advanceUntilIdle()
 
         val state = viewModel.state.value
-        assertNull(state.error)
-        assertEquals(monday, state.weekStart)
-        assertEquals(7, state.days.size)
+        assertThat(state.error).isNull()
+        assertThat(state.weekStart).isEqualTo(monday)
+        assertThat(state.days).hasSize(7)
     }
 
     @Test
@@ -140,8 +154,10 @@ class WeeklyReviewViewModelTest {
         advanceUntilIdle()
 
         val state = viewModel.state.value
-        assertNotNull("a failed read must not be drawn as a statement about the plan", state.error)
-        assertNull(state.weekStart)
+        assertWithMessage("a failed read must not be drawn as a statement about the plan")
+            .that(state.error)
+            .isNotNull()
+        assertThat(state.weekStart).isNull()
     }
 
     private fun session(id: String, at: java.time.LocalDateTime, sets: Int, volume: Long) = WorkoutSummary(

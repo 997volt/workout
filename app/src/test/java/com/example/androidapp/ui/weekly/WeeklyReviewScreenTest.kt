@@ -119,6 +119,7 @@ class WeeklyReviewScreenTest {
                 weekEnd = monday.plusDays(6),
                 blocks = listOf(
                     BlockProgress(name = "Push Pull Legs", position = 3, length = 9, complete = false),
+                    BlockProgress(name = "Base Block", position = 9, length = 9, complete = true),
                 ),
                 hasActivePlan = true,
             ),
@@ -126,7 +127,10 @@ class WeeklyReviewScreenTest {
 
         composeTestRule.onNodeWithText("The block").assertExists()
         composeTestRule.onNodeWithText("Push Pull Legs · day 3 of 9").assertExists()
-        composeTestRule.onNodeWithTag(TestTags.WEEKLY_REVIEW_BLOCK).assertExists()
+        composeTestRule.onNodeWithText("Base Block · complete").assertExists()
+        // One tag per line (N260): two blocks are two assertable nodes, which one shared tag could not be.
+        composeTestRule.onNodeWithTag(TestTags.weeklyReviewBlock("Push Pull Legs")).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.weeklyReviewBlock("Base Block")).assertExists()
         composeTestRule.onNodeWithText("This block runs in order, not on weekdays.").assertExists()
         // The card says why there are no weekdays; the days section stays generic (N256), so the screen
         // does not say "no weekday schedule" twice.

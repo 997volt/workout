@@ -644,12 +644,14 @@ object TestTags {
     const val DIAGNOSTICS_COPY = "diagnostics_copy"
     const val DIAGNOSTICS_RETRY = "diagnostics_retry"
 
-    /** The week in review (ROADMAP N247): its way in, the summary and the stall. */
+    /** The week in review (ROADMAP N247): its way in, the summary, the stall and one tag per block. */
     const val HOME_WEEKLY_REVIEW = "home_weekly_review"
     const val WEEKLY_REVIEW_SCREEN = "weekly_review_screen"
     const val WEEKLY_REVIEW_SUMMARY = "weekly_review_summary"
     const val WEEKLY_REVIEW_STALL = "weekly_review_stall"
-    const val WEEKLY_REVIEW_BLOCK = "weekly_review_block"
+
+    /** A followed block's line, by name: one tag per line, so two blocks are two assertable nodes (N260). */
+    fun weeklyReviewBlock(name: String) = "weekly_review_block_$name"
 
     /** The backup preview's question (ROADMAP N246). */
     const val IMPORT_PREVIEW_DIALOG = "import_preview_dialog"
