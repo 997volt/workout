@@ -9,6 +9,7 @@ import com.example.androidapp.domain.model.BlockProgress
 import com.example.androidapp.domain.model.DayOccurrence
 import com.example.androidapp.domain.model.MovementGain
 import com.example.androidapp.domain.model.PlanStall
+import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.WorkoutSummary
 import com.example.androidapp.domain.repository.AdherenceRepository
@@ -37,7 +38,10 @@ class RoomWeeklyReviewRepository @Inject constructor(
     ): DataResult<List<MovementGain>> = dataResultOf {
         val from = weekStart.atStartOfDay(zone).toInstant().toEpochMilli()
         val to = weekStart.plusDays(DAYS_IN_WEEK).atStartOfDay(zone).toInstant().toEpochMilli()
-        database.weeklyReviewDao().movementGains(from, to)
+        // The roles come from the rule, not from the query (B17, N79, B331): `recordsEffort` is the one place
+        // that decides what may be a best, and the SQL gets the stored names it compares against.
+        val recordableRoles = SetType.entries.filter { it.recordsEffort }.map { it.name }
+        database.weeklyReviewDao().movementGains(from, to, recordableRoles)
             .mapNotNull { it.toGainOrNull() }
             .sortedBy { it.name.lowercase() }
     }

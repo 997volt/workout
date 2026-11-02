@@ -16,6 +16,7 @@ import com.example.androidapp.domain.model.SetType
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -30,6 +31,9 @@ import org.junit.runner.RunWith
 class WeeklyReviewDaoTest {
 
     private lateinit var database: WorkoutDatabase
+
+    /** What the records rule allows as a best, passed the way the repository passes it (B17, B331). */
+    private val recordableRoles = SetType.entries.filter { it.recordsEffort }.map { it.name }
 
     @Before
     fun setUp() {
@@ -53,7 +57,11 @@ class WeeklyReviewDaoTest {
         set(session = "this", at = 1_500L, exercise = "squat", weightGrams = 105_000)
         set(session = "press", at = 1_600L, exercise = "press", weightGrams = 60_000)
 
-        val rows = database.weeklyReviewDao().movementGains(from = 1_000L, to = 2_000L)
+        val rows = database.weeklyReviewDao().movementGains(
+            from = 1_000L,
+            to = 2_000L,
+            recordableRoles = recordableRoles,
+        )
 
         val squat = rows.single { it.exerciseId == "squat" }
         assertEquals(105_000L, squat.weekTop)
@@ -71,9 +79,33 @@ class WeeklyReviewDaoTest {
         set(session = "deleted", at = 1_500L, exercise = "squat", weightGrams = 200_000, deletedAt = 1L)
         set(session = "live", at = 1_600L, exercise = "squat", weightGrams = 100_000)
 
-        val rows = database.weeklyReviewDao().movementGains(from = 1_000L, to = 2_000L)
+        val rows = database.weeklyReviewDao().movementGains(
+            from = 1_000L,
+            to = 2_000L,
+            recordableRoles = recordableRoles,
+        )
 
         assertEquals(100_000L, rows.single().weekTop)
+    }
+
+    @Test
+    fun aWarmUpHeavierThanTheWork_isNotABestAndIsNoGain() = runTest {
+        // B17, B331: a heavy warm-up is not a best, so it can neither raise this week's top nor become the
+        // "before" the next week is measured against.
+        database.exerciseDao().insertAll(listOf(exercise("squat", "Back Squat")))
+        set(session = "last", at = 500L, exercise = "squat", weightGrams = 100_000)
+        set(session = "ramp", at = 1_500L, exercise = "squat", weightGrams = 120_000, setType = SetType.WARMUP)
+        set(session = "work", at = 1_600L, exercise = "squat", weightGrams = 100_000)
+
+        val row = database.weeklyReviewDao().movementGains(
+            from = 1_000L,
+            to = 2_000L,
+            recordableRoles = recordableRoles,
+        ).single()
+
+        assertEquals("the warm-up is not the week's top", 100_000L, row.weekTop)
+        assertEquals("and it is not one of the week's sets", 1, row.weekSets)
+        assertNull("a repeat of the best is not a gain", row.toGainOrNull())
     }
 
     private suspend fun set(
@@ -81,6 +113,7 @@ class WeeklyReviewDaoTest {
         at: Long,
         exercise: String,
         weightGrams: Long,
+        setType: SetType = SetType.TOP_SET,
         deletedAt: Long? = null,
     ) {
         val sessionExerciseId = "se-$session-$exercise"
@@ -117,7 +150,7 @@ class WeeklyReviewDaoTest {
                 setIndex = 0,
                 reps = 5,
                 weightGrams = weightGrams,
-                setType = SetType.TOP_SET,
+                setType = setType,
                 createdAt = at,
                 updatedAt = at,
                 deletedAt = deletedAt,

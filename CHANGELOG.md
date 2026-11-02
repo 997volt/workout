@@ -35,7 +35,8 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 - **The week says which lifts moved** (N251). The review named the week's plan and its stall but not the lifts
   themselves. *What moved* lists the movements trained for the first time and the ones whose heaviest set beat
   their best before the week, with both numbers; a bodyweight first training appears as itself rather than
-  inventing a weight. It is one read over the sets, and a repeat is not progress.
+  inventing a weight. It is one read over the sets, and a repeat is not progress. Only the roles that record
+  effort count, so a heavy warm-up cannot manufacture a gain — the same rule the records use (B331).
 - **A failed housekeeping pass opens Diagnostics** (N250). The B324 notice can now take the lifter to the
   recorded failure — its class, its frames and the last pass — instead of offering only retry and later. The
   notice dismisses as it opens the screen, so two dialogs never stack over one failure.

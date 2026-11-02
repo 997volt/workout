@@ -16,7 +16,9 @@ interface WeeklyReviewDao {
     /**
      * One row per movement trained this week, with its best before the week and whether it had any before.
      *
-     * Only live finished sessions, live exercises and live sets count. A movement's week top is 0 when its
+     * Only live finished sessions, live exercises and live sets count, and only the roles that record effort
+     * do: a warm-up is not a best, and neither is a rung — the same rule the records use (B17, N79), passed in
+     * as [recordableRoles] so the SQL cannot drift from the enum (B331). A movement's week top is 0 when its
      * sets carried no weight; [priorSets] separates "never trained" from "trained at bodyweight".
      */
     @Query(
@@ -35,11 +37,16 @@ interface WeeklyReviewDao {
           AND ws.deletedAt IS NULL
           AND se.deletedAt IS NULL
           AND s.deletedAt IS NULL
+          AND s.setType IN (:recordableRoles)
         GROUP BY se.exerciseId, e.name
         HAVING weekSets > 0
         """,
     )
-    suspend fun movementGains(from: Long, to: Long): List<WeeklyMovementRow>
+    suspend fun movementGains(
+        from: Long,
+        to: Long,
+        recordableRoles: List<String>,
+    ): List<WeeklyMovementRow>
 }
 
 /** One movement's week, before the domain decides whether it counts as a gain (ROADMAP N251). */
