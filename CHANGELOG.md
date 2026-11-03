@@ -15,6 +15,14 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ## [Unreleased]
 
+### Changed
+
+- **A program table's repeated movement becomes one planned exercise** (N264). A table that said 3 × 8 at 100 kg
+  and then 2 × 10 at 90 kg for one movement imported as two plan entries, though a planned exercise already
+  holds a target per set. Adjacent rows with the same rest, RPE and note are now one exercise whose sets carry
+  each row's prescription, in row order; rows that differ in those three stay two exercises and the page names
+  the rows and the setting, because an exercise holds one of each.
+
 ### Fixed
 
 - **A merge with no finished history says so** (N262). The confirmation read "Moved 0 sessions and 0 plans"

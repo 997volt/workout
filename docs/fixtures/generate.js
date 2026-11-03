@@ -73,6 +73,9 @@ var PROGRAM_SHEET = [
   ['Autumn block', 'Upper A', 'Mon', 'Barbell Row', '4', '6-8', '70', '120', '8', ''].join('\t'),
   ['Autumn block', 'Upper A', 'Wed', 'Competition Bench Press', '5', '3', '82.5', '180', '8', ''].join('\t'),
   ['Autumn block', 'Lower A', 'Fri', 'Back Squat', '5', '5', '100', '240', '8', 'belts on'].join('\t'),
+  // The same movement in the next row: same rest, RPE and note, so the two rows are one planned exercise
+  // with both prescriptions (N264) — the fixture is where that document shape is pinned for both sides.
+  ['Autumn block', 'Lower A', 'Fri', 'Back Squat', '3', '8', '80', '240', '8', 'belts on'].join('\t'),
   ['Autumn block', 'Lower A', 'Fri', 'Machine Curl Call', '3', '10', '30', '90', '8', ''].join('\t')
 ].join('\n');
 var PROGRAM_EXPORTED_AT = 1790000000000;
@@ -112,7 +115,7 @@ fs.writeFileSync(
 console.log(
   'wrote ' + path.relative(process.cwd(), programTarget) +
   ': ' + program.stats.days + ' days, ' +
-  program.stats.exercises + ' exercise rows, ' +
+  program.stats.exercises + ' exercises, ' +
   program.stats.sets + ' sets'
 );
 

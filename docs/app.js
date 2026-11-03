@@ -3034,6 +3034,7 @@
       programSummary: byId('programSummary'),
       programPreview: byId('programPreview'),
       programProblems: byId('programProblems'),
+      programWarnings: byId('programWarnings'),
       downloadProgram: byId('downloadProgram'),
       programEditorHost: byId('programEditor'),
       editorStatus: byId('editorStatus'),
@@ -5148,22 +5149,80 @@
       day.exercises.push({
         name: exerciseName,
         row: rowIndex + 1,
-        sets: sets,
-        repsMin: reps.min,
-        repsMax: reps.max,
-        weightGrams: load === null ? null : Math.round(load * (unitForRow === 'lb' ? 453.59237 : 1000)),
+        lastRow: rowIndex + 1,
         restSeconds: rest,
         rpeHalves: rpeHalves,
-        note: valueOf(row, 'note') === '' ? null : valueOf(row, 'note')
+        note: valueOf(row, 'note') === '' ? null : valueOf(row, 'note'),
+        // A row's repeated "Sets" is one group; a row of the same movement right after it adds another
+        // (N264). Groups rather than one prescription because the merged exercise's sets differ between
+        // rows, while rest and RPE belong to the exercise and are compared before merging.
+        groups: [{
+          sets: sets,
+          repsMin: reps.min,
+          repsMax: reps.max,
+          weightGrams: load === null ? null : Math.round(load * (unitForRow === 'lb' ? 453.59237 : 1000))
+        }]
       });
     }
 
-    dayOrder.forEach(function (name) { sheet.days.push(byDay[name]); });
+    dayOrder.forEach(function (name) {
+      coalesceProgramExercises(byDay[name], sheet);
+      sheet.days.push(byDay[name]);
+    });
     if (sheet.rows === 0) {
       sheet.problems.push({ message: 'The table has headers but no exercise rows.' });
     }
     resolveProgramShape(sheet);
     return sheet;
+  }
+
+  /**
+   * One movement said in adjacent rows becomes one planned exercise (N264).
+   *
+   * A plan already holds one row per exercise with one target per set, so a table's "3 × 8 at 100 kg" then
+   * "2 × 10 at 90 kg" for the same movement is one exercise with five sets — the import was the only thing
+   * splitting it. Only **adjacent** rows merge: `Squat, Bench, Squat` is authored order, and moving sets
+   * across another movement would rewrite the plan.
+   *
+   * Rest, target RPE and the cue live on the planned exercise, not on its sets, so rows that differ in one
+   * of them are left as two exercises and reported rather than resolved by whichever row came first. That is
+   * the one case the table cannot express as one exercise; the lifter makes the rows agree, or keeps both.
+   */
+  function coalesceProgramExercises(day, sheet) {
+    var merged = [];
+    day.exercises.forEach(function (entry) {
+      var previous = merged.length > 0 ? merged[merged.length - 1] : null;
+      if (previous && normalizeName(previous.name) === normalizeName(entry.name)) {
+        var differences = programEntryDifferences(previous, entry);
+        if (differences.length === 0) {
+          previous.groups = previous.groups.concat(entry.groups);
+          previous.lastRow = entry.lastRow;
+          return;
+        }
+        sheet.warnings.push({
+          message: 'Rows ' + previous.lastRow + ' and ' + entry.row + ' name ' + entry.name +
+            ' with different ' + formatProgramDifferences(differences) + '; they stay two planned ' +
+            'exercises. Give them the same rest, RPE and note to import one exercise.'
+        });
+      }
+      merged.push(entry);
+    });
+    day.exercises = merged;
+  }
+
+  /** Which of the planned exercise's own settings two rows disagree about (N264). */
+  function programEntryDifferences(first, second) {
+    var differences = [];
+    if (first.restSeconds !== second.restSeconds) { differences.push('rest'); }
+    if (first.rpeHalves !== second.rpeHalves) { differences.push('RPE'); }
+    if (first.note !== second.note) { differences.push('note'); }
+    return differences;
+  }
+
+  /** "rest and RPE" — the fields a merge would have had to choose between (N264). */
+  function formatProgramDifferences(differences) {
+    if (differences.length === 1) { return differences[0]; }
+    return differences.slice(0, -1).join(', ') + ' and ' + differences[differences.length - 1];
   }
 
   /**
@@ -5383,27 +5442,35 @@
         // later set wear the row above it. The id keeps its original 1-based seed, so a program
         // loaded from the old output is recognised when the same table is loaded again rather than
         // arriving twice.
-        for (var setIndex = 0; setIndex < exercise.sets; setIndex += 1) {
-          setCount += 1;
-          templateSets.push({
-            id: 'tset_' + fnv1a64Hex(
-              'template-set|' + documentName + '|' + day.name + '|' + exercise.row + '|' + (setIndex + 1)
-            ),
-            templateExerciseId: templateExerciseId,
-            setIndex: setIndex,
-            role: 'NORMAL',
-            targetWeightGrams: exercise.weightGrams,
-            targetAssistanceGrams: null,
-            targetRepsMin: exercise.repsMin,
-            targetRepsMax: exercise.repsMax,
-            targetRepsCurrent: null,
-            dropValueGrams: null,
-            note: null,
-            createdAt: time,
-            updatedAt: time,
-            deletedAt: null
-          });
-        }
+        //
+        // One group per row the exercise was said on, which is one for an ordinary row and two or more
+        // when adjacent rows merged (N264): each group's sets land in row order under one exercise, and
+        // every set keeps its own row's reps and load.
+        var setIndex = 0;
+        exercise.groups.forEach(function (group) {
+          for (var within = 0; within < group.sets; within += 1) {
+            setCount += 1;
+            templateSets.push({
+              id: 'tset_' + fnv1a64Hex(
+                'template-set|' + documentName + '|' + day.name + '|' + exercise.row + '|' + (setIndex + 1)
+              ),
+              templateExerciseId: templateExerciseId,
+              setIndex: setIndex,
+              role: 'NORMAL',
+              targetWeightGrams: group.weightGrams,
+              targetAssistanceGrams: null,
+              targetRepsMin: group.repsMin,
+              targetRepsMax: group.repsMax,
+              targetRepsCurrent: null,
+              dropValueGrams: null,
+              note: null,
+              createdAt: time,
+              updatedAt: time,
+              deletedAt: null
+            });
+            setIndex += 1;
+          }
+        });
       });
     });
 
@@ -5971,19 +6038,35 @@
       table.appendChild(thead);
       var tbody = document.createElement('tbody');
       day.exercises.forEach(function (exercise) {
-        var tr = document.createElement('tr');
-        tr.appendChild(h('td', '', exercise.name));
-        tr.appendChild(h('td', '', String(exercise.sets)));
-        tr.appendChild(h('td', '', exercise.repsMin === exercise.repsMax
-          ? String(exercise.repsMin)
-          : exercise.repsMin + '–' + exercise.repsMax));
-        tr.appendChild(h('td', '', exercise.weightGrams === null
-          ? '—' : formatKg(exercise.weightGrams) + ' kg'));
-        tr.appendChild(h('td', '', exercise.restSeconds === null
-          ? '—' : exercise.restSeconds + ' s'));
-        tr.appendChild(h('td', '', exercise.rpeHalves === null
-          ? '—' : String(exercise.rpeHalves / 2)));
-        tbody.appendChild(tr);
+        var groups = exercise.groups || [];
+        groups.forEach(function (group, groupIndex) {
+          var tr = document.createElement('tr');
+          // One row per group, with the exercise's own cells spanning them (N264): a table that said the
+          // movement twice in adjacent rows reads here as one exercise with both prescriptions, which is
+          // what the document will hold.
+          if (groupIndex === 0) {
+            var nameCell = h('td', '', exercise.name);
+            nameCell.rowSpan = groups.length;
+            tr.appendChild(nameCell);
+          }
+          tr.appendChild(h('td', '', String(group.sets)));
+          tr.appendChild(h('td', '', group.repsMin === group.repsMax
+            ? String(group.repsMin)
+            : group.repsMin + '–' + group.repsMax));
+          tr.appendChild(h('td', '', group.weightGrams === null
+            ? '—' : formatKg(group.weightGrams) + ' kg'));
+          if (groupIndex === 0) {
+            var restCell = h('td', '', exercise.restSeconds === null
+              ? '—' : exercise.restSeconds + ' s');
+            restCell.rowSpan = groups.length;
+            tr.appendChild(restCell);
+            var rpeCell = h('td', '', exercise.rpeHalves === null
+              ? '—' : String(exercise.rpeHalves / 2));
+            rpeCell.rowSpan = groups.length;
+            tr.appendChild(rpeCell);
+          }
+          tbody.appendChild(tr);
+        });
       });
       table.appendChild(tbody);
       block.appendChild(table);
@@ -5999,6 +6082,11 @@
     setText(ui.elements.programProblems, problems.length > 0
       ? 'Cannot write this sheet: ' + problems.join(' ')
       : notes.join(' '));
+    // The sheet's own warnings, which had nowhere to go until a row that cannot merge needed saying
+    // (N264). Hidden when empty so the panel does not grow a blank line for the ordinary table.
+    var warnings = built.warnings.map(function (warning) { return warning.message; });
+    setText(ui.elements.programWarnings, warnings.join(' '));
+    ui.elements.programWarnings.hidden = warnings.length === 0;
     ui.elements.downloadProgram.disabled = !built.ok;
   }
 
@@ -8052,9 +8140,11 @@
    */
   function programPanelSummary(sheet, stats) {
     var isSequence = sheet.kind === 'SEQUENCE';
+    // "Exercises", not "exercise rows" (N264): a movement said in adjacent rows is one planned exercise,
+    // so the count that matters is what the document holds, not how many rows the sheet spent on it.
     return 'Program "' + (sheet.name || 'My program') + '" · ' + formatInt(stats.days) +
       ' day' + (stats.days === 1 ? '' : 's') + ' · ' + formatInt(stats.exercises) +
-      ' exercise row' + (stats.exercises === 1 ? '' : 's') + ' · ' + formatInt(stats.sets) +
+      ' exercise' + (stats.exercises === 1 ? '' : 's') + ' · ' + formatInt(stats.sets) +
       ' set' + (stats.sets === 1 ? '' : 's') + ' · loads in ' + sheet.unit + ' · ' +
       (isSequence ? 'one block' : 'every week') +
       (isSequence && typeof sheet.start === 'number'

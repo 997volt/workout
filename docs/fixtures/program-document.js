@@ -6,7 +6,7 @@
  *
  *     node docs/fixtures/generate.js
  */
-window.PROGRAM_SHEET_TEXT = "Program\tDay\tWeekday\tExercise\tSets\tReps\tLoad\tRest\tRPE\tNote\nAutumn block\tUpper A\tMon\tCompetition Bench Press\t5\t3\t82.5\t180\t8\tpause 1s\nAutumn block\tUpper A\tMon\tBarbell Row\t4\t6-8\t70\t120\t8\t\nAutumn block\tUpper A\tWed\tCompetition Bench Press\t5\t3\t82.5\t180\t8\t\nAutumn block\tLower A\tFri\tBack Squat\t5\t5\t100\t240\t8\tbelts on\nAutumn block\tLower A\tFri\tMachine Curl Call\t3\t10\t30\t90\t8\t";
+window.PROGRAM_SHEET_TEXT = "Program\tDay\tWeekday\tExercise\tSets\tReps\tLoad\tRest\tRPE\tNote\nAutumn block\tUpper A\tMon\tCompetition Bench Press\t5\t3\t82.5\t180\t8\tpause 1s\nAutumn block\tUpper A\tMon\tBarbell Row\t4\t6-8\t70\t120\t8\t\nAutumn block\tUpper A\tWed\tCompetition Bench Press\t5\t3\t82.5\t180\t8\t\nAutumn block\tLower A\tFri\tBack Squat\t5\t5\t100\t240\t8\tbelts on\nAutumn block\tLower A\tFri\tBack Squat\t3\t8\t80\t240\t8\tbelts on\nAutumn block\tLower A\tFri\tMachine Curl Call\t3\t10\t30\t90\t8\t";
 window.PROGRAM_DOCUMENT_FIXTURE = {
   "formatVersion": 7,
   "exportedAt": 1790000000000,
@@ -125,7 +125,7 @@ window.PROGRAM_DOCUMENT_FIXTURE = {
       "deletedAt": null
     },
     {
-      "id": "tex_5eed93e3e3b3cdf3",
+      "id": "tex_5eed92e3e3b3cc40",
       "templateId": "tpl_604d0d391e02a760",
       "exerciseId": "ex_99d2eab48e357913",
       "position": 1,
@@ -444,8 +444,56 @@ window.PROGRAM_DOCUMENT_FIXTURE = {
       "deletedAt": null
     },
     {
-      "id": "tset_e302e40b6aef4216",
-      "templateExerciseId": "tex_5eed93e3e3b3cdf3",
+      "id": "tset_c9a97a0b5cc1b34a",
+      "templateExerciseId": "tex_5eed94e3e3b3cfa6",
+      "setIndex": 5,
+      "role": "NORMAL",
+      "targetWeightGrams": 80000,
+      "targetAssistanceGrams": null,
+      "targetRepsMin": 8,
+      "targetRepsMax": 8,
+      "targetRepsCurrent": null,
+      "dropValueGrams": null,
+      "note": null,
+      "createdAt": 1790000000000,
+      "updatedAt": 1790000000000,
+      "deletedAt": null
+    },
+    {
+      "id": "tset_c9a97b0b5cc1b4fd",
+      "templateExerciseId": "tex_5eed94e3e3b3cfa6",
+      "setIndex": 6,
+      "role": "NORMAL",
+      "targetWeightGrams": 80000,
+      "targetAssistanceGrams": null,
+      "targetRepsMin": 8,
+      "targetRepsMax": 8,
+      "targetRepsCurrent": null,
+      "dropValueGrams": null,
+      "note": null,
+      "createdAt": 1790000000000,
+      "updatedAt": 1790000000000,
+      "deletedAt": null
+    },
+    {
+      "id": "tset_c9a96c0b5cc19b80",
+      "templateExerciseId": "tex_5eed94e3e3b3cfa6",
+      "setIndex": 7,
+      "role": "NORMAL",
+      "targetWeightGrams": 80000,
+      "targetAssistanceGrams": null,
+      "targetRepsMin": 8,
+      "targetRepsMax": 8,
+      "targetRepsCurrent": null,
+      "dropValueGrams": null,
+      "note": null,
+      "createdAt": 1790000000000,
+      "updatedAt": 1790000000000,
+      "deletedAt": null
+    },
+    {
+      "id": "tset_d854bb0b64503019",
+      "templateExerciseId": "tex_5eed92e3e3b3cc40",
       "setIndex": 0,
       "role": "NORMAL",
       "targetWeightGrams": 30000,
@@ -460,8 +508,8 @@ window.PROGRAM_DOCUMENT_FIXTURE = {
       "deletedAt": null
     },
     {
-      "id": "tset_e302e30b6aef4063",
-      "templateExerciseId": "tex_5eed93e3e3b3cdf3",
+      "id": "tset_d854b80b64502b00",
+      "templateExerciseId": "tex_5eed92e3e3b3cc40",
       "setIndex": 1,
       "role": "NORMAL",
       "targetWeightGrams": 30000,
@@ -476,8 +524,8 @@ window.PROGRAM_DOCUMENT_FIXTURE = {
       "deletedAt": null
     },
     {
-      "id": "tset_e302e20b6aef3eb0",
-      "templateExerciseId": "tex_5eed93e3e3b3cdf3",
+      "id": "tset_d854b90b64502cb3",
+      "templateExerciseId": "tex_5eed92e3e3b3cc40",
       "setIndex": 2,
       "role": "NORMAL",
       "targetWeightGrams": 30000,

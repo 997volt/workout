@@ -507,8 +507,12 @@ A table dropped into **Programs** (or into the Import source) becomes a **progra
 `Sets`, `Reps`, `Load`, `Rest`, `RPE` (optional), `Note` (optional), `Kind` (optional) and `Start` (optional). A
 tab-separated paste from a spreadsheet is the intended input.
 
-- **One row is one planned exercise**: `Sets` of the same rep target, at one load, with an optional rest and
-  RPE. `Reps` is `5` or a range like `6-8`.
+- **One movement in adjacent rows is one planned exercise**: a row is `Sets` of the same rep target at one
+  load, and the row immediately after it naming the same movement — with the same rest, RPE and note — joins
+  it, its sets following on. So `3 × 8 at 100 kg` then `2 × 10 at 90 kg` imports as one exercise with five
+  sets, in that order. Rows that differ in rest, RPE or note stay two planned exercises and the page names the
+  rows and the setting: those three belong to the exercise, not to a set, so a merge would have to drop one.
+  Only adjacent rows merge — `Squat, Bench, Squat` is authored order. `Reps` is `5` or a range like `6-8`.
 - **Days become templates, weekdays become slots.** A day named on two rows with different weekdays is
   scheduled on both; a day with no weekday is a workout the lifter starts by hand.
 - **Kind makes the table a block, and Start says when it begins.** `Kind` is `weekly` or `block` (`one

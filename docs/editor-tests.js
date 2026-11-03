@@ -178,6 +178,84 @@
       t.eq(build('').program.id, 'pgm_219a652524971005', 'a pasted table keeps the id it had');
     });
 
+    check('a movement said in adjacent rows is one planned exercise (N264)', function () {
+      var sheet = H.parseProgramSheet([
+        'Day\tExercise\tSets\tReps\tLoad\tRest\tRPE\tNote',
+        'Lower A\tBack Squat\t3\t8\t100\t240\t8\tbelts on',
+        'Lower A\tBack Squat\t2\t10\t90\t240\t8\tbelts on'
+      ].join('\n'));
+
+      t.eq(sheet.problems.length, 0, 'the table parses');
+      t.eq(sheet.warnings.length, 0, 'the two rows agree on what an exercise holds');
+      t.eq(sheet.days[0].exercises.length, 1, 'one planned exercise');
+      t.eq(sheet.days[0].exercises[0].groups.length, 2, 'with both prescriptions');
+
+      var document = H.buildProgramDocument(sheet, {}).document;
+      t.eq(document.templateExercises.length, 1, 'the document holds one exercise');
+      t.eq(document.templateSets.length, 5, 'with five sets');
+      var sets = document.templateSets.slice().sort(function (a, b) { return a.setIndex - b.setIndex; });
+      t.eq(sets.map(function (set) { return set.setIndex; }).join(','), '0,1,2,3,4', 'numbered from zero');
+      t.eq(sets.map(function (set) { return set.targetWeightGrams; }).join(','),
+        '100000,100000,100000,90000,90000', 'each row keeps its own load, in row order');
+      t.eq(sets.map(function (set) { return set.targetRepsMin; }).join(','), '8,8,8,10,10',
+        'and its own reps');
+      t.eq(sets.filter(function (set) {
+        return set.templateExerciseId !== document.templateExercises[0].id;
+      }).length, 0, 'all under the one exercise');
+    });
+
+    check('a row that differs in rest stays its own exercise, and says why (N264)', function () {
+      var sheet = H.parseProgramSheet([
+        'Day\tExercise\tSets\tReps\tLoad\tRest\tRPE',
+        'Lower A\tBack Squat\t3\t8\t100\t240\t8',
+        'Lower A\tBack Squat\t2\t10\t90\t180\t8'
+      ].join('\n'));
+
+      t.eq(sheet.days[0].exercises.length, 2, 'kept apart');
+      t.eq(sheet.warnings.length, 1, 'and reported once');
+      t.ok(sheet.warnings[0].message.indexOf('Rows 2 and 3') !== -1, 'the rows are named');
+      t.ok(sheet.warnings[0].message.indexOf('rest') !== -1, 'and the setting that differs');
+      t.eq(H.buildProgramDocument(sheet, {}).document.templateExercises.length, 2);
+    });
+
+    check('the same movement either side of another stays two exercises (N264)', function () {
+      var sheet = H.parseProgramSheet([
+        'Day\tExercise\tSets\tReps\tLoad\tRest\tRPE',
+        'Lower A\tBack Squat\t3\t8\t100\t240\t8',
+        'Lower A\tBench Press\t3\t5\t80\t240\t8',
+        'Lower A\tBack Squat\t2\t10\t90\t240\t8'
+      ].join('\n'));
+
+      t.eq(sheet.warnings.length, 0, 'nothing is reported: the order is the plan');
+      t.eq(sheet.days[0].exercises.length, 3, 'three planned exercises');
+      t.eq(H.buildProgramDocument(sheet, {}).document.templateExercises.length, 3);
+    });
+
+    check('the same movement in another day is another exercise (N264)', function () {
+      var sheet = H.parseProgramSheet([
+        'Day\tExercise\tSets\tReps\tLoad\tRest\tRPE',
+        'Lower A\tBack Squat\t3\t8\t100\t240\t8',
+        'Lower B\tBack Squat\t2\t10\t90\t240\t8'
+      ].join('\n'));
+
+      var document = H.buildProgramDocument(sheet, {}).document;
+      t.eq(sheet.warnings.length, 0);
+      t.eq(document.templates.length, 2, 'two workouts');
+      t.eq(document.templateExercises.length, 2, 'one exercise each');
+    });
+
+    check('a movement named twice with different spacing or case still merges (N264)', function () {
+      var sheet = H.parseProgramSheet([
+        'Day\tExercise\tSets\tReps\tLoad',
+        'Lower A\t back squat\t3\t8\t100',
+        'Lower A\tBack Squat\t2\t10\t90'
+      ].join('\n'));
+
+      t.eq(sheet.problems.length, 0);
+      t.eq(sheet.days[0].exercises.length, 1, 'one movement under two spellings');
+      t.eq(sheet.days[0].exercises[0].name, 'back squat', 'the first spelling is the label');
+    });
+
     check('a table that names two program kinds is refused', function () {
       var text = [
         'Day\tExercise\tSets\tReps\tKind',

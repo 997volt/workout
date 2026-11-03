@@ -1,5 +1,6 @@
 package com.example.androidapp.data
 
+import com.example.androidapp.data.transfer.ProgramDocument
 import com.example.androidapp.data.transfer.ProgramDocumentCodec
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.repoRoot
@@ -12,11 +13,13 @@ import java.time.DayOfWeek
  * The app accepts the helper's program sheet (N167).
  *
  * The fixture is the document the tool writes for a two-day sheet: three slots, two templates, five
- * planned exercises, twenty-two sets, one of them a range, one exercise created because the sheet named
+ * planned exercises, twenty-five sets, one of them a range, one exercise created because the sheet named
  * something the library does not hold. [ProgramDocumentCodec] is the gate the file must pass, and the
  * references are what the import's filters drop silently if they are wrong — so both are pinned here.
  * `docs/fixtures/generate.js` writes the fixture and the page's test rebuilds it from the sheet, so this
- * side pins the app's reading rather than the tool's writing.
+ * side pins the app's reading rather than the tool's writing. One of the five is two adjacent Back Squat
+ * rows the helper writes as one exercise with both prescriptions (N264), so the merged shape is pinned here
+ * too.
  */
 class ProgramDocumentFixtureTest {
 
@@ -49,7 +52,7 @@ class ProgramDocumentFixtureTest {
             .containsExactlyElementsIn(document.templates.map { it.id }.toSet())
 
         assertThat(document.templateExercises).hasSize(5)
-        assertThat(document.templateSets).hasSize(22)
+        assertThat(document.templateSets).hasSize(25)
         assertThat(document.templateSets.map { it.role }.toSet()).containsExactly(SetType.NORMAL)
 
         val templateExerciseIds = document.templateExercises.map { it.id }.toSet()
@@ -82,6 +85,9 @@ class ProgramDocumentFixtureTest {
             assertThat(set.targetRepsCurrent).isNull()
         }
 
+        // Two adjacent Back Squat rows are one exercise with both prescriptions (N264).
+        assertMergedSquatIsOneExercise(document)
+
         val created = document.exercises.first { it.id.startsWith("ex_") }
         assertThat(created.name).isEqualTo("Machine Curl Call")
         assertThat(created.primaryMuscle).isNull()
@@ -100,5 +106,25 @@ class ProgramDocumentFixtureTest {
                 .sorted()
             assertThat(indexes).isEqualTo(List(indexes.size) { it })
         }
+    }
+
+    /**
+     * The sheet says Back Squat in two adjacent rows, five sets then three (N264).
+     *
+     * Same rest, RPE and note, so the helper writes **one** planned exercise with both prescriptions, in
+     * the sheet's row order: five sets of five at 100 kg, then three of eight at 80 kg. Two entries here
+     * would be the app accepting the split the helper is meant to have removed.
+     */
+    private fun assertMergedSquatIsOneExercise(document: ProgramDocument) {
+        val squats = document.templateExercises.filter { exercise ->
+            document.exercises.first { it.id == exercise.exerciseId }.name == "Back Squat"
+        }
+        assertThat(squats).hasSize(1)
+        val sets = document.templateSets
+            .filter { it.templateExerciseId == squats.single().id }
+            .sortedBy { it.setIndex }
+        assertThat(sets.map { it.targetRepsMin }).isEqualTo(List(5) { 5 } + List(3) { 8 })
+        assertThat(sets.map { it.targetWeightGrams })
+            .isEqualTo(List(5) { 100_000L } + List(3) { 80_000L })
     }
 }

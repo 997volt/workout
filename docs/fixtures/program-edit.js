@@ -126,7 +126,7 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tex_5eed93e3e3b3cdf3",
+          "id": "tex_5eed92e3e3b3cc40",
           "templateId": "tpl_604d0d391e02a760",
           "exerciseId": "ex_99d2eab48e357913",
           "position": 1,
@@ -445,8 +445,56 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tset_e302e40b6aef4216",
-          "templateExerciseId": "tex_5eed93e3e3b3cdf3",
+          "id": "tset_c9a97a0b5cc1b34a",
+          "templateExerciseId": "tex_5eed94e3e3b3cfa6",
+          "setIndex": 5,
+          "role": "NORMAL",
+          "targetWeightGrams": 80000,
+          "targetAssistanceGrams": null,
+          "targetRepsMin": 8,
+          "targetRepsMax": 8,
+          "targetRepsCurrent": null,
+          "dropValueGrams": null,
+          "note": null,
+          "createdAt": 1790000000000,
+          "updatedAt": 1790000000000,
+          "deletedAt": null
+        },
+        {
+          "id": "tset_c9a97b0b5cc1b4fd",
+          "templateExerciseId": "tex_5eed94e3e3b3cfa6",
+          "setIndex": 6,
+          "role": "NORMAL",
+          "targetWeightGrams": 80000,
+          "targetAssistanceGrams": null,
+          "targetRepsMin": 8,
+          "targetRepsMax": 8,
+          "targetRepsCurrent": null,
+          "dropValueGrams": null,
+          "note": null,
+          "createdAt": 1790000000000,
+          "updatedAt": 1790000000000,
+          "deletedAt": null
+        },
+        {
+          "id": "tset_c9a96c0b5cc19b80",
+          "templateExerciseId": "tex_5eed94e3e3b3cfa6",
+          "setIndex": 7,
+          "role": "NORMAL",
+          "targetWeightGrams": 80000,
+          "targetAssistanceGrams": null,
+          "targetRepsMin": 8,
+          "targetRepsMax": 8,
+          "targetRepsCurrent": null,
+          "dropValueGrams": null,
+          "note": null,
+          "createdAt": 1790000000000,
+          "updatedAt": 1790000000000,
+          "deletedAt": null
+        },
+        {
+          "id": "tset_d854bb0b64503019",
+          "templateExerciseId": "tex_5eed92e3e3b3cc40",
           "setIndex": 0,
           "role": "NORMAL",
           "targetWeightGrams": 30000,
@@ -461,8 +509,8 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tset_e302e30b6aef4063",
-          "templateExerciseId": "tex_5eed93e3e3b3cdf3",
+          "id": "tset_d854b80b64502b00",
+          "templateExerciseId": "tex_5eed92e3e3b3cc40",
           "setIndex": 1,
           "role": "NORMAL",
           "targetWeightGrams": 30000,
@@ -477,8 +525,8 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tset_e302e20b6aef3eb0",
-          "templateExerciseId": "tex_5eed93e3e3b3cdf3",
+          "id": "tset_d854b90b64502cb3",
+          "templateExerciseId": "tex_5eed92e3e3b3cc40",
           "setIndex": 2,
           "role": "NORMAL",
           "targetWeightGrams": 30000,
@@ -687,7 +735,7 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tex_5eed93e3e3b3cdf3",
+          "id": "tex_5eed92e3e3b3cc40",
           "templateId": "tpl_604d0d391e02a760",
           "exerciseId": "ex_99d2eab48e357913",
           "position": 1,
@@ -1006,8 +1054,56 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tset_e302e40b6aef4216",
-          "templateExerciseId": "tex_5eed93e3e3b3cdf3",
+          "id": "tset_c9a97a0b5cc1b34a",
+          "templateExerciseId": "tex_5eed94e3e3b3cfa6",
+          "setIndex": 5,
+          "role": "NORMAL",
+          "targetWeightGrams": 80000,
+          "targetAssistanceGrams": null,
+          "targetRepsMin": 8,
+          "targetRepsMax": 8,
+          "targetRepsCurrent": null,
+          "dropValueGrams": null,
+          "note": null,
+          "createdAt": 1790000000000,
+          "updatedAt": 1790000000000,
+          "deletedAt": null
+        },
+        {
+          "id": "tset_c9a97b0b5cc1b4fd",
+          "templateExerciseId": "tex_5eed94e3e3b3cfa6",
+          "setIndex": 6,
+          "role": "NORMAL",
+          "targetWeightGrams": 80000,
+          "targetAssistanceGrams": null,
+          "targetRepsMin": 8,
+          "targetRepsMax": 8,
+          "targetRepsCurrent": null,
+          "dropValueGrams": null,
+          "note": null,
+          "createdAt": 1790000000000,
+          "updatedAt": 1790000000000,
+          "deletedAt": null
+        },
+        {
+          "id": "tset_c9a96c0b5cc19b80",
+          "templateExerciseId": "tex_5eed94e3e3b3cfa6",
+          "setIndex": 7,
+          "role": "NORMAL",
+          "targetWeightGrams": 80000,
+          "targetAssistanceGrams": null,
+          "targetRepsMin": 8,
+          "targetRepsMax": 8,
+          "targetRepsCurrent": null,
+          "dropValueGrams": null,
+          "note": null,
+          "createdAt": 1790000000000,
+          "updatedAt": 1790000000000,
+          "deletedAt": null
+        },
+        {
+          "id": "tset_d854bb0b64503019",
+          "templateExerciseId": "tex_5eed92e3e3b3cc40",
           "setIndex": 0,
           "role": "NORMAL",
           "targetWeightGrams": 30000,
@@ -1022,8 +1118,8 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tset_e302e30b6aef4063",
-          "templateExerciseId": "tex_5eed93e3e3b3cdf3",
+          "id": "tset_d854b80b64502b00",
+          "templateExerciseId": "tex_5eed92e3e3b3cc40",
           "setIndex": 1,
           "role": "NORMAL",
           "targetWeightGrams": 30000,
@@ -1038,8 +1134,8 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tset_e302e20b6aef3eb0",
-          "templateExerciseId": "tex_5eed93e3e3b3cdf3",
+          "id": "tset_d854b90b64502cb3",
+          "templateExerciseId": "tex_5eed92e3e3b3cc40",
           "setIndex": 2,
           "role": "NORMAL",
           "targetWeightGrams": 30000,
@@ -1260,7 +1356,7 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tex_5eed93e3e3b3cdf3",
+          "id": "tex_5eed92e3e3b3cc40",
           "templateId": "tpl_604d0d391e02a760",
           "exerciseId": "ex_99d2eab48e357913",
           "position": 1,
@@ -1579,8 +1675,56 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tset_e302e40b6aef4216",
-          "templateExerciseId": "tex_5eed93e3e3b3cdf3",
+          "id": "tset_c9a97a0b5cc1b34a",
+          "templateExerciseId": "tex_5eed94e3e3b3cfa6",
+          "setIndex": 5,
+          "role": "NORMAL",
+          "targetWeightGrams": 80000,
+          "targetAssistanceGrams": null,
+          "targetRepsMin": 8,
+          "targetRepsMax": 8,
+          "targetRepsCurrent": null,
+          "dropValueGrams": null,
+          "note": null,
+          "createdAt": 1790000000000,
+          "updatedAt": 1790000000000,
+          "deletedAt": null
+        },
+        {
+          "id": "tset_c9a97b0b5cc1b4fd",
+          "templateExerciseId": "tex_5eed94e3e3b3cfa6",
+          "setIndex": 6,
+          "role": "NORMAL",
+          "targetWeightGrams": 80000,
+          "targetAssistanceGrams": null,
+          "targetRepsMin": 8,
+          "targetRepsMax": 8,
+          "targetRepsCurrent": null,
+          "dropValueGrams": null,
+          "note": null,
+          "createdAt": 1790000000000,
+          "updatedAt": 1790000000000,
+          "deletedAt": null
+        },
+        {
+          "id": "tset_c9a96c0b5cc19b80",
+          "templateExerciseId": "tex_5eed94e3e3b3cfa6",
+          "setIndex": 7,
+          "role": "NORMAL",
+          "targetWeightGrams": 80000,
+          "targetAssistanceGrams": null,
+          "targetRepsMin": 8,
+          "targetRepsMax": 8,
+          "targetRepsCurrent": null,
+          "dropValueGrams": null,
+          "note": null,
+          "createdAt": 1790000000000,
+          "updatedAt": 1790000000000,
+          "deletedAt": null
+        },
+        {
+          "id": "tset_d854bb0b64503019",
+          "templateExerciseId": "tex_5eed92e3e3b3cc40",
           "setIndex": 0,
           "role": "NORMAL",
           "targetWeightGrams": 30000,
@@ -1595,8 +1739,8 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tset_e302e30b6aef4063",
-          "templateExerciseId": "tex_5eed93e3e3b3cdf3",
+          "id": "tset_d854b80b64502b00",
+          "templateExerciseId": "tex_5eed92e3e3b3cc40",
           "setIndex": 1,
           "role": "NORMAL",
           "targetWeightGrams": 30000,
@@ -1611,8 +1755,8 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tset_e302e20b6aef3eb0",
-          "templateExerciseId": "tex_5eed93e3e3b3cdf3",
+          "id": "tset_d854b90b64502cb3",
+          "templateExerciseId": "tex_5eed92e3e3b3cc40",
           "setIndex": 2,
           "role": "NORMAL",
           "targetWeightGrams": 30000,
@@ -1821,7 +1965,7 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tex_5eed93e3e3b3cdf3",
+          "id": "tex_5eed92e3e3b3cc40",
           "templateId": "tpl_604d0d391e02a760",
           "exerciseId": "ex_99d2eab48e357913",
           "position": 1,
@@ -2140,8 +2284,56 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tset_e302e40b6aef4216",
-          "templateExerciseId": "tex_5eed93e3e3b3cdf3",
+          "id": "tset_c9a97a0b5cc1b34a",
+          "templateExerciseId": "tex_5eed94e3e3b3cfa6",
+          "setIndex": 5,
+          "role": "NORMAL",
+          "targetWeightGrams": 80000,
+          "targetAssistanceGrams": null,
+          "targetRepsMin": 8,
+          "targetRepsMax": 8,
+          "targetRepsCurrent": null,
+          "dropValueGrams": null,
+          "note": null,
+          "createdAt": 1790000000000,
+          "updatedAt": 1790000000000,
+          "deletedAt": null
+        },
+        {
+          "id": "tset_c9a97b0b5cc1b4fd",
+          "templateExerciseId": "tex_5eed94e3e3b3cfa6",
+          "setIndex": 6,
+          "role": "NORMAL",
+          "targetWeightGrams": 80000,
+          "targetAssistanceGrams": null,
+          "targetRepsMin": 8,
+          "targetRepsMax": 8,
+          "targetRepsCurrent": null,
+          "dropValueGrams": null,
+          "note": null,
+          "createdAt": 1790000000000,
+          "updatedAt": 1790000000000,
+          "deletedAt": null
+        },
+        {
+          "id": "tset_c9a96c0b5cc19b80",
+          "templateExerciseId": "tex_5eed94e3e3b3cfa6",
+          "setIndex": 7,
+          "role": "NORMAL",
+          "targetWeightGrams": 80000,
+          "targetAssistanceGrams": null,
+          "targetRepsMin": 8,
+          "targetRepsMax": 8,
+          "targetRepsCurrent": null,
+          "dropValueGrams": null,
+          "note": null,
+          "createdAt": 1790000000000,
+          "updatedAt": 1790000000000,
+          "deletedAt": null
+        },
+        {
+          "id": "tset_d854bb0b64503019",
+          "templateExerciseId": "tex_5eed92e3e3b3cc40",
           "setIndex": 0,
           "role": "NORMAL",
           "targetWeightGrams": 30000,
@@ -2156,8 +2348,8 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tset_e302e30b6aef4063",
-          "templateExerciseId": "tex_5eed93e3e3b3cdf3",
+          "id": "tset_d854b80b64502b00",
+          "templateExerciseId": "tex_5eed92e3e3b3cc40",
           "setIndex": 1,
           "role": "NORMAL",
           "targetWeightGrams": 30000,
@@ -2172,8 +2364,8 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tset_e302e20b6aef3eb0",
-          "templateExerciseId": "tex_5eed93e3e3b3cdf3",
+          "id": "tset_d854b90b64502cb3",
+          "templateExerciseId": "tex_5eed92e3e3b3cc40",
           "setIndex": 2,
           "role": "NORMAL",
           "targetWeightGrams": 30000,
@@ -2399,7 +2591,7 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tex_5eed93e3e3b3cdf3",
+          "id": "tex_5eed92e3e3b3cc40",
           "templateId": "tpl_604d0d391e02a760",
           "exerciseId": "ex_99d2eab48e357913",
           "position": 1,
@@ -2718,8 +2910,56 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tset_e302e40b6aef4216",
-          "templateExerciseId": "tex_5eed93e3e3b3cdf3",
+          "id": "tset_c9a97a0b5cc1b34a",
+          "templateExerciseId": "tex_5eed94e3e3b3cfa6",
+          "setIndex": 5,
+          "role": "NORMAL",
+          "targetWeightGrams": 80000,
+          "targetAssistanceGrams": null,
+          "targetRepsMin": 8,
+          "targetRepsMax": 8,
+          "targetRepsCurrent": null,
+          "dropValueGrams": null,
+          "note": null,
+          "createdAt": 1790000000000,
+          "updatedAt": 1790000000000,
+          "deletedAt": null
+        },
+        {
+          "id": "tset_c9a97b0b5cc1b4fd",
+          "templateExerciseId": "tex_5eed94e3e3b3cfa6",
+          "setIndex": 6,
+          "role": "NORMAL",
+          "targetWeightGrams": 80000,
+          "targetAssistanceGrams": null,
+          "targetRepsMin": 8,
+          "targetRepsMax": 8,
+          "targetRepsCurrent": null,
+          "dropValueGrams": null,
+          "note": null,
+          "createdAt": 1790000000000,
+          "updatedAt": 1790000000000,
+          "deletedAt": null
+        },
+        {
+          "id": "tset_c9a96c0b5cc19b80",
+          "templateExerciseId": "tex_5eed94e3e3b3cfa6",
+          "setIndex": 7,
+          "role": "NORMAL",
+          "targetWeightGrams": 80000,
+          "targetAssistanceGrams": null,
+          "targetRepsMin": 8,
+          "targetRepsMax": 8,
+          "targetRepsCurrent": null,
+          "dropValueGrams": null,
+          "note": null,
+          "createdAt": 1790000000000,
+          "updatedAt": 1790000000000,
+          "deletedAt": null
+        },
+        {
+          "id": "tset_d854bb0b64503019",
+          "templateExerciseId": "tex_5eed92e3e3b3cc40",
           "setIndex": 0,
           "role": "NORMAL",
           "targetWeightGrams": 30000,
@@ -2734,8 +2974,8 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tset_e302e30b6aef4063",
-          "templateExerciseId": "tex_5eed93e3e3b3cdf3",
+          "id": "tset_d854b80b64502b00",
+          "templateExerciseId": "tex_5eed92e3e3b3cc40",
           "setIndex": 1,
           "role": "NORMAL",
           "targetWeightGrams": 30000,
@@ -2750,8 +2990,8 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tset_e302e20b6aef3eb0",
-          "templateExerciseId": "tex_5eed93e3e3b3cdf3",
+          "id": "tset_d854b90b64502cb3",
+          "templateExerciseId": "tex_5eed92e3e3b3cc40",
           "setIndex": 2,
           "role": "NORMAL",
           "targetWeightGrams": 30000,
@@ -2960,7 +3200,7 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tex_5eed93e3e3b3cdf3",
+          "id": "tex_5eed92e3e3b3cc40",
           "templateId": "tpl_604d0d391e02a760",
           "exerciseId": "ex_99d2eab48e357913",
           "position": 1,
@@ -3279,8 +3519,56 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tset_e302e40b6aef4216",
-          "templateExerciseId": "tex_5eed93e3e3b3cdf3",
+          "id": "tset_c9a97a0b5cc1b34a",
+          "templateExerciseId": "tex_5eed94e3e3b3cfa6",
+          "setIndex": 5,
+          "role": "NORMAL",
+          "targetWeightGrams": 80000,
+          "targetAssistanceGrams": null,
+          "targetRepsMin": 8,
+          "targetRepsMax": 8,
+          "targetRepsCurrent": null,
+          "dropValueGrams": null,
+          "note": null,
+          "createdAt": 1790000000000,
+          "updatedAt": 1790000000000,
+          "deletedAt": null
+        },
+        {
+          "id": "tset_c9a97b0b5cc1b4fd",
+          "templateExerciseId": "tex_5eed94e3e3b3cfa6",
+          "setIndex": 6,
+          "role": "NORMAL",
+          "targetWeightGrams": 80000,
+          "targetAssistanceGrams": null,
+          "targetRepsMin": 8,
+          "targetRepsMax": 8,
+          "targetRepsCurrent": null,
+          "dropValueGrams": null,
+          "note": null,
+          "createdAt": 1790000000000,
+          "updatedAt": 1790000000000,
+          "deletedAt": null
+        },
+        {
+          "id": "tset_c9a96c0b5cc19b80",
+          "templateExerciseId": "tex_5eed94e3e3b3cfa6",
+          "setIndex": 7,
+          "role": "NORMAL",
+          "targetWeightGrams": 80000,
+          "targetAssistanceGrams": null,
+          "targetRepsMin": 8,
+          "targetRepsMax": 8,
+          "targetRepsCurrent": null,
+          "dropValueGrams": null,
+          "note": null,
+          "createdAt": 1790000000000,
+          "updatedAt": 1790000000000,
+          "deletedAt": null
+        },
+        {
+          "id": "tset_d854bb0b64503019",
+          "templateExerciseId": "tex_5eed92e3e3b3cc40",
           "setIndex": 0,
           "role": "NORMAL",
           "targetWeightGrams": 30000,
@@ -3295,8 +3583,8 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tset_e302e30b6aef4063",
-          "templateExerciseId": "tex_5eed93e3e3b3cdf3",
+          "id": "tset_d854b80b64502b00",
+          "templateExerciseId": "tex_5eed92e3e3b3cc40",
           "setIndex": 1,
           "role": "NORMAL",
           "targetWeightGrams": 30000,
@@ -3311,8 +3599,8 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tset_e302e20b6aef3eb0",
-          "templateExerciseId": "tex_5eed93e3e3b3cdf3",
+          "id": "tset_d854b90b64502cb3",
+          "templateExerciseId": "tex_5eed92e3e3b3cc40",
           "setIndex": 2,
           "role": "NORMAL",
           "targetWeightGrams": 30000,
@@ -3533,7 +3821,7 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tex_5eed93e3e3b3cdf3",
+          "id": "tex_5eed92e3e3b3cc40",
           "templateId": "tpl_604d0d391e02a760",
           "exerciseId": "ex_99d2eab48e357913",
           "position": 1,
@@ -3852,8 +4140,56 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tset_e302e40b6aef4216",
-          "templateExerciseId": "tex_5eed93e3e3b3cdf3",
+          "id": "tset_c9a97a0b5cc1b34a",
+          "templateExerciseId": "tex_5eed94e3e3b3cfa6",
+          "setIndex": 5,
+          "role": "NORMAL",
+          "targetWeightGrams": 80000,
+          "targetAssistanceGrams": null,
+          "targetRepsMin": 8,
+          "targetRepsMax": 8,
+          "targetRepsCurrent": null,
+          "dropValueGrams": null,
+          "note": null,
+          "createdAt": 1790000000000,
+          "updatedAt": 1790000000000,
+          "deletedAt": null
+        },
+        {
+          "id": "tset_c9a97b0b5cc1b4fd",
+          "templateExerciseId": "tex_5eed94e3e3b3cfa6",
+          "setIndex": 6,
+          "role": "NORMAL",
+          "targetWeightGrams": 80000,
+          "targetAssistanceGrams": null,
+          "targetRepsMin": 8,
+          "targetRepsMax": 8,
+          "targetRepsCurrent": null,
+          "dropValueGrams": null,
+          "note": null,
+          "createdAt": 1790000000000,
+          "updatedAt": 1790000000000,
+          "deletedAt": null
+        },
+        {
+          "id": "tset_c9a96c0b5cc19b80",
+          "templateExerciseId": "tex_5eed94e3e3b3cfa6",
+          "setIndex": 7,
+          "role": "NORMAL",
+          "targetWeightGrams": 80000,
+          "targetAssistanceGrams": null,
+          "targetRepsMin": 8,
+          "targetRepsMax": 8,
+          "targetRepsCurrent": null,
+          "dropValueGrams": null,
+          "note": null,
+          "createdAt": 1790000000000,
+          "updatedAt": 1790000000000,
+          "deletedAt": null
+        },
+        {
+          "id": "tset_d854bb0b64503019",
+          "templateExerciseId": "tex_5eed92e3e3b3cc40",
           "setIndex": 0,
           "role": "NORMAL",
           "targetWeightGrams": 30000,
@@ -3868,8 +4204,8 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tset_e302e30b6aef4063",
-          "templateExerciseId": "tex_5eed93e3e3b3cdf3",
+          "id": "tset_d854b80b64502b00",
+          "templateExerciseId": "tex_5eed92e3e3b3cc40",
           "setIndex": 1,
           "role": "NORMAL",
           "targetWeightGrams": 30000,
@@ -3884,8 +4220,8 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tset_e302e20b6aef3eb0",
-          "templateExerciseId": "tex_5eed93e3e3b3cdf3",
+          "id": "tset_d854b90b64502cb3",
+          "templateExerciseId": "tex_5eed92e3e3b3cc40",
           "setIndex": 2,
           "role": "NORMAL",
           "targetWeightGrams": 30000,
@@ -4063,7 +4399,7 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tex_5eed93e3e3b3cdf3",
+          "id": "tex_5eed92e3e3b3cc40",
           "templateId": "tpl_604d0d391e02a760",
           "exerciseId": "ex_99d2eab48e357913",
           "position": 1,
@@ -4382,8 +4718,56 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tset_e302e40b6aef4216",
-          "templateExerciseId": "tex_5eed93e3e3b3cdf3",
+          "id": "tset_c9a97a0b5cc1b34a",
+          "templateExerciseId": "tex_5eed94e3e3b3cfa6",
+          "setIndex": 5,
+          "role": "NORMAL",
+          "targetWeightGrams": 80000,
+          "targetAssistanceGrams": null,
+          "targetRepsMin": 8,
+          "targetRepsMax": 8,
+          "targetRepsCurrent": null,
+          "dropValueGrams": null,
+          "note": null,
+          "createdAt": 1790000000000,
+          "updatedAt": 1790000000000,
+          "deletedAt": null
+        },
+        {
+          "id": "tset_c9a97b0b5cc1b4fd",
+          "templateExerciseId": "tex_5eed94e3e3b3cfa6",
+          "setIndex": 6,
+          "role": "NORMAL",
+          "targetWeightGrams": 80000,
+          "targetAssistanceGrams": null,
+          "targetRepsMin": 8,
+          "targetRepsMax": 8,
+          "targetRepsCurrent": null,
+          "dropValueGrams": null,
+          "note": null,
+          "createdAt": 1790000000000,
+          "updatedAt": 1790000000000,
+          "deletedAt": null
+        },
+        {
+          "id": "tset_c9a96c0b5cc19b80",
+          "templateExerciseId": "tex_5eed94e3e3b3cfa6",
+          "setIndex": 7,
+          "role": "NORMAL",
+          "targetWeightGrams": 80000,
+          "targetAssistanceGrams": null,
+          "targetRepsMin": 8,
+          "targetRepsMax": 8,
+          "targetRepsCurrent": null,
+          "dropValueGrams": null,
+          "note": null,
+          "createdAt": 1790000000000,
+          "updatedAt": 1790000000000,
+          "deletedAt": null
+        },
+        {
+          "id": "tset_d854bb0b64503019",
+          "templateExerciseId": "tex_5eed92e3e3b3cc40",
           "setIndex": 0,
           "role": "NORMAL",
           "targetWeightGrams": 30000,
@@ -4398,8 +4782,8 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tset_e302e30b6aef4063",
-          "templateExerciseId": "tex_5eed93e3e3b3cdf3",
+          "id": "tset_d854b80b64502b00",
+          "templateExerciseId": "tex_5eed92e3e3b3cc40",
           "setIndex": 1,
           "role": "NORMAL",
           "targetWeightGrams": 30000,
@@ -4414,8 +4798,8 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tset_e302e20b6aef3eb0",
-          "templateExerciseId": "tex_5eed93e3e3b3cdf3",
+          "id": "tset_d854b90b64502cb3",
+          "templateExerciseId": "tex_5eed92e3e3b3cc40",
           "setIndex": 2,
           "role": "NORMAL",
           "targetWeightGrams": 30000,
@@ -4642,7 +5026,7 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tex_5eed93e3e3b3cdf3",
+          "id": "tex_5eed92e3e3b3cc40",
           "templateId": "tpl_604d0d391e02a760",
           "exerciseId": "ex_99d2eab48e357913",
           "position": 1,
@@ -4961,8 +5345,56 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tset_e302e40b6aef4216",
-          "templateExerciseId": "tex_5eed93e3e3b3cdf3",
+          "id": "tset_c9a97a0b5cc1b34a",
+          "templateExerciseId": "tex_5eed94e3e3b3cfa6",
+          "setIndex": 5,
+          "role": "NORMAL",
+          "targetWeightGrams": 80000,
+          "targetAssistanceGrams": null,
+          "targetRepsMin": 8,
+          "targetRepsMax": 8,
+          "targetRepsCurrent": null,
+          "dropValueGrams": null,
+          "note": null,
+          "createdAt": 1790000000000,
+          "updatedAt": 1790000000000,
+          "deletedAt": null
+        },
+        {
+          "id": "tset_c9a97b0b5cc1b4fd",
+          "templateExerciseId": "tex_5eed94e3e3b3cfa6",
+          "setIndex": 6,
+          "role": "NORMAL",
+          "targetWeightGrams": 80000,
+          "targetAssistanceGrams": null,
+          "targetRepsMin": 8,
+          "targetRepsMax": 8,
+          "targetRepsCurrent": null,
+          "dropValueGrams": null,
+          "note": null,
+          "createdAt": 1790000000000,
+          "updatedAt": 1790000000000,
+          "deletedAt": null
+        },
+        {
+          "id": "tset_c9a96c0b5cc19b80",
+          "templateExerciseId": "tex_5eed94e3e3b3cfa6",
+          "setIndex": 7,
+          "role": "NORMAL",
+          "targetWeightGrams": 80000,
+          "targetAssistanceGrams": null,
+          "targetRepsMin": 8,
+          "targetRepsMax": 8,
+          "targetRepsCurrent": null,
+          "dropValueGrams": null,
+          "note": null,
+          "createdAt": 1790000000000,
+          "updatedAt": 1790000000000,
+          "deletedAt": null
+        },
+        {
+          "id": "tset_d854bb0b64503019",
+          "templateExerciseId": "tex_5eed92e3e3b3cc40",
           "setIndex": 0,
           "role": "NORMAL",
           "targetWeightGrams": 30000,
@@ -4977,8 +5409,8 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tset_e302e30b6aef4063",
-          "templateExerciseId": "tex_5eed93e3e3b3cdf3",
+          "id": "tset_d854b80b64502b00",
+          "templateExerciseId": "tex_5eed92e3e3b3cc40",
           "setIndex": 1,
           "role": "NORMAL",
           "targetWeightGrams": 30000,
@@ -4993,8 +5425,8 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tset_e302e20b6aef3eb0",
-          "templateExerciseId": "tex_5eed93e3e3b3cdf3",
+          "id": "tset_d854b90b64502cb3",
+          "templateExerciseId": "tex_5eed92e3e3b3cc40",
           "setIndex": 2,
           "role": "NORMAL",
           "targetWeightGrams": 30000,
@@ -5203,7 +5635,7 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tex_5eed93e3e3b3cdf3",
+          "id": "tex_5eed92e3e3b3cc40",
           "templateId": "tpl_604d0d391e02a760",
           "exerciseId": "ex_99d2eab48e357913",
           "position": 1,
@@ -5522,8 +5954,56 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tset_e302e40b6aef4216",
-          "templateExerciseId": "tex_5eed93e3e3b3cdf3",
+          "id": "tset_c9a97a0b5cc1b34a",
+          "templateExerciseId": "tex_5eed94e3e3b3cfa6",
+          "setIndex": 5,
+          "role": "NORMAL",
+          "targetWeightGrams": 80000,
+          "targetAssistanceGrams": null,
+          "targetRepsMin": 8,
+          "targetRepsMax": 8,
+          "targetRepsCurrent": null,
+          "dropValueGrams": null,
+          "note": null,
+          "createdAt": 1790000000000,
+          "updatedAt": 1790000000000,
+          "deletedAt": null
+        },
+        {
+          "id": "tset_c9a97b0b5cc1b4fd",
+          "templateExerciseId": "tex_5eed94e3e3b3cfa6",
+          "setIndex": 6,
+          "role": "NORMAL",
+          "targetWeightGrams": 80000,
+          "targetAssistanceGrams": null,
+          "targetRepsMin": 8,
+          "targetRepsMax": 8,
+          "targetRepsCurrent": null,
+          "dropValueGrams": null,
+          "note": null,
+          "createdAt": 1790000000000,
+          "updatedAt": 1790000000000,
+          "deletedAt": null
+        },
+        {
+          "id": "tset_c9a96c0b5cc19b80",
+          "templateExerciseId": "tex_5eed94e3e3b3cfa6",
+          "setIndex": 7,
+          "role": "NORMAL",
+          "targetWeightGrams": 80000,
+          "targetAssistanceGrams": null,
+          "targetRepsMin": 8,
+          "targetRepsMax": 8,
+          "targetRepsCurrent": null,
+          "dropValueGrams": null,
+          "note": null,
+          "createdAt": 1790000000000,
+          "updatedAt": 1790000000000,
+          "deletedAt": null
+        },
+        {
+          "id": "tset_d854bb0b64503019",
+          "templateExerciseId": "tex_5eed92e3e3b3cc40",
           "setIndex": 0,
           "role": "NORMAL",
           "targetWeightGrams": 30000,
@@ -5538,8 +6018,8 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tset_e302e30b6aef4063",
-          "templateExerciseId": "tex_5eed93e3e3b3cdf3",
+          "id": "tset_d854b80b64502b00",
+          "templateExerciseId": "tex_5eed92e3e3b3cc40",
           "setIndex": 1,
           "role": "NORMAL",
           "targetWeightGrams": 30000,
@@ -5554,8 +6034,8 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tset_e302e20b6aef3eb0",
-          "templateExerciseId": "tex_5eed93e3e3b3cdf3",
+          "id": "tset_d854b90b64502cb3",
+          "templateExerciseId": "tex_5eed92e3e3b3cc40",
           "setIndex": 2,
           "role": "NORMAL",
           "targetWeightGrams": 30000,
@@ -5792,7 +6272,7 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tex_5eed93e3e3b3cdf3",
+          "id": "tex_5eed92e3e3b3cc40",
           "templateId": "tpl_604d0d391e02a760",
           "exerciseId": "ex_99d2eab48e357913",
           "position": 1,
@@ -6111,8 +6591,56 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tset_e302e40b6aef4216",
-          "templateExerciseId": "tex_5eed93e3e3b3cdf3",
+          "id": "tset_c9a97a0b5cc1b34a",
+          "templateExerciseId": "tex_5eed94e3e3b3cfa6",
+          "setIndex": 5,
+          "role": "NORMAL",
+          "targetWeightGrams": 80000,
+          "targetAssistanceGrams": null,
+          "targetRepsMin": 8,
+          "targetRepsMax": 8,
+          "targetRepsCurrent": null,
+          "dropValueGrams": null,
+          "note": null,
+          "createdAt": 1790000000000,
+          "updatedAt": 1790000000000,
+          "deletedAt": null
+        },
+        {
+          "id": "tset_c9a97b0b5cc1b4fd",
+          "templateExerciseId": "tex_5eed94e3e3b3cfa6",
+          "setIndex": 6,
+          "role": "NORMAL",
+          "targetWeightGrams": 80000,
+          "targetAssistanceGrams": null,
+          "targetRepsMin": 8,
+          "targetRepsMax": 8,
+          "targetRepsCurrent": null,
+          "dropValueGrams": null,
+          "note": null,
+          "createdAt": 1790000000000,
+          "updatedAt": 1790000000000,
+          "deletedAt": null
+        },
+        {
+          "id": "tset_c9a96c0b5cc19b80",
+          "templateExerciseId": "tex_5eed94e3e3b3cfa6",
+          "setIndex": 7,
+          "role": "NORMAL",
+          "targetWeightGrams": 80000,
+          "targetAssistanceGrams": null,
+          "targetRepsMin": 8,
+          "targetRepsMax": 8,
+          "targetRepsCurrent": null,
+          "dropValueGrams": null,
+          "note": null,
+          "createdAt": 1790000000000,
+          "updatedAt": 1790000000000,
+          "deletedAt": null
+        },
+        {
+          "id": "tset_d854bb0b64503019",
+          "templateExerciseId": "tex_5eed92e3e3b3cc40",
           "setIndex": 0,
           "role": "NORMAL",
           "targetWeightGrams": 30000,
@@ -6127,8 +6655,8 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tset_e302e30b6aef4063",
-          "templateExerciseId": "tex_5eed93e3e3b3cdf3",
+          "id": "tset_d854b80b64502b00",
+          "templateExerciseId": "tex_5eed92e3e3b3cc40",
           "setIndex": 1,
           "role": "NORMAL",
           "targetWeightGrams": 30000,
@@ -6143,8 +6671,8 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tset_e302e20b6aef3eb0",
-          "templateExerciseId": "tex_5eed93e3e3b3cdf3",
+          "id": "tset_d854b90b64502cb3",
+          "templateExerciseId": "tex_5eed92e3e3b3cc40",
           "setIndex": 2,
           "role": "NORMAL",
           "targetWeightGrams": 30000,
@@ -6345,7 +6873,7 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tex_5eed93e3e3b3cdf3",
+          "id": "tex_5eed92e3e3b3cc40",
           "templateId": "tpl_604d0d391e02a760",
           "exerciseId": "ex_99d2eab48e357913",
           "position": 1,
@@ -6664,8 +7192,56 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tset_e302e40b6aef4216",
-          "templateExerciseId": "tex_5eed93e3e3b3cdf3",
+          "id": "tset_c9a97a0b5cc1b34a",
+          "templateExerciseId": "tex_5eed94e3e3b3cfa6",
+          "setIndex": 5,
+          "role": "NORMAL",
+          "targetWeightGrams": 80000,
+          "targetAssistanceGrams": null,
+          "targetRepsMin": 8,
+          "targetRepsMax": 8,
+          "targetRepsCurrent": null,
+          "dropValueGrams": null,
+          "note": null,
+          "createdAt": 1790000000000,
+          "updatedAt": 1790000000000,
+          "deletedAt": null
+        },
+        {
+          "id": "tset_c9a97b0b5cc1b4fd",
+          "templateExerciseId": "tex_5eed94e3e3b3cfa6",
+          "setIndex": 6,
+          "role": "NORMAL",
+          "targetWeightGrams": 80000,
+          "targetAssistanceGrams": null,
+          "targetRepsMin": 8,
+          "targetRepsMax": 8,
+          "targetRepsCurrent": null,
+          "dropValueGrams": null,
+          "note": null,
+          "createdAt": 1790000000000,
+          "updatedAt": 1790000000000,
+          "deletedAt": null
+        },
+        {
+          "id": "tset_c9a96c0b5cc19b80",
+          "templateExerciseId": "tex_5eed94e3e3b3cfa6",
+          "setIndex": 7,
+          "role": "NORMAL",
+          "targetWeightGrams": 80000,
+          "targetAssistanceGrams": null,
+          "targetRepsMin": 8,
+          "targetRepsMax": 8,
+          "targetRepsCurrent": null,
+          "dropValueGrams": null,
+          "note": null,
+          "createdAt": 1790000000000,
+          "updatedAt": 1790000000000,
+          "deletedAt": null
+        },
+        {
+          "id": "tset_d854bb0b64503019",
+          "templateExerciseId": "tex_5eed92e3e3b3cc40",
           "setIndex": 0,
           "role": "NORMAL",
           "targetWeightGrams": 30000,
@@ -6680,8 +7256,8 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tset_e302e30b6aef4063",
-          "templateExerciseId": "tex_5eed93e3e3b3cdf3",
+          "id": "tset_d854b80b64502b00",
+          "templateExerciseId": "tex_5eed92e3e3b3cc40",
           "setIndex": 1,
           "role": "NORMAL",
           "targetWeightGrams": 30000,
@@ -6696,8 +7272,8 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         },
         {
-          "id": "tset_e302e20b6aef3eb0",
-          "templateExerciseId": "tex_5eed93e3e3b3cdf3",
+          "id": "tset_d854b90b64502cb3",
+          "templateExerciseId": "tex_5eed92e3e3b3cc40",
           "setIndex": 2,
           "role": "NORMAL",
           "targetWeightGrams": 30000,
