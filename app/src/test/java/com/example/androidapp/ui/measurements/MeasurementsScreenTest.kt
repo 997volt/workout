@@ -719,6 +719,17 @@ class MeasurementsScreenTest {
     }
 
     @Test
+    fun aTypedZero_isNotAWeightTheFormCanSave() {
+        // B336: zero is a legal *load* and not a body, so the field states nothing and the entry stays unsaveable
+        // while it is the only number typed — the row a zero used to write is one the trend must not fit.
+        setScreen()
+        startAdding(MeasurementKind.DAILY)
+
+        composeTestRule.onNodeWithTag(TestTags.Measurements.WEIGHT).performTextInput("0")
+        composeTestRule.onNodeWithTag(TestTags.Measurements.CONFIRM).assertIsNotEnabled()
+    }
+
+    @Test
     fun aSorenessOnlyMorning_canBeSaved() {
         // The rule the split exists for (N113): the weight stopped being the one thing an entry cannot
         // be without, because a rest day reporting sore muscles is exactly what the record is for.

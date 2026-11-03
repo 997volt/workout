@@ -8,6 +8,7 @@ import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.model.BodyMeasurement
+import com.example.androidapp.domain.model.LatestWeight
 import com.example.androidapp.domain.model.MeasurementKind
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.SoreMuscle
@@ -411,6 +412,18 @@ class MeasurementRepositoryTest {
         val stored = repository.observeAll().first().single()
         assertEquals(75_000L, stored.weightGrams)
         assertEquals(MeasurementKind.DAILY, stored.kind)
+    }
+
+    @Test
+    fun theLatestWeight_skipsAZeroTheStoreStillHolds() = runTest {
+        // B336: an older build let a typed "0" be saved. It states no weight, so a bodyweight set loads the
+        // newest *stated* one — a zero answered here would put 0 kg under every bodyweight set the app loads.
+        val yesterday = localHour(8).minusSeconds(86_400L)
+        repository.save(entry(at = yesterday, weightGrams = 82_000L))
+        repository.save(entry(at = localHour(8), weightGrams = 0L))
+
+        val latest = repository.latestWeight() as DataResult.Success<LatestWeight?>
+        assertEquals("the newest weight, not the newest row", 82_000L, latest.data?.grams)
     }
 
     private fun entry(

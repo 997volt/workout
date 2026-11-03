@@ -456,6 +456,21 @@ class MeasurementsViewModelTest {
     }
 
     @Test
+    fun aStoredZeroWeight_isNotAWeighIn() = runTest(dispatcher) {
+        // B336: an older build let a typed "0" be saved. It states no weight, so the save asks the trend nothing
+        // — and the row is not a reading the verdict's series fits either.
+        val repository = FakeMeasurementRepository(MutableStateFlow(weighIns()))
+        val viewModel = viewModelOf(repository, settingsFor(WeightGoalKind.LOSE))
+        backgroundScope.launch(dispatcher) { viewModel.uiState.collect {} }
+        advanceUntilIdle()
+
+        viewModel.onSave(entry("m-zero", weight = 0L, at = LAST_DAY))
+        advanceUntilIdle()
+
+        assertNull("a zero is not a weigh-in", viewModel.rateVerdict.value)
+    }
+
+    @Test
     fun aMaintenanceGoal_isJudgedAgainstItsCorridor() = runTest(dispatcher) {
         val repository = FakeMeasurementRepository(MutableStateFlow(weighIns(baseGrams = 80_000L)))
         val viewModel = viewModelOf(

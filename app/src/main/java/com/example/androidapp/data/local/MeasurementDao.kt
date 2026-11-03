@@ -27,15 +27,18 @@ interface MeasurementDao {
     suspend fun allForExport(): List<MeasurementEntity>
 
     /**
-     * The most recent weight on record, or null when none was ever entered (ROADMAP N219).
+     * The most recent weight on record, or null when none was ever entered (ROADMAP N219, B336).
      *
      * One row and one column, because this is read on the logging path: a bodyweight set needs the weight
      * now, and loading a year of measurements to find the newest one would make logging wait on the tape.
+     *
+     * `> 0` because a stored zero is not a weight (B336): an older build accepted one, and answering it here
+     * would put 0 kg under every bodyweight set the app loads.
      */
     @Query(
         """
         SELECT weightGrams, measuredAt FROM measurements
-        WHERE weightGrams IS NOT NULL AND deletedAt IS NULL AND kind = 'DAILY'
+        WHERE weightGrams IS NOT NULL AND weightGrams > 0 AND deletedAt IS NULL AND kind = 'DAILY'
         ORDER BY measuredAt DESC
         LIMIT 1
         """,

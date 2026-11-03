@@ -1060,6 +1060,16 @@ the rule; that one argues it.
   `updatedAt` — an edit moves the latter without the day ever being re-entered.
   ([evidence](DECISIONS-EVIDENCE.md#b130-n132-n133))
 
+- **A zero is a legal load and not a body weight** (B336). `Weight.parseKilograms` takes `0` because a
+  bodyweight set adds nothing and the set editors cannot tell that from a typed nought; a *body* is the other
+  case, and this file already held the rule — *null is not zero*, and *a zero would read as a measurement of
+  nothing*. The two are told apart once, in `statedBodyWeightGrams`, and every reader goes through it: the
+  daily form states no weight for a typed zero, the weight series and the two derived masses do not read a
+  stored one, the goal history and the weigh-in verdict do not fit it, the details row does not print it, and
+  `latestWeight` will not load 0 kg under every bodyweight set. Rejected: refusing `0` in the parser, which
+  would make a bodyweight set untypeable, and refusing only at the form, which leaves every zero an older
+  build already wrote poisoning the fit.
+
 ## Programs
 
 - **A slot's row acts through one menu, and its template is read-only from there** (N72, extending

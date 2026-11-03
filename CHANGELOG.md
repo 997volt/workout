@@ -35,6 +35,13 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A zero weight is not a weigh-in** (B336). The daily form accepted a typed "0" as a body weight, because the
+  parser must accept it as a *load* — a bodyweight set adds nothing — and a nought states something. One such
+  row was fitted like any other: it dragged the weight trend by about the body weight across the window and
+  could make the unsolicited weigh-in verdict say something wild, and the newest weight on record became 0 kg
+  for every bodyweight set that loads one. A zero is now told apart from a weight once, where a body weight is
+  read: the form states no weight for it, the series and the derived masses ignore a stored one, and
+  `latestWeight` skips it.
 - **A maintenance weigh-in quotes its drift at a week's pace** (B335). The corridor verdict turned the fitted
   weight's distance outside the ±1 kg band into a bare 7,700 kcal a kilogram, so 390 g of water — an ordinary
   morning — read as "About 3,003 kcal a day more than you are eating now" on the measurements screen and again

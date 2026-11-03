@@ -179,6 +179,23 @@ class MetricSeriesTest {
     }
 
     @Test
+    fun aStoredZeroWeight_isNotAReadingTheTrendCanFit() {
+        // B336: an older build accepted "0" as a weigh-in. It states no weight, so it is not a moment of the
+        // weight series — a zero would drag the fitted trend by the body weight across the window — and it
+        // derives no mass either.
+        val zero = measurement(at = first, weight = 0L, bodyFat = 183, muscle = 421)
+        val real = measurement(at = second, weight = 82_400L)
+
+        assertThat(
+            metricSeries(MetricKey.Body(BodyMetric.WEIGHT), measurements = listOf(zero, real))
+                .readings.map { it.value }
+        ).isEqualTo(listOf(82_400.0))
+        assertThat(
+            metricSeries(MetricKey.Body(BodyMetric.FAT_MASS), measurements = listOf(zero)).readings
+        ).isEmpty()
+    }
+
+    @Test
     fun aTapeEntry_isNotAWeighIn() {
         // B221: every measurement row became a weight reading, so a tape day was a null point and the line
         // stopped and restarted there. A tape entry is not a moment of the weight series at all.

@@ -20,6 +20,7 @@ import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.model.BodyMeasurement
 import com.example.androidapp.domain.model.TapeSite
 import com.example.androidapp.domain.model.at
+import com.example.androidapp.domain.model.statedWeightGrams
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.history.HistoryFormat
@@ -92,7 +93,8 @@ internal fun MeasurementDetailsDialog(entry: BodyMeasurement, onDismiss: () -> U
 @Composable
 private fun measurementDetails(entry: BodyMeasurement): List<Pair<String, String>> {
     val details = mutableListOf<Pair<String, String>>()
-    entry.weightGrams?.let {
+    // A stored zero is no weight (B336), so it is not a row of the details either.
+    entry.statedWeightGrams?.let {
         details += stringResource(R.string.measurements_weight) to Weight.kilograms(it)
     }
     entry.bodyFatTenths?.let {

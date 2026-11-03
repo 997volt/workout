@@ -9,6 +9,7 @@ import com.example.androidapp.domain.model.BodyMeasurement
 import com.example.androidapp.domain.model.MeasurementKind
 import com.example.androidapp.domain.model.WeightGoal
 import com.example.androidapp.domain.model.isDailyOn
+import com.example.androidapp.domain.model.statedWeightGrams
 import com.example.androidapp.domain.repository.GoalPeriod
 import com.example.androidapp.domain.repository.GoalRepository
 import com.example.androidapp.domain.repository.MeasurementRepository
@@ -107,10 +108,11 @@ class MeasurementsViewModel @Inject constructor(
         goals.observePeriods(WEIGHT_METRIC_ID),
     ) { entries, current, periods ->
         // The readings the goal is read against: every recorded weight, oldest first, whatever the list shows
-        // (B141's whole-series rule, which the goal history shares).
+        // (B141's whole-series rule, which the goal history shares). A stored zero is no weight (B336), so it is
+        // not a reading the goal is judged on.
         val readings = entries
             .mapNotNull { entry ->
-                entry.weightGrams?.let { grams -> MetricReading(entry.measuredAt, grams.toDouble()) }
+                entry.statedWeightGrams?.let { grams -> MetricReading(entry.measuredAt, grams.toDouble()) }
             }
             .sortedBy { it.at }
         MeasurementsUiState(
@@ -196,12 +198,13 @@ class MeasurementsViewModel @Inject constructor(
      * is what keeps the line from firing on water weight.
      */
     private suspend fun verdictFor(measurement: BodyMeasurement): EnergyAdjustment? {
-        if (measurement.kind != MeasurementKind.DAILY || measurement.weightGrams == null) return null
+        // A zero is not a weigh-in (B336): the save states no weight, so it is not a question the trend can answer.
+        if (measurement.kind != MeasurementKind.DAILY || measurement.statedWeightGrams == null) return null
         val series = MetricSeries(
             key = MetricKey.Body(BodyMetric.WEIGHT),
             readings = repository.observeAll().first()
                 .mapNotNull { entry ->
-                    entry.weightGrams?.let { grams -> MetricReading(entry.measuredAt, grams.toDouble()) }
+                    entry.statedWeightGrams?.let { grams -> MetricReading(entry.measuredAt, grams.toDouble()) }
                 }
                 .sortedBy { it.at },
         )

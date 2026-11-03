@@ -137,15 +137,30 @@ fun BodyMeasurement.isDailyOn(day: LocalDate, zone: ZoneId): Boolean =
     kind == MeasurementKind.DAILY && measuredAt.localDay(zone) == day
 
 /**
+ * The grams a body weight states, or null when it states none (B336).
+ *
+ * A body weight is a **positive** number of grams, which is this file's own rule — *null is not zero*, and *a
+ * zero would read as a measurement of nothing*. Zero stays a legal **load** (a bodyweight set adds 0 kg), so
+ * the parser the set editors share must keep accepting it and the two cases are told apart here: the daily form
+ * refuses to write a zero through this function, and a store that already carries one — an older build accepted
+ * it — reads it as no weight, so it is not drawn, not fitted, and cannot fire the weigh-in verdict.
+ */
+fun statedBodyWeightGrams(weightGrams: Long?): Long? = weightGrams?.takeIf { it > 0 }
+
+/** The weight this entry states, or null for a row that states none (B336). */
+val BodyMeasurement.statedWeightGrams: Long? get() = statedBodyWeightGrams(weightGrams)
+
+/**
  * Whether this entry states any of its own numbers (ROADMAP N113).
  *
  * The rule that enables *Save*: the weight used to be the one thing an entry could not be without, and
  * splitting the record took that away — a soreness-only morning is a real entry, so a form cannot
- * demand a weight it was not given. What it can refuse is an entry that states nothing at all.
+ * demand a weight it was not given. What it can refuse is an entry that states nothing at all — and a typed
+ * zero is not a weight, so it does not state one (B336).
  */
 fun BodyMeasurement.statesSomething(): Boolean = when (kind) {
     MeasurementKind.DAILY ->
-        weightGrams != null || bodyFatTenths != null || muscleTenths != null || soreMuscles.isNotEmpty()
+        statedWeightGrams != null || bodyFatTenths != null || muscleTenths != null || soreMuscles.isNotEmpty()
 
     MeasurementKind.TAPE -> tape.isNotEmpty()
 }

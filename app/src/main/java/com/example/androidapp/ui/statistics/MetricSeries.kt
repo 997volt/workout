@@ -5,6 +5,7 @@ import com.example.androidapp.domain.model.ExerciseTrendPoint
 import com.example.androidapp.domain.model.TrendPoint
 import com.example.androidapp.domain.model.at
 import com.example.androidapp.domain.model.jointPainAt
+import com.example.androidapp.domain.model.statedWeightGrams
 import java.time.Instant
 
 /**
@@ -83,26 +84,28 @@ fun metricSeries(
 /** What a body metric reads from an entry, in the units the registry formats (ROADMAP N32, N113, N265). */
 private fun bodyValue(metric: BodyMetric, measurement: BodyMeasurement): Double? = when (metric) {
     // A daily entry may state no weight at all (N113), and a tape entry never does: null here means the entry
-    // is not a moment of this series, so [metricSeries] leaves it out rather than breaking the line on it.
-    BodyMetric.WEIGHT -> measurement.weightGrams?.toDouble()
+    // is not a moment of this series, so [metricSeries] leaves it out rather than breaking the line on it. A
+    // stored zero is not a weight either (B336), which is what [statedWeightGrams] answers.
+    BodyMetric.WEIGHT -> measurement.statedWeightGrams?.toDouble()
     BodyMetric.BODY_FAT -> measurement.bodyFatTenths?.toDouble()
     BodyMetric.MUSCLE -> measurement.muscleTenths?.toDouble()
     // N265: a derived metric is **the lifter's own arithmetic restated**, never a new measurement — the
     // percentage the day states, applied to the weight it states beside it. Nothing is stored for it, so nothing
     // can disagree with the row it came from.
-    BodyMetric.FAT_MASS -> massFrom(measurement.weightGrams, measurement.bodyFatTenths)
-    BodyMetric.MUSCLE_MASS -> massFrom(measurement.weightGrams, measurement.muscleTenths)
+    BodyMetric.FAT_MASS -> massFrom(measurement.statedWeightGrams, measurement.bodyFatTenths)
+    BodyMetric.MUSCLE_MASS -> massFrom(measurement.statedWeightGrams, measurement.muscleTenths)
 }
 
 /**
  * Grams of the body a stored percentage covers, or null when the day did not state both halves (N265).
  *
  * The percentages are in tenths, so a hundred percent is [TENTHS_PER_WHOLE] of them: the weight in grams times
- * the tenths over that is grams of the tissue, which is the unit every other mass in the app is stored in.
+ * the tenths over that is grams of the tissue, which is the unit every other mass in the app is stored in. The
+ * weight arrives already filtered to a stated one (B336), so a zero cannot derive a zero.
  */
-private fun massFrom(weightGrams: Long?, tenths: Int?): Double? =
+private fun massFrom(statedWeightGrams: Long?, tenths: Int?): Double? =
     tenths?.let { percentage ->
-        weightGrams?.let { grams -> grams.toDouble() * percentage / TENTHS_PER_WHOLE }
+        statedWeightGrams?.let { grams -> grams.toDouble() * percentage / TENTHS_PER_WHOLE }
     }
 
 /** A hundred percent, in the tenths a body-fat or muscle reading is stored in (N265). */

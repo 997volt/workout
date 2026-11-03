@@ -61,6 +61,8 @@ import com.example.androidapp.domain.model.SoreMuscle
 import com.example.androidapp.domain.model.TapeSite
 import com.example.androidapp.domain.model.WeightGoal
 import com.example.androidapp.domain.model.at
+import com.example.androidapp.domain.model.statedBodyWeightGrams
+import com.example.androidapp.domain.model.statedWeightGrams
 import com.example.androidapp.domain.model.statesSomething
 import com.example.androidapp.ui.components.AppCard
 import com.example.androidapp.ui.components.AppTextButton
@@ -526,8 +528,9 @@ private val LIST_FOOT_CLEARANCE = 88.dp
 @Composable
 private fun summary(entry: BodyMeasurement): String {
     val parts = mutableListOf(stringResource(kindLabel(entry.kind)))
-    // The weight is the one number that may be absent, because a soreness-only morning is a real entry.
-    entry.weightGrams?.let { parts += Weight.kilograms(it) }
+    // The weight is the one number that may be absent, because a soreness-only morning is a real entry — and a
+    // stored zero states none either (B336), so the rule that hides it from the chart hides it here.
+    entry.statedWeightGrams?.let { parts += Weight.kilograms(it) }
     entry.bodyFatTenths?.let { parts += MeasurementFormat.percent(it) }
     entry.muscleTenths?.let { parts += MeasurementFormat.percent(it) }
     TapeSite.entries.forEach { site -> entry.at(site)?.let { parts += MeasurementFormat.centimetres(it) } }
@@ -564,7 +567,11 @@ private fun MeasurementDialog(
     /** The entry being corrected, or null when this adds one. */
     initial: BodyMeasurement? = null,
 ) {
-    var weight by remember { mutableStateOf(initial?.weightGrams?.let { Weight.kilograms(it) }.orEmpty()) }
+    // A typed zero is not a body weight, and the form refuses to write one (B336): the field states nothing, so
+    // a zero alone leaves *Save* disabled and a zero beside other numbers is one fewer thing stated.
+    var weight by remember {
+        mutableStateOf(initial?.statedWeightGrams?.let { Weight.kilograms(it) }.orEmpty())
+    }
     var bodyFat by remember { mutableStateOf(initial?.bodyFatTenths?.let { MeasurementFormat.percent(it) }.orEmpty()) }
     var muscle by remember { mutableStateOf(initial?.muscleTenths?.let { MeasurementFormat.percent(it) }.orEmpty()) }
     var tape by remember { mutableStateOf(MeasurementFormat.tape(initial?.tape.orEmpty())) }
@@ -586,7 +593,7 @@ private fun MeasurementDialog(
         id = initial?.id.orEmpty(),
         measuredAt = dayState.measuredAt,
         kind = kind,
-        weightGrams = Weight.parseKilograms(weight),
+        weightGrams = statedBodyWeightGrams(Weight.parseKilograms(weight)),
         bodyFatTenths = tenths(bodyFat),
         muscleTenths = tenths(muscle),
         tape = tape.mapNotNull { (site, text) -> millimetres(text)?.let { site to it } }.toMap(),
