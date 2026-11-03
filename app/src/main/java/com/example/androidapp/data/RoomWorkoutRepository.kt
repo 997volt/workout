@@ -28,6 +28,8 @@ import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.TenPointScale
 import com.example.androidapp.domain.model.WorkoutSession
 import com.example.androidapp.domain.model.WorkoutSummary
+import com.example.androidapp.domain.model.movedToDay
+import com.example.androidapp.domain.model.zoneIdOrNull
 import com.example.androidapp.domain.nowEpochMillis
 import com.example.androidapp.domain.repository.StartedSession
 import com.example.androidapp.domain.repository.WorkoutRepository
@@ -41,6 +43,8 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -342,6 +346,35 @@ class RoomWorkoutRepository @Inject constructor(
             throw NotFoundException("session $sessionId")
         }
         dao.updateRestTimer(id = sessionId, restEndsAt = null, at = now)
+    }
+
+    /**
+     * Corrects the day a finished session happened on (ROADMAP N266).
+     *
+     * A workout done without the phone is logged on the day the app is next opened, and that day is what the
+     * month grid, the week in review and the adherence record read. The arithmetic is the domain's — both
+     * instants move together, so the session keeps its length — and this writes its answer in one statement.
+     *
+     * A session still running has no finish to keep, and a day whose session would end in the future has not
+     * happened: both are refused with a sentence, the rule a measurement day already holds (B212).
+     */
+    override suspend fun moveSessionToDay(sessionId: String, day: LocalDate): DataResult<Unit> = dataResultOf {
+        val session = dao.findSession(sessionId)?.toDomain(emptyList())
+            ?: throw NotFoundException("session $sessionId")
+        val moved = session.movedToDay(
+            day = day,
+            // The session's own zone is the frame its day reads in everywhere else; an old row has none, and the
+            // device's is the answer it is read with (N25).
+            zone = session.zoneIdOrNull() ?: ZoneId.systemDefault(),
+            now = Instant.ofEpochMilli(timeSource.nowEpochMillis()),
+        ) ?: throw InvalidInputException("That day has not happened yet.")
+        val updated = dao.moveSession(
+            id = sessionId,
+            startedAt = moved.startedAt.toEpochMilli(),
+            finishedAt = requireNotNull(moved.finishedAt) { "a moved session keeps its finish" }.toEpochMilli(),
+            at = timeSource.nowEpochMillis(),
+        )
+        if (updated == 0) throw NotFoundException("session $sessionId")
     }
 
     /**

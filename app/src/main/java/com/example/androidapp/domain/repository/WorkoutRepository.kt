@@ -14,6 +14,7 @@ import com.example.androidapp.domain.model.WorkoutSession
 import com.example.androidapp.domain.model.WorkoutSummary
 import kotlinx.coroutines.flow.Flow
 import java.time.Instant
+import java.time.LocalDate
 
 /**
  * The session a workout screen is now in, and whether this call opened it.
@@ -174,6 +175,18 @@ interface WorkoutRepository {
 
     /** Marks the session complete. It stops being "active" and enters history. */
     suspend fun finishSession(sessionId: String): DataResult<Unit>
+
+    /**
+     * Corrects the day a **finished** session happened on, keeping its hour and its length (ROADMAP N266).
+     *
+     * The start is stamped when the app is opened, so a workout done without the phone — or one logged the
+     * next morning — lands on the wrong day, and that day is what the month grid, the week in review and the
+     * adherence record read. Both instants move by the same offset, so the workout keeps its duration.
+     *
+     * A session still running has no finish to keep and a day that has not happened is not a record: both are
+     * a [com.example.androidapp.domain.DataError.Invalid], and a row that is gone is `NotFound`.
+     */
+    suspend fun moveSessionToDay(sessionId: String, day: LocalDate): DataResult<Unit>
 
     /**
      * Writes the session's readiness note (ROADMAP N4). A blank note is stored as null, so "nothing

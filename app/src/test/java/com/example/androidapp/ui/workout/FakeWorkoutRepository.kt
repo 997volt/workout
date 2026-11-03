@@ -141,5 +141,8 @@ internal class FakeWorkoutRepository : WorkoutRepository {
     override suspend fun adjustRest(deltaSeconds: Int): DataResult<Instant> = unused()
     override suspend fun clearRest(): DataResult<Unit> = unused()
 
+    /** The picker corrects no dates; the history detail is where N266's write lives. */
+    override suspend fun moveSessionToDay(sessionId: String, day: java.time.LocalDate): DataResult<Unit> = unused()
+
     private fun unused(): Nothing = error("the picker must not call this")
 }

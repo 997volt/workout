@@ -1614,6 +1614,18 @@ the rule; that one argues it.
 
 ## History and transfer
 
+- **A workout's day is corrected where it is read, not where it was started** (N266). A session's start is
+  stamped when the app is opened, so a workout done without the phone lands on the day it was written down —
+  and that day is what the month grid, the week in review and the adherence record read. The correction is the
+  one ⋮ on the past workout, behind a calendar bounded at today, and **both instants move by the same offset**,
+  so the session keeps its hour of day and the length it had; a day whose session would end in the future is
+  refused with a sentence, the rule a measurement already holds (B212). The zone is the session's own where it
+  recorded one, because that is the frame its day is read in everywhere else. Rejected: choosing a date when a
+  workout **starts**, which cannot help the workout already logged — the case the row exists for — and would
+  leave a live session whose elapsed clock, rest timer and adherence day disagree; and correcting the clock time
+  itself, which changes the session's duration and is a second question (a workout started forty minutes late is
+  short, not on the wrong day), so the day is corrected and the length kept.
+
 - **A query searches what a row says, not what is behind it** (N146). The history list is a SQL projection of
   totals and a template name, chosen so a year of training costs one query; reaching an exercise name would mean
   loading every set of every session, which is the cost the projection exists to avoid. So a query matches the

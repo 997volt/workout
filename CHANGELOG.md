@@ -17,6 +17,13 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Added
 
+- **A workout's day can be corrected** (N266). A session's start is stamped when the app is opened, so a workout
+  done without the phone — or one written down the next morning — landed on the day it was entered rather than
+  the day it happened, and that day is what the month grid, the week in review and the adherence record read.
+  The ⋮ on a past workout now offers *Change date*: a calendar that opens on the day the session has and stops
+  at today, and the session keeps its hour of day and its length, because the start and the finish move
+  together. A day whose session would end in the future is refused with a sentence — the rule a measurement
+  already holds — rather than becoming a record of something that has not happened.
 - **The body's percentages read as the mass they describe** (N265). Weight, body fat % and muscle % were three
   separate series, so the app could say the scale moved but never how much of it was fat and how much was
   muscle — the question the weight goal, its rate and the energy statement all exist for. *Fat mass* and

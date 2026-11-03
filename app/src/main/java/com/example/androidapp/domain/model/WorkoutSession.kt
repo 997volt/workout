@@ -1,7 +1,9 @@
 package com.example.androidapp.domain.model
 
 import com.example.androidapp.domain.WeightUnit
+import java.time.Duration
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZoneOffset
 
@@ -20,6 +22,26 @@ fun WorkoutSession.zoneIdOrNull(): ZoneId? = zoneOffsetMinutes?.let { minutes ->
 
 /** Minutes to seconds, the unit [ZoneOffset] wants. */
 private const val SECONDS_PER_MINUTE = 60
+
+/**
+ * This session on [day], keeping its hour of day and the length it had (ROADMAP N266).
+ *
+ * A **correction, not a re-statement**: the session happened, and the day the app wrote is the day the app was
+ * opened. Both instants travel by the same offset, so the workout keeps its duration — moving only the start
+ * would stretch or invert it.
+ *
+ * **Null** is the answer when there is nothing to correct: a session still running has no finish to keep, and a
+ * move that would end the session after [now] is refused, because a workout that has not happened is not a
+ * record — the rule a measurement day already holds (B212). The zone is the session's own where it recorded
+ * one, because that is the frame its day is read in everywhere else; the caller answers for an old row with the
+ * device's.
+ */
+fun WorkoutSession.movedToDay(day: LocalDate, zone: ZoneId, now: Instant): WorkoutSession? {
+    val finished = finishedAt ?: return null
+    val movedStart = startedAt.withDay(day, zone)
+    val movedFinish = finished.plus(Duration.between(startedAt, movedStart))
+    return if (movedFinish.isAfter(now)) null else copy(startedAt = movedStart, finishedAt = movedFinish)
+}
 
 /**
  * A training session (ROADMAP P1.2).

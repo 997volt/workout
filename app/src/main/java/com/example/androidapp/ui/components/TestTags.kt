@@ -283,6 +283,8 @@ object TestTags {
     const val HISTORY_DETAIL_MENU = "history_detail_menu"
     const val HISTORY_DETAIL_EDIT = "history_detail_edit"
     const val HISTORY_DETAIL_DELETE = "history_detail_delete"
+    const val HISTORY_DETAIL_CHANGE_DAY = "history_detail_change_day"
+    const val HISTORY_DETAIL_CHANGE_DAY_CONFIRM = "history_detail_change_day_confirm"
     const val DETAIL_PLAN_NAME = "detail_plan_name"
     const val DETAIL_PLAN_CONFIRM = "detail_plan_confirm"
     const val DETAIL_OPEN_NEW_PLAN = "detail_open_new_plan"

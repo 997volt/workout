@@ -58,6 +58,7 @@ import com.example.androidapp.domain.model.WorkoutSession
 import com.example.androidapp.domain.model.zoneIdOrNull
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.CenteredMessage
+import com.example.androidapp.ui.components.DatePrompt
 import com.example.androidapp.ui.components.ExerciseRatingSection
 import com.example.androidapp.ui.components.LocalWeightUnit
 import com.example.androidapp.ui.components.SetEditorDialog
@@ -76,6 +77,7 @@ import com.example.androidapp.ui.workout.activityLabel
 import com.example.androidapp.ui.workout.declinedStepText
 import java.time.DayOfWeek
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 
 @Composable
@@ -117,6 +119,7 @@ fun WorkoutDetailRoute(
         onDeleteSet = viewModel::onDeleteSet,
         onRateExercise = viewModel::onRateExercise,
         onDeleteWorkout = viewModel::onDeleteWorkout,
+        onMoveToDay = viewModel::onMoveToDay,
         onBack = onBack,
         modifier = modifier,
         savedTemplate = savedTemplate,
@@ -145,6 +148,8 @@ fun WorkoutDetailScreen(
     onDeleteSet: (String) -> Unit,
     onRateExercise: (String, Int?, List<JointPain>) -> Unit,
     onDeleteWorkout: () -> Unit,
+    /** Corrects the day the workout happened on (ROADMAP N266). */
+    onMoveToDay: (LocalDate) -> Unit,
     onBack: () -> Unit,
     onOpenExerciseTrends: (String) -> Unit,
     onSaveAsTemplate: (String) -> Unit,
@@ -163,6 +168,7 @@ fun WorkoutDetailScreen(
     var editing by remember { mutableStateOf<HistorySet?>(null) }
     var confirmingDelete by remember { mutableStateOf(false) }
     var savingAsPlan by remember { mutableStateOf(false) }
+    var changingDay by remember { mutableStateOf(false) }
     // Reading or editing (N84). `rememberSaveable`, unlike the three above: a data class is not something a
     // Bundle can hold, but a mode the user chose is, and this activity declares no `configChanges` — so a
     // rotation would otherwise put the workout back into reading and switch every edit off under them.
@@ -196,6 +202,7 @@ fun WorkoutDetailScreen(
                 // Offered only when there is something to copy; the rule is enforced again by the
                 // repository, which refuses an empty workout rather than making an empty plan.
                 onSaveAsPlan = if (state.exercises.isEmpty()) null else { { savingAsPlan = true } },
+                onChangeDay = { changingDay = true },
             )
         },
     ) { innerPadding ->
@@ -210,9 +217,7 @@ fun WorkoutDetailScreen(
         )
     }
 
-    editing?.let { set ->
-        EditSetDialog(set = set, onDismiss = { editing = null }, onUpdateSet = onUpdateSet)
-    }
+    editing?.let { EditSetDialog(set = it, onDismiss = { editing = null }, onUpdateSet = onUpdateSet) }
 
     if (confirmingDelete) {
         DeleteWorkoutDialog(
@@ -223,6 +228,31 @@ fun WorkoutDetailScreen(
             },
         )
     }
+
+    // A correction is a calendar rather than a text field (B217, N266).
+    if (changingDay) ChangeDayPrompt(state.session, onDismiss = { changingDay = false }, onPick = onMoveToDay)
+}
+
+/**
+ * The calendar a workout's day is corrected with (ROADMAP N266).
+ *
+ * The day is read in the session's own zone — the frame the header prints it in — and the calendar stops at
+ * today, because a workout that has not happened is not a record (B212's rule).
+ */
+@Composable
+private fun ChangeDayPrompt(
+    session: WorkoutSession?,
+    onDismiss: () -> Unit,
+    onPick: (LocalDate) -> Unit,
+) {
+    val zone = session?.zoneIdOrNull() ?: ZoneId.systemDefault()
+    DatePrompt(
+        initial = session?.startedAt?.atZone(zone)?.toLocalDate(),
+        latestDay = LocalDate.now(zone),
+        confirmTestTag = TestTags.HISTORY_DETAIL_CHANGE_DAY_CONFIRM,
+        onDismiss = onDismiss,
+        onPick = onPick,
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -234,6 +264,8 @@ private fun DetailTopBar(
     onToggleEdit: () -> Unit,
     onDelete: () -> Unit,
     onBack: () -> Unit,
+    /** Corrects the day the workout happened on (ROADMAP N266). */
+    onChangeDay: () -> Unit,
     /** Null when the workout has nothing to copy (ROADMAP N31). */
     onSaveAsPlan: (() -> Unit)? = null,
 ) {
@@ -284,6 +316,7 @@ private fun DetailTopBar(
                     editing = editing,
                     onToggleEdit = onToggleEdit,
                     onSaveAsPlan = onSaveAsPlan,
+                    onChangeDay = onChangeDay,
                     onDelete = onDelete,
                 )
             }
@@ -292,22 +325,25 @@ private fun DetailTopBar(
 }
 
 /**
- * The one ⋮ on a past workout: the mode, the copy, and the destruction (ROADMAP N84).
+ * The one ⋮ on a past workout: the mode, the copy, the correction, and the destruction (ROADMAP N84, N266).
  *
  * N53's rule, at screen level: what writes is rare and what reads is constant, so the edits stopped being
  * live controls on every row and became one menu entry. The order and the colour are the exercise menu's
  * (`ExerciseActionsMenu`): the mode first because it is the entry reached for most, then the constructive
- * one, then the destructive one last and coloured — and the confirmation behind it stays (B2), because the
+ * ones, then the destructive one last and coloured — and the confirmation behind it stays (B2), because the
  * delete takes the workout and there is no undo to reach for.
  *
- * `rememberSaveable` for the open state, the same rule that menu follows: this activity declares no
- * `configChanges`, so rotation rebuilds it and a menu that was open would vanish mid-decision.
+ * **Changing the date** sits beside saving as a plan rather than in the edit mode: it corrects the row, not
+ * the sets, and it is the one write a workout logged after the fact needs. `rememberSaveable` for the open
+ * state, the same rule that menu follows: this activity declares no `configChanges`, so rotation rebuilds it
+ * and a menu that was open would vanish mid-decision.
  */
 @Composable
 private fun DetailMenu(
     editing: Boolean,
     onToggleEdit: () -> Unit,
     onSaveAsPlan: (() -> Unit)?,
+    onChangeDay: () -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -324,26 +360,10 @@ private fun DetailMenu(
             )
         }
         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-            // The label states the state it is in, the shape the workout's own Reopen/Done uses (N7, N69):
-            // a mode whose exit is another trip to this menu has to say which way it goes.
-            DropdownMenuItem(
-                text = {
-                    Text(
-                        stringResource(
-                            if (editing) {
-                                R.string.history_detail_edit_done
-                            } else {
-                                R.string.history_detail_edit
-                            },
-                        ),
-                    )
-                },
-                onClick = {
-                    menuOpen = false
-                    onToggleEdit()
-                },
-                modifier = Modifier.testTag(TestTags.HISTORY_DETAIL_EDIT),
-            )
+            EditModeItem(editing = editing) {
+                menuOpen = false
+                onToggleEdit()
+            }
             onSaveAsPlan?.let { save ->
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.detail_save_as_plan)) },
@@ -354,6 +374,14 @@ private fun DetailMenu(
                     modifier = Modifier.testTag(TestTags.DETAIL_SAVE_AS_PLAN),
                 )
             }
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.history_detail_change_day)) },
+                onClick = {
+                    menuOpen = false
+                    onChangeDay()
+                },
+                modifier = Modifier.testTag(TestTags.HISTORY_DETAIL_CHANGE_DAY),
+            )
             DropdownMenuItem(
                 text = {
                     Text(
@@ -369,6 +397,27 @@ private fun DetailMenu(
             )
         }
     }
+}
+
+/**
+ * The menu's first entry: the edit mode, whose label states the state it is in (N7, N69).
+ *
+ * Its own composable because the menu around it is at the length this project allows, and the label's two
+ * branches are the reason it is not a one-line item.
+ */
+@Composable
+private fun EditModeItem(editing: Boolean, onClick: () -> Unit) {
+    DropdownMenuItem(
+        text = {
+            Text(
+                stringResource(
+                    if (editing) R.string.history_detail_edit_done else R.string.history_detail_edit,
+                ),
+            )
+        },
+        onClick = onClick,
+        modifier = Modifier.testTag(TestTags.HISTORY_DETAIL_EDIT),
+    )
 }
 
 @Composable
@@ -755,6 +804,7 @@ private fun WorkoutDetailScreenPreview() {
             onDeleteSet = {},
             onRateExercise = { _, _, _ -> },
             onDeleteWorkout = {},
+            onMoveToDay = {},
             onBack = {},
             onOpenExerciseTrends = {},
             onSaveAsTemplate = { _ -> },

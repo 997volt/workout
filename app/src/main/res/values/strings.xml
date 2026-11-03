@@ -1130,6 +1130,7 @@
     <string name="history_detail_more">More actions</string>
     <string name="history_detail_edit">Edit workout</string>
     <string name="history_detail_edit_done">Done editing</string>
+    <string name="history_detail_change_day">Change date</string>
     <string name="history_detail_missing">That workout is no longer stored.</string>
     <!-- Repeating one finished workout (ROADMAP N48): the entry point the home button gave up, now
          addressed to the workout the row names rather than to "the last one". -->

@@ -2431,6 +2431,10 @@ class ActiveWorkoutViewModelTest {
             return DataResult.Success(Unit)
         }
 
+        /** The live workout is not a finished one, so a date correction is never this screen's write (N266). */
+        override suspend fun moveSessionToDay(sessionId: String, day: java.time.LocalDate): DataResult<Unit> =
+            error("a running workout has no day to correct")
+
         override suspend fun deleteSession(sessionId: String): DataResult<Unit> {
             sessions.value = null
             exercises.value = emptyList()

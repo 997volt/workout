@@ -214,6 +214,21 @@ interface WorkoutDao {
     suspend fun markFinished(id: String, at: Long): Int
 
     /**
+     * Moves a **finished** session to another day (ROADMAP N266): both instants travel together, so it keeps the
+     * length it had. The caller has already checked that the result is in the past.
+     *
+     * Rows updated: 0 means the session is gone or still open.
+     */
+    @Query(
+        """
+        UPDATE workout_sessions
+        SET startedAt = :startedAt, finishedAt = :finishedAt, updatedAt = :at
+        WHERE id = :id AND deletedAt IS NULL AND finishedAt IS NOT NULL
+        """,
+    )
+    suspend fun moveSession(id: String, startedAt: Long, finishedAt: Long, at: Long): Int
+
+    /**
      * Sets or clears the readiness note (ROADMAP N4). A null [note] clears it.
      *
      * Rows updated: 0 means the session is gone, so a stale screen cannot write a

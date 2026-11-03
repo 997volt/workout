@@ -108,6 +108,20 @@ class WorkoutDetailViewModelTest {
         assertNull("the offer is dismissed once taken", viewModel.savedTemplate.value)
     }
 
+    @Test
+    fun changingTheDay_passesThePickedDay_andClearsTheError() = runTest(dispatcher) {
+        // N266: the screen's part is to hand the chosen day to the repository; the arithmetic and the two
+        // refusals are the domain's and the repository's, tested where they live.
+        val viewModel = viewModelFor()
+        observe(viewModel)
+        advanceUntilIdle()
+
+        viewModel.onMoveToDay(LocalDate.of(2026, 10, 2))
+        advanceUntilIdle()
+
+        assertEquals(LocalDate.of(2026, 10, 2), repository.movedTo)
+    }
+
     private fun viewModelFor(
         templates: FakeTemplateRepository = FakeTemplateRepository(),
         programs: FakeProgramRepository = FakeProgramRepository(),
@@ -312,6 +326,14 @@ class WorkoutDetailViewModelTest {
 
         override suspend fun finishSession(sessionId: String): DataResult<Unit> = unused()
         override suspend fun setReadiness(sessionId: String, note: String?): DataResult<Unit> = unused()
+
+        /** The day the screen moved the workout to, or null while it has not (N266). */
+        var movedTo: LocalDate? = null
+
+        override suspend fun moveSessionToDay(sessionId: String, day: LocalDate): DataResult<Unit> {
+            movedTo = day
+            return DataResult.Success(Unit)
+        }
 
         override suspend fun setWorkoutNotes(sessionId: String, note: String?): DataResult<Unit> =
             unused()

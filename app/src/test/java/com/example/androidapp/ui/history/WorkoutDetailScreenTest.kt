@@ -40,6 +40,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import java.time.DayOfWeek
 import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 
 /**
  * Instrumented UI tests for the history detail screen (ROADMAP P1.6, P1.7).
@@ -319,6 +321,21 @@ class WorkoutDetailScreenTest {
         composeTestRule.onNodeWithTag(TestTags.DETAIL_OPEN_NEW_PLAN).assertIsDisplayed()
     }
 
+    @Test
+    fun theMenuCorrectsTheDay_andItsAnswerReachesTheCallback() {
+        // N266: a workout logged after the fact lands on the day the app was opened, and the one ⋮ is where the
+        // day is corrected. The calendar opens on the day the session has, so confirming returns that day.
+        var moved: LocalDate? = null
+        setScreen(onMoveToDay = { moved = it })
+
+        composeTestRule.onNodeWithTag(TestTags.HISTORY_DETAIL_MENU).performClick()
+        composeTestRule.onNodeWithTag(TestTags.HISTORY_DETAIL_CHANGE_DAY).performClick()
+        composeTestRule.onNodeWithTag(TestTags.HISTORY_DETAIL_CHANGE_DAY_CONFIRM).performClick()
+
+        assertThat(moved)
+            .isEqualTo(Instant.parse("2026-09-28T07:00:00Z").atZone(ZoneId.systemDefault()).toLocalDate())
+    }
+
     private fun setScreen(
         uiState: WorkoutDetailUiState = state,
         onUpdateSet: (String, Int, Long, Int?, String?, SetType, Long, Int?) -> Unit =
@@ -326,6 +343,7 @@ class WorkoutDetailScreenTest {
         onDeleteSet: (String) -> Unit = {},
         onRateExercise: (String, Int?, List<JointPain>) -> Unit = { _, _, _ -> },
         onDeleteWorkout: () -> Unit = {},
+        onMoveToDay: (LocalDate) -> Unit = {},
         onOpenExerciseTrends: (String) -> Unit = {},
         savedTemplate: String? = null,
         onSaveAsTemplate: (String) -> Unit = {},
@@ -340,6 +358,7 @@ class WorkoutDetailScreenTest {
                 onDeleteSet = onDeleteSet,
                 onRateExercise = onRateExercise,
                 onDeleteWorkout = onDeleteWorkout,
+                onMoveToDay = onMoveToDay,
                 onOpenExerciseTrends = onOpenExerciseTrends,
                 savedTemplate = savedTemplate,
                 onSaveAsTemplate = onSaveAsTemplate,

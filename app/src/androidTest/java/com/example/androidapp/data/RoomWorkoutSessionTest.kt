@@ -8,15 +8,14 @@ import com.example.androidapp.data.local.SessionSoreMuscleEntity
 import com.example.androidapp.data.local.TemplateEntity
 import com.example.androidapp.data.local.TemplateExerciseEntity
 import com.example.androidapp.data.local.WorkoutDatabase
-import com.example.androidapp.domain.model.Equipment
-import com.example.androidapp.domain.model.MovementPattern
-import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.ZoneOffsetSource
+import com.example.androidapp.domain.model.Equipment
+import com.example.androidapp.domain.model.MovementPattern
+import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.repository.StartedSession
-import java.time.Instant
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -27,6 +26,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.time.Duration
+import java.time.Instant
+import java.time.LocalDate
 
 /**
  * Session-level writes, end to end through the repository (ROADMAP N4).
@@ -71,7 +73,8 @@ class RoomWorkoutSessionTest {
     }
 
     @Test
-    fun resuming_doesNotReportANewSession() = runTest {        val first = start()
+    fun resuming_doesNotReportANewSession() = runTest {
+        val first = start()
         val second = start()
 
         assertEquals("the open session must be reused", first.id, second.id)
@@ -337,5 +340,40 @@ class RoomWorkoutSessionTest {
         // fallback shows as null rather than as an override with nothing (N5).
         assertNull(row.restSeconds)
         assertNull(row.techniqueNote)
+    }
+
+    @Test
+    fun aFinishedSession_movesToAnotherDay_andBothInstantsTravelTogether() = runTest {
+        // N266: a workout logged on the wrong day is corrected by the day. The start and the finish move by the
+        // same offset, so the session keeps the length it had rather than stretching or inverting.
+        val started = start()
+        repository.finishSession(started.id)
+        val before = repository.observeSession(started.id).first()!!
+
+        assertTrue(repository.moveSessionToDay(started.id, LocalDate.of(2026, 9, 26)) is DataResult.Success)
+
+        val after = repository.observeSession(started.id).first()!!
+        assertEquals(
+            "both instants moved by the same offset",
+            Duration.between(before.startedAt, after.startedAt),
+            Duration.between(before.finishedAt, after.finishedAt),
+        )
+        assertEquals(Instant.parse("2026-09-26T08:00:00Z"), after.startedAt)
+    }
+
+    @Test
+    fun aDayThatHasNotHappened_isRefused_andWritesNothing() = runTest {
+        // The clock is 29 September; a session moved to the 30th would end in the future, which is not a record
+        // (B212's rule). It is refused with a sentence rather than written.
+        val started = start()
+        repository.finishSession(started.id)
+
+        val result = repository.moveSessionToDay(started.id, LocalDate.of(2026, 9, 30))
+
+        assertTrue("refused, not stored", (result as DataResult.Failure).error is DataError.Invalid)
+        assertEquals(
+            Instant.parse("2026-09-29T08:00:00Z"),
+            repository.observeSession(started.id).first()!!.startedAt,
+        )
     }
 }

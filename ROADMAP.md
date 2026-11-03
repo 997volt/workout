@@ -19,12 +19,9 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 Nothing is in flight. 2.21 shipped the 2.20 follow-up batch (N248–N254, B329) and the review's fixes, whose
 settled rules are in [DECISIONS.md](DECISIONS.md). The program table's repeated movement (N264), the energy
-verdict's unit (B335), the body's two derived masses (N265) and the zero that was a weigh-in (B336) are in the
-unreleased [CHANGELOG.md](CHANGELOG.md). One row is queued: the session whose day cannot be corrected.
-
-| # | Change | Why it matters | Size |
-| --- | --- | --- | --- |
-| N266 | **A session's day is written when the app is opened, and never corrected.** `startOrResumeSession` stamps `startedAt` from the clock at the tap, and a finished workout's detail can edit a set, rate it, copy it or delete it, but not its date — nor can a session be logged after the fact. Decide first which of the two is wanted: a date chosen when a workout starts, or a finished session's time corrected afterwards; then build one of them. | A workout done without the phone, or started forty minutes late, lands on the day the app was opened instead of the day it happened — and that date is what the month grid, the week in review and the adherence record all read. | Small–Medium |
+verdict's unit (B335), the body's two derived masses (N265), the zero that was a weigh-in (B336) and the day a
+workout can now be moved to (N266) are in the unreleased [CHANGELOG.md](CHANGELOG.md); nothing is queued behind
+them.
 
 ## Later — decided, and not being started
 

@@ -33,6 +33,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.Duration
+import java.time.LocalDate
 import javax.inject.Inject
 
 /** A set as the history detail shows it. */
@@ -357,6 +358,16 @@ class WorkoutDetailViewModel @Inject constructor(
             }
         }
     }
+
+    /**
+     * Corrects the day this workout happened on (ROADMAP N266).
+     *
+     * The start is stamped when the app is opened, so a workout done without the phone lands on the day it was
+     * written down rather than the day it happened — and that day is what the month grid, the week in review
+     * and the adherence record read. The hour and the length are kept; a day that has not happened is refused
+     * by the repository with a sentence, which the snackbar says.
+     */
+    fun onMoveToDay(day: LocalDate) = write { workoutRepository.moveSessionToDay(sessionId, day) }
 
     private fun write(block: suspend () -> DataResult<Unit>) {
         viewModelScope.launch {
