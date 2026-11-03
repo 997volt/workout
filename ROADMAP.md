@@ -19,7 +19,11 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 Nothing is in flight. 2.21 shipped the 2.20 follow-up batch (N248–N254, B329) and the review's fixes, whose
 settled rules are in [DECISIONS.md](DECISIONS.md). The program table's repeated movement (N264) is in the
-unreleased [CHANGELOG.md](CHANGELOG.md); nothing is queued behind it.
+unreleased [CHANGELOG.md](CHANGELOG.md). One defect is queued:
+
+| # | Change | Why it matters | Size |
+| --- | --- | --- | --- |
+| B335 | **A maintenance weigh-in quotes its corridor gap at a week's pace.** `energyAdjustmentToCorridor` turns the fitted line's distance outside the ±1 kg corridor into kilocalories with the bare 7,700 a kilogram, and the sentence it feeds says "a day". Both branches quote the same conversion — `7700 ÷ 1000 ÷ 7`, or 1.1 kcal a day per gram a week — so the level gap becomes the daily intake that closes it in a week: 390 g reads about 430 kcal a day, not 3,000. | The corridor verdict is a *level* judgment (N135) wearing a *rate* sentence (N98). A morning of water that puts the fit 390 g outside the band — an ordinary reading, not a warning — is drawn as "About 3,003 kcal a day more than you are eating now", on the measurements screen and again under the chart. That is seven times the app's own conversion, and it is the difference between a nudge and a second dinner. | Small |
 
 ## Later — decided, and not being started
 
