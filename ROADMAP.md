@@ -17,8 +17,13 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-Nothing is in flight. 2.21 shipped the 2.20 follow-up batch (N248–N254, B329) and the review's fixes, whose
-settled rules are in [DECISIONS.md](DECISIONS.md); nothing is queued behind them.
+2.21 shipped the 2.20 follow-up batch (N248–N254, B329) and the review's fixes; their settled rules are in
+[DECISIONS.md](DECISIONS.md). One row is queued: the import helper writes a program table's repeated movement
+as two planned exercises, where one already holds the same five sets.
+
+| # | Change | Why it matters | Size |
+| --- | --- | --- | --- |
+| N264 | **A program table's repeated movement becomes one planned exercise.** Adjacent rows in a day naming the same movement, with the same rest, target RPE and note, become one planned exercise whose sets carry each row's reps and load in row order; rows that differ in those three stay separate with a warning. The helper's sheet parser, builder and preview. | A table that says 3 × 8 at 100 kg and then 2 × 10 at 90 kg for one movement imports as two plan entries, though a planned exercise already holds a per-set prescription — only the import split it. Adjacent only, because A, B, A is authored order, and the three settings are the ones a planned exercise holds one of, so a differing row is kept rather than overwritten. | Medium |
 
 ## Later — decided, and not being started
 
