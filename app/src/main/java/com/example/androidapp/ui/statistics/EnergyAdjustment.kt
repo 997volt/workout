@@ -48,6 +48,17 @@ private const val GRAMS_PER_KILOGRAM = 1000.0
 private const val DAYS_PER_WEEK = 7.0
 
 /**
+ * Kcal a day per gram a week — the one conversion both branches quote in (B335).
+ *
+ * 7,700 kcal is a kilogram, a kilogram is a thousand grams and a week is seven days, so a gram a week is
+ * 1.1 kcal a day. The **rate** branch multiplies a rate gap by it; the **corridor** branch multiplies a level
+ * gap by it, which is the same number read as the pace that closes the gap in a week (see
+ * [energyAdjustmentToCorridor]). One constant rather than two expressions, because two conversions of one
+ * physical quantity are two answers — and the "a day" the sentence promises is true only where both are this.
+ */
+private const val KCAL_PER_GRAM_PER_WEEK = KCAL_PER_KILOGRAM / GRAMS_PER_KILOGRAM / DAYS_PER_WEEK
+
+/**
  * The adjustment the series implies for [targetPerWeekGrams], or null when there is too little to say.
  *
  * Null is a real answer and the screen says so rather than drawing a number: a rate from three weigh-ins is
@@ -109,12 +120,11 @@ fun MetricSeries.weighInVerdict(goal: WeightGoal?, currentWeightGrams: Long?): E
 
 /** The arithmetic, once the series is known to be long enough and fittable. */
 private fun adjustmentFor(fitted: TrendSlope, targetPerWeekGrams: Double): EnergyAdjustment {
-    val kcalPerGramPerWeek = KCAL_PER_KILOGRAM / GRAMS_PER_KILOGRAM / DAYS_PER_WEEK
-    val gap = (targetPerWeekGrams - fitted.perWeek) * kcalPerGramPerWeek
+    val gap = (targetPerWeekGrams - fitted.perWeek) * KCAL_PER_GRAM_PER_WEEK
     // The band is the fit's own uncertainty rather than a decoration: the 7700 above is an approximation and
     // weight moves on water, glycogen and sodium, so the answer is reported as the range it is. A fit that
     // cannot measure its own scatter contributes none, which is the honest answer for three readings.
-    val uncertainty = (fitted.perWeekStandardError ?: 0.0) * kcalPerGramPerWeek
+    val uncertainty = (fitted.perWeekStandardError ?: 0.0) * KCAL_PER_GRAM_PER_WEEK
     return EnergyAdjustment(
         lowKcal = floor(gap - uncertainty).toInt(),
         highKcal = ceil(gap + uncertainty).toInt(),
@@ -122,7 +132,7 @@ private fun adjustmentFor(fitted: TrendSlope, targetPerWeekGrams: Double): Energ
 }
 
 /**
- * The adjustment that would bring the weight back inside a corridor around [targetGrams] (ROADMAP N135).
+ * The adjustment that would bring the weight back inside a corridor around [targetGrams] (ROADMAP N135, B335).
  *
  * Maintenance is a **corridor**, not a rate of zero, so this is a *level* gap rather than a rate gap: the
  * question is whether the weight is inside the band, not whether the slope is zero. The **fitted line**
@@ -131,6 +141,11 @@ private fun adjustmentFor(fitted: TrendSlope, targetPerWeekGrams: Double): Energ
  *
  * A point rather than a range: the corridor is already the band, and the fit's own scatter added on top would
  * be a second band around a band. Null when the series holds no weight to ask about.
+ *
+ * **The number is a day's intake at a week's pace.** A level has no energy per day until something names how
+ * fast it is closed, and the sentence this feeds promises "a day", so the gap crosses the same
+ * [KCAL_PER_GRAM_PER_WEEK] the rate branch uses: 390 g outside the corridor is about 430 kcal a day — the
+ * intake that would close it in a week — rather than the 3,000 the bare 7,700 a kilogram gave (B335).
  */
 fun MetricSeries.energyAdjustmentToCorridor(
     targetGrams: Double,
@@ -149,7 +164,8 @@ fun MetricSeries.energyAdjustmentToCorridor(
         fitted < targetGrams - corridorGrams -> targetGrams - corridorGrams - fitted
         else -> 0.0
     }
-    val kcal = (gapGrams * KCAL_PER_KILOGRAM / GRAMS_PER_KILOGRAM).roundToInt()
+    // One conversion for both branches: the gap is a mass, and quoting it per day needs the week's pace (B335).
+    val kcal = (gapGrams * KCAL_PER_GRAM_PER_WEEK).roundToInt()
     return EnergyAdjustment(lowKcal = kcal, highKcal = kcal)
 }
 

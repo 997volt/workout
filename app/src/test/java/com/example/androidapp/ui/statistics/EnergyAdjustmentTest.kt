@@ -141,12 +141,25 @@ class EnergyAdjustmentTest {
 
     @Test
     fun theCorridorGap_isTheDistanceToTheEdge_notToTheMiddle() {
-        // 82.2 kg against a corridor of 79–81 is 1.2 kg over the *edge*, and 1.2 kg × 7700 = 9240 kcal — the
-        // figure a lifter eats back over days, not the 2.2 kg to the middle of the band.
+        // 82.2 kg against a corridor of 79–81 is 1.2 kg over the *edge*, not the 2.2 kg to the middle — and at
+        // the app's week pace that is 1,320 kcal a day, not the 9,240 a bare 7,700 a kilogram gave (B335).
         val adjustment = series(0L to 82_200.0, 7L to 82_200.0, 14L to 82_200.0)
             .energyAdjustmentToCorridor(targetGrams = 80_000.0)!!
 
-        assertThat(adjustment.magnitude.last).isEqualTo(9_240)
+        assertThat(adjustment.magnitude.last).isEqualTo(1_320)
+    }
+
+    @Test
+    fun aCorridorGap_quotesWhateverARateGapOfTheSameSizeQuotes() {
+        // B335: the level gap and the rate gap cross one conversion, so a 200 g drift must read as the 220 kcal
+        // a day a 200 g a week shortfall reads as. The rate branch floors and ceils its signed figure, so its
+        // band stays a unit wide even with no scatter; the comparison is on the figure both branches quote.
+        val flat = weekly(perWeek = 0.0)
+        val corridor = flat.energyAdjustmentToCorridor(targetGrams = 83_200.0)!!
+        val rate = flat.energyAdjustment(targetPerWeekGrams = -200.0)!!
+
+        assertThat(corridor.magnitude).isEqualTo(220..220)
+        assertThat(corridor.magnitude.first).isEqualTo(rate.magnitude.first)
     }
 
     @Test

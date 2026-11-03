@@ -25,6 +25,12 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A maintenance weigh-in quotes its drift at a week's pace** (B335). The corridor verdict turned the fitted
+  weight's distance outside the ±1 kg band into a bare 7,700 kcal a kilogram, so 390 g of water — an ordinary
+  morning — read as "About 3,003 kcal a day more than you are eating now" on the measurements screen and again
+  under the chart. The verdict is a *level* judgment fed into a *rate* sentence, and the level never met the
+  week that sentence divides by. Both branches of the energy statement now share one conversion, so the
+  corridor figure is what a rate gap of that size would quote: about 430 kcal a day for the same 390 g.
 - **A merge with no finished history says so** (N262). The confirmation read "Moved 0 sessions and 0 plans"
   when every session the source held was deleted or still open — the same sentence it gave a movement with no
   history at all — so it now states that no finished session moved, and never prints a zero count.

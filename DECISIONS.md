@@ -919,6 +919,16 @@ the rule; that one argues it.
   flows would be drawn again on every return to the screen, which is the pursuit it must not have.
   ([evidence](DECISIONS-EVIDENCE.md#n136))
 
+- **A corridor verdict quotes its level gap at the week's pace** (B335). A maintenance goal is judged as a
+  *level* (N135) and spoken through N98's *rate* sentence — "about X kcal a day" — so the level has to cross the
+  same conversion a rate does: **7700 ÷ 1000 ÷ 7**, one constant serving both branches. The pace is the app's own
+  week, named rather than implied: a gram a week is 1.1 kcal a day, so the corridor's answer is the daily intake
+  that closes the gap in a week, and 390 g outside the band reads about 430 kcal a day. Rejected: the bare 7,700
+  a kilogram this shipped with, which quoted the same 390 g as 3,000 kcal a day — seven times the app's own
+  conversion, and no sentence about a day could be true of it; and dropping the figure for maintenance in favour
+  of the distance in kilograms, which is honest but leaves the one verdict that fires on a weigh-in saying
+  nothing about eating.
+
 - **The weight goal is set where the body is recorded; the chart only draws it.** The goal row — its kind, its
   number and the history behind it — sat under the statistics chart, which is a drawing of the past rather than
   the place a reading is written. It is the **measurements screen's first item** now, above the entries it is
