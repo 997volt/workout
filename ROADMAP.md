@@ -18,10 +18,17 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 ## Next
 
 Nothing is in flight. 2.21 shipped the 2.20 follow-up batch (N248–N254, B329) and the review's fixes, whose
-settled rules are in [DECISIONS.md](DECISIONS.md). The program table's repeated movement (N264), the energy
-verdict's unit (B335), the body's two derived masses (N265), the zero that was a weigh-in (B336) and the day a
-workout can now be moved to (N266) are in the unreleased [CHANGELOG.md](CHANGELOG.md); nothing is queued behind
-them.
+settled rules are in [DECISIONS.md](DECISIONS.md). The unreleased [CHANGELOG.md](CHANGELOG.md) carries seven
+entries: the two 2.21 follow-ups (N261, N262), the program table's repeated movement (N264), the energy
+verdict's unit (B335), the body's two derived masses (N265), the zero that was a weigh-in (B336), and the day a
+workout can now be moved to (N266). Three rows are queued from the review of that set; its fourth finding — this
+summary, which named five of the seven entries — is fixed here rather than queued:
+
+| # | Change | Why it matters | Size |
+| --- | --- | --- | --- |
+| B337 | **A refused day correction says which refusal it is.** `movedToDay` answers null both for an open session and for a day whose session would end in the future, and the repository turns both into "That day has not happened yet." The reachable case is the calendar's own bound: at 09:00, yesterday's 18:00 session moved to today — today *has* begun, 18:00 has not. Split the sentence, and give the open session its own ("Finish the workout first."), which is unreachable today because history lists finished sessions only but is not impossible. | The sentence is the only feedback a refused correction gives, and one that is wrong about *why* sends the lifter back to the calendar to try another day. The open-session branch is latent, and a latent branch whose message is wrong is the one that will be hit when a screen starts opening live sessions. | Small |
+| B338 | **The measurement save refuses a non-positive weight, like the day's targeted write does.** `setDailyWeight` refuses `grams <= 0`; `save` validates sore-muscle scores but never looks at `weightGrams`. The form is `save`'s only caller today and it normalizes a typed zero to no weight, so nothing is broken — but the repository is where "an import may carry anything" is caught, and the rule B336 named now lives in one method only. Add the guard and the domain test `statedBodyWeightGrams`/`statesSomething` never had. | A backup or a future caller that hands `save` a zero is stored silently, and the readers are then the only thing keeping it out of the chart and the trend — the defence is a rule in every reader instead of one check at the boundary. The direct test is where the rule lives rather than where its effects show. | Small |
+| N267 | **A corrected workout's day is announced.** The ⋮ → *Change date* write lands silently: the header's date changes and nothing says so. The per-screen rule is to announce state changes, and this write's whole effect *is* a date — so a snackbar naming it ("Moved to 26 September") is the confirmation the delete and its undo already use. | A lifter who picked the wrong day sees no evidence the tap landed, and TalkBack hears nothing at all. Every other write on this screen either changes the screen's shape (delete leaves) or is one row among many, while this one is a single date in a header line that is easy to have scrolled past. | Small |
 
 ## Later — decided, and not being started
 
