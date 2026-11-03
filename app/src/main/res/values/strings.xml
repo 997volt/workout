@@ -592,6 +592,10 @@
     <string name="measurements_weight">Weight</string>
     <string name="measurements_body_fat">Body fat %</string>
     <string name="measurements_muscle">Muscle %</string>
+    <!-- The two derived masses (N265). The parenthetical is the input: a number the scale never printed has to
+         say what it was made of. -->
+    <string name="measurements_fat_mass">Fat mass (from body fat %)</string>
+    <string name="measurements_muscle_mass">Muscle mass (from muscle %)</string>
     <string name="measurements_neck">Neck</string>
     <string name="measurements_chest">Chest</string>
     <string name="measurements_waist">Waist</string>

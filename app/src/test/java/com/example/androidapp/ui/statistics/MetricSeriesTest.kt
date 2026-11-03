@@ -149,6 +149,36 @@ class MetricSeriesTest {
     }
 
     @Test
+    fun theDerivedMasses_areThePercentageOfTheWeightItWasTakenWith() {
+        // N265: 82.4 kg at 18.3% fat is 15.0792 kg of fat, and 42.1% muscle is 34.6904 kg — the day's own two
+        // numbers, multiplied. Stored in grams like every other mass, so the kilogram unit formats it as usual.
+        val entry = measurement(weight = 82_400L, bodyFat = 183, muscle = 421)
+
+        assertThat(
+            metricSeries(MetricKey.Body(BodyMetric.FAT_MASS), measurements = listOf(entry))
+                .readings.single().value
+        ).isEqualTo(15_079.2)
+        assertThat(
+            metricSeries(MetricKey.Body(BodyMetric.MUSCLE_MASS), measurements = listOf(entry))
+                .readings.single().value
+        ).isEqualTo(34_690.4)
+    }
+
+    @Test
+    fun aDerivedMass_needsBothTheWeightAndThePercentage() {
+        // Either half missing and the day states no mass at all: a percentage of nothing is not a reading, and
+        // B221's rule is that an entry which does not state a metric is not a point in its series.
+        val weighedOnly = measurement(at = first, weight = 82_400L)
+        val measuredOnly = measurement(at = second, bodyFat = 183, muscle = 421)
+
+        listOf(BodyMetric.FAT_MASS, BodyMetric.MUSCLE_MASS).forEach { metric ->
+            assertWithMessage("$metric has nothing to derive")
+                .that(metricSeries(MetricKey.Body(metric), measurements = listOf(weighedOnly, measuredOnly)).readings)
+                .isEmpty()
+        }
+    }
+
+    @Test
     fun aTapeEntry_isNotAWeighIn() {
         // B221: every measurement row became a weight reading, so a tape day was a null point and the line
         // stopped and restarted there. A tape entry is not a moment of the weight series at all.

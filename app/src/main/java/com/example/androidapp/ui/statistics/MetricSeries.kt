@@ -80,11 +80,30 @@ fun metricSeries(
     }.sortedBy { it.at },
 )
 
-/** What a body metric reads from an entry, in the units the registry formats (ROADMAP N32, N113). */
+/** What a body metric reads from an entry, in the units the registry formats (ROADMAP N32, N113, N265). */
 private fun bodyValue(metric: BodyMetric, measurement: BodyMeasurement): Double? = when (metric) {
     // A daily entry may state no weight at all (N113), and a tape entry never does: null here means the entry
     // is not a moment of this series, so [metricSeries] leaves it out rather than breaking the line on it.
     BodyMetric.WEIGHT -> measurement.weightGrams?.toDouble()
     BodyMetric.BODY_FAT -> measurement.bodyFatTenths?.toDouble()
     BodyMetric.MUSCLE -> measurement.muscleTenths?.toDouble()
+    // N265: a derived metric is **the lifter's own arithmetic restated**, never a new measurement — the
+    // percentage the day states, applied to the weight it states beside it. Nothing is stored for it, so nothing
+    // can disagree with the row it came from.
+    BodyMetric.FAT_MASS -> massFrom(measurement.weightGrams, measurement.bodyFatTenths)
+    BodyMetric.MUSCLE_MASS -> massFrom(measurement.weightGrams, measurement.muscleTenths)
 }
+
+/**
+ * Grams of the body a stored percentage covers, or null when the day did not state both halves (N265).
+ *
+ * The percentages are in tenths, so a hundred percent is [TENTHS_PER_WHOLE] of them: the weight in grams times
+ * the tenths over that is grams of the tissue, which is the unit every other mass in the app is stored in.
+ */
+private fun massFrom(weightGrams: Long?, tenths: Int?): Double? =
+    tenths?.let { percentage ->
+        weightGrams?.let { grams -> grams.toDouble() * percentage / TENTHS_PER_WHOLE }
+    }
+
+/** A hundred percent, in the tenths a body-fat or muscle reading is stored in (N265). */
+private const val TENTHS_PER_WHOLE = 1_000.0

@@ -15,6 +15,16 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ## [Unreleased]
 
+### Added
+
+- **The body's percentages read as the mass they describe** (N265). Weight, body fat % and muscle % were three
+  separate series, so the app could say the scale moved but never how much of it was fat and how much was
+  muscle — the question the weight goal, its rate and the energy statement all exist for. *Fat mass* and
+  *muscle mass* are series of their own now: `weight × percentage` from the day that stated both, charted,
+  averaged and trended like every other, in kilograms. The name carries its input ("Fat mass (from body fat %)"),
+  and a day missing either number is not a reading rather than a row of zeroes. Nothing is stored: the
+  derivation is the row's own arithmetic, so a backup, a goal and the chart all read the same days.
+
 ### Changed
 
 - **A program table's repeated movement becomes one planned exercise** (N264). A table that said 3 × 8 at 100 kg

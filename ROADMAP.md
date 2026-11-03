@@ -18,14 +18,13 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 ## Next
 
 Nothing is in flight. 2.21 shipped the 2.20 follow-up batch (N248–N254, B329) and the review's fixes, whose
-settled rules are in [DECISIONS.md](DECISIONS.md). The program table's repeated movement (N264) and the energy
-verdict's unit (B335) are in the unreleased [CHANGELOG.md](CHANGELOG.md). Three rows are queued, in this order:
-the body's two percentages read as the mass they describe, a zero that must not be a weigh-in, and the session
-whose day cannot be corrected.
+settled rules are in [DECISIONS.md](DECISIONS.md). The program table's repeated movement (N264), the energy
+verdict's unit (B335) and the body's two derived masses (N265) are in the unreleased
+[CHANGELOG.md](CHANGELOG.md). Two rows are queued, in this order: a zero that must not be a weigh-in, and the
+session whose day cannot be corrected.
 
 | # | Change | Why it matters | Size |
 | --- | --- | --- | --- |
-| N265 | **The body's two percentages read as the mass they describe.** A daily entry states weight, body fat % and muscle %, so `weight × pct` is the number a cut or a bulk is actually judged on. Two derived body metrics — fat mass and muscle mass, in grams like every other load — computed in `bodyValue` from the one row that carries both inputs, registered in `MetricGroup.BODY`, and labelled with the inputs they rest on; a day missing either number is not a reading (B221's rule). The chart, the average, the trend and a goal row come from the registry, and nothing is stored, exported or migrated. | The weight goal, its rate, its target date and the energy adjustment all ask whether the change is the rate that was asked for, and none of them asks whether any of it was muscle — the question a cut or a bulk turns on. Both answers are already on the device, one multiplication apart, and a percentage is the only form the app ever shows them in. | Small |
 | B336 | **A zero weight is not a weigh-in the trend may fit.** `Weight.parseKilograms` accepts `0` — right for a load, wrong for a body — and the daily form stores it, because a 0 is something stated. One such row is fitted like any other: it drags the trend by about the body weight across the window and can make the unsolicited weigh-in verdict say something wild. Refuse it in the form's validation, not in the parser the set editors share. | The weigh-in line is the one verdict that speaks without being asked, so a typo that changes it is the worst place for one; `weighInVerdict` already guards the goal's weight against 0 and the fit is what it cannot see. Same class as the corridor units just fixed (B335). | Small |
 | N266 | **A session's day is written when the app is opened, and never corrected.** `startOrResumeSession` stamps `startedAt` from the clock at the tap, and a finished workout's detail can edit a set, rate it, copy it or delete it, but not its date — nor can a session be logged after the fact. Decide first which of the two is wanted: a date chosen when a workout starts, or a finished session's time corrected afterwards; then build one of them. | A workout done without the phone, or started forty minutes late, lands on the day the app was opened instead of the day it happened — and that date is what the month grid, the week in review and the adherence record all read. | Small–Medium |
 

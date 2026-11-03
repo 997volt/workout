@@ -880,6 +880,16 @@ the rule; that one argues it.
   rather than drawing a figure from noise, which is P2.8's bar. **Nothing is written**: the statement sets no
   setting, no plan and no target, which is the app's oldest rule reaching a second surface.
 
+- **A derived series is the lifter's own arithmetic restated, and says what it was made of** (N265). Fat mass
+  and muscle mass are `weight × percentage` — the two numbers the same daily entry already states — computed
+  where the series is built, never stored. That is what keeps them honest *and* cheap: a chart, an average, a
+  trend and a goal all read the same rows, and a backup carries nothing that could disagree with the row it
+  came from. The **name states its input** ("Fat mass (from body fat %)"), because a number the scale never
+  printed has to say where it came from. **A day missing either half is not a moment of the series** — not a
+  null reading (B221's rule) — so a weigh-in is not a fat-mass reading and a percentage without a weight is not
+  one either. Rejected: writing the derived values as columns, which would create a second copy of a fact the
+  row already holds and a migration for every one of them.
+
 - **A weight goal sets the rate, instead of the rate being typed** (N135, revising N98's stored rate). "−0.35 kg
   a week" used to be a number the lifter authored beside a target, which is two answers to one question — and the
   pair could disagree, which is what the change fixes. Now the goal states a **kind**: a target weight, a

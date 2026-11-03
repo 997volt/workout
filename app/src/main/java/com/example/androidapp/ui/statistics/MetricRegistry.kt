@@ -111,7 +111,17 @@ sealed interface MetricKey {
 internal val WEIGHT_METRIC_ID = MetricKey.Body(BodyMetric.WEIGHT).id
 
 /** The body series that are not tape sites (ROADMAP N32). */
-enum class BodyMetric { WEIGHT, BODY_FAT, MUSCLE }
+enum class BodyMetric {
+    WEIGHT,
+    BODY_FAT,
+    MUSCLE,
+
+    /** Grams of fat the day's own body-fat percentage covers — derived, never stored (N265). */
+    FAT_MASS,
+
+    /** Grams of muscle that percentage covers — derived, never stored (N265). */
+    MUSCLE_MASS,
+}
 
 /**
  * How a stored value reads (ROADMAP N35).
@@ -329,6 +339,27 @@ object MetricRegistry {
                 group = MetricGroup.BODY,
                 labelRes = R.string.measurements_muscle,
                 unit = MetricUnit.PERCENT,
+                isBars = false,
+            ),
+        )
+        // N265: the two percentages read as the mass they describe. Derived in the series rather than stored,
+        // so every reader — chart, average, trend, goal — reads the rows the entry states, and a backup has
+        // nothing extra to carry.
+        add(
+            MetricEntry(
+                key = MetricKey.Body(BodyMetric.FAT_MASS),
+                group = MetricGroup.BODY,
+                labelRes = R.string.measurements_fat_mass,
+                unit = MetricUnit.KILOGRAMS,
+                isBars = false,
+            ),
+        )
+        add(
+            MetricEntry(
+                key = MetricKey.Body(BodyMetric.MUSCLE_MASS),
+                group = MetricGroup.BODY,
+                labelRes = R.string.measurements_muscle_mass,
+                unit = MetricUnit.KILOGRAMS,
                 isBars = false,
             ),
         )
