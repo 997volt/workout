@@ -20,6 +20,9 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 - **A merge with no finished history says so** (N262). The confirmation read "Moved 0 sessions and 0 plans"
   when every session the source held was deleted or still open — the same sentence it gave a movement with no
   history at all — so it now states that no finished session moved, and never prints a zero count.
+- **A set the history cannot draw is no longer promised** (N261). The restore preview and the import's summary
+  counted a live set whose session exercise or session the file keeps hidden — a set written but shown nowhere.
+  Both now require the set, the exercise and the session to be live after the merge.
 
 ## [2.21] — 2026-11-02 (versionCode 42)
 

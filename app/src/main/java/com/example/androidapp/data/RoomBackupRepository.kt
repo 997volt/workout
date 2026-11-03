@@ -175,13 +175,16 @@ class RoomBackupRepository @Inject constructor(
         // memory work, and every caller is a UI scope, so they run off that thread (N257).
         withContext(Dispatchers.IO) {
             val file = BackupCodec.decode(text)
+            // A set is drawn only inside its exercise inside its session (N261): one whose parents stay hidden
+            // is a live row the merge writes and the history shows nowhere, so it is not one of the counts.
+            val drawnSets = visibleSetIds(file)
             BackupPreview(
                 sessions = previewCounts(
                     file.sessions.map { FileRow(it.id, it.deletedAt) },
                     dao.allSessions().associate { it.id to it.deletedAt },
                 ),
                 sets = previewCounts(
-                    file.sets.map { FileRow(it.id, it.deletedAt) },
+                    file.sets.filter { it.id in drawnSets }.map { FileRow(it.id, it.deletedAt) },
                     dao.allSets().associate { it.id to it.deletedAt },
                 ),
                 measurements = previewMeasurements(file.measurements),
@@ -272,6 +275,55 @@ class RoomBackupRepository @Inject constructor(
         return PreviewCounts(inFile = inFile, alreadyHere = here, restored = restored, added = added)
     }
 
+    /**
+     * The sets the history will draw after the merge (ROADMAP N261).
+     *
+     * A set is only seen inside its session exercise inside its session: one whose exercise or session stays
+     * hidden is written by the merge but drawn nowhere, so neither the question nor the summary may count it. A
+     * parent is live afterwards when it is live in the file — inserted, or restored — or already live here,
+     * which the merge leaves alone.
+     */
+    private suspend fun visibleSetIds(file: BackupFile): Set<String> {
+        val localExercises = dao.allSessionExercises()
+        val sessions = LiveAfterMerge(
+            file = file.sessions.associate { it.id to it.deletedAt },
+            local = dao.allSessions().associate { it.id to it.deletedAt },
+        )
+        val exercises = LiveAfterMerge(
+            file = file.sessionExercises.associate { it.id to it.deletedAt },
+            local = localExercises.associate { it.id to it.deletedAt },
+        )
+        val sessionOf = buildMap {
+            file.sessionExercises.forEach { put(it.id, it.sessionId) }
+            localExercises.forEach { if (it.id !in this) put(it.id, it.sessionId) }
+        }
+        return file.sets
+            .filter { set ->
+                val sessionId = sessionOf[set.sessionExerciseId]
+                set.deletedAt == null &&
+                    set.sessionExerciseId in exercises &&
+                    sessionId != null &&
+                    sessionId in sessions
+            }
+            .mapTo(mutableSetOf()) { it.id }
+    }
+
+    /**
+     * Which rows of one kind are live after the merge, asked by a child that is only drawn through its parents
+     * (N261).
+     *
+     * Live in the file means inserted or restored; live here means the merge leaves it alone; hidden in both
+     * means it stays hidden. An id in neither is not a row the merge can produce — the insert would fail its
+     * foreign key — and answers false.
+     */
+    private data class LiveAfterMerge(
+        private val file: Map<String, Long?>,
+        private val local: Map<String, Long?>,
+    ) {
+        operator fun contains(id: String): Boolean =
+            (file.containsKey(id) && file[id] == null) || (local.containsKey(id) && local[id] == null)
+    }
+
     override suspend fun import(text: String): DataResult<ImportSummary> = dataResultOf {
         // Throws InvalidInputException for a file we cannot use, before touching
         // anything — a rejected file must leave the database exactly as it was.
@@ -284,6 +336,9 @@ class RoomBackupRepository @Inject constructor(
         val file = BackupCodec.decode(text).let { decoded ->
             decoded.copy(exercises = decoded.exercises.withValidLibraryShape())
         }
+        // The sets both sides will count (N261): the question and the summary have to agree about a set the
+        // merge writes but the history will not draw.
+        val drawnSets = visibleSetIds(file)
 
         // One transaction, so a failure part-way cannot leave sessions without their sets.
         // The shape is: a soft delete keeps the row under its id, so an insert-only import
@@ -296,7 +351,7 @@ class RoomBackupRepository @Inject constructor(
         // block first made every restore into a fresh database fail with
         // `FOREIGN KEY constraint failed` and roll the whole import back.
         database.withTransaction {
-            val inserted = insertMissing(file)
+            val inserted = insertMissing(file, drawnSets)
             val programs = importPrograms(file)
             // The goal periods merge **inside** the transaction like every other table (B144). They used to run
             // after it, as the last trace of the seam the preferences store needed: a goal is a row now, and a
@@ -304,7 +359,7 @@ class RoomBackupRepository @Inject constructor(
             val goals = restoreGoalPeriods(file)
             ImportSummary(
                 added = inserted + programs.added + goals,
-                restored = restoreSoftDeleted(file) + programs.restored,
+                restored = restoreSoftDeleted(file, drawnSets) + programs.restored,
             )
         }
     }
@@ -312,13 +367,15 @@ class RoomBackupRepository @Inject constructor(
     /**
      * Brings back the rows this device holds as soft-deleted, and counts what genuinely came
      * back: only a row the file itself has *live* did, because one the file also records as
-     * deleted is still deleted.
+     * deleted is still deleted. A set counts only when the exercise and session it is drawn
+     * through will be live too (N261) — the row comes back either way, for a later restore of
+     * the exercise to find.
      *
      * Extracted from [import] because that function had reached the length this project
      * enforces, and the seven tables here are one shape repeated — updates, so no foreign-key
      * ordering is involved: every row already exists and only its own columns change.
      */
-    private suspend fun restoreSoftDeleted(file: BackupFile): Int {
+    private suspend fun restoreSoftDeleted(file: BackupFile, drawnSets: Set<String>): Int {
         // Read once into sets: asking the database per row would be a query per element.
         val hiddenExercises = dao.softDeletedExerciseIds().toSet()
         val hiddenSessions = dao.softDeletedSessionIds().toSet()
@@ -367,7 +424,7 @@ class RoomBackupRepository @Inject constructor(
         return exercises.count { it.deletedAt == null } +
             sessions.count { it.deletedAt == null } +
             sessionExercises.count { it.deletedAt == null } +
-            sets.count { it.deletedAt == null } +
+            sets.count { it.deletedAt == null && it.id in drawnSets } +
             templates.count { it.deletedAt == null } +
             templateExercises.count { it.deletedAt == null } +
             templateSets.count { it.deletedAt == null } +
@@ -442,14 +499,17 @@ class RoomBackupRepository @Inject constructor(
     }
 
     /**
-     * Inserts what the file has and this device does not, counting only the rows that became live (B330).
+     * Inserts what the file has and this device does not, counting only the rows that became live and can be
+     * drawn (B330, N261).
      *
      * `IGNORE` skips live rows and the ones just restored, and Room returns -1 for a skipped row; a row the
-     * file records as deleted goes in hidden and did not become live, so it is not counted.
+     * file records as deleted goes in hidden and did not become live, so it is not counted. A set also needs the
+     * exercise and session it is drawn through to be live — [drawnSets] is that answer, computed once by
+     * [import] for both sides.
      *
      * Parents before children, so the foreign keys hold as rows go in.
      */
-    private suspend fun insertMissing(file: BackupFile): Int {
+    private suspend fun insertMissing(file: BackupFile, drawnSets: Set<String>): Int {
         val attemptedMeasurements = file.measurements.withoutAnExistingDay()
         val measurementParents = attemptedMeasurements.mapTo(mutableSetOf()) { it.id }
         measurementParents += measurements.allForExport()
@@ -469,7 +529,7 @@ class RoomBackupRepository @Inject constructor(
             soreMuscles.insert(file.sessionSoreMuscles.map { it.toEntity() })
                 .countLive(file.sessionSoreMuscles) { it.deletedAt == null } +
             dao.insertSets(file.sets.map { it.toEntity() })
-                .countLive(file.sets) { it.deletedAt == null } +
+                .countLive(file.sets) { it.deletedAt == null && it.id in drawnSets } +
             dao.insertTemplates(file.templates.map { it.toEntity() })
                 .countLive(file.templates) { it.deletedAt == null } +
             dao.insertTemplateExercises(file.templateExercises.map { it.toEntity() })

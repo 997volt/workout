@@ -1001,6 +1001,11 @@ class BackupRoundTripTest {
         assertEquals(0, preview.sessions.alreadyHere)
         assertEquals(0, preview.sessions.added)
         assertEquals(
+            "the set is drawn through that session, so it is here and becomes visible with it",
+            1,
+            preview.sets.alreadyHere,
+        )
+        assertEquals(
             "reading the file wrote nothing",
             0,
             database.workoutDao().observeHistory().first().size,
@@ -1033,17 +1038,17 @@ class BackupRoundTripTest {
         assertEquals(0, preview.sessions.added)
         assertEquals(0, preview.sessions.restored)
         assertEquals(
-            "the sets under it are live rows, and the merge does write those",
-            1,
+            "the set under it is live, but nothing draws it: its exercise and session stay hidden (N261)",
+            0,
             preview.sets.inFile,
         )
 
         val summary = (repository.import(text) as DataResult.Success).data
 
         assertEquals(
-            "the hidden session and its exercise are carried, not counted: " +
-                "the exercise, set, plan and its two plan rows are what became live",
-            5,
+            "the hidden session and its exercise are carried, not counted, and the set is not drawn: " +
+                "the exercise, plan and its two plan rows are what became live",
+            4,
             summary.added,
         )
         assertEquals(0, summary.restored)
@@ -1051,6 +1056,11 @@ class BackupRoundTripTest {
         assertNotNull(
             "the row is still carried, hidden, so a later restore can bring it back",
             database.backupDao().allSessions().single().deletedAt,
+        )
+        assertEquals("the set is written anyway", 1, database.backupDao().allSets().size)
+        assertNull(
+            "and the set itself is live — it is the drawing that fails",
+            database.backupDao().allSets().single().deletedAt,
         )
     }
 
@@ -1068,5 +1078,70 @@ class BackupRoundTripTest {
         assertEquals(0, preview.sessions.inFile)
         assertEquals(0, preview.sessions.restored)
         assertEquals(0, preview.sessions.alreadyHere)
+    }
+
+    @Test
+    fun aSetUnderARemovedExercise_isWrittenButNotCounted() = runTest {
+        // N261: removing an exercise hides the session-exercise row and leaves its sets live. The workout is
+        // still drawn, so the sheet must not promise sets that history will never show.
+        seedAWorkout()
+        workouts.removeExercise("se-1")
+        val text = exportedJson()
+
+        database.clearAllTables()
+
+        val preview = (repository.preview(text) as DataResult.Success).data
+
+        assertEquals("the workout is live", 1, preview.sessions.inFile)
+        assertEquals("but the exercise it hangs off was removed", 0, preview.sets.inFile)
+
+        val summary = (repository.import(text) as DataResult.Success).data
+
+        assertEquals(
+            "the session, exercise, plan and its two plan rows became live; the set is written, not drawn",
+            5,
+            summary.added,
+        )
+        assertEquals(
+            "the set row is there, for a later restore of the exercise",
+            1,
+            database.backupDao().allSets().size,
+        )
+    }
+
+    @Test
+    fun aRestoredSetWhoseExerciseStaysHidden_isNotCounted() = runTest {
+        // N261 on the restore side: the file has the set live, so the merge un-hides it — but the exercise it
+        // is drawn through stays hidden, so it is not counted as coming back.
+        seedAWorkout()
+        workouts.removeExercise("se-1")
+        val text = exportedJson()
+        database.workoutDao().softDeleteSet("set-1", at = 9_000L)
+
+        val preview = (repository.preview(text) as DataResult.Success).data
+        assertEquals("the set would come back, but nothing would draw it", 0, preview.sets.inFile)
+
+        val summary = (repository.import(text) as DataResult.Success).data
+        assertEquals("so it is not counted as back", 0, summary.restored)
+        assertNull(
+            "the row is un-hidden anyway, for a later restore of the exercise",
+            database.backupDao().allSets().single().deletedAt,
+        )
+    }
+
+    @Test
+    fun aRestoredSetWhoseExerciseComesBack_isCounted() = runTest {
+        // The other half of N261, so the gate is not simply dropping every restored set: with its exercise and
+        // session live, the set is drawn and the merge says so.
+        seedAWorkout()
+        val text = exportedJson()
+        database.workoutDao().softDeleteSet("set-1", at = 9_000L)
+
+        val preview = (repository.preview(text) as DataResult.Success).data
+        assertEquals(1, preview.sets.inFile)
+        assertEquals("the set comes back into a live exercise", 1, preview.sets.restored)
+
+        val summary = (repository.import(text) as DataResult.Success).data
+        assertEquals(1, summary.restored)
     }
 }
