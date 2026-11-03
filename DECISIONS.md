@@ -69,6 +69,12 @@ the rule; that one argues it.
   duplicate repair and the seed's own retirement delete, and both write the id and its survivor to
   `retired_movements` first, which is what a program document exported before the merge resolves through.
   A ruled source has to be an import's leftover shape: a movement the lifter filled in is theirs.
+- **A merge reports the history the picker counted, not the rows it re-pointed** (B333). The confirmation says
+  how many finished sessions and live plans moved, the same reads the survivor picker shows, so one definition
+  serves the number offered for a movement and the number reported for it. Counting session-exercise rows
+  instead — the first cut — made the two disagree by every deleted, unfinished or repeated row, and a plan
+  holding the movement twice read as two plans. Rejected: relabelling the sentence as *entries*, because the
+  picker is where two histories are compared and a second unit invites reading the two numbers as one.
 
 ## Templates and plans
 
@@ -759,6 +765,10 @@ the rule; that one argues it.
   boundary and keeps it out of a backup. The group is judged on its first set, a rung cut short does not
   hold it back, and the rest waits for the run to close. Rejected: a per-rung rating, because the group
   is one effort. ([evidence](DECISIONS-EVIDENCE.md#n79))
+- **A warm-up is never a week's best** (B331, extending N67). *What moved* compares a week's heaviest set with
+  the heaviest before it, so it takes the same `SetType.recordsEffort` roles the records do — from the enum
+  rather than a literal in the query — and a warm-up or a rung can neither raise the week's top nor become the
+  bar the next week is measured against.
 - **The workout's overflow is the logger's own business, and the templates list withholds the start**
   (N78, narrowed by N87). The tab bar stays off the logger (N34), and N87 leaves the overflow holding
   only *Discard* mid-workout because the two plan screens already live on home's start bar, which stays
@@ -1601,6 +1611,13 @@ the rule; that one argues it.
   session is the same shape at the top: it comes back **closed at its own start** (B150), because
   `finishedAt IS NULL` is the app's whole definition of the workout in progress and a file may not decide what
   this device is doing.
+- **The restore question and its summary count one set of rows: those that become live and can be drawn**
+  (B330, N261). A row the file records as deleted is carried across hidden and is neither *new* nor *back*; a
+  live row under a parent that stays hidden — a set whose session exercise or session the file keeps deleted —
+  is written and drawn nowhere, so it is not promised either. The preview and the post-write summary share the
+  rule, because a question that promised a different set from the one the merge writes would be worse than no
+  question. Rejected: counting every row the write touches, since a row written hidden is fidelity for a later
+  restore rather than something the lifter can find.
 
 - **One program-edit core is compiled into both hosts, and neither calls the other** (N170). The
   document's model, codec, version gate, validation and edit planner live in a Kotlin Multiplatform

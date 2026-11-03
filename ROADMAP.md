@@ -17,14 +17,8 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-2.21 shipped the 2.20 follow-up batch (N248–N254, B329) and the review's fixes. What is left is where the rules
-those fixes settled belong; a new product direction is not queued — the Parked triggers have not fired, so the
-next feature is a decision rather than a row. One row is picked up at a time; a row that ships leaves this file
-for [CHANGELOG.md](CHANGELOG.md).
-
-| # | Change | Why it matters | Size |
-| --- | --- | --- | --- |
-| N263 | **Put this batch's settled rules in DECISIONS.** A warm-up is never a week's best, the backup preview and its summary count rows that become live, and a merge counts sessions by the picker's read — the rules B331, B330 and B333 settled, recorded so far only in KDoc, tests and the changelog. | DECISIONS is where a rule that binds every change lives; a future change that re-derives one of these from scratch is how the KDoc and the code drift apart again. | Small |
+Nothing is in flight. 2.21 shipped the 2.20 follow-up batch (N248–N254, B329) and the review's fixes, whose
+settled rules are in [DECISIONS.md](DECISIONS.md); nothing is queued behind them.
 
 ## Later — decided, and not being started
 
