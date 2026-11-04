@@ -18,14 +18,14 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 ## Next
 
 Nothing is in flight. 2.21 shipped the 2.20 follow-up batch (N248–N254, B329) and the review's fixes, whose
-settled rules are in [DECISIONS.md](DECISIONS.md). The unreleased [CHANGELOG.md](CHANGELOG.md) carries nine
+settled rules are in [DECISIONS.md](DECISIONS.md). The unreleased [CHANGELOG.md](CHANGELOG.md) carries eleven
 entries: the two 2.21 follow-ups (N261, N262), the program table's repeated movement (N264), the energy verdict's
-unit (B335), the body's two derived masses (N265), the zero that was a weigh-in (B336), the day a workout can now
-be moved to (N266) and the refusal that said the wrong thing (B337). Two rows are queued from that review:
+unit (B335), the body's two derived masses (N265), the zero that was a weigh-in (B336) with the boundary that now
+refuses one (B338), the day a workout can now be moved to (N266) and the refusal that said the wrong thing
+(B337). One row is queued from that review:
 
 | # | Change | Why it matters | Size |
 | --- | --- | --- | --- |
-| B338 | **The measurement save refuses a non-positive weight, like the day's targeted write does.** `setDailyWeight` refuses `grams <= 0`; `save` validates sore-muscle scores but never looks at `weightGrams`. The form is `save`'s only caller today and it normalizes a typed zero to no weight, so nothing is broken — but the repository is where "an import may carry anything" is caught, and the rule B336 named now lives in one method only. Add the guard and the domain test `statedBodyWeightGrams`/`statesSomething` never had. | A backup or a future caller that hands `save` a zero is stored silently, and the readers are then the only thing keeping it out of the chart and the trend — the defence is a rule in every reader instead of one check at the boundary. The direct test is where the rule lives rather than where its effects show. | Small |
 | N267 | **A corrected workout's day is announced.** The ⋮ → *Change date* write lands silently: the header's date changes and nothing says so. The per-screen rule is to announce state changes, and this write's whole effect *is* a date — so a snackbar naming it ("Moved to 26 September") is the confirmation the delete and its undo already use. | A lifter who picked the wrong day sees no evidence the tap landed, and TalkBack hears nothing at all. Every other write on this screen either changes the screen's shape (delete leaves) or is one row among many, while this one is a single date in a header line that is easy to have scrolled past. | Small |
 
 ## Later — decided, and not being started

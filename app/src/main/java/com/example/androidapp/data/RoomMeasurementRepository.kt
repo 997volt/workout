@@ -90,6 +90,10 @@ class RoomMeasurementRepository @Inject constructor(
                 "A sore-muscle score must be between ${TenPointScale.MIN} and ${TenPointScale.MAX}.",
             )
         }
+        // A weight is a positive number of grams (B336, B338): the form states none for a typed zero, and this
+        // is the boundary that catches anything which did not come through the form. The same rule the day's
+        // targeted write holds (`setDailyWeight`), stated once for both.
+        requireStatedWeight(measurement.weightGrams)
         // One entry of each kind for a day, so a tape entry edits its own row rather than the one the
         // scale wrote (N113). The day is the local one, not a fixed span (N32, B133).
         val zone = ZoneId.systemDefault()
@@ -148,7 +152,7 @@ class RoomMeasurementRepository @Inject constructor(
     }
 
     override suspend fun setDailyWeight(at: Instant, grams: Long): DataResult<Unit> = dataResultOf {
-        if (grams <= 0L) throw InvalidInputException("A weight must be more than zero.")
+        requireStatedWeight(grams)
         val zone = ZoneId.systemDefault()
         val (dayStart, dayEnd) = at.localDayBounds(zone)
         database.withTransaction {
@@ -242,6 +246,18 @@ private fun List<SoreMuscle>.toRows(measurementId: String, now: Long): List<Meas
             deletedAt = null,
         )
     }
+
+/**
+ * A weight a row may store, or a refusal (B338).
+ *
+ * A body weight is a **positive** number of grams — `null` states none, which is the form's answer for a blank
+ * field and for a typed zero (B336) — and a stored zero or negative is a reading nothing should fit. The two
+ * writes that can carry one ask this, so the rule is one check rather than a reader-side habit; an import may
+ * carry anything, which is what the repository is the boundary for.
+ */
+private fun requireStatedWeight(grams: Long?) {
+    if (grams != null && grams <= 0L) throw InvalidInputException("A weight must be more than zero.")
+}
 
 private fun MeasurementEntity.toDomain(soreRows: List<MeasurementSoreMuscleEntity>) = BodyMeasurement(
     id = id,

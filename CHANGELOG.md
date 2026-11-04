@@ -42,6 +42,12 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A weight of zero is refused at the boundary, not only in the form** (B338). A typed zero never reaches the
+  store through the daily form — it states no weight — but `save` itself accepted any `weightGrams`, while the
+  day's targeted `setDailyWeight` already refused a non-positive one. Both writes now ask one rule, so a zero
+  that arrives by another road (a backup, a later caller) is turned away instead of being stored and then
+  ignored by every reader in turn. `statedBodyWeightGrams` and `statesSomething` also gained the domain test the
+  rule never had.
 - **A refused day correction says which refusal it is** (B337). One message — "That day has not happened yet." —
   covered two different refusals: a session still running, and a day whose session would end in the future. The
   second is reachable through the calendar's own bound, since it stops at today: at 09:00, yesterday's 18:00

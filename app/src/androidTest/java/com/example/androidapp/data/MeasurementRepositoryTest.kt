@@ -86,6 +86,20 @@ class MeasurementRepositoryTest {
     }
 
     @Test
+    fun savingAZeroWeight_isRefused_atTheBoundary() = runTest {
+        // B338: the form states no weight for a typed zero, and the repository refuses one that arrives by any
+        // other road — the rule the day's targeted write already held, and the one every reader otherwise
+        // re-applies to keep a nought out of the chart.
+        val result = repository.save(entry(at = localHour(8), weightGrams = 0L))
+
+        assertEquals(
+            "A weight must be more than zero.",
+            ((result as DataResult.Failure).error as DataError.Invalid).message,
+        )
+        assertTrue("nothing was written", repository.observeAll().first().isEmpty())
+    }
+
+    @Test
     fun savingOnAnotherDay_addsAnEntry() = runTest {
         repository.save(entry(at = localHour(8), weightGrams = 82_000L))
         // A day after today is refused now (B212), so "another day" is taken from the past.
