@@ -42,6 +42,12 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A refused day correction says which refusal it is** (B337). One message — "That day has not happened yet." —
+  covered two different refusals: a session still running, and a day whose session would end in the future. The
+  second is reachable through the calendar's own bound, since it stops at today: at 09:00, yesterday's 18:00
+  session can be moved to today, where the day has begun and 18:00 has not. The domain now answers with the
+  reason, and the refusal reads "That would end the workout in the future."; a running session gets its own
+  sentence ("Finish the workout before changing its day.") for the day a screen starts opening one.
 - **A zero weight is not a weigh-in** (B336). The daily form accepted a typed "0" as a body weight, because the
   parser must accept it as a *load* — a bodyweight set adds nothing — and a nought states something. One such
   row was fitted like any other: it dragged the weight trend by about the body weight across the window and

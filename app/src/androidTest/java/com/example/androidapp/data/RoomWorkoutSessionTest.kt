@@ -364,14 +364,39 @@ class RoomWorkoutSessionTest {
     @Test
     fun aDayThatHasNotHappened_isRefused_andWritesNothing() = runTest {
         // The clock is 29 September; a session moved to the 30th would end in the future, which is not a record
-        // (B212's rule). It is refused with a sentence rather than written.
+        // (B212's rule), and the sentence says that rather than claiming the day does not exist (B337).
         val started = start()
         repository.finishSession(started.id)
 
         val result = repository.moveSessionToDay(started.id, LocalDate.of(2026, 9, 30))
 
-        assertTrue("refused, not stored", (result as DataResult.Failure).error is DataError.Invalid)
+        val error = (result as DataResult.Failure).error
         assertEquals(
+            "the refusal names the future, not the day",
+            "That would end the workout in the future.",
+            (error as DataError.Invalid).message,
+        )
+        assertEquals(
+            Instant.parse("2026-09-29T08:00:00Z"),
+            repository.observeSession(started.id).first()!!.startedAt,
+        )
+    }
+
+    @Test
+    fun aSessionStillRunning_isRefusedWithItsOwnSentence() = runTest {
+        // B337: a session with no finish has no day to correct, and says so — the message is not the future one.
+        val started = start()
+
+        val result = repository.moveSessionToDay(started.id, LocalDate.of(2026, 9, 26))
+
+        val error = (result as DataResult.Failure).error
+        assertEquals(
+            "the refusal names what is missing: the finish",
+            "Finish the workout before changing its day.",
+            (error as DataError.Invalid).message,
+        )
+        assertEquals(
+            "and nothing was written",
             Instant.parse("2026-09-29T08:00:00Z"),
             repository.observeSession(started.id).first()!!.startedAt,
         )

@@ -26,12 +26,14 @@ class WorkoutSessionDayTest {
 
     @Test
     fun movingToAnotherDay_keepsTheHourAndTheLength() {
-        val moved = session.movedToDay(
+        val correction = session.movedToDay(
             day = LocalDate.of(2026, 10, 2),
             zone = berlin,
             now = Instant.parse("2026-10-06T09:00:00Z"),
-        )!!
+        )
 
+        assertThat(correction).isInstanceOf(DayCorrection.Moved::class.java)
+        val moved = (correction as DayCorrection.Moved).session
         assertThat(moved.startedAt).isEqualTo(Instant.parse("2026-10-02T16:00:00Z"))
         assertThat(moved.finishedAt).isEqualTo(Instant.parse("2026-10-02T17:30:00Z"))
         assertThat(Duration.between(moved.startedAt, moved.finishedAt))
@@ -39,20 +41,23 @@ class WorkoutSessionDayTest {
     }
 
     @Test
-    fun anOpenSession_hasNoFinishToKeep() {
+    fun anOpenSession_saysItIsStillRunning() {
+        // B337: the reason is part of the answer, because the sentence the screen shows is the reason.
         val running = session.copy(finishedAt = null)
 
         assertThat(running.movedToDay(LocalDate.of(2026, 10, 2), berlin, Instant.parse("2026-10-06T09:00:00Z")))
-            .isNull()
+            .isEqualTo(DayCorrection.StillRunning)
     }
 
     @Test
-    fun aDayWhoseSessionWouldEndInTheFuture_isRefused() {
+    fun aDayWhoseSessionWouldEndInTheFuture_saysItHasNotHappened() {
         // Moving this session to today keeps its 18:00 hour; at 09:00 that workout has not happened, and a record
         // is of the past (B212's rule). Yesterday's edition of it is fine — it ended by then.
         val now = Instant.parse("2026-10-06T07:00:00Z")
 
-        assertThat(session.movedToDay(LocalDate.of(2026, 10, 6), berlin, now)).isNull()
-        assertThat(session.movedToDay(LocalDate.of(2026, 10, 5), berlin, now)).isNotNull()
+        assertThat(session.movedToDay(LocalDate.of(2026, 10, 6), berlin, now))
+            .isEqualTo(DayCorrection.NotYetHappened)
+        assertThat(session.movedToDay(LocalDate.of(2026, 10, 5), berlin, now))
+            .isInstanceOf(DayCorrection.Moved::class.java)
     }
 }

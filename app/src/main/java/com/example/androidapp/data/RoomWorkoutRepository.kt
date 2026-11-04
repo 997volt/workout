@@ -16,6 +16,7 @@ import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.ZoneOffsetSource
 import com.example.androidapp.domain.dataResultOf
 import com.example.androidapp.domain.model.Activity
+import com.example.androidapp.domain.model.DayCorrection
 import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.PerformedSetSpec
 import com.example.androidapp.domain.model.PersonalRecords
@@ -349,25 +350,35 @@ class RoomWorkoutRepository @Inject constructor(
     }
 
     /**
-     * Corrects the day a finished session happened on (ROADMAP N266).
+     * Corrects the day a finished session happened on (ROADMAP N266, B337).
      *
      * A workout done without the phone is logged on the day the app is next opened, and that day is what the
      * month grid, the week in review and the adherence record read. The arithmetic is the domain's — both
      * instants move together, so the session keeps its length — and this writes its answer in one statement.
      *
-     * A session still running has no finish to keep, and a day whose session would end in the future has not
-     * happened: both are refused with a sentence, the rule a measurement day already holds (B212).
+     * Each refusal says what it is: a session still running has no day to correct, and a move that would end
+     * the session after now describes a workout that has not happened (B212's rule). The second is reachable
+     * through the calendar's own bound — today can be picked at 09:00 for a session whose hour is 18:00.
      */
     override suspend fun moveSessionToDay(sessionId: String, day: LocalDate): DataResult<Unit> = dataResultOf {
         val session = dao.findSession(sessionId)?.toDomain(emptyList())
             ?: throw NotFoundException("session $sessionId")
-        val moved = session.movedToDay(
-            day = day,
-            // The session's own zone is the frame its day reads in everywhere else; an old row has none, and the
-            // device's is the answer it is read with (N25).
-            zone = session.zoneIdOrNull() ?: ZoneId.systemDefault(),
-            now = Instant.ofEpochMilli(timeSource.nowEpochMillis()),
-        ) ?: throw InvalidInputException("That day has not happened yet.")
+        val moved = when (
+            val correction = session.movedToDay(
+                day = day,
+                // The session's own zone is the frame its day reads in everywhere else; an old row has none,
+                // and the device's is the answer it is read with (N25).
+                zone = session.zoneIdOrNull() ?: ZoneId.systemDefault(),
+                now = Instant.ofEpochMilli(timeSource.nowEpochMillis()),
+            )
+        ) {
+            is DayCorrection.Moved -> correction.session
+            DayCorrection.StillRunning ->
+                throw InvalidInputException("Finish the workout before changing its day.")
+
+            DayCorrection.NotYetHappened ->
+                throw InvalidInputException("That would end the workout in the future.")
+        }
         val updated = dao.moveSession(
             id = sessionId,
             startedAt = moved.startedAt.toEpochMilli(),

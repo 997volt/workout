@@ -24,23 +24,46 @@ fun WorkoutSession.zoneIdOrNull(): ZoneId? = zoneOffsetMinutes?.let { minutes ->
 private const val SECONDS_PER_MINUTE = 60
 
 /**
+ * What correcting a session's day produced (ROADMAP N266, B337).
+ *
+ * **Two refusals rather than one null**, because they are different facts and the sentence a lifter reads has
+ * to be the one that is true: a session still running has no finish to keep, while a move that would end after
+ * now describes a workout that has not happened — and the second is reachable through the calendar's own
+ * bound, where today has begun but the session's hour of it has not.
+ */
+sealed interface DayCorrection {
+    /** The session, with both instants moved. */
+    data class Moved(val session: WorkoutSession) : DayCorrection
+
+    /** Still running, so there is no finish to keep and no day to correct. */
+    data object StillRunning : DayCorrection
+
+    /** That day would end the session after [movedToDay]'s `now`, so it has not happened yet. */
+    data object NotYetHappened : DayCorrection
+}
+
+/**
  * This session on [day], keeping its hour of day and the length it had (ROADMAP N266).
  *
  * A **correction, not a re-statement**: the session happened, and the day the app wrote is the day the app was
  * opened. Both instants travel by the same offset, so the workout keeps its duration — moving only the start
  * would stretch or invert it.
  *
- * **Null** is the answer when there is nothing to correct: a session still running has no finish to keep, and a
- * move that would end the session after [now] is refused, because a workout that has not happened is not a
- * record — the rule a measurement day already holds (B212). The zone is the session's own where it recorded
- * one, because that is the frame its day is read in everywhere else; the caller answers for an old row with the
- * device's.
+ * The two ways there is nothing to correct are told apart in [DayCorrection], because the caller says which one
+ * it is: a session still running, and a move that would end the session after [now] — a workout that has not
+ * happened is not a record, the rule a measurement day already holds (B212). The zone is the session's own where
+ * it recorded one, because that is the frame its day is read in everywhere else; the caller answers for an old
+ * row with the device's.
  */
-fun WorkoutSession.movedToDay(day: LocalDate, zone: ZoneId, now: Instant): WorkoutSession? {
-    val finished = finishedAt ?: return null
+fun WorkoutSession.movedToDay(day: LocalDate, zone: ZoneId, now: Instant): DayCorrection {
+    val finished = finishedAt ?: return DayCorrection.StillRunning
     val movedStart = startedAt.withDay(day, zone)
     val movedFinish = finished.plus(Duration.between(startedAt, movedStart))
-    return if (movedFinish.isAfter(now)) null else copy(startedAt = movedStart, finishedAt = movedFinish)
+    return if (movedFinish.isAfter(now)) {
+        DayCorrection.NotYetHappened
+    } else {
+        DayCorrection.Moved(copy(startedAt = movedStart, finishedAt = movedFinish))
+    }
 }
 
 /**
