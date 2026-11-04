@@ -17,12 +17,11 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-Nothing is in flight. 2.21 shipped the 2.20 follow-up batch (N248–N254, B329) and the review's fixes, whose
-settled rules are in [DECISIONS.md](DECISIONS.md). The unreleased [CHANGELOG.md](CHANGELOG.md) carries twelve
-entries: the two 2.21 follow-ups (N261, N262), the program table's repeated movement (N264), the energy verdict's
-unit (B335), the body's two derived masses (N265), the zero that was a weigh-in (B336) with the boundary that now
-refuses one (B338), the day a workout can be moved to (N266), and what that correction says on the way out and on
-the way back (B337, N267). Nothing is queued behind them.
+Nothing is in flight. 2.22 shipped the 2.21 follow-ups (N261, N262), the program table's repeated movement
+(N264), the energy verdict's unit (B335), the body's two derived masses (N265), the zero that was a weigh-in
+(B336) with the boundary that now refuses one (B338), the day a workout can be moved to (N266), and what that
+correction says on the way out and on the way back (B337, N267); their settled rules are in
+[DECISIONS.md](DECISIONS.md). Nothing is queued behind them.
 
 ## Later — decided, and not being started
 
