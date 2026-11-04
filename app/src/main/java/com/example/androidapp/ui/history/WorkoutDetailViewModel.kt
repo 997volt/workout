@@ -360,14 +360,42 @@ class WorkoutDetailViewModel @Inject constructor(
     }
 
     /**
-     * Corrects the day this workout happened on (ROADMAP N266).
+     * The day this workout was just moved to, for the screen to say (N267).
+     *
+     * Null until a correction lands and cleared once the sentence is read: the correction's whole effect is the
+     * header's date, so it is announced rather than left to be noticed. Set by the write rather than derived
+     * from the session, for [_rateVerdict]'s reason — a value read from the data would be said again on every
+     * return to the screen.
+     */
+    private val _movedDay = MutableStateFlow<LocalDate?>(null)
+
+    val movedDay: StateFlow<LocalDate?> = _movedDay.asStateFlow()
+
+    /**
+     * Corrects the day this workout happened on (ROADMAP N266, N267).
      *
      * The start is stamped when the app is opened, so a workout done without the phone lands on the day it was
      * written down rather than the day it happened — and that day is what the month grid, the week in review
-     * and the adherence record read. The hour and the length are kept; a day that has not happened is refused
-     * by the repository with a sentence, which the snackbar says.
+     * and the adherence record read. The hour and the length are kept; a refusal is the repository's to say,
+     * and it reaches the snackbar as an error while a success reaches it as the new day.
      */
-    fun onMoveToDay(day: LocalDate) = write { workoutRepository.moveSessionToDay(sessionId, day) }
+    fun onMoveToDay(day: LocalDate) {
+        viewModelScope.launch {
+            when (val result = workoutRepository.moveSessionToDay(sessionId, day)) {
+                is DataResult.Success -> {
+                    lastError.value = null
+                    _movedDay.value = day
+                }
+
+                is DataResult.Failure -> lastError.value = result.error
+            }
+        }
+    }
+
+    /** Called once the moved-to sentence has been read (N267). */
+    fun onDismissMovedDay() {
+        _movedDay.value = null
+    }
 
     private fun write(block: suspend () -> DataResult<Unit>) {
         viewModelScope.launch {

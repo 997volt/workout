@@ -48,7 +48,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
-import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.SetType
@@ -95,6 +94,7 @@ fun WorkoutDetailRoute(
     val savedTemplate by viewModel.savedTemplate.collectAsStateWithLifecycle()
     val programs by viewModel.programs.collectAsStateWithLifecycle()
     val scheduledProgram by viewModel.scheduledProgram.collectAsStateWithLifecycle()
+    val movedDay by viewModel.movedDay.collectAsStateWithLifecycle()
     val currentOnOpenProgram by rememberUpdatedState(onOpenProgram)
 
     LaunchedEffect(scheduledProgram) {
@@ -128,15 +128,44 @@ fun WorkoutDetailRoute(
         onOpenTemplate = onOpenTemplate,
         programs = programs,
         onScheduleTemplate = viewModel::onScheduleTemplate,
+        movedDay = movedDay,
+        onDismissMovedDay = viewModel::onDismissMovedDay,
     )
 }
 
-/** Shows the screen's one write failure, if there is one (F7). */
+/**
+ * The screen's own sentences: a write's failure, and the day a correction landed on (F7, N267).
+ *
+ * One composable because both are the same shape — a line that states and is taken — and because the screen
+ * around them is at the length this project allows. The moved-to sentence **is** the confirmation: the write's
+ * whole effect is the header's date, and a line that quietly changes its text is not announced. Keyed on the day,
+ * so a second correction says its own piece rather than being swallowed as "the same value" (B3's rule).
+ */
 @Composable
-private fun DetailErrorEffect(error: DataError?, host: SnackbarHostState) {
-    error?.let {
+private fun DetailNotices(
+    state: WorkoutDetailUiState,
+    movedDay: LocalDate?,
+    host: SnackbarHostState,
+    onDismissMovedDay: () -> Unit,
+) {
+    state.error?.let {
         val message = dataErrorMessage(it)
         LaunchedEffect(message) { host.showSnackbar(message) }
+    }
+
+    val zone = state.session?.zoneIdOrNull() ?: ZoneId.systemDefault()
+    val movedTo = movedDay?.let { day ->
+        stringResource(
+            R.string.history_detail_moved_to,
+            HistoryFormat.date(day.atStartOfDay(zone).toInstant(), zone = zone),
+        )
+    }
+    val currentOnDismiss by rememberUpdatedState(onDismissMovedDay)
+    LaunchedEffect(movedDay) {
+        if (movedTo != null) {
+            host.showSnackbar(movedTo)
+            currentOnDismiss()
+        }
     }
 }
 
@@ -161,9 +190,13 @@ fun WorkoutDetailScreen(
     savedTemplate: String? = null,
     /** P3.18: the programs the saved plan can be scheduled into. */
     programs: List<WorkoutProgram> = emptyList(),
+    /** The day the workout was last moved to, so the correction can be said (N267). */
+    movedDay: LocalDate? = null,
+    /** Called once that sentence has been read. */
+    onDismissMovedDay: () -> Unit = {},
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
-    DetailErrorEffect(error = state.error, host = snackbarHostState)
+    DetailNotices(state, movedDay, snackbarHostState, onDismissMovedDay)
 
     var editing by remember { mutableStateOf<HistorySet?>(null) }
     var confirmingDelete by remember { mutableStateOf(false) }

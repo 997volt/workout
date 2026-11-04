@@ -34,6 +34,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Changed
 
+- **A corrected workout's day is announced** (N267). The *Change date* write landed silently: the header's date
+  moved and nothing said so, though a date is the whole of what that write does. A snackbar now names the day —
+  "Moved to 26 September" — and is taken once read, so the correction is confirmed to the lifter and announced
+  to a screen reader rather than left to be noticed.
 - **A program table's repeated movement becomes one planned exercise** (N264). A table that said 3 × 8 at 100 kg
   and then 2 × 10 at 90 kg for one movement imported as two plan entries, though a planned exercise already
   holds a target per set. Adjacent rows with the same rest, RPE and note are now one exercise whose sets carry

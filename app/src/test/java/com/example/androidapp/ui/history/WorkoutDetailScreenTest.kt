@@ -336,6 +336,23 @@ class WorkoutDetailScreenTest {
             .isEqualTo(Instant.parse("2026-09-28T07:00:00Z").atZone(ZoneId.systemDefault()).toLocalDate())
     }
 
+    @Test
+    fun aCorrectedDay_isSaid_ratherThanLeftToTheHeader() {
+        // N267: the write's whole effect is one header line, so the screen states the day it moved to — which is
+        // also the only thing a screen reader can announce.
+        val day = LocalDate.of(2026, 9, 26)
+        setScreen(movedDay = day)
+
+        val expected = ApplicationProvider.getApplicationContext<Context>().getString(
+            R.string.history_detail_moved_to,
+            HistoryFormat.date(
+                day.atStartOfDay(ZoneId.systemDefault()).toInstant(),
+                zone = ZoneId.systemDefault(),
+            ),
+        )
+        composeTestRule.onNodeWithText(expected).assertExists()
+    }
+
     private fun setScreen(
         uiState: WorkoutDetailUiState = state,
         onUpdateSet: (String, Int, Long, Int?, String?, SetType, Long, Int?) -> Unit =
@@ -350,6 +367,7 @@ class WorkoutDetailScreenTest {
         onOpenTemplate: (String) -> Unit = {},
         programs: List<WorkoutProgram> = emptyList(),
         onScheduleTemplate: (String, DayOfWeek?) -> Unit = { _, _ -> },
+        movedDay: LocalDate? = null,
     ) {
         composeTestRule.setContent {
             WorkoutDetailScreen(
@@ -365,6 +383,8 @@ class WorkoutDetailScreenTest {
                 onOpenTemplate = onOpenTemplate,
                 programs = programs,
                 onScheduleTemplate = onScheduleTemplate,
+                movedDay = movedDay,
+                onDismissMovedDay = {},
                 onBack = {},
                 onDismissSavedTemplate = {},
             )

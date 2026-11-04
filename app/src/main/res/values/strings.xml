@@ -1131,6 +1131,8 @@
     <string name="history_detail_edit">Edit workout</string>
     <string name="history_detail_edit_done">Done editing</string>
     <string name="history_detail_change_day">Change date</string>
+    <!-- What the correction says once it lands (N267). A date is the write's whole effect, so it is named. -->
+    <string name="history_detail_moved_to">Moved to %1$s</string>
     <string name="history_detail_missing">That workout is no longer stored.</string>
     <!-- Repeating one finished workout (ROADMAP N48): the entry point the home button gave up, now
          addressed to the workout the row names rather than to "the last one". -->

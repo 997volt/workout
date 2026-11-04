@@ -109,17 +109,23 @@ class WorkoutDetailViewModelTest {
     }
 
     @Test
-    fun changingTheDay_passesThePickedDay_andClearsTheError() = runTest(dispatcher) {
-        // N266: the screen's part is to hand the chosen day to the repository; the arithmetic and the two
-        // refusals are the domain's and the repository's, tested where they live.
+    fun changingTheDay_passesThePickedDay_andSaysWhichDayItWas() = runTest(dispatcher) {
+        // N266, N267: the screen's part is to hand the chosen day to the repository; the arithmetic and the two
+        // refusals are the domain's and the repository's, tested where they live. A success is then said once,
+        // and taken rather than left standing on the next visit.
         val viewModel = viewModelFor()
         observe(viewModel)
         advanceUntilIdle()
+        assertNull("nothing has been moved yet", viewModel.movedDay.value)
 
         viewModel.onMoveToDay(LocalDate.of(2026, 10, 2))
         advanceUntilIdle()
 
         assertEquals(LocalDate.of(2026, 10, 2), repository.movedTo)
+        assertEquals("the day is said", LocalDate.of(2026, 10, 2), viewModel.movedDay.value)
+
+        viewModel.onDismissMovedDay()
+        assertNull("and said once", viewModel.movedDay.value)
     }
 
     private fun viewModelFor(

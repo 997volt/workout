@@ -1621,7 +1621,10 @@ the rule; that one argues it.
   stamped when the app is opened, so a workout done without the phone lands on the day it was written down —
   and that day is what the month grid, the week in review and the adherence record read. The correction is the
   one ⋮ on the past workout, behind a calendar bounded at today, and **both instants move by the same offset**,
-  so the session keeps its hour of day and the length it had. **Each refusal says which one it is** (B337): a
+  so the session keeps its hour of day and the length it had. **The correction is said** (N267): the snackbar names
+  the day it moved to, because the write's whole effect is that one header line and a line that changes quietly is
+  not announced — it is taken once read, the shape N136's weigh-in line follows. **Each refusal says which one it
+  is** (B337): a
   session still running has no finish to keep — unreachable today, because the screen only opens finished
   sessions — and a day whose session would end in the future has not happened, the rule a measurement already
   holds (B212); that second one *is* reachable through the calendar's own bound, since today can be picked at
