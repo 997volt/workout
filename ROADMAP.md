@@ -28,13 +28,6 @@ existing run at **B339** and **N268**. When a row is picked up its design argume
 
 ### State and interaction
 
-- **B356 — A block's Skip must ask first or be undoable.** The one-tap `home_block_skip` button writes a skip
-  that advances a sequence block permanently
-  ([HomeRows.kt](app/src/main/java/com/example/androidapp/ui/home/HomeRows.kt)); there is no un-skip API, while
-  removing a slot asks and deleting a measurement offers undo. Fixed means a confirmation that names the day
-  and explains what advances (the shape of the slot-removal dialog), or an undo built on the row's existing
-  `deletedAt`, plus the test that covers the chosen path.
-
 ### Backup lifecycle
 
 - **B362 — Automatic backup needs a lifecycle, not only a schedule.** Old folder grants are never released

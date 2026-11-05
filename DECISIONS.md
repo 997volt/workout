@@ -1570,7 +1570,9 @@ the rule; that one argues it.
   forever. A sequence's progress is its place in the block instead. **A block's skip is its own
   action, dated the day it was taken** (B195): a weekly skip is keyed to its week because the
   occurrence is the week's, while a block's session happens once and has no week to be keyed to, so
-  the column that holds a week's start holds that day.
+  the column that holds a week's start holds that day. **It asks first** (B356): the skip advances the block
+  permanently and there is no un-skip, so the one tap that writes is a confirmation rather than the card's
+  action button.
 - **A program's kind and start belong to the program's definition, so an edit may author them**
   (N174, N178, **amended by N186**). N174 first had them device-owned on an edit, like `isActive` and
   `position`; N186 reverses that half because the helper must be able to build a whole block, and a

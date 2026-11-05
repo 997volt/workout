@@ -18,12 +18,17 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.EventAvailable
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.Straighten
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -312,6 +317,9 @@ private fun TodayPlanCard(
  * three are one row: which of them a card offers is the difference between a weekly occurrence and a
  * session in a block.
  */
+// The row's three actions and the one confirmation they need; the card was already split here for the
+// ceiling (B195), and the dialog is one more branch on the same row.
+@Suppress("LongMethod")
 @Composable
 private fun PlanCardActions(
     plan: TodayPlan,
@@ -319,6 +327,7 @@ private fun PlanCardActions(
     onSubstitute: () -> Unit,
     onSkipBlock: () -> Unit,
 ) {
+    var confirmingSkip by rememberSaveable(plan.id) { mutableStateOf(false) }
     val skipLabel = if (plan.isSequence) {
         stringResource(
             R.string.home_block_skip_label,
@@ -350,12 +359,35 @@ private fun PlanCardActions(
         // the one way past a session that cannot be trained (B195).
         if (plan.isSequence && plan.slotId != null) {
             AppTextButton(
-                onClick = onSkipBlock,
+                onClick = { confirmingSkip = true },
                 modifier = Modifier
                     .testTag(TestTags.homeSkipBlock(plan.id))
                     .semantics { contentDescription = skipLabel },
             ) {
                 Text(stringResource(R.string.home_block_skip))
+            }
+            if (confirmingSkip) {
+                AlertDialog(
+                    onDismissRequest = { confirmingSkip = false },
+                    title = { Text(stringResource(R.string.home_block_skip_title)) },
+                    text = { Text(stringResource(R.string.home_block_skip_body, plan.name)) },
+                    confirmButton = {
+                        AppTextButton(
+                            onClick = {
+                                confirmingSkip = false
+                                onSkipBlock()
+                            },
+                            modifier = Modifier.testTag(TestTags.homeSkipConfirm(plan.id)),
+                        ) {
+                            Text(stringResource(R.string.home_block_skip))
+                        }
+                    },
+                    dismissButton = {
+                        AppTextButton(onClick = { confirmingSkip = false }) {
+                            Text(stringResource(R.string.action_cancel))
+                        }
+                    },
+                )
             }
         }
         Button(

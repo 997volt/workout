@@ -693,6 +693,8 @@
     <!-- A block's session happens once, so the weekly *Continue* is not its skip (B195). -->
     <string name="home_block_skip">Skip</string>
     <string name="home_block_skip_label">Skip day %1$d of %2$d</string>
+    <string name="home_block_skip_title">Skip this session?</string>
+    <string name="home_block_skip_body">This moves %1$s past this session for good. There is no undo.</string>
     <string name="home_block_skipped">Session skipped.</string>
     <string name="home_block_finished">Block complete: %1$s.</string>
     <!-- A block is excluded from the ratio, so its own place is what this screen says (N189). -->

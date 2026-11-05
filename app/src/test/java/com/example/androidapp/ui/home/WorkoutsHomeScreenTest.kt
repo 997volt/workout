@@ -699,6 +699,9 @@ class WorkoutsHomeScreenTest {
             .performScrollToNode(hasTestTag(TestTags.homeSkipBlock("slot-9")))
         composeTestRule.onNodeWithTag(TestTags.homeSkipBlock("slot-9")).performClick()
 
+        // B356: the one-tap write is asked first, because the skip advances the block for good.
+        assertThat(skipped).isNull()
+        composeTestRule.onNodeWithTag(TestTags.homeSkipConfirm("slot-9")).performClick()
         assertThat(skipped?.slotId).isEqualTo("slot-9")
         composeTestRule.onNodeWithTag(TestTags.homeSkipBlock("slot-1")).assertDoesNotExist()
     }

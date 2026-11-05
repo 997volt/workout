@@ -17,6 +17,9 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A block's Skip asks before it writes** (B356). The one-tap action advances a finite program past a session
+  permanently, and there is no un-skip, so it now opens a confirmation naming the session; cancelling writes
+  nothing. The test proves the first tap does not call the write and the confirmation does.
 - **Switches and section headings are readable to a screen reader** (B353). The settings and program-editor
   switches had their label in a sibling `Text`, so TalkBack said "On, switch"; `SectionHeader` and
   `TopBarTitle` were plain text, so no long screen could be navigated by heading. The switches now carry their
