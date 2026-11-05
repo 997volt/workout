@@ -1,6 +1,8 @@
 package com.example.androidapp.data.local
 
 import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 
 /**
@@ -17,4 +19,8 @@ interface MovementMergeDao {
     /** Every retired id and what it became, for the document import to resolve through. */
     @Query("SELECT * FROM retired_movements")
     suspend fun retiredMovements(): List<RetiredMovementEntity>
+
+    /** Adds the mapping a restored backup carries, ignoring an id this device already retired (B347). */
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertRetiredMovements(rows: List<RetiredMovementEntity>): List<Long>
 }

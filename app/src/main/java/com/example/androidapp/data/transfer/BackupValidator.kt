@@ -42,6 +42,18 @@ internal object BackupValidator {
         validateTemplateExercises(file.templateExercises, this)
         validateTemplateSets(file.templateSets, this)
         validatePrograms(file, this)
+        validateRetired(file.retiredMovements, this)
+    }
+
+    private fun validateRetired(rows: List<RetiredMovementDto>, out: MutableList<BackupProblem>) {
+        rows.forEachIndexed { index, row ->
+            val where = "Retired movement ${index + 1}"
+            row.id.required(out, where)
+            row.survivorId.required(out, where)
+            if (row.id == row.survivorId) {
+                out += BackupProblem(where, "A retired movement cannot be its own survivor.")
+            }
+        }
     }
 
     private fun validateExercises(rows: List<ExerciseDto>, out: MutableList<BackupProblem>) {

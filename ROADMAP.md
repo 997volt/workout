@@ -26,14 +26,6 @@ existing run at **B339** and **N268**. When a row is picked up its design argume
 
 ### Data correctness and recovery
 
-- **B347 — The backup must carry the movement-merge memory.** `retired_movements` records which merged id
-  became which survivor so a program document exported before a merge resolves to the survivor instead of
-  recreating the twin (N238, schema 16). It is absent from [BackupFile.kt](app/src/main/java/com/example/androidapp/data/transfer/BackupFile.kt)
-  and from the export, so a restore loses that memory and an old document can mint the duplicate the table
-  exists to prevent — including a merge the lifter made deliberately, which the automatic repair leaves alone.
-  Fixed means a defaulted `retiredMovements` collection in the backup format, restored with the same additive
-  rules as the other merge tables, and a test that exports, clears, restores and loads a pre-merge document.
-
 ### State and interaction
 
 - **B349 — A rotation must not discard what was typed.** The measurements form is the clearest case: `adding`

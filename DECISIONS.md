@@ -75,7 +75,9 @@ the rule; that one argues it.
   seed will never ship again. The exception to the sync shape above is deliberate and narrow — only the
   duplicate repair and the seed's own retirement delete, and both write the id and its survivor to
   `retired_movements` first, which is what a program document exported before the merge resolves through.
-  A ruled source has to be an import's leftover shape: a movement the lifter filled in is theirs.
+  **The mapping travels in the backup** (B347): it is this device's own merge history, and a restore that lost
+  it would let an old document recreate the duplicate. A ruled source has to be an import's leftover shape: a
+  movement the lifter filled in is theirs.
 - **A merge reports the history the picker counted, not the rows it re-pointed** (B333). The confirmation says
   how many finished sessions and live plans moved, the same reads the survivor picker shows, so one definition
   serves the number offered for a movement and the number reported for it. Counting session-exercise rows

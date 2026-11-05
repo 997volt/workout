@@ -9,6 +9,7 @@ import com.example.androidapp.data.local.ProgramDeloadDayEntity
 import com.example.androidapp.data.local.ProgramDeloadEntity
 import com.example.androidapp.data.local.ProgramEntity
 import com.example.androidapp.data.local.ProgramSlotEntity
+import com.example.androidapp.data.local.RetiredMovementEntity
 import com.example.androidapp.data.local.SessionExerciseJointEntity
 import com.example.androidapp.data.local.SessionSoreMuscleEntity
 import com.example.androidapp.data.local.TemplateEntity
@@ -171,6 +172,24 @@ class BackupRoundTripTest {
             (result as DataResult.Failure).error is DataError.Invalid,
         )
         assertEquals("a refused import writes nothing", 0, counts().total)
+    }
+
+    @Test
+    fun theMergeMemory_survivesExportAndRestore() = runTest {
+        // B347: a pre-merge program document resolves through this table. If a restore dropped it, loading
+        // that document could bring the duplicate back that N238 exists to prevent.
+        database.movementMergeDao().insertRetiredMovements(
+            listOf(RetiredMovementEntity(id = "old-squat", survivorId = "back-squat")),
+        )
+        val json = exportedJson()
+        database.clearAllTables()
+
+        repository.import(json)
+
+        assertEquals(
+            mapOf("old-squat" to "back-squat"),
+            database.movementMergeDao().retiredMovements().associate { it.id to it.survivorId },
+        )
     }
 
     @Test

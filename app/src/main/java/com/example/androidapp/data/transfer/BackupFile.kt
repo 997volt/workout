@@ -106,6 +106,15 @@ data class BackupFile(
      */
     val programSubstitutions: List<ProgramSubstitutionDto> = emptyList(),
     /**
+     * Movement ids a merge retired and the survivor each became (B347).
+     *
+     * The table exists so a program document exported before a merge resolves to the survivor rather than
+     * recreating the duplicate (N238). A restore that lost it could bring the twin back, so it travels with
+     * the rest of the library context. Defaulted and unbumped: a file written before it existed has no merge
+     * to resolve.
+     */
+    val retiredMovements: List<RetiredMovementDto> = emptyList(),
+    /**
      * Body measurements (ROADMAP N32).
      *
      * Defaulted, like every added collection — and it must be here in the same change as the table,
@@ -622,6 +631,12 @@ data class ProgramDeloadDayDto(
 )
 
 /** One occurrence trained with a different workout (ROADMAP P3.11). */
+@Serializable
+data class RetiredMovementDto(
+    val id: String,
+    val survivorId: String,
+)
+
 @Serializable
 data class ProgramSubstitutionDto(
     val id: String,

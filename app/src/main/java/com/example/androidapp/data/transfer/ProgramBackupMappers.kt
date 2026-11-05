@@ -6,6 +6,12 @@ import com.example.androidapp.data.local.ProgramEntity
 import com.example.androidapp.data.local.ProgramSkipEntity
 import com.example.androidapp.data.local.ProgramSlotEntity
 import com.example.androidapp.data.local.ProgramSubstitutionEntity
+import com.example.androidapp.data.local.RetiredMovementEntity
+
+/** The merge memory the backup carries (B347): one retired id and its survivor. */
+internal fun RetiredMovementEntity.toDto() = RetiredMovementDto(id = id, survivorId = survivorId)
+
+internal fun RetiredMovementDto.toEntity() = RetiredMovementEntity(id = id, survivorId = survivorId)
 
 /**
  * Entity <-> backup DTO for programs (ROADMAP P3.3).

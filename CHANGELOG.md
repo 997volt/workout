@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The movement-merge memory travels in the backup** (B347). `retired_movements` records which id a merge
+  replaced and with what, so a program document exported before the merge resolves to the survivor instead of
+  recreating the duplicate. It was absent from the file, so a restore could bring the twin back. The defaulted
+  collection now exports and restores with the other context tables and is validated like them.
 - **A backup is written from one snapshot, and its import parses off the main thread** (B346). Export read
   roughly eighteen tables through independent DAO calls, so a set logged between two of them could be written
   without its parent; the file then failed the foreign key on import and the restore rolled back — the app's

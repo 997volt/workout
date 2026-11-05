@@ -11,8 +11,8 @@ import androidx.room.PrimaryKey
  * document import resolves through: an id it finds here is read as the survivor, so an old file joins the one
  * movement rather than splitting it again.
  *
- * A row is written once and never updated, and it is not part of the export: it describes what *this* device did
- * to its own library, not a fact about the training.
+ * A row is written once and never updated. It travels in the backup (B347): it is what *this* device did to its
+ * own library, and a restore that lost it would let a document exported before the merge recreate the twin.
  */
 @Entity(tableName = "retired_movements")
 data class RetiredMovementEntity(

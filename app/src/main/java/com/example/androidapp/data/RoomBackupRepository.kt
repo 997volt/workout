@@ -123,6 +123,8 @@ class RoomBackupRepository @Inject constructor(
                     // The workouts that stood in for a slot's own (ROADMAP P3.11): without them a
                     // restored week reads as missed even though it was trained, with something else.
                     programSubstitutions = programBackup.allProgramSubstitutions().map { it.toDto() },
+                    // The ids a merge retired, so a document exported before it resolves to the survivor (B347).
+                    retiredMovements = database.movementMergeDao().retiredMovements().map { it.toDto() },
                     measurements = measurements.allForExport().map { it.toDto() },
                     // The soreness a daily entry reported (ROADMAP N113): a fact the lifter wrote, so a
                     // restore that dropped it would lose work in silence.
@@ -540,6 +542,8 @@ class RoomBackupRepository @Inject constructor(
      * Parents before children, so the foreign keys hold as rows go in.
      */
     private suspend fun insertMissing(file: BackupFile, drawnSets: Set<String>): Int {
+        // The merge memory is context rather than a live row, so it joins the transaction but not the count.
+        database.movementMergeDao().insertRetiredMovements(file.retiredMovements.map { it.toEntity() })
         val attemptedMeasurements = file.measurements.withoutAnExistingDay()
         val measurementParents = attemptedMeasurements.mapTo(mutableSetOf()) { it.id }
         measurementParents += measurements.allForExport()
