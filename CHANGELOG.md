@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The release instructions say which Android API each run covers** (N271). `RELEASING.md` called the
+  dispatch run "the shipping API"; it runs 36, one below the target 37, because no `default`/`aosp_atd` 37 image
+  exists. The nightly is 34 and Robolectric is 35; minimum API 26 has no CI runtime, so the release now records
+  whether it was manually tried.
 - **The hardening batch's UI promises have tests** (B377). The refusal path of history's set editor now proves
   the dialog and its typed value stay, cancelling a block's skip writes nothing, and rotation tests exercise the
   history editor, the planned-set dialog and the measurement edit form rather than only their savers.

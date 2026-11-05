@@ -64,7 +64,7 @@ four that do this.
 
 ### 5. Verify, before tagging
 
-**Dispatch the pipeline first** and wait for both jobs, including the instrumented one: CI no
+**Dispatch the pipeline first** and wait for all three jobs, including the instrumented one: CI no
 longer runs on every push, so nothing else has confirmed this commit on a clean machine.
 
 ```sh
@@ -74,11 +74,23 @@ gh run watch
 
 The build job runs the gate set — unit tests, lint, detekt, R8 — and the instrumented job is the
 only place the emulator suite runs outside a developer's machine, so a release is the wrong time
-to discover either has stopped working. A dispatch is also the one run that uses the **shipping
-API** rather than the nightly's fast API 34 image, so it is the run that would catch a behaviour
-change on a newer Android. If it fails on the emulator rather than on a test, say so and decide
-deliberately: the failure signatures and the API-level split are in
+to discover either has stopped working. If it fails on the emulator rather than on a test, say so
+and decide deliberately: the failure signatures are in
 [DECISIONS-EVIDENCE.md](DECISIONS-EVIDENCE.md#n30-emulator).
+
+**Which API each run actually covers** (N271):
+
+| Run | Android API |
+|---|---|
+| `build` job | `compileSdk`/`targetSdk` 37; JVM unit tests under Robolectric's SDK 35 |
+| nightly `instrumented` | 34 (`aosp_atd`) |
+| dispatch `instrumented` | **36** (`default`, the highest published `default` image) |
+| minimum | `minSdk` 26; compiled and linted, but no CI runtime |
+
+API 37 has no published `default` or `aosp_atd` system image, so the dispatch cannot run the
+shipping API; 36 is one below it. Before tagging, if an API 26 device is available, install the
+signed APK and open a workout; otherwise record in the release notes that the minimum API was not
+runtime-tested. The release note must not call the dispatch "the shipping API".
 
 ```bash
 ./tools/verify-release.py

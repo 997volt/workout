@@ -19,20 +19,15 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 A review of `v2.22..main` after the 2.22 hardening batch was code-complete found the items below. They are the
 work that should land before 2.23 is tagged. Each row names the current behaviour, why it matters, what "fixed"
-means and the test that proves it, so it can be picked up without the review conversation. **N271 and N280
-were already specified in *Later* and move here** because the review showed they now affect the release's
-verification claims.
+means and the test that proves it, so it can be picked up without the review conversation. **N280 was
+already specified in *Later* and moved here** because the review showed it now affects the release's
+truthfulness.
 
 ### Backup and restore
 
 ### Editor state and tests
 
 ### Release and documentation
-
-- **N271 — Test the shipping and minimum APIs, and correct the release note.** The app targets SDK 37, the
-  emulator dispatch runs 36, Robolectric simulates 35, and `RELEASING.md` calls the dispatch "the shipping
-  API". Fixed means a periodic API 26 and API 37 run (or a documented equivalent) and the sentence says which
-  API each run actually covers.
 
 - **N280 — Reconcile the prose with the code.** README's CI task list omits `:shared:detekt`; the workflow
   header says "Two jobs" while the file has three and says "always run" while nothing runs on push;

@@ -573,9 +573,10 @@ the rule; that one argues it.
   Four different infrastructure failures shared one cause: the runner user is not in the
   `kvm` group, so the emulator fell back to software emulation. A udev rule grants the
   group access and `-accel auto` takes it. The API-level trade is split by trigger rather
-  than paid every run: the nightly keeps the fast `aosp_atd` image at API 34, and the
-  pre-release dispatch runs the shipping API, where an API 35+ behaviour change can show up.
-  ([evidence](DECISIONS-EVIDENCE.md#n30-emulator))
+  than paid every run: the nightly keeps the fast `aosp_atd` image at API 34, and the pre-release
+  dispatch runs **API 36**, the highest API with a published `default` image. The app targets 37, but no
+  default or `aosp_atd` 37 image exists, so 37 is compiled and linted rather than executed; the release
+  instructions say so, and the minimum API 26 has no CI runtime at all (N271). ([evidence](DECISIONS-EVIDENCE.md#n30-emulator))
 
 - **A series is described once, in the metric registry** (N35). Labels, units, formatters,
   groups, bars-or-line, axis-at-zero and better-direction all live in one place, because
