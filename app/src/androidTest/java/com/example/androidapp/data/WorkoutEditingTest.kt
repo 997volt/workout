@@ -335,6 +335,40 @@ class WorkoutEditingTest {
     }
 
     @Test
+    fun aFailedJointReplace_leavesThePreviousListAndRating() = runTest {
+        // B345: the rating and its replaced list are one save. Make the new insert fail and assert the
+        // old list is still live and the rating did not move -- the state a non-transactional write left.
+        val sessionId = seedOpenWorkoutWithASet()
+        repository.rateExercise(
+            "se1",
+            muscleFeel = 8,
+            joints = listOf(JointPain(Joint.KNEE, Side.LEFT, 6)),
+        )
+        database.openHelper.writableDatabase.execSQL(
+            "CREATE TRIGGER fail_joint_insert BEFORE INSERT ON session_exercise_joints " +
+                "BEGIN SELECT RAISE(ABORT, 'fail'); END",
+        )
+        try {
+            val result = repository.rateExercise(
+                "se1",
+                muscleFeel = 7,
+                joints = listOf(JointPain(Joint.KNEE, Side.RIGHT, 9)),
+            )
+
+            assertTrue(result is DataResult.Failure)
+            val stored = repository.observeSessionExercises(sessionId).first().single()
+            assertEquals("the old rating stays", 8, stored.muscleFeel)
+            assertEquals(
+                "and the old list is not left hidden",
+                listOf(JointPain(Joint.KNEE, Side.LEFT, 6)),
+                stored.joints,
+            )
+        } finally {
+            database.openHelper.writableDatabase.execSQL("DROP TRIGGER fail_joint_insert")
+        }
+    }
+
+    @Test
     fun aJointList_isReplaced_ratherThanMerged() = runTest {
         // ROADMAP N63: the editor shows exactly what is stored, so a joint missing from a save was
         // removed by the lifter and must not survive as a hidden row.

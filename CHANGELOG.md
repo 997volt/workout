@@ -17,6 +17,12 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The multi-write paths are one transaction** (B345). `rateExercise` wrote the muscle rating, hid the old
+  joint list and inserted the new one with no transaction, so a failed insert lost the ratings the lifter had;
+  `deleteSession` could leave a live session whose exercises were all hidden, and `finishSession`,
+  `finishExercise` and `removeExercise` had the same half-written shape. Each is now one
+  `database.withTransaction`, and an instrumented trigger test proves a failed joint insert rolls the rating
+  and the old list back.
 - **The week in review counts each session in its own zone** (B344). `weekTotals` read every session's day in the
   reader's zone, so a workout performed abroad near a week boundary could be counted in the wrong week and its
   totals. It now uses `zoneIdOrNull() ?: zone`, the rule history and adherence already read.

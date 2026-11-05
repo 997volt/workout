@@ -26,16 +26,6 @@ existing run at **B339** and **N268**. When a row is picked up its design argume
 
 ### Data correctness and recovery
 
-- **B345 — The two multi-write paths that can lose a prior value must be one transaction.**
-  `rateExercise` writes the muscle rating, soft-deletes the old joint list, then inserts the new one
-  ([RoomWorkoutRepository.kt](app/src/main/java/com/example/androidapp/data/RoomWorkoutRepository.kt)); a
-  failure in `insertAll` leaves the old ratings hidden and the new list empty, with no undo. `deleteSession`
-  is four writes (sore rows, joint rows, session exercises, session); a failure between the last two leaves a
-  live session whose exercises are all hidden. `finishSession` and `finishExercise` are the same shape at lower
-  risk (an armed rest timer on a closed workout, live joints under a hidden exercise) and belong in the same
-  pass. Fixed means `database.withTransaction` in each, with a test that makes the second write fail and asserts
-  the first is rolled back.
-
 - **B346 — A backup must be one snapshot, and import must not parse it on the main thread.** `export()` reads
   every table through separate DAO calls with no transaction
   ([RoomBackupRepository.kt](app/src/main/java/com/example/androidapp/data/RoomBackupRepository.kt)). A set

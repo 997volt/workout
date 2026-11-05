@@ -208,12 +208,15 @@ class RoomWorkoutRepository @Inject constructor(
 
     override suspend fun removeExercise(sessionExerciseId: String): DataResult<Unit> =
         dataResultOf {
-            val now = timeSource.nowEpochMillis()
-            val updated = dao.softDeleteSessionExercise(id = sessionExerciseId, at = now)
-            if (updated == 0) throw NotFoundException("session exercise $sessionExerciseId")
-            // The joint rows belong to the exercise, so they go with it (N63) — the reader already
-            // hides a removed exercise's joints, and this keeps the stored state saying the same.
-            jointDao.softDeleteForExercise(sessionExerciseId = sessionExerciseId, at = now)
+            // The exercise and its joints go together, or a failure leaves live joints under a hidden row (B345).
+            database.withTransaction {
+                val now = timeSource.nowEpochMillis()
+                val updated = dao.softDeleteSessionExercise(id = sessionExerciseId, at = now)
+                if (updated == 0) throw NotFoundException("session exercise $sessionExerciseId")
+                // The joint rows belong to the exercise, so they go with it (N63) — the reader already
+                // hides a removed exercise's joints, and this keeps the stored state saying the same.
+                jointDao.softDeleteForExercise(sessionExerciseId = sessionExerciseId, at = now)
+            }
         }
 
     override suspend fun moveExercise(sessionExerciseId: String, delta: Int): DataResult<Unit> =
@@ -241,13 +244,15 @@ class RoomWorkoutRepository @Inject constructor(
         // The session is read first so the rest can be cleared on the same row that
         // owns the exercise — ending a lift must not leave a timer armed for a break
         // the user has finished with (ROADMAP N7).
-        val sessionId = dao.findSessionIdForSessionExercise(sessionExerciseId)
-            ?: throw NotFoundException("session exercise $sessionExerciseId")
-        val now = timeSource.nowEpochMillis()
-        if (dao.setSessionExerciseFinished(id = sessionExerciseId, finishedAt = now, at = now) == 0) {
-            throw NotFoundException("session exercise $sessionExerciseId")
+        database.withTransaction {
+            val sessionId = dao.findSessionIdForSessionExercise(sessionExerciseId)
+                ?: throw NotFoundException("session exercise $sessionExerciseId")
+            val now = timeSource.nowEpochMillis()
+            if (dao.setSessionExerciseFinished(id = sessionExerciseId, finishedAt = now, at = now) == 0) {
+                throw NotFoundException("session exercise $sessionExerciseId")
+            }
+            dao.updateRestTimer(id = sessionId, restEndsAt = null, at = now)
         }
-        dao.updateRestTimer(id = sessionId, restEndsAt = null, at = now)
     }
 
     override suspend fun setWorkoutNotes(sessionId: String, note: String?): DataResult<Unit> =
@@ -307,46 +312,51 @@ class RoomWorkoutRepository @Inject constructor(
                 "Ratings must be between ${TenPointScale.MIN} and ${TenPointScale.MAX}.",
             )
         }
-        val now = timeSource.nowEpochMillis()
-        val updated = dao.setSessionExerciseRating(
-            id = sessionExerciseId,
-            muscleFeel = muscleFeel,
-            at = now,
-        )
-        if (updated == 0) throw NotFoundException("session exercise $sessionExerciseId")
-
-        // A save **replaces** the list (N63): the editor shows exactly what is stored, so a joint
-        // missing from it was removed by the lifter. The same shape the readiness write uses — the
-        // exercise write above has already refused a dead row, so the only failure window hides the
-        // old list and shows the new one empty rather than mixing the two.
-        jointDao.softDeleteForExercise(sessionExerciseId = sessionExerciseId, at = now)
-        if (joints.isNotEmpty()) {
-            jointDao.insertAll(
-                joints.mapIndexed { index, joint ->
-                    SessionExerciseJointEntity(
-                        id = UUID.randomUUID().toString(),
-                        sessionExerciseId = sessionExerciseId,
-                        joint = joint.joint,
-                        side = joint.side,
-                        score = joint.score,
-                        position = index,
-                        createdAt = now,
-                        updatedAt = now,
-                        deletedAt = null,
-                    )
-                },
+        // The rating and its replaced list are one save: a failure in the insert must not leave the old
+        // list hidden and the new one absent, which would lose what the lifter had recorded (B345).
+        database.withTransaction {
+            val now = timeSource.nowEpochMillis()
+            val updated = dao.setSessionExerciseRating(
+                id = sessionExerciseId,
+                muscleFeel = muscleFeel,
+                at = now,
             )
+            if (updated == 0) throw NotFoundException("session exercise $sessionExerciseId")
+
+            // A save **replaces** the list (N63): the editor shows exactly what is stored, so a joint
+            // missing from it was removed by the lifter. The exercise write above has already refused a
+            // dead row, and the transaction is what keeps a failed insert from mixing the two lists.
+            jointDao.softDeleteForExercise(sessionExerciseId = sessionExerciseId, at = now)
+            if (joints.isNotEmpty()) {
+                jointDao.insertAll(
+                    joints.mapIndexed { index, joint ->
+                        SessionExerciseJointEntity(
+                            id = UUID.randomUUID().toString(),
+                            sessionExerciseId = sessionExerciseId,
+                            joint = joint.joint,
+                            side = joint.side,
+                            score = joint.score,
+                            position = index,
+                            createdAt = now,
+                            updatedAt = now,
+                            deletedAt = null,
+                        )
+                    },
+                )
+            }
         }
     }
 
     override suspend fun finishSession(sessionId: String): DataResult<Unit> = dataResultOf {
         // Finishing also stops any running rest: leaving a timer armed on a closed
         // session would fire a notification for a workout that is over.
-        val now = timeSource.nowEpochMillis()
-        if (dao.markFinished(id = sessionId, at = now) == 0) {
-            throw NotFoundException("session $sessionId")
+        database.withTransaction {
+            val now = timeSource.nowEpochMillis()
+            if (dao.markFinished(id = sessionId, at = now) == 0) {
+                throw NotFoundException("session $sessionId")
+            }
+            dao.updateRestTimer(id = sessionId, restEndsAt = null, at = now)
         }
-        dao.updateRestTimer(id = sessionId, restEndsAt = null, at = now)
     }
 
     /**
@@ -405,19 +415,21 @@ class RoomWorkoutRepository @Inject constructor(
     }
 
     override suspend fun deleteSession(sessionId: String): DataResult<Unit> = dataResultOf {
-        if (dao.findSession(sessionId) == null) {
-            throw NotFoundException("session $sessionId")
+        // Children first, then the parent, **inside one transaction** (B345): a failure between the last
+        // two writes would leave a live session whose exercises are all hidden.
+        database.withTransaction {
+            if (dao.findSession(sessionId) == null) {
+                throw NotFoundException("session $sessionId")
+            }
+            val now = timeSource.nowEpochMillis()
+            // The sore-muscle rows go with the session they describe (N62): leaving them live would
+            // show a deleted workout's soreness to the restore the export offers.
+            soreMuscleDao.softDeleteForSession(sessionId = sessionId, at = now)
+            // And the joint rows go with the exercise they describe (N63), for the same reason.
+            jointDao.softDeleteForSession(sessionId = sessionId, at = now)
+            dao.softDeleteSessionExercises(sessionId = sessionId, at = now)
+            dao.softDeleteSession(id = sessionId, at = now)
         }
-        // Children first, then the parent, so a partial failure cannot leave the
-        // session invisible but its exercises still live.
-        val now = timeSource.nowEpochMillis()
-        // The sore-muscle rows go with the session they describe (N62): leaving them live would
-        // show a deleted workout's soreness to the restore the export offers.
-        soreMuscleDao.softDeleteForSession(sessionId = sessionId, at = now)
-        // And the joint rows go with the exercise they describe (N63), for the same reason.
-        jointDao.softDeleteForSession(sessionId = sessionId, at = now)
-        dao.softDeleteSessionExercises(sessionId = sessionId, at = now)
-        dao.softDeleteSession(id = sessionId, at = now)
     }
 
     /**

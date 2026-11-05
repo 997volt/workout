@@ -83,6 +83,13 @@ the rule; that one argues it.
   holding the movement twice read as two plans. Rejected: relabelling the sentence as *entries*, because the
   picker is where two histories are compared and a second unit invites reading the two numbers as one.
 
+- **A multi-write operation is one transaction** (B345). A rating and the list it replaces, a session and
+  the children a delete hides, and a finish that also clears its rest are one act each: a failure part-way
+  used to leave the old list hidden with the new one absent, a live session with no exercises, or a timer
+  armed on a finished workout. `database.withTransaction` is the boundary, and the retry is not a substitute
+  because the first failure has already destroyed the prior value. Rejected: ordering the writes so the
+  visible half lands last, which only chooses which broken state a failure leaves.
+
 ## Templates and plans
 
 - **A plan's sets are targets, and nothing verifies them** (N14). The logged set is a
