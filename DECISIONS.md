@@ -452,6 +452,12 @@ the rule; that one argues it.
   The limit is one constant shared by the form, the repository and the backup validator; the field shows the range
   and the save is refused while a typed value is outside it. Rejected: clamping the number, which would store a
   reading the lifter did not type.
+- **A backup is one snapshot, and its work runs off the UI thread** (B346). Export reads every table in one
+  read transaction, because independent reads could copy a set without the session exercise it hangs off: the
+  file looked complete and the import then failed the foreign key and rolled the whole restore back. Import
+  decodes, shapes and validates on IO, and reads `visibleSetIds` inside the write transaction, so the inventory
+  and the write see the same store. The export file is the only escape hatch; an almost-consistent one is worse
+  than a slow one.
 - **A backup's values are validated before any of it is merged** (B342). The import bypasses the write
   boundaries by design — it restores rows, it does not re-perform them — so the checks those boundaries hold
   run once over the decoded file instead: a counted set needs a positive rep count, a hold states seconds and

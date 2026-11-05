@@ -17,6 +17,12 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A backup is written from one snapshot, and its import parses off the main thread** (B346). Export read
+  roughly eighteen tables through independent DAO calls, so a set logged between two of them could be written
+  without its parent; the file then failed the foreign key on import and the restore rolled back — the app's
+  only escape hatch was unrestorable. The reads are now one `database.withTransaction`, and `visibleSetIds` is
+  read inside the import transaction. Import also decodes, shapes and validates the file on IO rather than the
+  caller's thread, as export and preview already did.
 - **The multi-write paths are one transaction** (B345). `rateExercise` wrote the muscle rating, hid the old
   joint list and inserted the new one with no transaction, so a failed insert lost the ratings the lifter had;
   `deleteSession` could leave a live session whose exercises were all hidden, and `finishSession`,

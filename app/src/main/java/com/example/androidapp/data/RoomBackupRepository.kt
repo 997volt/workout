@@ -78,16 +78,19 @@ class RoomBackupRepository @Inject constructor(
     private val metricGoals = database.metricGoalDao()
 
     override suspend fun export(): DataResult<String> = dataResultOf {
-        // The goal that is open for each metric, read once: the file carries the periods *and* the two maps a
-        // build that predates them reads, and both come from the same rows (N137).
-        val openGoals = metricGoals.observeCurrent().first()
         // **The encoding runs off the caller's thread** (B158). The DAO reads suspend and Room moves them to
         // its own executors, but everything between them here does not: `crashLogStore.all()` lists and reads a
         // file per crash, and `encode` serialises the whole database in one go. Both used to run on whatever
         // thread asked — the composition's scope — so an export janked the UI in proportion to the history.
         // The same reasoning `clearAllUserData` already states further down this file.
         withContext(Dispatchers.IO) {
-            BackupCodec.encode(
+            // **One snapshot** (B346): the reads below used to be independent, so a set logged between the
+            // session-exercise read and the set read was written without its parent and the file then failed
+            // the foreign key on import. A read transaction makes the copy internally consistent.
+            val file = database.withTransaction {
+                // The goal that is open for each metric, read once: the file carries the periods *and* the two
+                // maps a build that predates them reads, and both come from the same rows (N137).
+                val openGoals = metricGoals.observeCurrent().first()
                 BackupFile(
                     schemaVersion = BackupCodec.CURRENT_SCHEMA_VERSION,
                     exportedAt = timeSource.nowEpochMillis(),
@@ -136,8 +139,9 @@ class RoomBackupRepository @Inject constructor(
                     // Diagnostics ride along so they are reachable on a release
                     // build; import ignores them, deliberately.
                     crashLogs = crashLogStore.all(),
-                ),
-            )
+                )
+            }
+            BackupCodec.encode(file)
         }
     }
 
@@ -347,21 +351,21 @@ class RoomBackupRepository @Inject constructor(
         // movement, which is what every variation in an older file is — and the grouped list would then hide
         // or misplace the row rather than show it. A movement under a movement is **flattened onto its
         // category** rather than cleared, so the family survives the trip. A legal library is unchanged.
-        val file = BackupCodec.decode(text).let { decoded ->
-            decoded.copy(exercises = decoded.exercises.withValidLibraryShape())
+        // The decode and the shape work are CPU and memory work, and every caller is a UI scope; the
+        // export and preview already made this switch (B158, B346). The validation is here too, before the
+        // transaction, so a bad file is refused without opening one.
+        val (file, problems) = withContext(Dispatchers.IO) {
+            val decoded = BackupCodec.decode(text).let {
+                it.copy(exercises = it.exercises.withValidLibraryShape())
+            }
+            decoded to BackupValidator.problems(decoded)
         }
-        // The values first (B342): a file that states a negative load or a hold for no time is refused
-        // before anything is written, with the first row named. The preview shows the whole list.
-        val problems = BackupValidator.problems(file)
         if (problems.isNotEmpty()) {
             val first = problems.first()
             throw InvalidInputException(
                 "That backup cannot be merged: ${first.where.lowercase()} — ${first.message}",
             )
         }
-        // The sets both sides will count (N261): the question and the summary have to agree about a set the
-        // merge writes but the history will not draw.
-        val drawnSets = visibleSetIds(file)
 
         // One transaction, so a failure part-way cannot leave sessions without their sets.
         // The shape is: a soft delete keeps the row under its id, so an insert-only import
@@ -374,6 +378,9 @@ class RoomBackupRepository @Inject constructor(
         // block first made every restore into a fresh database fail with
         // `FOREIGN KEY constraint failed` and roll the whole import back.
         database.withTransaction {
+            // The sets both sides will count (N261): read inside the transaction so the inventory and the
+            // write see the same store (B346).
+            val drawnSets = visibleSetIds(file)
             val inserted = insertMissing(file, drawnSets)
             val programs = importPrograms(file)
             // The goal periods merge **inside** the transaction like every other table (B144). They used to run

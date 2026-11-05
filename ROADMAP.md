@@ -26,17 +26,6 @@ existing run at **B339** and **N268**. When a row is picked up its design argume
 
 ### Data correctness and recovery
 
-- **B346 — A backup must be one snapshot, and import must not parse it on the main thread.** `export()` reads
-  every table through separate DAO calls with no transaction
-  ([RoomBackupRepository.kt](app/src/main/java/com/example/androidapp/data/RoomBackupRepository.kt)). A set
-  logged between the session-exercise read and the set read is written without its parent, and the file then
-  fails the foreign key on import and rolls the whole restore back — the app's only escape hatch is
-  unrestorable. Separately, `import` parses, shapes and inventories the whole file on the caller's thread while
-  `export` and `preview` correctly switch to IO, and `visibleSetIds` reads outside the import transaction.
-  Fixed means the read block is one `withTransaction`, the decode/shape work is on IO, `visibleSetIds` runs
-  inside the transaction, and a test logs a set while an export is in flight and proves the file still
-  restores.
-
 - **B347 — The backup must carry the movement-merge memory.** `retired_movements` records which merged id
   became which survivor so a program document exported before a merge resolves to the survivor instead of
   recreating the twin (N238, schema 16). It is absent from [BackupFile.kt](app/src/main/java/com/example/androidapp/data/transfer/BackupFile.kt)
