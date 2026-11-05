@@ -122,7 +122,6 @@ fun ActiveWorkoutRoute(
         onDismissBodyweight = viewModel::onDismissBodyweightPrompt,
         onUpdateSet = viewModel::onUpdateSet,
         setWriteOutcome = setWriteOutcome,
-        onSetWriteShown = viewModel::onSetWriteShown,
         onRemoveExercise = viewModel::onRemoveExercise,
         onMoveExercise = viewModel::onMoveExercise,
         onDeleteSet = viewModel::onDeleteSet,
@@ -166,8 +165,6 @@ fun ActiveWorkoutScreen(
     onAddExercise: () -> Unit,
     /** The last set edit's answer, so its editor closes on success only (B284). */
     setWriteOutcome: SetWrite?,
-    /** Takes that answer once its editor has read it, so a second edit emits again (B340). */
-    onSetWriteShown: () -> Unit = {},
     /** Makes the session an activity, or a workout again (ROADMAP N141). */
     onSetActivity: (Activity?) -> Unit,
     onLogSet: (String, SetEdit) -> Unit,
@@ -290,14 +287,7 @@ fun ActiveWorkoutScreen(
 
     ActivityPicker(open = choosingActivity, onPick = onSetActivity, onDismiss = { choosingActivity = false })
 
-    SetEditorSection(
-        editing = editing,
-        exercises = state.exercises,
-        onUpdateSet = onUpdateSet,
-        setWriteOutcome = setWriteOutcome,
-        onSetWriteShown = onSetWriteShown,
-        onDismiss = { editingSetId = null },
-    )
+    SetEditorSection(editing, state.exercises, onUpdateSet, setWriteOutcome) { editingSetId = null }
 
     // One host, from the frozen state, so a rotation mid-answer reopens it on the picks (N74).
     pendingProgression?.let {
@@ -342,8 +332,6 @@ internal fun SetEditorSection(
     onUpdateSet: (String, Int, Long, Int?, String?, SetType, Long, Int?) -> Unit,
     /** The last set edit's answer, so its editor closes on success only (B284). */
     setWriteOutcome: SetWrite? = null,
-    /** Takes that answer once this editor has read it, so a second edit emits again (B340). */
-    onSetWriteShown: () -> Unit = {},
     onDismiss: () -> Unit,
 ) {
     val set = editing ?: return
@@ -353,11 +341,9 @@ internal fun SetEditorSection(
     // write that lands across one still has to be able to close the dialog it belongs to (B340).
     var saving by rememberSaveable(set.id) { mutableStateOf(false) }
     val dismiss by rememberUpdatedState(onDismiss)
-    val takeOutcome by rememberUpdatedState(onSetWriteShown)
     LaunchedEffect(setWriteOutcome) {
         if (saving && setWriteOutcome == SetWrite.Written(set.id)) {
             saving = false
-            takeOutcome()
             dismiss()
         }
     }

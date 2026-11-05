@@ -15,12 +15,12 @@ import java.time.ZoneOffset
  * `Int` and can wrap into a value the constructor accepts, which would be a total function that is
  * not one.
  */
-fun storedZoneOrNull(offsetMinutes: Int?): ZoneId? {
-    val minutes = offsetMinutes ?: return null
-    val seconds = minutes.toLong() * SECONDS_PER_MINUTE
-    if (seconds !in MIN_OFFSET_SECONDS..MAX_OFFSET_SECONDS) return null
-    return ZoneOffset.ofTotalSeconds(seconds.toInt())
-}
+fun storedZoneOrNull(offsetMinutes: Int?): ZoneId? =
+    offsetMinutes
+        ?.toLong()
+        ?.times(SECONDS_PER_MINUTE)
+        ?.takeIf { it in MIN_OFFSET_SECONDS..MAX_OFFSET_SECONDS }
+        ?.let { ZoneOffset.ofTotalSeconds(it.toInt()) }
 
 /** The stored offset's zone, or [fallback] for a row without one or with an illegal value. */
 fun storedZoneOrFallback(offsetMinutes: Int?, fallback: ZoneId): ZoneId =

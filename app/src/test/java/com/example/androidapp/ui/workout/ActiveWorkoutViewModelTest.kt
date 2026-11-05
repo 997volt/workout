@@ -57,10 +57,12 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
@@ -1630,9 +1632,10 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
-    fun aSecondEditOfTheSameSet_answersAgain_onceTheFirstIsTaken() = runTest(dispatcher) {
-        // B340: the answer is sticky state, not an event. Equal Written(setId) values would conflate, so
-        // the editor takes the first one when it closes and a repeat edit can emit from null again.
+    fun aSecondEditOfTheSameSet_answersAgain() = runTest(dispatcher) {
+        // B340: the answer is sticky state, not an event. Equal Written(setId) values conflate, so a new
+        // edit clears the previous answer before it writes; the flow must go Written -> null -> Written,
+        // or the editor's effect would never see the second success.
         val repository = FakeWorkoutRepository()
         val viewModel = viewModelFor(repository)
         observe(viewModel)
@@ -1642,20 +1645,20 @@ class ActiveWorkoutViewModelTest {
         viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, offeredSet(viewModel))
         settle()
         val logged = repository.sets.value.single()
+        val answers = mutableListOf<SetWrite?>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.setWriteOutcome.collect { answers += it }
+        }
+        runCurrent()
 
         viewModel.onUpdateSet(logged.id, reps = 3, weightGrams = 90_000)
         settle()
-        assertEquals(SetWrite.Written(logged.id), viewModel.setWriteOutcome.value)
-
-        viewModel.onSetWriteShown()
-        assertNull("the answer is consumed, not left sticky", viewModel.setWriteOutcome.value)
-
         viewModel.onUpdateSet(logged.id, reps = 4, weightGrams = 95_000)
         settle()
+
         assertEquals(
-            "the same set edited twice answers twice",
-            SetWrite.Written(logged.id),
-            viewModel.setWriteOutcome.value,
+            listOf(null, SetWrite.Written(logged.id), null, SetWrite.Written(logged.id)),
+            answers,
         )
     }
 

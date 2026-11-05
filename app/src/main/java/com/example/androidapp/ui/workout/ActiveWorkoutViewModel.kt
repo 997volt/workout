@@ -1129,6 +1129,10 @@ class ActiveWorkoutViewModel @Inject constructor(
             // An edit moves a set a log's comparison may be reading, so it takes its turn with logging
             // (ROADMAP B129). The edit itself compares nothing.
             writingASet.withLock {
+                // A new edit is a new answer (B340): the previous Written(setId) is equal to this one,
+                // so leaving it in place would let the StateFlow conflate the next success and never
+                // re-run the effect that closes the editor.
+                setWrite.value = null
                 // The banner names the record the set was; an edit or a delete can make that false (B290).
                 _personalRecord.value = null
                 val result = workoutRepository.updateSet(
@@ -1148,18 +1152,6 @@ class ActiveWorkoutViewModel @Inject constructor(
                 }
             }
         }
-    }
-
-    /**
-     * Takes the set edit's answer once the editor that read it has closed (B340).
-     *
-     * The answer is a `StateFlow` because the editor observes it across a recomposition, but a sticky
-     * value is not an event: a second successful edit produces an equal `Written(setId)`, the flow
-     * conflates it, and the effect keyed on the value never runs again. Clearing it here makes the
-     * second edit emit from null like the first.
-     */
-    fun onSetWriteShown() {
-        setWrite.value = null
     }
 
     fun onDeleteSet(setId: String) {
