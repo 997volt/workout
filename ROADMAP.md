@@ -1,7 +1,7 @@
 # Workout — Roadmap
 
-> **What is planned, not what happened.** *Later* is decided and waiting, *Parked* is decided against until a
-> named trigger fires, and the non-goals are lines this app does not cross.
+> **What is planned, not what happened.** *Next* is the batch picked up before anything else, *Later* is decided and waiting,
+> *Parked* is decided against until a named trigger fires, and the non-goals are lines this app does not cross.
 > Shipped work is [CHANGELOG.md](CHANGELOG.md), how a release is cut is [RELEASING.md](RELEASING.md), and the
 > settled rules are [DECISIONS.md](DECISIONS.md) with their argument in
 > [DECISIONS-EVIDENCE.md](DECISIONS-EVIDENCE.md).
@@ -15,13 +15,45 @@ work was planned, so they do not always run in order — and an id this file doe
 shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 [CHANGELOG-1.x.md](CHANGELOG-1.x.md) for the 1.x releases.
 
-## Later — the rest of the 2.22 review
+## Next — 2.23: the release review's findings
 
-These rows are real and specified, but none is in flight: a defect here is low-frequency or a polish item, an
-engineering row is not user-visible, and a feature is waiting for a decision. A row leaves this section when it
-is picked up; its design argument moves to [DECISIONS.md](DECISIONS.md).
+A review of `v2.22..main` after the 2.22 hardening batch was code-complete found the items below. They are the
+work that should land before 2.23 is tagged. Each row names the current behaviour, why it matters, what "fixed"
+means and the test that proves it, so it can be picked up without the review conversation. **B348, B360, N271
+and N280 were already specified in *Later* and move here** because the review showed they now affect the
+release's restore and verification claims.
 
-### Defects and polish
+### Backup and restore
+
+- **B374 — A backup this app can write must be a backup it can restore.** The B342 validator now enforces
+  ceilings the writers do not. The editor accepts any positive rep count and `heldShape` only floors it at one
+  ([SetEntryFields.kt](app/src/main/java/com/example/androidapp/ui/components/SetEntryFields.kt),
+  [RoomWorkoutRepository.kt](app/src/main/java/com/example/androidapp/data/RoomWorkoutRepository.kt)); exercise
+  and template rests are only checked against the lower bound
+  ([ExerciseDetailScreen.kt](app/src/main/java/com/example/androidapp/ui/exercises/ExerciseDetailScreen.kt),
+  [RoomExerciseRepository.kt](app/src/main/java/com/example/androidapp/data/RoomExerciseRepository.kt),
+  [RoomTemplateRepository.kt](app/src/main/java/com/example/androidapp/data/RoomTemplateRepository.kt)); planned
+  reps and holds are checked only for a minimum. The validator refuses anything above `MAX_REPS`, an hour of
+  rest, or a day's hold ([BackupValidator.kt](app/src/main/java/com/example/androidapp/data/transfer/BackupValidator.kt)).
+  A database that predates B359 can also hold a 183% body fat or a 9999 cm tape row, and B359 did not bump the
+  schema, so a pre-release backup can be refused wholesale. Automatic backup makes the same mistake in the
+  other direction: it records a success after `BackupCodec.decode` only
+  ([AutomaticBackup.kt](app/src/main/java/com/example/androidapp/data/AutomaticBackup.kt)), so it can date a
+  file the import will not merge. **Fixed** means one ceiling per value shared by the form, the repository and
+  the validator, a deliberate legacy path for files written before the limit (repair, migration or a per-row
+  warning — never a silent drop or a blanket refusal), and a read-back that runs the validator. **Tests:** the
+  writer's maximum survives export → preview → import; a pre-B359 fixture with an out-of-range value is handled
+  by the chosen legacy path; a read-back that the validator refuses is not recorded as a success. B360 below is
+  the write-boundary half of the same gap.
+
+- **B375 — Automatic backup verification must run off the main thread.** `AutomaticBackup.write` reads the copy
+  and calls `BackupCodec.decode` in the caller's context
+  ([AutomaticBackup.kt](app/src/main/java/com/example/androidapp/data/AutomaticBackup.kt)); the due run starts
+  from `MainActivity`'s `lifecycleScope` ([MainActivity.kt](app/src/main/java/com/example/androidapp/MainActivity.kt))
+  and "Back up now" from `viewModelScope` ([SettingsViewModel.kt](app/src/main/java/com/example/androidapp/ui/settings/SettingsViewModel.kt)).
+  A full database decoded on every due backup can jank or ANR startup, the exact problem import and preview
+  already fixed. **Fixed** means the read, decode and validation run on `Dispatchers.Default` or IO.
+  **Test:** the verification path does not execute on Main.
 
 - **B348 — The restore preview and the restore summary must agree about what became visible.** The summary
   counts a restored session-exercise or planned set whenever its own `deletedAt` is null, even when its parent
@@ -31,6 +63,89 @@ is picked up; its design argument moves to [DECISIONS.md](DECISIONS.md).
   inserts while the import runs inserts first, so a hand-made file with two live rows for one day+kind can be
   promised a restore the import will not perform. Fixed means one parent-aware counting rule used by both
   surfaces and one merge order modelled by both, with the same fixture read through preview and import.
+
+- **B360 — The set write boundary needs upper bounds as well as a floor.** `updateSet`/`logSet` clamp weights,
+  assistance and bodyweight at zero but place no ceiling on reps or grams, even though `Weight.MAX_GRAMS` and
+  `MAX_SET_SECONDS` exist ([RoomWorkoutRepository.kt](app/src/main/java/com/example/androidapp/data/RoomWorkoutRepository.kt)).
+  The editor's parser keeps today's UI safe; a new caller or an import does not. Fixed means the boundary
+  refuses a load above the app's maximum and an absurd rep count, with a test that calls the repository
+  directly.
+
+- **B379 — Export must not hold the database transaction while it reads crash logs.** B346 wrapped every table
+  read in `database.withTransaction`; `crashLogStore.all()` — file listing and reads — is inside that transaction
+  ([RoomBackupRepository.kt](app/src/main/java/com/example/androidapp/data/RoomBackupRepository.kt)). A slow or
+  large diagnostics directory holds the read transaction and delays the export's own writes. Crash logs are
+  diagnostics, not training data, so they do not need the database snapshot. **Fixed** means the database
+  snapshot is taken in the transaction and the crash-log read happens outside it. **Test:** an export with a
+  slow or failing crash-log store still completes the database snapshot and does not hold the transaction open.
+
+- **B378 — A failed clear must not leave automatic backup off.** B343 disables the schedule before clearing
+  ([RoomBackupRepository.kt](app/src/main/java/com/example/androidapp/data/RoomBackupRepository.kt)); if
+  `clearAllTables` then fails, the data is still present and the scheduled backup is silently off. **Fixed**
+  means the previous switch is restored when the clear fails, or the partial state is made explicit and
+  recoverable. **Test:** a failing clear leaves the backup switch exactly as it was.
+
+- **B380 — "Back up now" must be single-flight and enabled-aware.** The button launches `runNow` with no busy
+  state, so repeated taps queue copies on the mutex; `runNow` writes whenever a folder exists even if the switch
+  is off ([AutomaticBackup.kt](app/src/main/java/com/example/androidapp/data/AutomaticBackup.kt)). **Fixed**
+  means the control is disabled or coalesced while a copy runs and the runner refuses a disabled backup.
+  **Tests:** repeated taps produce one copy; a disabled backup refuses a manual run.
+
+### Editor state and tests
+
+- **B376 — Every editor host must survive rotation.** B349 made drafts saveable but three hosts still discard
+  them. History stores the open `HistorySet` in plain `remember`
+  ([WorkoutDetailScreen.kt](app/src/main/java/com/example/androidapp/ui/history/WorkoutDetailScreen.kt)), so a
+  rotation closes the editor before its saveable draft can restore; the template planned-set dialog's draft is
+  plain `remember`
+  ([TemplateSetDialog.kt](app/src/main/java/com/example/androidapp/ui/components/TemplateSetDialog.kt)) while
+  its host's open id is saveable; and the measurement edit form's `editingEntry` is plain `remember`
+  ([MeasurementsScreen.kt](app/src/main/java/com/example/androidapp/ui/measurements/MeasurementsScreen.kt)).
+  **Fixed** means each host saves an id (or one small state object) and derives the row, and the template set
+  editor gets its own saver. **Test:** a Robolectric rotation test for each half-filled form, not only the
+  `SetEntryDraftSaver` unit test.
+
+- **B377 — Add the UI tests the batch's acceptance criteria still lack.** B350 proves the ViewModel's
+  `Written`/`Refused` values but not that a refused history edit keeps the dialog and its typed values; B356
+  tests the confirm path but not cancellation; B349 has no rotated half-filled form. **Fixed** means those
+  three tests: a refusal leaves the editor open and unchanged, cancelling a block skip writes nothing, and a
+  rotation restores every field. B374 carries the legacy-backup test.
+
+### Release and documentation
+
+- **N271 — Test the shipping and minimum APIs, and correct the release note.** The app targets SDK 37, the
+  emulator dispatch runs 36, Robolectric simulates 35, and `RELEASING.md` calls the dispatch "the shipping
+  API". Fixed means a periodic API 26 and API 37 run (or a documented equivalent) and the sentence says which
+  API each run actually covers.
+
+- **N280 — Reconcile the prose with the code.** README's CI task list omits `:shared:detekt`; the workflow
+  header says "Two jobs" while the file has three and says "always run" while nothing runs on push;
+  `RELEASING.md` says "both jobs"; `.editorconfig` uses an inline comment EditorConfig does not parse;
+  build-tools are not actually pinned in the build file; the privacy prose still says the export is the only
+  path off the device (automatic backup writes a folder) and mentions progress photos the app does not hold;
+  one XML comment still asks to revisit the platform-backup rules "when export/import lands", which it did.
+  The docs test also still credits a removed `ci-check-instrumented.py`. Fixed means one docs pass, with
+  `DocsConsistencyTest` extended to the README/RELEASING claims that drifted.
+
+- **B381 — Correct the batch's KDoc, decisions and diff hygiene.** B338's weight KDoc now sits above
+  `requirePlausibleValues`, leaving `requireStatedWeight` undocumented, and the new sentence says a tape typo
+  would make a derived fat mass exceed the body — tape does not feed fat mass
+  ([RoomMeasurementRepository.kt](app/src/main/java/com/example/androidapp/data/RoomMeasurementRepository.kt)).
+  DECISIONS claims every dialog that survives rotation keeps its draft (B349) and every screen title is a
+  heading (B353), which B376 and B369 contradict; the N268 "no-op" wording still ignores `ANDROID_ENV_ROOT` and
+  the PATH change. `git diff --check` also reports a blank line at EOF in
+  [ProgramMappers.kt](app/src/main/java/com/example/androidapp/data/local/ProgramMappers.kt). **Fixed** means
+  the KDoc moves and says what tape and body percentages actually do, the decisions are qualified, the env
+  script's claim is made true or worded accurately, and the blank line is removed. **Test:** the docs gate and
+  `git diff --check`.
+
+## Later — the rest of the 2.22 review
+
+These rows are real and specified, but none is in flight: a defect here is low-frequency or a polish item, an
+engineering row is not user-visible, and a feature is waiting for a decision. A row leaves this section when it
+is picked up; its design argument moves to [DECISIONS.md](DECISIONS.md).
+
+### Defects and polish
 
 - **B354–B355 — Messages the lifter can neither acknowledge nor see.** The library derives
   `lastTrainedError` from the read flow and `onErrorShown()` clears only `writeError`
@@ -55,13 +170,6 @@ is picked up; its design argument moves to [DECISIONS.md](DECISIONS.md).
   deload screen adds a third `navigationBarsPadding()`. Fixed means the shell or the screens own the bottom
   inset exactly once, verified on a gesture-navigation and a three-button device (this was reasoned from code,
   not measured).
-
-- **B360 — The set write boundary needs upper bounds as well as a floor.** `updateSet`/`logSet` clamp weights,
-  assistance and bodyweight at zero but place no ceiling on reps or grams, even though `Weight.MAX_GRAMS` and
-  `MAX_SET_SECONDS` exist ([RoomWorkoutRepository.kt](app/src/main/java/com/example/androidapp/data/RoomWorkoutRepository.kt)).
-  The editor's parser keeps today's UI safe; a new caller or an import does not. Fixed means the boundary
-  refuses a load above the app's maximum and an absurd rep count, with a test that calls the repository
-  directly.
 
 - **B361 — Crash logs must be bounded.** [CrashLogStore.kt](app/src/main/java/com/example/androidapp/platform/CrashLogStore.kt)
   writes one file per crash and never prunes; `latest()` reads and parses every file, and every export carries
@@ -147,11 +255,6 @@ is picked up; its design argument moves to [DECISIONS.md](DECISIONS.md).
   Fixed means CI builds a debug-signed release (ephemeral keystore), installs it on the emulator and runs a
   smoke navigation, or runs the instrumented suite against a release build type.
 
-- **N271 — Test the shipping and minimum APIs, and correct the release note.** The app targets SDK 37, the
-  emulator dispatch runs 36, Robolectric simulates 35, and `RELEASING.md` calls the dispatch "the shipping
-  API". Fixed means a periodic API 26 and API 37 run (or a documented equivalent) and the sentence says which
-  API each run actually covers.
-
 - **N272 — Pin the supply chain.** The wrapper properties carry no `distributionSha256Sum` although the comment
   says the workflow validates it (it validates the JAR, not the distribution), and there is no dependency
   verification or locking. Fixed means the wrapper checksum is present and dependency verification metadata is
@@ -191,15 +294,6 @@ is picked up; its design argument moves to [DECISIONS.md](DECISIONS.md).
   only echoes `node --version` and runs the helper's tests on whatever the runner ships, so the two jobs can
   test the same generated `docs/shared` on different majors. Fixed means the same `setup-node` version in both
   jobs.
-
-- **N280 — Reconcile the prose with the code.** README's CI task list omits `:shared:detekt`; the workflow
-  header says "Two jobs" while the file has three and says "always run" while nothing runs on push;
-  `RELEASING.md` says "both jobs"; `.editorconfig` uses an inline comment EditorConfig does not parse;
-  build-tools are not actually pinned in the build file; the privacy prose still says the export is the only
-  path off the device (automatic backup writes a folder) and mentions progress photos the app does not hold;
-  one XML comment still asks to revisit the platform-backup rules "when export/import lands", which it did.
-  The docs test also still credits a removed `ci-check-instrumented.py`. Fixed means one docs pass, with
-  `DocsConsistencyTest` extended to the README/RELEASING claims that drifted.
 
 - **N281 — The test-only FileProvider should not ship.** The production manifest declares a `FileProvider`
   scoped to a cache directory only because `DocumentIoTest` needs a real content URI. Fixed means the provider
