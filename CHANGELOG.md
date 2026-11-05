@@ -17,6 +17,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A rotation keeps what was typed in the editors** (B349). The measurement form's `adding` flag was saveable
+  while its numbers and picked day were plain `remember`, so a half-filled record came back blank; the set
+  editor's draft was plain `remember` although its host kept the dialog open, and the exercise editor had the
+  same gap. Each draft now has a saver keyed to the row being edited, and the set-draft round trip has a JVM
+  test.
 - **The movement-merge memory travels in the backup** (B347). `retired_movements` records which id a merge
   replaced and with what, so a program document exported before the merge resolves to the survivor instead of
   recreating the duplicate. It was absent from the file, so a restore could bring the twin back. The defaulted

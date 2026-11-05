@@ -28,15 +28,6 @@ existing run at **B339** and **N268**. When a row is picked up its design argume
 
 ### State and interaction
 
-- **B349 — A rotation must not discard what was typed.** The measurements form is the clearest case: `adding`
-  is `rememberSaveable`, so the dialog survives a rotation, while weight, body fat, muscle, tape and the
-  picked day are plain `remember` ([MeasurementsScreen.kt](app/src/main/java/com/example/androidapp/ui/measurements/MeasurementsScreen.kt)),
-  so the numbers reset and only the saved sore muscles come back. The set editors have the same shape: their
-  host keeps the dialog open (`rememberSaveable` or a ViewModel flag) while the draft in
-  [SetEditorDialog.kt](app/src/main/java/com/example/androidapp/ui/components/SetEditorDialog.kt) and the
-  exercise-detail editor is plain `remember`. Fixed means a `Saver` or ViewModel field for each draft and the
-  picked day, with a Robolectric test that rotates a half-filled form and asserts every value survives.
-
 - **B350 — History's set editor must close on the write's answer, not the tap.** `onSave` in
   [WorkoutDetailScreen.kt](app/src/main/java/com/example/androidapp/ui/history/WorkoutDetailScreen.kt) calls
   `onUpdateSet(...)` and then `onDismiss()` unconditionally. A refused write (a rung boundary, an invalid load)

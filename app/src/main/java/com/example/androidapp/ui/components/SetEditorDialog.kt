@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -73,8 +74,10 @@ fun SetEditorDialog(
      * log path; the default offers everything for the previews and tests that have no position to speak of.
      */
     offers: (SetType) -> Boolean = { true },
+    /** Identifies the set so a rotation restores this dialog's draft, not another opening's (B349). */
+    saveKey: String = "",
 ) {
-    var draft by remember {
+    var draft by rememberSaveable(saveKey, stateSaver = SetEntryDraftSaver) {
         mutableStateOf(
             SetEntryDraft(
                 // A hold states no rep count, and its own field is the one the dialog then shows (N220).

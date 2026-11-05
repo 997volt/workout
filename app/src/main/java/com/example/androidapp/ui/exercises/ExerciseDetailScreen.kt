@@ -25,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.mapSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -465,6 +466,47 @@ private data class ExerciseDraft(
     )
 }
 
+/**
+ * The edit form's draft across a rotation (B349): the form's open flag lives in the ViewModel, so the
+ * values it holds must not be a plain `remember`.
+ */
+private val ExerciseDraftSaver = mapSaver(
+    save = { draft ->
+        mapOf(
+            "name" to draft.name,
+            "primary" to draft.primaryMuscle?.name,
+            "equipment" to draft.equipment?.name,
+            "pattern" to draft.movementPattern?.name,
+            "rest" to draft.restText,
+            "note" to draft.techniqueNote,
+            "step" to draft.stepText,
+            "unit" to draft.weightUnit?.name,
+            "bodyweight" to draft.isBodyweight,
+            "timed" to draft.isTimed,
+            "progression" to draft.progressionMode?.name,
+            "appUnit" to draft.appUnit.name,
+            "parent" to draft.parentId,
+        )
+    },
+    restore = { values ->
+        ExerciseDraft(
+            name = values["name"] as? String ?: "",
+            primaryMuscle = (values["primary"] as? String)?.let { MuscleGroup.valueOf(it) },
+            equipment = (values["equipment"] as? String)?.let { Equipment.valueOf(it) },
+            movementPattern = (values["pattern"] as? String)?.let { MovementPattern.valueOf(it) },
+            restText = values["rest"] as? String ?: "",
+            techniqueNote = values["note"] as? String ?: "",
+            stepText = values["step"] as? String ?: "",
+            weightUnit = (values["unit"] as? String)?.let { WeightUnit.valueOf(it) },
+            isBodyweight = values["bodyweight"] as? Boolean ?: false,
+            isTimed = values["timed"] as? Boolean ?: false,
+            progressionMode = (values["progression"] as? String)?.let { ProgressionMode.valueOf(it) },
+            appUnit = (values["appUnit"] as? String)?.let { WeightUnit.valueOf(it) } ?: WeightUnit.KILOGRAMS,
+            parentId = values["parent"] as? String,
+        )
+    },
+)
+
 private fun Exercise.toDraft(appUnit: WeightUnit) = ExerciseDraft(
     name = name,
     primaryMuscle = primaryMuscle,
@@ -504,7 +546,9 @@ private fun ExerciseEditForm(
     // Keys on the exercise id so switching to another exercise resets the draft
     // rather than carrying the previous one's values over.
     val appUnit = LocalWeightUnit.current
-    var draft by remember(exercise.id) { mutableStateOf(exercise.toDraft(appUnit)) }
+    var draft by rememberSaveable(exercise.id, stateSaver = ExerciseDraftSaver) {
+        mutableStateOf(exercise.toDraft(appUnit))
+    }
 
     Column(
         modifier = modifier

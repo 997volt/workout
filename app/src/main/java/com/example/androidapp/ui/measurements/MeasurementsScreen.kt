@@ -39,6 +39,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -87,6 +88,7 @@ import com.example.androidapp.ui.statistics.MetricKey
 import com.example.androidapp.ui.statistics.MetricRegistry
 import com.example.androidapp.ui.statistics.WeightGoalRow
 import kotlinx.coroutines.launch
+import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 
@@ -575,12 +577,18 @@ private fun MeasurementDialog(
 ) {
     // A typed zero is not a body weight, and the form refuses to write one (B336): the field states nothing, so
     // a zero alone leaves *Save* disabled and a zero beside other numbers is one fewer thing stated.
-    var weight by remember {
+    var weight by rememberSaveable(initial?.id) {
         mutableStateOf(initial?.statedWeightGrams?.let { Weight.kilograms(it) }.orEmpty())
     }
-    var bodyFat by remember { mutableStateOf(initial?.bodyFatTenths?.let { MeasurementFormat.percent(it) }.orEmpty()) }
-    var muscle by remember { mutableStateOf(initial?.muscleTenths?.let { MeasurementFormat.percent(it) }.orEmpty()) }
-    var tape by remember { mutableStateOf(MeasurementFormat.tape(initial?.tape.orEmpty())) }
+    var bodyFat by rememberSaveable(initial?.id) {
+        mutableStateOf(initial?.bodyFatTenths?.let { MeasurementFormat.percent(it) }.orEmpty())
+    }
+    var muscle by rememberSaveable(initial?.id) {
+        mutableStateOf(initial?.muscleTenths?.let { MeasurementFormat.percent(it) }.orEmpty())
+    }
+    var tape by rememberSaveable(initial?.id, stateSaver = TapeSaver) {
+        mutableStateOf(MeasurementFormat.tape(initial?.tape.orEmpty()))
+    }
     // `rememberSaveable` for the same reason the note's other dialogs hold their picks that way: a
     // rotation mid-edit must not throw away the muscles already picked (N113).
     var soreMuscles by rememberSaveable(stateSaver = SoreMusclesSaver) {
@@ -591,7 +599,9 @@ private fun MeasurementDialog(
     // day is read in, which is the device's. The state is keyed on the record so a recomposition cannot re-read
     // the stored day over a picked one (B214).
     val zone = ZoneId.systemDefault()
-    val dayState = remember(initial) { MeasurementDayState(initial?.measuredAt, zone) }
+    val dayState = rememberSaveable(initial, saver = MeasurementDaySaver) {
+        MeasurementDayState(initial?.measuredAt, zone)
+    }
 
     val draft = BodyMeasurement(
         // A blank id is a new entry, which the repository places by its day and kind; an edit keeps the
@@ -748,6 +758,22 @@ internal fun TapeFields(tape: Map<TapeSite, String>, onTapeChange: (TapeSite, St
         }
     }
 }
+
+/** The typed tape sites survive a rotation, the same rule as the numbers (B349). */
+private val TapeSaver = listSaver<Map<TapeSite, String>, String>(
+    save = { tape -> tape.flatMap { (site, text) -> listOf(site.name, text) } },
+    restore = { flat ->
+        flat.chunked(2).mapNotNull { (name, text) ->
+            TapeSite.entries.firstOrNull { it.name == name }?.let { it to text }
+        }.toMap()
+    },
+)
+
+/** The picked day, restored in the device's zone — the frame the form reads it in (B349). */
+private val MeasurementDaySaver = Saver<MeasurementDayState, Long>(
+    save = { it.measuredAt.toEpochMilli() },
+    restore = { MeasurementDayState(Instant.ofEpochMilli(it), ZoneId.systemDefault()) },
+)
 
 /** Survives a rotation mid-edit, the shape the readiness note's own list used (N113). */
 private val SoreMusclesSaver = listSaver<List<SoreMuscle>, String>(

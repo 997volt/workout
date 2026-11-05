@@ -861,6 +861,7 @@ private fun EditSetDialog(
     modifier: Modifier = Modifier,
 ) {
     SetEditorDialog(
+        saveKey = set.id,
         modifier = modifier,
         initialUnit = exerciseWeightUnit(set.weightUnit),
         initialReps = set.reps,

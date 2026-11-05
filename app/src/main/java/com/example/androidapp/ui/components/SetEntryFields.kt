@@ -11,6 +11,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.saveable.mapSaver
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -60,6 +61,37 @@ internal data class SetEntryDraft(
     /** Only the dialog edits the comment; the inline fields leave it empty. */
     val noteText: String = "",
     val setType: SetType = SetType.NORMAL,
+)
+
+/**
+ * The dialog's typed draft across a rotation (B349).
+ *
+ * The open state already survives a rotation, so the values it holds have to as well; a plain
+ * `remember` reopened the form on the stored values and lost the correction.
+ */
+internal val SetEntryDraftSaver = mapSaver(
+    save = { draft ->
+        mapOf(
+            "reps" to draft.repsText,
+            "duration" to draft.durationText,
+            "timed" to draft.timed,
+            "weight" to draft.weightText,
+            "rpe" to draft.rpeText,
+            "note" to draft.noteText,
+            "type" to draft.setType.name,
+        )
+    },
+    restore = { values ->
+        SetEntryDraft(
+            repsText = values["reps"] as? String ?: "",
+            durationText = values["duration"] as? String ?: "",
+            timed = values["timed"] as? Boolean ?: false,
+            weightText = values["weight"] as? String ?: "",
+            rpeText = values["rpe"] as? String ?: "",
+            noteText = values["note"] as? String ?: "",
+            setType = (values["type"] as? String)?.let { SetType.valueOf(it) } ?: SetType.NORMAL,
+        )
+    },
 )
 
 /**

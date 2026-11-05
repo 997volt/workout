@@ -356,6 +356,7 @@ internal fun SetEditorSection(
         .orEmpty()
 
     SetEditorDialog(
+        saveKey = set.id,
         initialReps = set.reps,
         initialWeightGrams = set.weightGrams,
         initialRpe = set.rpeHalves,
