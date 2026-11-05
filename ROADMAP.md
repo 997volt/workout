@@ -19,20 +19,11 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 A review of `v2.22..main` after the 2.22 hardening batch was code-complete found the items below. They are the
 work that should land before 2.23 is tagged. Each row names the current behaviour, why it matters, what "fixed"
-means and the test that proves it, so it can be picked up without the review conversation. **B348, N271 and
-N280 were already specified in *Later* and move here** because the review showed they now affect the release's
-restore and verification claims.
+means and the test that proves it, so it can be picked up without the review conversation. **N271 and N280
+were already specified in *Later* and move here** because the review showed they now affect the release's
+verification claims.
 
 ### Backup and restore
-
-- **B348 — The restore preview and the restore summary must agree about what became visible.** The summary
-  counts a restored session-exercise or planned set whenever its own `deletedAt` is null, even when its parent
-  stays hidden. B330 counts only rows the merge makes live, and N261 extended that honesty to sets the
-  history cannot draw ([RoomBackupRepository.kt](app/src/main/java/com/example/androidapp/data/RoomBackupRepository.kt));
-  the summary still counts those children, and the preview does not count those kinds at all. Separately, the preview models measurement restores before
-  inserts while the import runs inserts first, so a hand-made file with two live rows for one day+kind can be
-  promised a restore the import will not perform. Fixed means one parent-aware counting rule used by both
-  surfaces and one merge order modelled by both, with the same fixture read through preview and import.
 
 - **B379 — Export must not hold the database transaction while it reads crash logs.** B346 wrapped every table
   read in `database.withTransaction`; `crashLogStore.all()` — file listing and reads — is inside that transaction
@@ -72,7 +63,7 @@ restore and verification claims.
   `Written`/`Refused` values but not that a refused history edit keeps the dialog and its typed values; B356
   tests the confirm path but not cancellation; B349 has no rotated half-filled form. **Fixed** means those
   three tests: a refusal leaves the editor open and unchanged, cancelling a block skip writes nothing, and a
-  rotation restores every field. B374 carries the legacy-backup test.
+  rotation restores every field. The legacy-backup test lives in `BackupValidatorTest`.
 
 ### Release and documentation
 

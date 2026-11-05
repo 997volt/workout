@@ -1741,8 +1741,12 @@ the rule; that one argues it.
   live row under a parent that stays hidden — a set whose session exercise or session the file keeps deleted —
   is written and drawn nowhere, so it is not promised either. The preview and the post-write summary share the
   rule, because a question that promised a different set from the one the merge writes would be worse than no
-  question. Rejected: counting every row the write touches, since a row written hidden is fidelity for a later
-  restore rather than something the lifter can find.
+  question. **B348 makes the rule parent-aware for every child** — a session exercise needs its session, a joint
+  its exercise, a soreness row its session, a planned exercise its template and a planned set both — and models
+  the import's insert-first order in the preview. A row this device already holds hidden is restored, not
+  inserted, so it no longer reserves its day before the restore step and blocks a second live row that the
+  question would otherwise promise. Rejected: counting every row the write touches, since a row written hidden
+  is fidelity for a later restore rather than something the lifter can find.
 
 - **One program-edit core is compiled into both hosts, and neither calls the other** (N170). The
   document's model, codec, version gate, validation and edit planner live in a Kotlin Multiplatform

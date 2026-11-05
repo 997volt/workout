@@ -17,6 +17,13 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The restore preview and summary agree about what becomes visible** (B348). The summary counted a
+  session exercise, joint, soreness row or planned set whenever its own `deletedAt` was null, even when the
+  session, exercise or template it is drawn through stayed hidden. It also let a file row this device already
+  held hidden reserve its day during the insert step, blocking a second live row for that day that the preview
+  promised. The summary now counts only rows with a live parent after the merge, and the preview models the
+  import's insert-first order. The instrumented fixture hides a session while leaving its exercise and set
+  live, and the JVM test uses two live rows on one day.
 - **Automatic backup verifies off the main thread** (B375). The read-back introduced by B362 decoded a full
   database in the caller's context; the due run starts from `MainActivity`'s `lifecycleScope` and "Back up now"
   from `viewModelScope`, so a large history could jank or ANR startup. The read, decode and validation now run

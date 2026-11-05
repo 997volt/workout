@@ -279,14 +279,10 @@ class RoomBackupRepository @Inject constructor(
         var here = 0
         var restored = 0
         var added = 0
-        // The restore step: a hidden local row comes back only when no live entry already owns its day.
-        live.forEach { row ->
-            val sameId = byId[row.id] ?: return@forEach
-            if (sameId.deletedAt == null) return@forEach
-            inFile++
-            if (taken.add(day(row))) restored++ else here++
-        }
-        // The insert step: an absent row is added only when its day is free after the restores.
+        // The insert step runs first, as [insertMissing] does: an absent row is added only when its day is
+        // free, and the second live row for a day yields to the first. The old preview restored before
+        // inserting, so a hand-made file with two live rows for one day could promise a restore the import
+        // would not perform (B348).
         live.forEach { row ->
             val sameId = byId[row.id]
             if (sameId != null && sameId.deletedAt != null) return@forEach
@@ -294,7 +290,97 @@ class RoomBackupRepository @Inject constructor(
             val free = taken.add(day(row))
             if (sameId != null || !free) here++ else added++
         }
+        // The restore step: a hidden local row comes back only when no live entry already owns its day —
+        // including one the insert step just wrote.
+        live.forEach { row ->
+            val sameId = byId[row.id] ?: return@forEach
+            if (sameId.deletedAt == null) return@forEach
+            inFile++
+            if (taken.add(day(row))) restored++ else here++
+        }
         return PreviewCounts(inFile = inFile, alreadyHere = here, restored = restored, added = added)
+    }
+
+    /**
+     * The child rows that will be drawn after the merge, so a restored row under a hidden parent is not
+     * counted in either the question or the summary (B348).
+     *
+     * The same parent rule as [visibleSetIds], widened to the other children a workout, plan or program is
+     * drawn through: a session exercise needs its session, a joint its session exercise, a soreness row its
+     * session, a planned exercise its template and a planned set both. Membership is by id and the row must
+     * itself be live in the file; a child whose own row is hidden is carried for a later restore and is not
+     * counted. [import] computes this once inside its transaction, so a parent restored earlier in the same
+     * merge counts as live for the child below it.
+     */
+    private data class MergeVisibility(
+        val sets: Set<String>,
+        val sessionExercises: Set<String>,
+        val joints: Set<String>,
+        val soreMuscles: Set<String>,
+        val templateExercises: Set<String>,
+        val templateSets: Set<String>,
+    )
+
+    private suspend fun mergeVisibility(file: BackupFile): MergeVisibility {
+        val localSessionExercises = dao.allSessionExercises()
+        val sessions = LiveAfterMerge(
+            file = file.sessions.associate { it.id to it.deletedAt },
+            local = dao.allSessions().associate { it.id to it.deletedAt },
+        )
+        val sessionExercises = LiveAfterMerge(
+            file = file.sessionExercises.associate { it.id to it.deletedAt },
+            local = localSessionExercises.associate { it.id to it.deletedAt },
+        )
+        val sessionOf = buildMap {
+            file.sessionExercises.forEach { put(it.id, it.sessionId) }
+            localSessionExercises.forEach { if (it.id !in this) put(it.id, it.sessionId) }
+        }
+        val exerciseParents = (
+            file.sessionExercises.map { it.id } + file.sets.map { it.sessionExerciseId } +
+                file.sessionExerciseJoints.map { it.sessionExerciseId }
+            )
+            .filter { it in sessionExercises && sessionOf[it]?.let(sessions::contains) == true }
+            .toSet()
+
+        val localTemplateExercises = dao.allTemplateExercises()
+        val templates = LiveAfterMerge(
+            file = file.templates.associate { it.id to it.deletedAt },
+            local = dao.allTemplates().associate { it.id to it.deletedAt },
+        )
+        val templateExercises = LiveAfterMerge(
+            file = file.templateExercises.associate { it.id to it.deletedAt },
+            local = localTemplateExercises.associate { it.id to it.deletedAt },
+        )
+        val templateOf = buildMap {
+            file.templateExercises.forEach { put(it.id, it.templateId) }
+            localTemplateExercises.forEach { if (it.id !in this) put(it.id, it.templateId) }
+        }
+        val templateParents = (file.templateExercises.map { it.id } + file.templateSets.map { it.templateExerciseId })
+            .filter { it in templateExercises && templateOf[it]?.let(templates::contains) == true }
+            .toSet()
+        val templateSets = LiveAfterMerge(
+            file = file.templateSets.associate { it.id to it.deletedAt },
+            local = dao.allTemplateSets().associate { it.id to it.deletedAt },
+        )
+
+        return MergeVisibility(
+            sets = file.sets
+                .filter { it.deletedAt == null && it.sessionExerciseId in exerciseParents }
+                .mapTo(mutableSetOf()) { it.id },
+            sessionExercises = exerciseParents,
+            joints = file.sessionExerciseJoints
+                .filter { it.sessionExerciseId in exerciseParents }
+                .mapTo(mutableSetOf()) { it.id },
+            soreMuscles = file.sessionSoreMuscles
+                .filter { it.sessionId in sessions }
+                .mapTo(mutableSetOf()) { it.id },
+            templateExercises = file.templateExercises
+                .filter { it.id in templateParents }
+                .mapTo(mutableSetOf()) { it.id },
+            templateSets = file.templateSets
+                .filter { it.id in templateSets && it.templateExerciseId in templateParents }
+                .mapTo(mutableSetOf()) { it.id },
+        )
     }
 
     /**
@@ -384,8 +470,8 @@ class RoomBackupRepository @Inject constructor(
         database.withTransaction {
             // The sets both sides will count (N261): read inside the transaction so the inventory and the
             // write see the same store (B346).
-            val drawnSets = visibleSetIds(file)
-            val inserted = insertMissing(file, drawnSets)
+            val visibility = mergeVisibility(file)
+            val inserted = insertMissing(file, visibility)
             val programs = importPrograms(file)
             // The goal periods merge **inside** the transaction like every other table (B144). They used to run
             // after it, as the last trace of the seam the preferences store needed: a goal is a row now, and a
@@ -393,7 +479,7 @@ class RoomBackupRepository @Inject constructor(
             val goals = restoreGoalPeriods(file)
             ImportSummary(
                 added = inserted + programs.added + goals,
-                restored = restoreSoftDeleted(file, drawnSets) + programs.restored,
+                restored = restoreSoftDeleted(file, visibility) + programs.restored,
             )
         }
     }
@@ -409,7 +495,7 @@ class RoomBackupRepository @Inject constructor(
      * enforces, and the seven tables here are one shape repeated — updates, so no foreign-key
      * ordering is involved: every row already exists and only its own columns change.
      */
-    private suspend fun restoreSoftDeleted(file: BackupFile, drawnSets: Set<String>): Int {
+    private suspend fun restoreSoftDeleted(file: BackupFile, visible: MergeVisibility): Int {
         // Read once into sets: asking the database per row would be a query per element.
         val hiddenExercises = dao.softDeletedExerciseIds().toSet()
         val hiddenSessions = dao.softDeletedSessionIds().toSet()
@@ -457,13 +543,13 @@ class RoomBackupRepository @Inject constructor(
 
         return exercises.count { it.deletedAt == null } +
             sessions.count { it.deletedAt == null } +
-            sessionExercises.count { it.deletedAt == null } +
-            sets.count { it.deletedAt == null && it.id in drawnSets } +
+            sessionExercises.count { it.deletedAt == null && it.id in visible.sessionExercises } +
+            sets.count { it.deletedAt == null && it.id in visible.sets } +
             templates.count { it.deletedAt == null } +
-            templateExercises.count { it.deletedAt == null } +
-            templateSets.count { it.deletedAt == null } +
-            soreMuscleRows.count { it.deletedAt == null } +
-            jointRows.count { it.deletedAt == null } +
+            templateExercises.count { it.deletedAt == null && it.id in visible.templateExercises } +
+            templateSets.count { it.deletedAt == null && it.id in visible.templateSets } +
+            soreMuscleRows.count { it.deletedAt == null && it.id in visible.soreMuscles } +
+            jointRows.count { it.deletedAt == null && it.id in visible.joints } +
             measurementRows.count { it.deletedAt == null } +
             measurementSoreRows.count { it.deletedAt == null }
     }
@@ -538,15 +624,21 @@ class RoomBackupRepository @Inject constructor(
      *
      * `IGNORE` skips live rows and the ones just restored, and Room returns -1 for a skipped row; a row the
      * file records as deleted goes in hidden and did not become live, so it is not counted. A set also needs the
-     * exercise and session it is drawn through to be live — [drawnSets] is that answer, computed once by
+     * exercise and session it is drawn through to be live — [MergeVisibility] is that answer, computed once by
      * [import] for both sides.
      *
      * Parents before children, so the foreign keys hold as rows go in.
      */
-    private suspend fun insertMissing(file: BackupFile, drawnSets: Set<String>): Int {
+    private suspend fun insertMissing(file: BackupFile, visible: MergeVisibility): Int {
         // The merge memory is context rather than a live row, so it joins the transaction but not the count.
         database.movementMergeDao().insertRetiredMovements(file.retiredMovements.map { it.toEntity() })
-        val attemptedMeasurements = file.measurements.withoutAnExistingDay()
+        // A row this device already holds — live or hidden — is not an insert: a live one is ignored, a
+        // hidden one is restored later. Letting it reserve its day here made the second live row for that
+        // day yield to a row that never landed (B348).
+        val localMeasurementIds = measurements.allForExport().mapTo(mutableSetOf()) { it.id }
+        val attemptedMeasurements = file.measurements
+            .filter { it.id !in localMeasurementIds }
+            .withoutAnExistingDay()
         val measurementParents = attemptedMeasurements.mapTo(mutableSetOf()) { it.id }
         measurementParents += measurements.allForExport()
             .filter { it.deletedAt == null }
@@ -557,21 +649,25 @@ class RoomBackupRepository @Inject constructor(
             dao.insertSessions(file.sessions.map { it.toEntity() })
                 .countLive(file.sessions) { it.deletedAt == null } +
             dao.insertSessionExercises(file.sessionExercises.map { it.toEntity() })
-                .countLive(file.sessionExercises) { it.deletedAt == null } +
+                .countLive(file.sessionExercises) { it.deletedAt == null && it.id in visible.sessionExercises } +
             // The joint rows go in after the exercises they hang off, which the line above wrote (N63).
             joints.insert(file.sessionExerciseJoints.map { it.toEntity() })
-                .countLive(file.sessionExerciseJoints) { it.deletedAt == null } +
+                .countLive(file.sessionExerciseJoints) { it.deletedAt == null && it.id in visible.joints } +
             // The sore-muscle rows go in after their sessions, which the lines above already wrote (N62).
             soreMuscles.insert(file.sessionSoreMuscles.map { it.toEntity() })
-                .countLive(file.sessionSoreMuscles) { it.deletedAt == null } +
+                .countLive(file.sessionSoreMuscles) { it.deletedAt == null && it.id in visible.soreMuscles } +
             dao.insertSets(file.sets.map { it.toEntity() })
-                .countLive(file.sets) { it.deletedAt == null && it.id in drawnSets } +
+                .countLive(file.sets) { it.deletedAt == null && it.id in visible.sets } +
             dao.insertTemplates(file.templates.map { it.toEntity() })
                 .countLive(file.templates) { it.deletedAt == null } +
             dao.insertTemplateExercises(file.templateExercises.map { it.toEntity() })
-                .countLive(file.templateExercises) { it.deletedAt == null } +
+                .countLive(file.templateExercises) {
+                    it.deletedAt == null && it.id in visible.templateExercises
+                } +
             dao.insertTemplateSets(file.templateSets.map { it.toEntity() })
-                .countLive(file.templateSets) { it.deletedAt == null } +
+                .countLive(file.templateSets) {
+                    it.deletedAt == null && it.id in visible.templateSets
+                } +
             // One entry of each kind per day, so a file's row yields to the day this device already has (B178).
             measurements.insertAll(attemptedMeasurements.map { it.toEntity() })
                 .countLive(attemptedMeasurements) { it.deletedAt == null } +

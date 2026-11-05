@@ -1070,6 +1070,34 @@ class BackupRoundTripTest {
     }
 
     @Test
+    fun aLiveChildUnderAHiddenParent_isNotCountedByTheSummary() = runTest {
+        // B348: a session exercise and a set whose session the file records deleted are written, but the
+        // history draws neither, so neither may inflate the summary the import reports.
+        seedAWorkout()
+        val file = BackupCodec.decode(exportedJson())
+        val edited = file.copy(
+            sessions = file.sessions.map { it.copy(deletedAt = 10L) },
+            sessionExercises = file.sessionExercises.map { it.copy(deletedAt = null) },
+            sets = file.sets.map { it.copy(deletedAt = null) },
+        )
+        val text = BackupCodec.encode(edited)
+        database.clearAllTables()
+
+        val preview = (repository.preview(text) as DataResult.Success).data
+        assertEquals("the session stays hidden", 0, preview.sessions.inFile)
+        assertEquals("so its set is drawn nowhere", 0, preview.sets.inFile)
+
+        val summary = (repository.import(text) as DataResult.Success).data
+
+        assertEquals(
+            "the exercise and the plan's three rows are all that became visible",
+            4,
+            summary.added,
+        )
+        assertEquals(0, summary.restored)
+    }
+
+    @Test
     fun aFileThatRecordsARowDeleted_isCarriedButNotPromised() = runTest {
         // B330: the export carries a soft delete so a restore stays exact, but a row the file itself records
         // as deleted becomes nothing the lifter can find — not "new" on a fresh device and not "back" on one

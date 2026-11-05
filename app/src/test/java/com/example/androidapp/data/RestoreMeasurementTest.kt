@@ -5,6 +5,7 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.data.local.WorkoutDatabase
+import com.example.androidapp.data.transfer.BackupCodec
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.model.BodyMeasurement
@@ -13,6 +14,7 @@ import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.SoreMuscle
 import com.example.androidapp.platform.CrashLogStore
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -67,6 +69,38 @@ class RestoreMeasurementTest {
         val live = RoomMeasurementRepository(target, clock()).observeAll().first()
         assertThat(live).hasSize(1)
         assertThat(live.single().bodyFatTenths).isEqualTo(180)
+    }
+
+    @Test
+    fun twoLiveRowsForOneDay_arePreviewedTheWayTheImportMergesThem() = runTest {
+        // B348: the import inserts before it restores, so the first live row takes the day. The preview
+        // used to model the opposite order and promised a restore the merge would not perform.
+        val source = database("one-day-source")
+        RoomMeasurementRepository(source, clock()).save(
+            BodyMeasurement(id = "from-file", measuredAt = day, kind = MeasurementKind.DAILY, weightGrams = 80_000L),
+        )
+        val exported = (repository(source).export() as DataResult.Success).data
+        val file = BackupCodec.decode(exported)
+        val row = file.measurements.single()
+        val text = BackupCodec.encode(file.copy(measurements = listOf(row, row.copy(id = "second-live"))))
+
+        val target = database("one-day-target")
+        val targetMeasurements = RoomMeasurementRepository(target, clock())
+        targetMeasurements.save(
+            BodyMeasurement(id = "from-file", measuredAt = day, kind = MeasurementKind.DAILY, weightGrams = 81_000L),
+        )
+        targetMeasurements.delete("from-file")
+
+        val preview = (repository(target).preview(text) as DataResult.Success).data
+        assertThat(preview.measurements.added).isEqualTo(1)
+        assertWithMessage("the hidden row does not also come back")
+            .that(preview.measurements.restored)
+            .isEqualTo(0)
+
+        val summary = (repository(target).import(text) as DataResult.Success).data
+        assertThat(summary.added).isEqualTo(1)
+        assertThat(summary.restored).isEqualTo(0)
+        assertThat(targetMeasurements.observeAll().first()).hasSize(1)
     }
 
     @Test
