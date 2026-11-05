@@ -81,6 +81,9 @@ data class TemplateVersionPlan(
  * swallowing it (F7): a reorder that silently did not happen would leave the user
  * starting a workout in the wrong order.
  */
+/** The dialog's open value for a set that does not exist yet; the answer carries it back (B352). */
+internal const val ADDING_SET_ID = "__adding__"
+
 @HiltViewModel
 class TemplateEditorViewModel @Inject constructor(
     private val repository: TemplateRepository,
@@ -165,9 +168,8 @@ class TemplateEditorViewModel @Inject constructor(
     }
 
     /** Appends a planned set to an exercise (ROADMAP N14). */
-    fun onAddSet(templateExerciseId: String, edit: TemplateSetEdit) = writeSet {
-        repository.addSet(templateExerciseId, edit)
-    }
+    fun onAddSet(templateExerciseId: String, edit: TemplateSetEdit) =
+        writeSet(ADDING_SET_ID) { repository.addSet(templateExerciseId, edit) }
 
     /**
      * Appends [count] planned sets that share one set of targets (P3.18).
@@ -217,9 +219,8 @@ class TemplateEditorViewModel @Inject constructor(
         repository.prependSets(templateExerciseId, ramp)
     }
 
-    fun onUpdateSet(templateSetId: String, edit: TemplateSetEdit) = writeSet {
-        repository.updateSet(templateSetId, edit)
-    }
+    fun onUpdateSet(templateSetId: String, edit: TemplateSetEdit) =
+        writeSet(templateSetId) { repository.updateSet(templateSetId, edit) }
 
     /**
      * Removes a planned set, and offers the way back (ROADMAP N90).
@@ -407,20 +408,22 @@ class TemplateEditorViewModel @Inject constructor(
         }
     }
 
-    /** The last planned-set write's answer, so its editor closes on success only (B284). */
-    private val setSave = MutableStateFlow<Boolean?>(null)
-    val setSaveOutcome: StateFlow<Boolean?> = setSave.asStateFlow()
+    /** The planned set the last write made, so only that set's editor closes (B352). */
+    private val setSave = MutableStateFlow<String?>(null)
+    val setSaveOutcome: StateFlow<String?> = setSave.asStateFlow()
 
     /** Takes the outcome once its editor has closed, so the next one does not close itself. */
     fun onDismissSetSave() {
         setSave.value = null
     }
 
-    private fun writeSet(action: suspend () -> DataResult<Unit>) {
+    private fun writeSet(setId: String, action: suspend () -> DataResult<Unit>) {
         viewModelScope.launch {
+            // Clear first, like the workout's set edit: an equal id must be a new emission (B352).
+            setSave.value = null
             val result = action()
             error.value = (result as? DataResult.Failure)?.error
-            setSave.value = result is DataResult.Success
+            setSave.value = if (result is DataResult.Success) setId else null
         }
     }
 

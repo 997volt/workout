@@ -763,6 +763,11 @@ the rule; that one argues it.
 
 ## The workout screen
 
+- **A set editor's answer names the set it wrote** (B352). A screen-global "succeeded" flag cannot tell one
+  block's dialog from another's, so a write that landed while a second dialog was open closed the wrong one.
+  The outcome is the written id (the new-set sentinel for an add), cleared before the write so an equal id is a
+  new emission, and the effect closes only a dialog whose open value matches it. The same shape the workout and
+  history editors use.
 - **A dialog that survives a rotation also keeps its draft** (B349). A form's open flag has to be saveable so a
   rotation does not close it; once it is, the values in it are part of the same decision, and a plain `remember`
   silently reopens the form on the stored values and loses the correction. The measurement fields, its picked

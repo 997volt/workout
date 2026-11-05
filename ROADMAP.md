@@ -28,13 +28,6 @@ existing run at **B339** and **N268**. When a row is picked up its design argume
 
 ### State and interaction
 
-- **B352 — One template block's save outcome must not close another block's dialog.** The screen-global
-  `setSaveOutcome == true && open != null` test in
-  [TemplateEditorScreen.kt](app/src/main/java/com/example/androidapp/ui/templates/TemplateEditorScreen.kt)
-  checks only that *some* dialog is open, so a write that finishes on block A can close the dialog just opened
-  on block B. The effect is also keyed on a method reference, which can change on every recomposition. Fixed
-  means the outcome carries the set it belongs to and the effect compares it with the open block's id.
-
 - **B353 — The app's screen-reader structure must exist.** The settings and program-editor switches are a sibling `Text` plus an
   unnamed `Switch` ([SettingsScreen.kt](app/src/main/java/com/example/androidapp/ui/settings/SettingsScreen.kt)),
   so TalkBack says "On, switch"; `BodyweightField` already shows the `.semantics { contentDescription = label }`

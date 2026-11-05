@@ -94,7 +94,6 @@ import com.example.androidapp.ui.components.warmUpActionFor
 import com.example.androidapp.ui.theme.AndroidAppTheme
 
 /** The [TemplateExerciseBlock] open-dialog value that means "a new set"; a set id means an edit (B284). */
-private const val ADDING = "__adding__"
 
 /**
  * One template: its name and its ordered exercises (ROADMAP N3).
@@ -182,7 +181,7 @@ fun TemplateEditorScreen(
     onBack: () -> Unit,
     onAddWarmUpSets: (String, Long) -> Unit,
     /** The last planned-set write's answer, so its editor closes on success only (B284). */
-    setSaveOutcome: Boolean?,
+    setSaveOutcome: String?,
     onDismissSetSave: () -> Unit,
     onDismissMessage: () -> Unit,
     onAddSet: (String, TemplateSetEdit) -> Unit,
@@ -382,7 +381,7 @@ private fun TemplateEditorBody(
     onOpenExercise: (String) -> Unit,
     onMoveExercise: (String, Int) -> Unit,
     /** The last planned-set write's answer, so its editor closes on success only (B284). */
-    setSaveOutcome: Boolean?,
+    setSaveOutcome: String?,
     onDismissSetSave: () -> Unit,
     onAddSet: (String, TemplateSetEdit) -> Unit,
     onAddSets: (String, Int, TemplateSetEdit) -> Unit,
@@ -529,7 +528,7 @@ private fun TemplateExerciseBlock(
     onRemove: () -> Unit,
     onOpenExercise: () -> Unit,
     /** The last planned-set write's answer, so the editor closes on success only (B284). */
-    setSaveOutcome: Boolean?,
+    setSaveOutcome: String?,
     onDismissSetSave: () -> Unit,
     onAddSet: (TemplateSetEdit) -> Unit,
     onUpdateSet: (String, TemplateSetEdit) -> Unit,
@@ -544,15 +543,16 @@ private fun TemplateExerciseBlock(
 ) {
     // This exercise's display unit, resolved once: every load it names reads in it (ROADMAP N64).
     val unit = exerciseWeightUnit(exercise.weightUnit)
-    // The dialog that is open: a set's id, [ADDING] for a new one, or null for none — one saveable value
+    // The dialog that is open: a set's id, [ADDING_SET_ID] for a new one, or null for none — one saveable value
     // rather than two flags that could disagree. It closes on the write's answer, not on the tap (B284): a
     // refusal — a rung boundary, a load the plan refuses — keeps the dialog and the values the lifter typed.
     var open by rememberSaveable { mutableStateOf<String?>(null) }
     val edited = exercise.sets.firstOrNull { it.id == open }
-    LaunchedEffect(setSaveOutcome, onDismissSetSave, open) {
-        if (setSaveOutcome == true && open != null) {
+    val dismissSave by rememberUpdatedState(onDismissSetSave)
+    LaunchedEffect(setSaveOutcome) {
+        if (open != null && setSaveOutcome == open) {
             open = null
-            onDismissSetSave()
+            dismissSave()
         }
     }
 
@@ -590,7 +590,7 @@ private fun TemplateExerciseBlock(
                 unit = unit,
                 onAdd = onAddSets,
             )
-            AddSetButton(exerciseId = exercise.id, onClick = { open = ADDING })
+            AddSetButton(exerciseId = exercise.id, onClick = { open = ADDING_SET_ID })
             ExercisePlanFields(exercise, appProgressionMode, onSavePlan)
         }
     }

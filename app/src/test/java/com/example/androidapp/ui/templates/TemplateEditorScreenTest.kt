@@ -110,7 +110,7 @@ class TemplateEditorScreenTest {
     }
 
     /** The last planned-set write's answer; null is "nothing has been written yet" (B284). */
-    private val setSaveOutcome = mutableStateOf<Boolean?>(null)
+    private val setSaveOutcome = mutableStateOf<String?>(null)
     private val onDismissSetSave: () -> Unit = { setSaveOutcome.value = null }
 
     private fun setScreen(
@@ -208,10 +208,11 @@ class TemplateEditorScreenTest {
         addSet()
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_SAVE).assertIsDisplayed()
 
-        composeTestRule.runOnIdle { setSaveOutcome.value = false }
+        // A different block's success must not close this one (B352); only this dialog's own id does.
+        composeTestRule.runOnIdle { setSaveOutcome.value = "another-set" }
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_SAVE).assertIsDisplayed()
 
-        composeTestRule.runOnIdle { setSaveOutcome.value = true }
+        composeTestRule.runOnIdle { setSaveOutcome.value = ADDING_SET_ID }
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_SAVE).assertDoesNotExist()
     }
 

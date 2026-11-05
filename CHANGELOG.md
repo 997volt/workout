@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A planned set's answer names the set it wrote** (B352). The template editor kept a screen-global "a write
+  succeeded" flag, so a write finishing on block A could close the dialog just opened on block B. The outcome
+  now carries the set id (or the new-set sentinel), the effect compares it with the open dialog, and the test
+  sets another block's id to prove it does not close.
 - **A failed stall read is not "the plan is moving"** (B351). `PlanStallFinder` turned a failed trends read into
   an empty session list, so a storage fault made the program editor and the week review say nothing had
   stalled. It now returns a `DataResult`; both callers show the read's error instead of inventing a verdict, and
