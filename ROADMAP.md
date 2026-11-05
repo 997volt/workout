@@ -26,15 +26,6 @@ existing run at **B339** and **N268**. When a row is picked up its design argume
 
 ### Data correctness and recovery
 
-- **B341 — A stored zone offset outside ±18 h must never throw inside a program flow.** The three
-  `FinishedSessionRow`/`ProgramSessionRow` mappers in
-  [ProgramMappers.kt](app/src/main/java/com/example/androidapp/data/local/ProgramMappers.kt) call
-  `ZoneOffset.ofTotalSeconds(minutes * 60)` without the `runCatching` that `WorkoutSession.zoneIdOrNull()`
-  gained in B282. `zoneOffsetMinutes` has no constraint, and a backup can carry any integer, so one imported
-  row can throw in `observeProgramRun`/`observeSequenceSchedule` — flows with no `catch` — when a program is
-  opened or home reads a block. Fixed means one total conversion helper used by every mapper, plus a crafted
-  backup test proving a bad offset is read with the fallback zone rather than killing the flow.
-
 - **B342 — A backup must be validated before any of it is merged.** Import checks the schema version and the
   library shape, then copies DTO values straight into entities
   ([BackupMappers.kt](app/src/main/java/com/example/androidapp/data/transfer/BackupMappers.kt),

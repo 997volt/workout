@@ -6,10 +6,10 @@ import com.example.androidapp.domain.model.DeloadWeek
 import com.example.androidapp.domain.model.ProgramSession
 import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.WorkoutProgram
+import com.example.androidapp.domain.model.storedZoneOrFallback
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.ZoneOffset
 
 /**
  * Translation between program storage and the domain (ROADMAP P3.3).
@@ -76,9 +76,7 @@ internal fun FinishedSessionRow.toRunSession(fallbackZone: ZoneId): ProgramSessi
             sessionId = sessionId,
             templateId = template,
             startedAt = Instant.ofEpochMilli(startedAt),
-            zone = zoneOffsetMinutes
-                ?.let { minutes -> ZoneOffset.ofTotalSeconds(minutes * SECONDS_PER_MINUTE) }
-                ?: fallbackZone,
+            zone = storedZoneOrFallback(zoneOffsetMinutes, fallbackZone),
         )
     }
 
@@ -93,9 +91,7 @@ internal fun ProgramSessionRow.toProgramSession(fallbackZone: ZoneId): ProgramSe
         sessionId = sessionId,
         templateId = templateId,
         startedAt = Instant.ofEpochMilli(startedAt),
-        zone = zoneOffsetMinutes
-            ?.let { minutes -> ZoneOffset.ofTotalSeconds(minutes * SECONDS_PER_MINUTE) }
-            ?: fallbackZone,
+        zone = storedZoneOrFallback(zoneOffsetMinutes, fallbackZone),
     )
 
 /**
@@ -109,10 +105,7 @@ internal fun FinishedSessionRow.toAdherenceSession(fallbackZone: ZoneId): Adhere
         sessionId = sessionId,
         templateId = templateId,
         startedAt = Instant.ofEpochMilli(startedAt),
-        zone = zoneOffsetMinutes
-            ?.let { minutes -> ZoneOffset.ofTotalSeconds(minutes * SECONDS_PER_MINUTE) }
-            ?: fallbackZone,
+        zone = storedZoneOrFallback(zoneOffsetMinutes, fallbackZone),
         isActivity = activity != null,
     )
 
-private const val SECONDS_PER_MINUTE = 60

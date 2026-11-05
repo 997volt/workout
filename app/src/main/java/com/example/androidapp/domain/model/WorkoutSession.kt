@@ -5,7 +5,6 @@ import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.ZoneOffset
 
 /**
  * The zone this session was performed in, or null when it predates the column (ROADMAP N25).
@@ -14,14 +13,7 @@ import java.time.ZoneOffset
  * every screen showed before this existed. Two readers want slightly different things from it, so it
  * is a function rather than a property: a row's own time, and the month or day it belongs to.
  */
-fun WorkoutSession.zoneIdOrNull(): ZoneId? = zoneOffsetMinutes?.let { minutes ->
-    // Total, as the name promises (B282): `ZoneOffset.ofTotalSeconds` throws outside ±18:00, and a backup
-    // can carry any integer — one such session killed the history flow instead of failing the import.
-    runCatching { ZoneOffset.ofTotalSeconds(minutes * SECONDS_PER_MINUTE) }.getOrNull()
-}
-
-/** Minutes to seconds, the unit [ZoneOffset] wants. */
-private const val SECONDS_PER_MINUTE = 60
+fun WorkoutSession.zoneIdOrNull(): ZoneId? = storedZoneOrNull(zoneOffsetMinutes)
 
 /**
  * What correcting a session's day produced (ROADMAP N266, B337).

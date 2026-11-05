@@ -62,6 +62,12 @@ the rule; that one argues it.
   so a future sync stays a decision, not a migration. A session's zone offset, the piece this
   entry used to call missing, landed with N25 (`zoneOffsetMinutes`); the design beyond the
   row shape is still parked (ROADMAP P4.9).
+- **A stored zone offset is read through one total conversion** (N25, B282, B341). A row's offset is written
+  from a real `ZoneId`, but a backup can carry any integer and `ZoneOffset.ofTotalSeconds` throws outside
+  ±18:00. `storedZoneOrNull` range-checks in a `Long` (an `Int` multiplication overflows), and
+  `storedZoneOrFallback` answers the reading zone for a row without one or with an illegal value. History,
+  adherence and the program mappers all use it: B282 fixed the first and stopped short of the other two,
+  which is how one imported row could still kill a program flow.
 - **A merged movement is deleted, and its id remembered** (N238). A row that is the same movement as
   another is re-pointed and then hard-deleted rather than tombstoned: after the re-point it holds nothing,
   and a tombstone would be a row every library read must filter and every backup must carry for an id the

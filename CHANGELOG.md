@@ -17,6 +17,12 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A stored zone offset outside ±18 h cannot take a program screen down** (B341). The total conversion
+  B282 added for history was not used by the three program/adherence mappers, which still called
+  `ZoneOffset.ofTotalSeconds` directly. One imported row with an out-of-range `zoneOffsetMinutes` could
+  therefore throw inside `observeProgramRun`/`observeSequenceSchedule` — flows with no `catch` — when a
+  program was opened or home read a block. Every reader now goes through one `storedZoneOrNull`/`storedZoneOrFallback`,
+  which range-checks in a `Long` before converting.
 - **A second successful edit of the same set closes its editor** (B340). The answer was a sticky
   `StateFlow`; after one success it held `Written(setId)` forever, so a repeat edit wrote the same value,
   the flow conflated it, and the editor stayed open with no feedback. The screen now consumes the answer

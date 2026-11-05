@@ -3,7 +3,6 @@ package com.example.androidapp.domain.model
 import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
-import java.time.ZoneOffset
 
 /**
  * The zone this workout was performed in, or null when it predates the column (ROADMAP N25).
@@ -11,14 +10,7 @@ import java.time.ZoneOffset
  * Null is answered by the caller with the current zone, which is what history showed before — and the
  * reason the migration backfills nothing rather than inventing an offset for the past.
  */
-fun WorkoutSummary.zoneIdOrNull(): ZoneId? = zoneOffsetMinutes?.let { minutes ->
-    // Total, as the name promises (B282): `ZoneOffset.ofTotalSeconds` throws outside ±18:00, and a backup
-    // can carry any integer — one such session killed the history flow instead of failing the import.
-    runCatching { ZoneOffset.ofTotalSeconds(minutes * SECONDS_PER_MINUTE) }.getOrNull()
-}
-
-/** Minutes to seconds, the unit [ZoneOffset] wants. */
-private const val SECONDS_PER_MINUTE = 60
+fun WorkoutSummary.zoneIdOrNull(): ZoneId? = storedZoneOrNull(zoneOffsetMinutes)
 
 /**
  * A finished workout as the history list shows it (ROADMAP P1.6).
