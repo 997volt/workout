@@ -1840,6 +1840,14 @@ the rule; that one argues it.
 
 ## Automatic backup and bodyweight loading
 
+- **A backup folder is a grant with a lifecycle, and a success is a restorable file** (B362). The folder is
+  the user's, so changing it releases the previous persisted grant once the new one is taken — an app that
+  kept every tree it was ever pointed at would hold access nobody can see. A different folder also clears the
+  last-success/last-attempt/failure record, because the old folder's copy says nothing about the new one and
+  keeping the date would delay the first copy by a period. "Back up now" is the same writer, lock and order as
+  the due run, not a second path. **The file is read back and decoded before success is recorded**: a provider
+  accepting a stream is not proof it committed a restorable copy, and the date exists to mean one. A failed
+  read-back deletes the bad file and records a failure.
 - **A clear turns the automatic backup off before it deletes** (B343). The schedule lived in preferences, so
   emptying the database left it enabled: the next due run wrote an almost-empty copy, the prune kept the newest
   five, and the copies taken before the clear were gone within five periods — while the confirmation said an

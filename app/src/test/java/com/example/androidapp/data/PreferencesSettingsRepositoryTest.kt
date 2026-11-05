@@ -1,10 +1,5 @@
 package com.example.androidapp.data
 
-import com.google.common.truth.Truth.assertThat
-import com.google.common.truth.Truth.assertWithMessage
-import java.time.LocalDate
-import com.example.androidapp.domain.model.StatisticsRange
-import com.example.androidapp.domain.model.RangeKind
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.DataError
@@ -12,11 +7,16 @@ import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.model.BackupFolder
 import com.example.androidapp.domain.model.BackupSchedule
-import java.time.Instant
+import com.example.androidapp.domain.model.RangeKind
+import com.example.androidapp.domain.model.StatisticsRange
+import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.time.Instant
+import java.time.LocalDate
 
 /**
  * The settings store (ROADMAP B23).
@@ -181,6 +181,24 @@ class PreferencesSettingsRepositoryTest {
         repository.setBackupFolder(null)
 
         assertThat(repository.observeBackupSettings().first().folder).isNull()
+    }
+
+    @Test
+    fun changingTheFolder_resetsTheDates_soTheNewFolderIsDue() = runTest {
+        // B362: the old folder's success says nothing about the new one, and keeping it would delay the
+        // first copy by a whole period. The old folder's files are untouched; only this record resets.
+        val repository = repository()
+        val at = Instant.parse("2026-10-26T10:00:00Z")
+        repository.setBackupFolder(BackupFolder(uri = "content://tree/one", label = "one"))
+        repository.recordBackupResult(at = at, attemptAt = at, failed = false)
+
+        repository.setBackupFolder(BackupFolder(uri = "content://tree/two", label = "two"))
+
+        val stored = repository.observeBackupSettings().first()
+        assertThat(stored.folder?.label).isEqualTo("two")
+        assertThat(stored.lastSuccessAt).isNull()
+        assertThat(stored.lastAttemptAt).isNull()
+        assertThat(stored.failed).isFalse()
     }
 
     @Test

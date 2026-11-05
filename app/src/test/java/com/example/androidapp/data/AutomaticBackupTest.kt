@@ -3,6 +3,8 @@ package com.example.androidapp.data
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.androidapp.data.transfer.BackupCodec
+import com.example.androidapp.data.transfer.BackupFile
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
@@ -95,6 +97,43 @@ class AutomaticBackupTest {
         assertThat(written.fileName).isEqualTo(backupFileName(now))
         assertThat(files.files).containsKey(written.fileName)
         assertThat(settings.observeBackupSettings().first().lastSuccessAt).isEqualTo(now)
+    }
+
+    @Test
+    fun runNow_writesEvenWhenThePeriodSaysNotDue() = runTest {
+        // B362: the manual copy is the same writer, asked directly rather than around the schedule.
+        enable()
+        backup().runIfDue()
+        clock = now.plus(Duration.ofDays(1))
+        assertThat(backup().runIfDue()).isEqualTo(BackupRun.NotDue)
+
+        val run = backup().runNow()
+
+        assertThat(run).isInstanceOf(BackupRun.Written::class.java)
+        assertThat(files.files).hasSize(2)
+    }
+
+    @Test
+    fun runNow_withNoFolder_writesNothing() = runTest {
+        settings.setBackupEnabled(true)
+
+        assertThat(backup().runNow()).isEqualTo(BackupRun.NotConfigured)
+        assertThat(files.files).isEmpty()
+    }
+
+    @Test
+    fun aCopyThatCannotBeReadBack_isAFailedBackup_notARecordedSuccess() = runTest {
+        // B362: the stream closing is not proof the provider committed. A corrupt read-back is deleted and
+        // recorded as a failure, so the settings row never dates a file that cannot be restored.
+        enable()
+        files.corrupting = true
+
+        val run = backup().runNow()
+
+        assertThat(run).isInstanceOf(BackupRun.Failed::class.java)
+        assertThat(files.files).isEmpty()
+        assertThat(settings.observeBackupSettings().first().lastSuccessAt).isNull()
+        assertThat(settings.observeBackupSettings().first().failed).isTrue()
     }
 
     @Test
@@ -192,9 +231,9 @@ class AutomaticBackupTest {
         // the name alone would pass for a file holding "hello".
         enable()
 
-        backup(FakeBackupRepository(text = "{\"schemaVersion\":6}")).runIfDue()
+        backup(FakeBackupRepository(text = VALID_BACKUP)).runIfDue()
 
-        assertThat(files.files.values).containsExactly("{\"schemaVersion\":6}")
+        assertThat(files.files.values).containsExactly(VALID_BACKUP)
     }
 
     @Test
@@ -286,10 +325,23 @@ class AutomaticBackupTest {
 }
 
 /** A folder that keeps its files in a map: enough to see what was written, refused and pruned. */
+/** The smallest document this build's own codec reads back, so the writer's verification is exercised. */
+private val VALID_BACKUP: String = BackupCodec.encode(
+    BackupFile(
+        schemaVersion = 6,
+        exportedAt = 0,
+        exercises = emptyList(),
+        sessions = emptyList(),
+        sessionExercises = emptyList(),
+        sets = emptyList(),
+    ),
+)
+
 private class FakeBackupFiles : BackupFolderFiles {
 
     val files = linkedMapOf<String, String>()
     var refusing = false
+    var corrupting = false
 
     override suspend fun write(treeUri: String, fileName: String, text: String): String? {
         if (refusing) return null
@@ -301,9 +353,11 @@ private class FakeBackupFiles : BackupFolderFiles {
             name = fileName.removeSuffix(".json") + "-" + attempt + ".json"
             attempt++
         }
-        files[name] = text
+        files[name] = if (corrupting) "{ not json" else text
         return name
     }
+
+    override suspend fun read(treeUri: String, fileName: String): String? = files[fileName]
 
     override suspend fun names(treeUri: String): List<String> = files.keys.toList()
 
@@ -313,7 +367,7 @@ private class FakeBackupFiles : BackupFolderFiles {
 /** The database's own answer, chosen by the test: a JSON document, or the reason there is none. */
 private class FakeBackupRepository(
     private val failing: Boolean = false,
-    private val text: String = """{"schemaVersion":1}""",
+    private val text: String = VALID_BACKUP,
 ) : BackupRepository {
 
     override suspend fun export(): DataResult<String> = if (failing) {

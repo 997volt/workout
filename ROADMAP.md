@@ -30,15 +30,6 @@ existing run at **B339** and **N268**. When a row is picked up its design argume
 
 ### Backup lifecycle
 
-- **B362 — Automatic backup needs a lifecycle, not only a schedule.** Old folder grants are never released
-  when the folder changes ([BackupFolderPicker.kt](app/src/main/java/com/example/androidapp/ui/settings/BackupFolderPicker.kt)),
-  so the app keeps access to every tree ever chosen until the system's persistable-grant limit is reached;
-  changing folders does not reset the failure/period record, so a repaired backup can wait a full period; and
-  there is no way to ask for one "now" after fixing a folder. Fixed means the previous grant is released, a
-  folder change clears the failed-attempt state (or makes the next check due), and Settings offers a verified
-  "Back up now". The write should be read back and parsed before its success is recorded, so "last backup" can
-  mean "a restorable copy landed".
-
 ### Verification and tooling
 
 - **N268 — The CI Gradle cache must not be redirected into the checkout.** `tools/android-env.sh` sets

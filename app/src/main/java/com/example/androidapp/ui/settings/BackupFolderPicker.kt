@@ -23,15 +23,21 @@ import com.example.androidapp.domain.model.BackupFolder
  * it. Inventing a second message for the same outcome would be two sentences for one failure.
  */
 @Composable
-fun rememberBackupFolderPicker(onChoose: (BackupFolder) -> Unit): () -> Unit {
+fun rememberBackupFolderPicker(
+    currentFolder: BackupFolder? = null,
+    onChoose: (BackupFolder) -> Unit,
+): () -> Unit {
     val context = LocalContext.current
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult // the sheet was dismissed
-        runCatching {
-            context.contentResolver.takePersistableUriPermission(
-                uri,
-                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
-            )
+        val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+        runCatching { context.contentResolver.takePersistableUriPermission(uri, flags) }
+        // The old grant is released once the new one is taken (B362): the picker used to leave every
+        // folder it had ever been given with a live grant, so a folder the user moved away from stayed
+        // writable by the app. A release that fails is ignored — the grant is held by the system, and the
+        // write path already reports a folder it cannot use.
+        currentFolder?.uri?.takeIf { it != uri.toString() }?.let { old ->
+            runCatching { context.contentResolver.releasePersistableUriPermission(Uri.parse(old), flags) }
         }
         onChoose(BackupFolder(uri = uri.toString(), label = folderLabel(uri)))
     }

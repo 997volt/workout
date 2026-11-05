@@ -1,5 +1,6 @@
 package com.example.androidapp.data
 
+import com.example.androidapp.data.transfer.BackupCodec
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
@@ -16,6 +17,15 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import javax.inject.Singleton
+
+/** The two ways the app asks for a backup, so a screen can offer one without reaching into the writer (B362). */
+interface BackupRunner {
+    /** The launch check: writes only when the period has run out. */
+    suspend fun runIfDue(): BackupRun
+
+    /** Writes now, whatever the period says; the settings row's "Back up now". */
+    suspend fun runNow(): BackupRun
+}
 
 /** What one launch's due check did (ROADMAP N218). */
 sealed interface BackupRun {
@@ -50,7 +60,7 @@ class AutomaticBackup @Inject constructor(
     private val backup: BackupRepository,
     private val files: BackupFolderFiles,
     private val time: TimeSource,
-) {
+) : BackupRunner {
 
     /**
      * One run at a time (B248).
@@ -61,7 +71,7 @@ class AutomaticBackup @Inject constructor(
      */
     private val running = Mutex()
 
-    suspend fun runIfDue(): BackupRun = running.withLock {
+    override suspend fun runIfDue(): BackupRun = running.withLock {
         val current = settings.observeBackupSettings().first()
         val folder = current.folder
         val now = time.now()
@@ -74,6 +84,18 @@ class AutomaticBackup @Inject constructor(
         }
     }
 
+    /**
+     * A copy the user asked for (B362), not waiting for the period.
+     *
+     * The same lock and the same write as a due run: two copies cannot interleave, and the manual one is
+     * still ordered export → write → prune → record. A folder that is not configured is [BackupRun.NotConfigured],
+     * the same answer the launch path gives.
+     */
+    override suspend fun runNow(): BackupRun = running.withLock {
+        val folder = settings.observeBackupSettings().first().folder ?: return@withLock BackupRun.NotConfigured
+        write(folder, time.now())
+    }
+
     /** The write itself, ordered so a partial run costs nothing. */
     private suspend fun write(folder: BackupFolder, now: Instant): BackupRun {
         val fileName = backupFileName(now)
@@ -82,7 +104,14 @@ class AutomaticBackup @Inject constructor(
 
             is DataResult.Success -> {
                 val written = files.write(folder.uri, fileName, exported.data)
-                if (written != null) {
+                // Read the copy back and decode it before recording a success (B362): "the last backup" has to
+                // mean a file this app can restore, not a stream a provider accepted. A bad copy is removed so
+                // it cannot be mistaken for one later.
+                val restorable = written != null &&
+                    files.read(folder.uri, written)?.let { text ->
+                        runCatching { BackupCodec.decode(text) }.isSuccess
+                    } == true
+                if (written != null && restorable) {
                     // Pruned only after the new file is on disk: a folder that cannot take the new copy must
                     // not also lose an old one, which is the one way this feature could make a user worse off.
                     backupsToDelete(files.names(folder.uri), keep = written)
@@ -93,7 +122,12 @@ class AutomaticBackup @Inject constructor(
                     settings.recordBackupResult(at = now, attemptAt = now, failed = false)
                     BackupRun.Written(written)
                 } else {
-                    failed(DataError.Storage(IllegalStateException("the backup file was not written")))
+                    written?.let { files.delete(folder.uri, it) }
+                    failed(
+                        DataError.Storage(
+                            IllegalStateException("the backup file was not written or could not be read back"),
+                        ),
+                    )
                 }
             }
         }

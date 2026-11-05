@@ -17,6 +17,13 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **Automatic backup has a lifecycle** (B362). Changing folders left the old tree's persisted grant alive, kept
+  the record of a successful copy from the *old* folder (so a repaired backup could wait a full period), and
+  offered no way to ask for one after fixing a folder. The picker releases the previous grant once the new one
+  is taken, storing a different folder clears the last-success/last-attempt/failure state so the new folder is
+  due, and Settings has a "Back up now" button on the same writer. A copy is also read back and decoded before
+  its success is recorded: a stream that closed is not proof the provider committed, and "last backup" now means
+  a restorable file.
 - **A block's Skip asks before it writes** (B356). The one-tap action advances a finite program past a session
   permanently, and there is no un-skip, so it now opens a confirmation naming the session; cancelling writes
   nothing. The test proves the first tap does not call the write and the confirmation does.

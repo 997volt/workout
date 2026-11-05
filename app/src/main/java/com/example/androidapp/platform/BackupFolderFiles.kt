@@ -29,6 +29,9 @@ interface BackupFolderFiles {
      */
     suspend fun write(treeUri: String, fileName: String, text: String): String?
 
+    /** Reads one file back by display name, or null when it cannot be read (B362). */
+    suspend fun read(treeUri: String, fileName: String): String?
+
     /** Every display name in the tree, in provider order. */
     suspend fun names(treeUri: String): List<String>
 
@@ -78,7 +81,14 @@ class SafBackupFolderFiles @Inject constructor(
                     false
                 }
             } ?: false
-            if (landed) name else null
+            // A stream that closed is not proof the provider committed (B362): read one byte back, so a
+            // zero-length or vanished document is a failure rather than a "backup" the settings row dates.
+            if (landed && document != null && isNonEmpty(document)) {
+                name
+            } else {
+                document?.let { runCatching { DocumentsContract.deleteDocument(context.contentResolver, it) } }
+                null
+            }
         }
     } catch (cancellation: CancellationException) {
         throw cancellation
@@ -88,12 +98,38 @@ class SafBackupFolderFiles @Inject constructor(
         null
     }
 
+    /** Whether [uri] can be opened and has at least one byte, the check a closed stream cannot make. */
+    private fun isNonEmpty(uri: Uri): Boolean = try {
+        context.contentResolver.openInputStream(uri)?.use { it.read() != -1 } ?: false
+    } catch (_: Throwable) {
+        false
+    }
+
     /**
      * A name in [children] that nothing holds: [fileName], or the same name with `-2`, `-3` … appended.
      *
      * A second-resolution stamp made two writes in one second the same file; the same-instant case is still
      * possible across devices and clock changes, so the folder is asked rather than assumed (B248).
      */
+    override suspend fun read(treeUri: String, fileName: String): String? = try {
+        withContext(Dispatchers.IO) {
+            val tree = treeUri.toUri()
+            val children = DocumentsContract.buildChildDocumentsUriUsingTree(
+                tree,
+                DocumentsContract.getTreeDocumentId(tree),
+            )
+            documentNamed(children, fileName)?.let { uri ->
+                context.contentResolver.openInputStream(uri)?.use { stream ->
+                    stream.readBytes().toString(Charsets.UTF_8)
+                }
+            }
+        }
+    } catch (cancellation: CancellationException) {
+        throw cancellation
+    } catch (_: Throwable) {
+        null
+    }
+
     private fun freeName(children: Uri, fileName: String): String {
         val taken = namesIn(children).toSet()
         if (fileName !in taken) return fileName

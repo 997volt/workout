@@ -55,6 +55,7 @@ import com.example.androidapp.domain.model.ProgressionMode
 import com.example.androidapp.ui.components.AppCard
 import com.example.androidapp.ui.components.AppFilterChip
 import com.example.androidapp.ui.components.AppRow
+import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.ClearEverythingDialog
 import com.example.androidapp.ui.components.FailureMessage
 import com.example.androidapp.ui.components.IconTile
@@ -112,7 +113,10 @@ fun SettingsRoute(
     val clearedText = stringResource(R.string.clear_done)
     var failure by remember { mutableStateOf<DataError?>(null) }
     FailureMessage(failure = failure, onMessage = { message = it }, onClear = { failure = null })
-    val chooseBackupFolder = rememberBackupFolderPicker(viewModel::onChooseBackupFolder)
+    val chooseBackupFolder = rememberBackupFolderPicker(
+        currentFolder = state.backup.folder,
+        onChoose = viewModel::onChooseBackupFolder,
+    )
 
     SettingsScreen(
         state = state,
@@ -125,6 +129,7 @@ fun SettingsRoute(
         onEnableBackup = viewModel::onEnableBackup,
         onSetBackupSchedule = viewModel::onSetBackupSchedule,
         onChooseBackupFolder = chooseBackupFolder,
+        onBackupNow = viewModel::onBackupNow,
         onExportData = transferActions.export,
         onImportData = transferActions.import,
         onOpenDiagnostics = onOpenDiagnostics,
@@ -164,6 +169,7 @@ fun SettingsScreen(
     onDismissMessage: () -> Unit,
     modifier: Modifier = Modifier,
     message: String? = null,
+    onBackupNow: () -> Unit = {},
 ) {
     var confirmingClear by rememberSaveable { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -207,6 +213,7 @@ fun SettingsScreen(
             onEnableBackup = onEnableBackup,
             onSetBackupSchedule = onSetBackupSchedule,
             onChooseBackupFolder = onChooseBackupFolder,
+            onBackupNow = onBackupNow,
             onExportData = onExportData,
             onImportData = onImportData,
             onClearData = { confirmingClear = true },
@@ -234,6 +241,7 @@ private fun SettingsBody(
     onEnableBackup: (Boolean) -> Unit,
     onSetBackupSchedule: (BackupSchedule) -> Unit,
     onChooseBackupFolder: () -> Unit,
+    onBackupNow: () -> Unit,
     onExportData: () -> Unit,
     onImportData: () -> Unit,
     onClearData: () -> Unit,
@@ -270,6 +278,7 @@ private fun SettingsBody(
             onEnableBackup = onEnableBackup,
             onSetSchedule = onSetBackupSchedule,
             onChooseFolder = onChooseBackupFolder,
+            onBackupNow = onBackupNow,
         )
         // Support sits above Data so the one irreversible action keeps the screen's last slot (N43).
         SupportSection(onOpenDiagnostics = onOpenDiagnostics)
@@ -396,6 +405,7 @@ private fun BackupSection(
     onEnableBackup: (Boolean) -> Unit,
     onSetSchedule: (BackupSchedule) -> Unit,
     onChooseFolder: () -> Unit,
+    onBackupNow: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
@@ -422,7 +432,7 @@ private fun BackupSection(
                     testTag = TestTags.SETTINGS_BACKUP_FOLDER,
                 )
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                BackupStatus(backup = state.backup)
+                BackupStatus(backup = state.backup, onBackupNow = onBackupNow)
             }
         }
     }
@@ -461,7 +471,11 @@ private fun BackupPeriodChoice(
  * to tell whether they lost a week or a minute, and the date is the answer to that question.
  */
 @Composable
-private fun BackupStatus(backup: BackupSettings, modifier: Modifier = Modifier) {
+private fun BackupStatus(
+    backup: BackupSettings,
+    onBackupNow: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val lastSuccess = backup.lastSuccessAt?.let { instant ->
         remember(instant) {
             DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
@@ -506,6 +520,16 @@ private fun BackupStatus(backup: BackupSettings, modifier: Modifier = Modifier) 
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 4.dp),
         )
+        if (backup.folder != null) {
+            AppTextButton(
+                onClick = onBackupNow,
+                modifier = Modifier
+                    .padding(top = 4.dp)
+                    .testTag(TestTags.SETTINGS_BACKUP_NOW),
+            ) {
+                Text(stringResource(R.string.settings_backup_now))
+            }
+        }
     }
 }
 

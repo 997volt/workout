@@ -1079,6 +1079,7 @@
     <string name="settings_backup_never">No backup yet</string>
     <string name="settings_backup_failed">The last backup failed. Check that the folder still exists.</string>
     <string name="settings_backup_no_folder">Choose a folder — until then a backup has nowhere to go.</string>
+    <string name="settings_backup_now">Back up now</string>
     <string name="settings_backup_kept">The newest five backups are kept; older ones are removed.</string>
     <!-- A bodyweight movement (ROADMAP N219): the weight field is what was *added*. -->
     <string name="exercise_detail_bodyweight">Bodyweight exercise</string>

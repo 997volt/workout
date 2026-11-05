@@ -12,6 +12,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.WeightUnit
+import com.example.androidapp.domain.model.BackupFolder
 import com.example.androidapp.domain.model.BackupSchedule
 import com.example.androidapp.domain.model.BackupSettings
 import com.example.androidapp.domain.model.ProgressionMode
@@ -47,6 +48,7 @@ class SettingsScreenTest {
     private val backupEnabledWrites = mutableListOf<Boolean>()
     private val backupScheduleWrites = mutableListOf<BackupSchedule>()
     private var folderPicks = 0
+    private var backupsNow = 0
 
     private fun show(state: SettingsUiState, message: String? = null) {
         composeTestRule.setContent {
@@ -68,6 +70,7 @@ class SettingsScreenTest {
                 onSetRestCue = { _ -> },
                 onSetKeepScreenOn = { _ -> },
                 onDismissMessage = {},
+                onBackupNow = { backupsNow++ },
             )
         }
     }
@@ -256,6 +259,23 @@ class SettingsScreenTest {
 
         composeTestRule.onNodeWithTag(TestTags.SETTINGS_BACKUP_LAST).assertExists()
         composeTestRule.onNodeWithText("Last backup:", substring = true).assertExists()
+    }
+
+    @Test
+    fun theBackupNowButton_writesACopy() {
+        // B362: the manual copy is a button on the same card, shown only when there is a folder.
+        show(
+            SettingsUiState(
+                backup = BackupSettings(
+                    enabled = true,
+                    folder = BackupFolder(uri = "content://tree/x", label = "x"),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.SETTINGS_BACKUP_NOW).performScrollTo().performClick()
+
+        assertEquals(1, backupsNow)
     }
 
     @Test

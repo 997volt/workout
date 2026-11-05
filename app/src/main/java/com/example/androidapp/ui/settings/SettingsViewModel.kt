@@ -2,6 +2,7 @@ package com.example.androidapp.ui.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.androidapp.data.BackupRunner
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.RestTimer
@@ -28,6 +29,7 @@ import javax.inject.Inject
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
+    private val backupRunner: BackupRunner,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -102,6 +104,11 @@ class SettingsViewModel @Inject constructor(
     /** Remembers the folder a backup writes to; the picker has already taken the grant (ROADMAP N218). */
     fun onChooseBackupFolder(folder: BackupFolder) {
         write { settingsRepository.setBackupFolder(folder) }
+    }
+
+    /** Writes one copy now, whatever the period says (B362); the backup flow shows the result. */
+    fun onBackupNow() {
+        viewModelScope.launch { backupRunner.runNow() }
     }
 
     /** One place where a failed write becomes the error the screen shows. */

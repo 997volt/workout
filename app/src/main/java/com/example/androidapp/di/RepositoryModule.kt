@@ -1,5 +1,7 @@
 package com.example.androidapp.di
 
+import com.example.androidapp.data.AutomaticBackup
+import com.example.androidapp.data.BackupRunner
 import com.example.androidapp.data.RoomAdherenceRepository
 import com.example.androidapp.data.RoomBackupRepository
 import com.example.androidapp.data.RoomDeloadRepository
@@ -44,6 +46,11 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class RepositoryModule {
+
+    /** The one writer behind both the launch check and the manual "Back up now" (B362). */
+    @Binds
+    @Singleton
+    abstract fun bindBackupRunner(impl: AutomaticBackup): BackupRunner
 
     @Binds
     @Singleton

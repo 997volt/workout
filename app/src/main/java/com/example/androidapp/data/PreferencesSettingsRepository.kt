@@ -283,6 +283,7 @@ class PreferencesSettingsRepository @Inject constructor(
         }
 
     override suspend fun setBackupFolder(folder: BackupFolder?): DataResult<Unit> = withContext(Dispatchers.IO) {
+        val previous = currentBackupSettings().folder
         preferences.edit(commit = true) {
             if (folder == null) {
                 // Absent rather than an empty string: "no folder" and a blank one are the same answer, and one
@@ -292,6 +293,14 @@ class PreferencesSettingsRepository @Inject constructor(
             } else {
                 putString(KEY_BACKUP_FOLDER_URI, folder.uri)
                 putString(KEY_BACKUP_FOLDER_LABEL, folder.label)
+            }
+            if (folder != previous) {
+                // A new folder has never been written to (B362): keeping the old folder's dates would say a
+                // copy is there and delay the first one by a whole period. The old folder's files stay the
+                // user's; only this device's record of when it last wrote resets.
+                remove(KEY_BACKUP_LAST_SUCCESS)
+                remove(KEY_BACKUP_LAST_ATTEMPT)
+                remove(KEY_BACKUP_LAST_FAILED)
             }
         }
         if (currentBackupSettings().folder == folder) {

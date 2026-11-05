@@ -1,5 +1,7 @@
 package com.example.androidapp.ui.settings
 
+import com.example.androidapp.data.BackupRun
+import com.example.androidapp.data.BackupRunner
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.RestTimer
@@ -10,7 +12,6 @@ import com.example.androidapp.domain.model.BackupSettings
 import com.example.androidapp.domain.model.ProgressionMode
 import com.example.androidapp.domain.model.StatisticsRange
 import com.example.androidapp.domain.repository.SettingsRepository
-import java.time.Instant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -28,6 +29,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
+import java.time.Instant
 
 /**
  * The settings screen's state (ROADMAP B23).
@@ -39,6 +41,9 @@ import org.junit.Test
 class SettingsViewModelTest {
 
     private val dispatcher = StandardTestDispatcher()
+    private val runner = FakeBackupRunner()
+
+    private fun viewModel(repository: FakeSettingsRepository) = SettingsViewModel(repository, runner)
 
     @Before
     fun setUp() = Dispatchers.setMain(dispatcher)
@@ -48,7 +53,7 @@ class SettingsViewModelTest {
 
     @Test
     fun theStoredValue_isWhatTheScreenShows() = runTest(dispatcher) {
-        val viewModel = SettingsViewModel(FakeSettingsRepository(stored = 45))
+        val viewModel = viewModel(FakeSettingsRepository(stored = 45))
         advanceUntilIdle()
 
         assertEquals(45, viewModel.uiState.value.defaultRestSeconds)
@@ -57,7 +62,7 @@ class SettingsViewModelTest {
     @Test
     fun aChoiceThatIsStored_becomesTheShownValue() = runTest(dispatcher) {
         val repository = FakeSettingsRepository(stored = RestTimer.DEFAULT_SECONDS)
-        val viewModel = SettingsViewModel(repository)
+        val viewModel = viewModel(repository)
         advanceUntilIdle()
 
         viewModel.onSetDefaultRest(30)
@@ -73,7 +78,7 @@ class SettingsViewModelTest {
         // The promise in the ViewModel's own KDoc: a failed write must not change what is shown, or
         // the next workout silently uses the old rest while the screen says otherwise.
         val repository = FakeSettingsRepository(stored = 90, refuseWrites = true)
-        val viewModel = SettingsViewModel(repository)
+        val viewModel = viewModel(repository)
         advanceUntilIdle()
 
         viewModel.onSetDefaultRest(30)
@@ -88,7 +93,7 @@ class SettingsViewModelTest {
         // ROADMAP N44: the switch is stored like the rest sound, and the screen shows what is in
         // force rather than what was tapped.
         val repository = FakeSettingsRepository(stored = 90)
-        val viewModel = SettingsViewModel(repository)
+        val viewModel = viewModel(repository)
         advanceUntilIdle()
 
         assertEquals("on by default", true, viewModel.uiState.value.restTimerEnabled)
@@ -105,7 +110,7 @@ class SettingsViewModelTest {
         // ROADMAP N66: on until the lifter turns it off, and the screen shows what is in force
         // rather than what was tapped.
         val repository = FakeSettingsRepository(stored = 90)
-        val viewModel = SettingsViewModel(repository)
+        val viewModel = viewModel(repository)
         advanceUntilIdle()
 
         assertEquals("ask by default", ProgressionMode.SUGGEST, viewModel.uiState.value.progressionMode)
@@ -115,6 +120,28 @@ class SettingsViewModelTest {
 
         assertEquals(ProgressionMode.OFF, viewModel.uiState.value.progressionMode)
         assertEquals(listOf(ProgressionMode.OFF), repository.progressionWrites)
+    }
+
+    @Test
+    fun backupNow_asksTheRunner_forACopytRegardlessOfThePeriod() = runTest(dispatcher) {
+        // B362: the manual copy is the same writer, not a second path around the schedule.
+        val viewModel = viewModel(FakeSettingsRepository(stored = 90))
+
+        viewModel.onBackupNow()
+        advanceUntilIdle()
+
+        assertEquals(1, runner.nowCalls)
+    }
+}
+
+private class FakeBackupRunner : BackupRunner {
+    var nowCalls = 0
+
+    override suspend fun runIfDue(): BackupRun = BackupRun.NotDue
+
+    override suspend fun runNow(): BackupRun {
+        nowCalls++
+        return BackupRun.NotDue
     }
 }
 
