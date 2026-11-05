@@ -108,4 +108,3 @@ internal fun FinishedSessionRow.toAdherenceSession(fallbackZone: ZoneId): Adhere
         zone = storedZoneOrFallback(zoneOffsetMinutes, fallbackZone),
         isActivity = activity != null,
     )
-

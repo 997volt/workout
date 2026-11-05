@@ -1,7 +1,7 @@
 # Workout — Roadmap
 
-> **What is planned, not what happened.** *Next* is the batch picked up before anything else, *Later* is decided and waiting,
-> *Parked* is decided against until a named trigger fires, and the non-goals are lines this app does not cross.
+> **What is planned, not what happened.** *Later* is decided and waiting, *Parked* is decided against until a
+> named trigger fires, and the non-goals are lines this app does not cross.
 > Shipped work is [CHANGELOG.md](CHANGELOG.md), how a release is cut is [RELEASING.md](RELEASING.md), and the
 > settled rules are [DECISIONS.md](DECISIONS.md) with their argument in
 > [DECISIONS-EVIDENCE.md](DECISIONS-EVIDENCE.md).
@@ -14,32 +14,6 @@ backlog, `R#.#` releases) are stable and go in commit messages. They were assign
 work was planned, so they do not always run in order — and an id this file does not list has
 shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 [CHANGELOG-1.x.md](CHANGELOG-1.x.md) for the 1.x releases.
-
-## Next — 2.23: the release review's findings
-
-A review of `v2.22..main` after the 2.22 hardening batch was code-complete found the items below. They are the
-work that should land before 2.23 is tagged. Each row names the current behaviour, why it matters, what "fixed"
-means and the test that proves it, so it can be picked up without the review conversation. **N280 was
-already specified in *Later* and moved here** because the review showed it now affects the release's
-truthfulness.
-
-### Backup and restore
-
-### Editor state and tests
-
-### Release and documentation
-
-- **B381 — Correct the batch's KDoc, decisions and diff hygiene.** B338's weight KDoc now sits above
-  `requirePlausibleValues`, leaving `requireStatedWeight` undocumented, and the new sentence says a tape typo
-  would make a derived fat mass exceed the body — tape does not feed fat mass
-  ([RoomMeasurementRepository.kt](app/src/main/java/com/example/androidapp/data/RoomMeasurementRepository.kt)).
-  DECISIONS claims every dialog that survives rotation keeps its draft (B349) and every screen title is a
-  heading (B353), which B376 and B369 contradict; the N268 "no-op" wording still ignores `ANDROID_ENV_ROOT` and
-  the PATH change. `git diff --check` also reports a blank line at EOF in
-  [ProgramMappers.kt](app/src/main/java/com/example/androidapp/data/local/ProgramMappers.kt). **Fixed** means
-  the KDoc moves and says what tape and body percentages actually do, the decisions are qualified, the env
-  script's claim is made true or worded accurately, and the blank line is removed. **Test:** the docs gate and
-  `git diff --check`.
 
 ## Later — the rest of the 2.22 review
 

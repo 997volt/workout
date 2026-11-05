@@ -775,7 +775,7 @@ the rule; that one argues it.
   The outcome is the written id (the new-set sentinel for an add), cleared before the write so an equal id is a
   new emission, and the effect closes only a dialog whose open value matches it. The same shape the workout and
   history editors use.
-- **A dialog that survives a rotation also keeps its draft** (B349). A form's open flag has to be saveable so a
+- **An editor whose dialog survives a rotation also keeps its draft** (B349). A form's open flag has to be saveable so a
   rotation does not close it; once it is, the values in it are part of the same decision, and a plain `remember`
   silently reopens the form on the stored values and loses the correction. The measurement fields, its picked
   day, the set editor and the exercise editor each carry a `Saver` (or a list/map saver) keyed to the row, so a
@@ -1935,8 +1935,9 @@ the rule; that one argues it.
 - **Accessibility accompanies each screen**; it is not a later phase. Name what a control
   does (`onClickLabel`), *announce* state changes rather than only drawing them, and tag
   things so tests do not assert on English literals. **A control whose label is a sibling is unnamed** (B353):
-  a switch carries its label as a content description, and a section or screen title calls `heading()` so a
-  reader can move between groups rather than through one flat focus list.
+  a switch carries its label as a content description, and a section or a title drawn through `TopBarTitle`
+  calls `heading()` so a reader can move between groups rather than through one flat focus list. Raw top-bar
+  `Text` is still outside that component and is B369.
 - **One mechanism makes room for the keyboard, and it is the app's** (B119, B122, B127).
   The activity's window is pinned to `android:windowSoftInputMode="adjustResize"` — which
   `enableEdgeToEdge()` does not set, and which the platform otherwise resolves to `adjustPan` —

@@ -253,18 +253,11 @@ private fun List<SoreMuscle>.toRows(measurementId: String, now: Long): List<Meas
     }
 
 /**
- * A weight a row may store, or a refusal (B338).
- *
- * A body weight is a **positive** number of grams — `null` states none, which is the form's answer for a blank
- * field and for a typed zero (B336) — and a stored zero or negative is a reading nothing should fit. The two
- * writes that can carry one ask this, so the rule is one check rather than a reader-side habit; an import may
- * carry anything, which is what the repository is the boundary for.
- */
-/**
  * The ranges a body record can state (B359).
  *
- * 100% is the most either percentage can be, and a tape site has a ceiling rather than none: a typed
- * 9999 is a slip, and storing it would make a derived fat mass exceed the body it came from.
+ * 100% is the most either percentage can be, and a tape site has a ceiling rather than none. A typed 9999 is
+ * a slip; no derived mass reads tape, so that ceiling is about the tape series itself, while an impossible
+ * percentage would make a derived fat or muscle mass exceed the body it came from.
  */
 private fun requirePlausibleValues(measurement: BodyMeasurement) {
     val refusal = when {
@@ -282,6 +275,14 @@ private fun requirePlausibleValues(measurement: BodyMeasurement) {
     if (refusal != null) throw InvalidInputException(refusal)
 }
 
+/**
+ * A weight a row may store, or a refusal (B338).
+ *
+ * A body weight is a **positive** number of grams — `null` states none, which is the form's answer for a blank
+ * field and for a typed zero (B336) — and a stored zero or negative is a reading nothing should fit. The two
+ * writes that can carry one ask this, so the rule is one check rather than a reader-side habit; an import may
+ * carry anything, which is what the repository is the boundary for.
+ */
 private fun requireStatedWeight(grams: Long?) {
     if (grams != null && grams <= 0L) throw InvalidInputException("A weight must be more than zero.")
 }

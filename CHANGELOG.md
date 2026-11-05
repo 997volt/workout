@@ -17,6 +17,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The batch's KDoc and decisions match the code** (B381). B338's weight doc had been left above
+  `requirePlausibleValues`, leaving `requireStatedWeight` undocumented; the new text wrongly said tape feeds a
+  derived fat mass. The KDoc is back on its function, the tape sentence says what tape does, the B349 decision
+  says "an editor whose dialog survives" (B376 fixed the hosts) and the B353 decision no longer claims every
+  raw top-bar title is a heading (B369 is still open). The trailing blank line in ProgramMappers is gone.
 - **The CI, toolchain and privacy prose matches the code** (N280). The workflow header said two jobs and
   "always run" after the docs job existed and pushes stopped being a trigger; the README's CI task list omitted
   `:shared:detekt`; `.editorconfig` carried an inline comment the format does not parse; build tools were
