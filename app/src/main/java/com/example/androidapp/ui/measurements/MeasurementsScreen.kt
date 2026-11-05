@@ -567,6 +567,9 @@ internal fun kindLabel(kind: MeasurementKind): Int = when (kind) {
  * filled in — and the draft keeps the entry's **own day and id**, so saving corrects the row it came from
  * rather than placing a second one on the day.
  */
+// The dialog is one form: its field state, the draft built from them and the three buttons. The
+// screen split is N285; until then the state initializers are what push it past the method ceiling.
+@Suppress("LongMethod")
 @Composable
 private fun MeasurementDialog(
     kind: MeasurementKind,
