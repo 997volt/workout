@@ -17,6 +17,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The workspace env script leaves a CI Gradle cache alone** (N268). `tools/android-env.sh` set
+  `GRADLE_USER_HOME` into the checkout unconditionally, so a CI job that restored a cache with `setup-gradle`
+  bypassed it and every build was cold — while the README and workflow header said the script is a no-op
+  without `.toolchain/`. It now sets the workspace home only when the caller has not set one and `.toolchain/`
+  exists, which is the case the script exists for.
 - **Automatic backup has a lifecycle** (B362). Changing folders left the old tree's persisted grant alive, kept
   the record of a successful copy from the *old* folder (so a repaired backup could wait a full period), and
   offered no way to ask for one after fixing a folder. The picker releases the previous grant once the new one

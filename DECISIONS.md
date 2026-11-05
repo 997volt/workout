@@ -1901,6 +1901,11 @@ the rule; that one argues it.
 - **The current zone is read when it is needed, never captured** (B45). A `val` in a
   companion object freezes the zone at class load, so a process outliving a timezone change
   keeps computing "today" in a zone the device no longer has.
+- **The workspace env script never overrides a caller's Gradle cache** (N268). `GRADLE_USER_HOME` is the one
+  variable whose override is expensive: CI restores a cache into it, and pointing it at the checkout turns every
+  build cold. The script sets the workspace home only when `.toolchain/` exists **and** the caller has not
+  already chosen one; that keeps the no-op claim true on a runner with no toolchain and keeps a local shell
+  self-contained.
 - **Accessibility accompanies each screen**; it is not a later phase. Name what a control
   does (`onClickLabel`), *announce* state changes rather than only drawing them, and tag
   things so tests do not assert on English literals. **A control whose label is a sibling is unnamed** (B353):

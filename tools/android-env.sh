@@ -40,9 +40,14 @@ if [ -d "$ANDROID_ENV_ROOT/.toolchain/android-sdk" ]; then
     export ANDROID_AVD_HOME
 fi
 
-GRADLE_USER_HOME="$ANDROID_ENV_ROOT/.toolchain/gradle-home"
-export GRADLE_USER_HOME
-mkdir -p "$GRADLE_USER_HOME" 2>/dev/null || true
+# A CI runner restores its own Gradle cache and exports GRADLE_USER_HOME; overriding it here
+# would throw that cache away and make every CI build cold. The workspace home is only for a
+# machine that has the local toolchain (and therefore is the no-op claim's exception).
+if [ -z "${GRADLE_USER_HOME:-}" ] && [ -d "$ANDROID_ENV_ROOT/.toolchain" ]; then
+    GRADLE_USER_HOME="$ANDROID_ENV_ROOT/.toolchain/gradle-home"
+    export GRADLE_USER_HOME
+    mkdir -p "$GRADLE_USER_HOME" 2>/dev/null || true
+fi
 
 # The emulator links against X11/Pulse libraries the host image does not ship,
 # and there is no package manager we may install into. .toolchain/syslibs holds

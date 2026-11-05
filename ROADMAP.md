@@ -32,13 +32,6 @@ existing run at **B339** and **N268**. When a row is picked up its design argume
 
 ### Verification and tooling
 
-- **N268 — The CI Gradle cache must not be redirected into the checkout.** `tools/android-env.sh` sets
-  `GRADLE_USER_HOME=$ROOT/.toolchain/gradle-home` unconditionally, and `gradlew` sources the script whenever it
-  exists, so on CI it bypasses the cache that `setup-gradle` restored; the README, workflow header and AGENTS
-  all describe the script as a no-op without `.toolchain/`. Fixed means the variable is set only when
-  `.toolchain/` exists or when it is unset, the no-op claim is made true, and a CI log shows the Gradle
-  distribution coming from the restored cache.
-
 - **N273 — The export/import ViewModel must be tested.** `DataTransferViewModel` is the only place that
   produces an export, confirms an import, clears everything and decides which outcome sentence the user sees;
   no test references it. Its collaborators are covered, but the orchestration B159 built to survive rotation
