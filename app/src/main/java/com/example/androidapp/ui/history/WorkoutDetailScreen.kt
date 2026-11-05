@@ -71,6 +71,7 @@ import com.example.androidapp.ui.components.setNumbers
 import com.example.androidapp.ui.components.setRoleMarker
 import com.example.androidapp.ui.components.setSummaryText
 import com.example.androidapp.ui.theme.AndroidAppTheme
+import com.example.androidapp.ui.workout.SetWrite
 import com.example.androidapp.ui.workout.WorkoutFormat
 import com.example.androidapp.ui.workout.activityLabel
 import com.example.androidapp.ui.workout.declinedStepText
@@ -95,6 +96,7 @@ fun WorkoutDetailRoute(
     val programs by viewModel.programs.collectAsStateWithLifecycle()
     val scheduledProgram by viewModel.scheduledProgram.collectAsStateWithLifecycle()
     val movedDay by viewModel.movedDay.collectAsStateWithLifecycle()
+    val setWriteOutcome by viewModel.setWriteOutcome.collectAsStateWithLifecycle()
     val currentOnOpenProgram by rememberUpdatedState(onOpenProgram)
 
     LaunchedEffect(scheduledProgram) {
@@ -130,6 +132,7 @@ fun WorkoutDetailRoute(
         onScheduleTemplate = viewModel::onScheduleTemplate,
         movedDay = movedDay,
         onDismissMovedDay = viewModel::onDismissMovedDay,
+        setWriteOutcome = setWriteOutcome,
     )
 }
 
@@ -169,6 +172,8 @@ private fun DetailNotices(
     }
 }
 
+// A parameter hub for one screen: the split is N285, and the method ceiling is about its size.
+@Suppress("LongMethod")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WorkoutDetailScreen(
@@ -194,6 +199,8 @@ fun WorkoutDetailScreen(
     movedDay: LocalDate? = null,
     /** Called once that sentence has been read. */
     onDismissMovedDay: () -> Unit = {},
+    /** The last set edit's answer, so its editor closes only on success (B350). */
+    setWriteOutcome: SetWrite? = null,
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     DetailNotices(state, movedDay, snackbarHostState, onDismissMovedDay)
@@ -250,7 +257,14 @@ fun WorkoutDetailScreen(
         )
     }
 
-    editing?.let { EditSetDialog(set = it, onDismiss = { editing = null }, onUpdateSet = onUpdateSet) }
+    editing?.let {
+        EditSetDialog(
+            set = it,
+            onDismiss = { editing = null },
+            onUpdateSet = onUpdateSet,
+            setWriteOutcome = setWriteOutcome,
+        )
+    }
 
     if (confirmingDelete) {
         DeleteWorkoutDialog(
@@ -859,7 +873,16 @@ private fun EditSetDialog(
     onDismiss: () -> Unit,
     onUpdateSet: (String, Int, Long, Int?, String?, SetType, Long, Int?) -> Unit,
     modifier: Modifier = Modifier,
+    setWriteOutcome: SetWrite? = null,
 ) {
+    var saving by rememberSaveable(set.id) { mutableStateOf(false) }
+    val dismiss by rememberUpdatedState(onDismiss)
+    LaunchedEffect(setWriteOutcome) {
+        if (saving && setWriteOutcome == SetWrite.Written(set.id)) {
+            saving = false
+            dismiss()
+        }
+    }
     SetEditorDialog(
         saveKey = set.id,
         modifier = modifier,
@@ -879,6 +902,7 @@ private fun EditSetDialog(
         initialBodyweight = set.isBodyweight,
         onDismiss = onDismiss,
         onSave = { edit ->
+            saving = true
             onUpdateSet(
                 set.id,
                 edit.reps,
@@ -889,7 +913,6 @@ private fun EditSetDialog(
                 edit.assistanceGrams,
                 edit.durationSeconds,
             )
-            onDismiss()
         },
     )
 }

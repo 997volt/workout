@@ -775,7 +775,8 @@ the rule; that one argues it.
   `StateFlow`, and a second successful edit of the same set produced no new emission, leaving the dialog open
   and silent. The next edit clears the previous answer before it writes, so the flow goes Written → null →
   Written and the second success is an event the editor can see; its `saving` flag is saveable so a write
-  that lands across a rotation still closes the editor it belongs to. Rejected: a one-shot channel, because
+  that lands across a rotation still closes the editor it belongs to. **History's editor follows the same rule**
+  (B350) rather than dismissing on the tap. Rejected: a one-shot channel, because
   the answer also has to survive the recomposition that draws the dialog, and a callback that consumes it
   added a parameter to an already parameter-heavy screen (N285).
 

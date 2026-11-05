@@ -17,6 +17,7 @@ import com.example.androidapp.domain.repository.ProgramRepository
 import com.example.androidapp.domain.repository.TemplateRepository
 import com.example.androidapp.domain.repository.WorkoutRepository
 import com.example.androidapp.ui.navigation.WorkoutDetail
+import com.example.androidapp.ui.workout.SetWrite
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -150,6 +151,10 @@ class WorkoutDetailViewModel @Inject constructor(
     private val sessionId: String = savedStateHandle.toRoute<WorkoutDetail>().sessionId
 
     private val lastError = MutableStateFlow<DataError?>(null)
+
+    /** The last set edit's answer, so its editor closes on success and stays on a refusal (B350). */
+    private val _setWrite = MutableStateFlow<SetWrite?>(null)
+    val setWriteOutcome: StateFlow<SetWrite?> = _setWrite.asStateFlow()
 
     private val _savedTemplate = MutableStateFlow<String?>(null)
 
@@ -308,17 +313,33 @@ class WorkoutDetailViewModel @Inject constructor(
         setType: SetType = SetType.NORMAL,
         assistanceGrams: Long = 0,
         durationSeconds: Int? = null,
-    ) = write {
-        workoutRepository.updateSet(
-            setId = setId,
-            reps = reps,
-            weightGrams = weightGrams,
-            rpeHalves = rpeHalves,
-            note = note,
-            setType = setType,
-            assistanceGrams = assistanceGrams,
-            durationSeconds = durationSeconds,
-        )
+    ) {
+        // A new edit is a new answer (B350/B340): clear the previous one before writing so an equal
+        // Written(setId) is not conflated and the editor's effect sees the result.
+        _setWrite.value = null
+        viewModelScope.launch {
+            val result = workoutRepository.updateSet(
+                setId = setId,
+                reps = reps,
+                weightGrams = weightGrams,
+                rpeHalves = rpeHalves,
+                note = note,
+                setType = setType,
+                assistanceGrams = assistanceGrams,
+                durationSeconds = durationSeconds,
+            )
+            when (result) {
+                is DataResult.Success -> {
+                    lastError.value = null
+                    _setWrite.value = SetWrite.Written(setId)
+                }
+
+                is DataResult.Failure -> {
+                    lastError.value = result.error
+                    _setWrite.value = SetWrite.Refused(setId, result.error)
+                }
+            }
+        }
     }
 
     fun onDeleteSet(setId: String) = write {

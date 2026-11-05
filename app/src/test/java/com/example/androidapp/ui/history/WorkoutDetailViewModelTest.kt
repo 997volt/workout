@@ -2,6 +2,7 @@ package com.example.androidapp.ui.history
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.model.Activity
 import com.example.androidapp.domain.model.Equipment
@@ -32,6 +33,7 @@ import com.example.androidapp.domain.repository.StartedSession
 import com.example.androidapp.domain.repository.TemplateRepository
 import com.example.androidapp.domain.repository.TemplateSetEdit
 import com.example.androidapp.domain.repository.WorkoutRepository
+import com.example.androidapp.ui.workout.SetWrite
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -46,6 +48,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -87,6 +90,24 @@ class WorkoutDetailViewModelTest {
      */
     private fun TestScope.observe(viewModel: WorkoutDetailViewModel) {
         backgroundScope.launch(dispatcher) { viewModel.uiState.collect {} }
+    }
+
+    @Test
+    fun aSetEdit_answersWritten_onSuccess_andRefused_onFailure() = runTest(dispatcher) {
+        // B350: the dialog closes on this answer rather than the tap, so a refusal keeps the correction.
+        val viewModel = viewModelFor()
+        observe(viewModel)
+        advanceUntilIdle()
+
+        viewModel.onUpdateSet("set1", reps = 8, weightGrams = 100_000L)
+        advanceUntilIdle()
+        assertEquals(SetWrite.Written("set1"), viewModel.setWriteOutcome.value)
+
+        repository.updateSetResult = DataResult.Failure(DataError.Storage(IllegalStateException("disk full")))
+        viewModel.onUpdateSet("set1", reps = 9, weightGrams = 100_000L)
+        advanceUntilIdle()
+        assertTrue(viewModel.setWriteOutcome.value is SetWrite.Refused)
+        assertEquals("set1", repository.updatedSetId)
     }
 
     @Test
@@ -361,6 +382,10 @@ class WorkoutDetailViewModelTest {
             durationSeconds: Int?,
         ): DataResult<Unit> = unused()
 
+        /** What the next set edit answers, and which set it named (B350). */
+        var updateSetResult: DataResult<Unit> = DataResult.Success(Unit)
+        var updatedSetId: String? = null
+
         override suspend fun updateSet(
             setId: String,
             reps: Int,
@@ -370,7 +395,10 @@ class WorkoutDetailViewModelTest {
             setType: com.example.androidapp.domain.model.SetType,
             assistanceGrams: Long,
             durationSeconds: Int?,
-        ): DataResult<Unit> = unused()
+        ): DataResult<Unit> {
+            updatedSetId = setId
+            return updateSetResult
+        }
 
         override suspend fun deleteSet(setId: String): DataResult<Unit> = unused()
         override suspend fun previousPerformance(

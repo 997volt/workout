@@ -28,14 +28,6 @@ existing run at **B339** and **N268**. When a row is picked up its design argume
 
 ### State and interaction
 
-- **B350 — History's set editor must close on the write's answer, not the tap.** `onSave` in
-  [WorkoutDetailScreen.kt](app/src/main/java/com/example/androidapp/ui/history/WorkoutDetailScreen.kt) calls
-  `onUpdateSet(...)` and then `onDismiss()` unconditionally. A refused write (a rung boundary, an invalid load)
-  therefore closes the dialog and loses the correction, which is the exact inversion of B284's rule that the
-  active workout enforces one screen away. Fixed means the history ViewModel exposes the same written/refused
-  outcome and the dialog closes only on a success for its own set, with a test that a refusal keeps the typed
-  values.
-
 - **B351 — A failed trends read must not be reported as "no stall".** `PlanStallFinder` does
   `(trends.templateSessions(templateId) as? DataResult.Success)?.data.orEmpty()`
   ([PlanStallFinder.kt](app/src/main/java/com/example/androidapp/domain/PlanStallFinder.kt)), so a storage

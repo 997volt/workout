@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **History's set editor closes on the write's answer, not the tap** (B350). It called `onUpdateSet` and then
+  dismissed unconditionally, so a refused correction — a rung boundary, an invalid load — closed the dialog and
+  lost what was typed, the inverse of the rule the active workout enforces. The history ViewModel now exposes
+  `Written`/`Refused` and the dialog closes only on its own success; the test covers both answers.
 - **A rotation keeps what was typed in the editors** (B349). The measurement form's `adding` flag was saveable
   while its numbers and picked day were plain `remember`, so a half-filled record came back blank; the set
   editor's draft was plain `remember` although its host kept the dialog open, and the exercise editor had the
