@@ -13,11 +13,13 @@ import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.InvalidInputException
 import com.example.androidapp.domain.NotFoundException
 import com.example.androidapp.domain.TimeSource
+import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.ZoneOffsetSource
 import com.example.androidapp.domain.dataResultOf
 import com.example.androidapp.domain.model.Activity
 import com.example.androidapp.domain.model.DayCorrection
 import com.example.androidapp.domain.model.JointPain
+import com.example.androidapp.domain.model.MAX_REPS
 import com.example.androidapp.domain.model.PerformedSetSpec
 import com.example.androidapp.domain.model.PersonalRecords
 import com.example.androidapp.domain.model.PreviousPerformance
@@ -494,6 +496,7 @@ class RoomWorkoutRepository @Inject constructor(
         if (!Rpe.isValid(rpeHalves)) {
             throw InvalidInputException("RPE must be between 1 and 10, in half steps.")
         }
+        requireWritableLoad(weightGrams, assistanceGrams, bodyweightGrams)
         // A stale screen can hold an id for an exercise that was removed, or whose
         // session was already finished. Writing anyway would file the set under
         // history the user cannot reach, so this fails as NotFound instead.
@@ -559,6 +562,7 @@ class RoomWorkoutRepository @Inject constructor(
             if (!Rpe.isValid(rpeHalves)) {
                 throw InvalidInputException("RPE must be between 1 and 10, in half steps.")
             }
+            requireWritableLoad(weightGrams, assistanceGrams)
 
             // Read the stored row first, so the columns an edit does not touch
             // (setIndex, createdAt) are preserved rather than invented,
@@ -769,9 +773,28 @@ internal const val MAX_SET_SECONDS = 86_400
  * cases that matter are the three refusals and the clamp that keeps a zero-rep set out of history.
  */
 internal fun heldShape(reps: Int, durationSeconds: Int?): Pair<Int, Int?> = when {
-    durationSeconds == null -> reps.coerceAtLeast(1) to null
+    durationSeconds == null -> reps.coerceAtLeast(1).also {
+        if (it > MAX_REPS) throw InvalidInputException("A set cannot have more than $MAX_REPS reps.")
+    } to null
     durationSeconds < 1 -> throw InvalidInputException("A hold must be longer than zero seconds.")
     durationSeconds > MAX_SET_SECONDS -> throw InvalidInputException("A hold cannot be longer than a day.")
     reps != 0 -> throw InvalidInputException("A timed set records a duration instead of reps.")
     else -> 0 to durationSeconds
+}
+
+/**
+ * A set's load and bodyweight, bounded like every other stored number (B360).
+ *
+ * The editor parses within [Weight.MAX_GRAMS], but a repository caller or an import does not go through it.
+ * A negative is already turned into none by the write; an oversized one is a typo, not a heavier lift.
+ */
+internal fun requireWritableLoad(
+    weightGrams: Long,
+    assistanceGrams: Long,
+    bodyweightGrams: Long? = null,
+) {
+    val tooHeavy = weightGrams > Weight.MAX_GRAMS ||
+        assistanceGrams > Weight.MAX_GRAMS ||
+        (bodyweightGrams != null && bodyweightGrams > Weight.MAX_GRAMS)
+    if (tooHeavy) throw InvalidInputException("A load is outside the app's range.")
 }

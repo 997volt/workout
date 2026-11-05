@@ -1,6 +1,7 @@
 package com.example.androidapp.data
 
 import com.example.androidapp.domain.InvalidInputException
+import com.example.androidapp.domain.model.MAX_REPS
 import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.domain.model.loadGrams
 import com.google.common.truth.Truth.assertThat
@@ -23,6 +24,14 @@ class SetShapeTest {
     @Test
     fun aSetOfZeroReps_isClampedToTheOneRepItAlreadyWas() {
         assertThat(heldShape(reps = 0, durationSeconds = null)).isEqualTo(1 to null)
+    }
+
+    @Test
+    fun aSetAboveTheRepCeiling_isRefused() {
+        // B360: the editor can type any positive rep count; the write boundary is the one place that
+        // refuses a number no human performs.
+        val refused = runCatching { heldShape(reps = MAX_REPS + 1, durationSeconds = null) }
+        assertThat(refused.exceptionOrNull()).isInstanceOf(InvalidInputException::class.java)
     }
 
     @Test

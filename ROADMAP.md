@@ -19,22 +19,21 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 A review of `v2.22..main` after the 2.22 hardening batch was code-complete found the items below. They are the
 work that should land before 2.23 is tagged. Each row names the current behaviour, why it matters, what "fixed"
-means and the test that proves it, so it can be picked up without the review conversation. **B348, B360, N271
-and N280 were already specified in *Later* and move here** because the review showed they now affect the
-release's restore and verification claims.
+means and the test that proves it, so it can be picked up without the review conversation. **B348, N271 and
+N280 were already specified in *Later* and move here** because the review showed they now affect the release's
+restore and verification claims.
 
 ### Backup and restore
 
-- **B374 — A backup this app can write must be a backup it can restore.** The B342 validator now enforces
-  ceilings the writers do not. The editor accepts any positive rep count and `heldShape` only floors it at one
-  ([SetEntryFields.kt](app/src/main/java/com/example/androidapp/ui/components/SetEntryFields.kt),
-  [RoomWorkoutRepository.kt](app/src/main/java/com/example/androidapp/data/RoomWorkoutRepository.kt)); exercise
-  and template rests are only checked against the lower bound
+- **B374 — A backup this app can write must be a backup it can restore.** B360 closed the set write ceilings,
+  but other writers and the validator still disagree. Exercise and template rests are only checked against the
+  lower bound
   ([ExerciseDetailScreen.kt](app/src/main/java/com/example/androidapp/ui/exercises/ExerciseDetailScreen.kt),
   [RoomExerciseRepository.kt](app/src/main/java/com/example/androidapp/data/RoomExerciseRepository.kt),
   [RoomTemplateRepository.kt](app/src/main/java/com/example/androidapp/data/RoomTemplateRepository.kt)); planned
-  reps and holds are checked only for a minimum. The validator refuses anything above `MAX_REPS`, an hour of
-  rest, or a day's hold ([BackupValidator.kt](app/src/main/java/com/example/androidapp/data/transfer/BackupValidator.kt)).
+  reps and holds are checked only for a minimum. The validator refuses anything above an hour of rest, a day's
+  hold or `MAX_REPS`
+  ([BackupValidator.kt](app/src/main/java/com/example/androidapp/data/transfer/BackupValidator.kt)).
   A database that predates B359 can also hold a 183% body fat or a 9999 cm tape row, and B359 did not bump the
   schema, so a pre-release backup can be refused wholesale. Automatic backup makes the same mistake in the
   other direction: it records a success after `BackupCodec.decode` only
@@ -43,8 +42,7 @@ release's restore and verification claims.
   the validator, a deliberate legacy path for files written before the limit (repair, migration or a per-row
   warning — never a silent drop or a blanket refusal), and a read-back that runs the validator. **Tests:** the
   writer's maximum survives export → preview → import; a pre-B359 fixture with an out-of-range value is handled
-  by the chosen legacy path; a read-back that the validator refuses is not recorded as a success. B360 below is
-  the write-boundary half of the same gap.
+  by the chosen legacy path; a read-back that the validator refuses is not recorded as a success.
 
 - **B375 — Automatic backup verification must run off the main thread.** `AutomaticBackup.write` reads the copy
   and calls `BackupCodec.decode` in the caller's context
@@ -63,13 +61,6 @@ release's restore and verification claims.
   inserts while the import runs inserts first, so a hand-made file with two live rows for one day+kind can be
   promised a restore the import will not perform. Fixed means one parent-aware counting rule used by both
   surfaces and one merge order modelled by both, with the same fixture read through preview and import.
-
-- **B360 — The set write boundary needs upper bounds as well as a floor.** `updateSet`/`logSet` clamp weights,
-  assistance and bodyweight at zero but place no ceiling on reps or grams, even though `Weight.MAX_GRAMS` and
-  `MAX_SET_SECONDS` exist ([RoomWorkoutRepository.kt](app/src/main/java/com/example/androidapp/data/RoomWorkoutRepository.kt)).
-  The editor's parser keeps today's UI safe; a new caller or an import does not. Fixed means the boundary
-  refuses a load above the app's maximum and an absurd rep count, with a test that calls the repository
-  directly.
 
 - **B379 — Export must not hold the database transaction while it reads crash logs.** B346 wrapped every table
   read in `database.withTransaction`; `crashLogStore.all()` — file listing and reads — is inside that transaction

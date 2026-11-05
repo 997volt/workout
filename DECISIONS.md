@@ -1876,6 +1876,12 @@ the rule; that one argues it.
   progression answers a hold with "a hold is not measured in reps" instead of calling it N reps short. A hold
   session saved as a plan writes **no** rep target (B244), which is a shape a plan already allows.
 
+- **A set's numbers have ceilings at the write boundary, not only in the editor** (B360). The field's parser
+  bounded a typed load, but `logSet`/`updateSet` only clamped negatives to zero, so a repository caller or an
+  import could store a load above `Weight.MAX_GRAMS` or a rep count no human performs — values the backup
+  validator then refused. The boundary now refuses both, and a bodyweight above the same maximum; the maximum
+  rep count is one constant shared with the validator. Rejected: clamping an oversized value, which would
+  silently turn a typo into a different set.
 - **A bodyweight set snapshots the lifter's weight** (N219). Taken once, when the set is logged, and stored
   on the set: a later measurement corrects the body, not what was lifted, and resolving it at read time would
   let every trend rewrite itself when the scale moved. The load is `bodyweight + added − assistance`, floored

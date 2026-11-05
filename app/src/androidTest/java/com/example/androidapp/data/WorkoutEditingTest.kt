@@ -1,29 +1,30 @@
 package com.example.androidapp.data
 
-import com.example.androidapp.data.local.TemplateExerciseEntity
-import com.example.androidapp.data.local.TemplateEntity
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.data.local.ExerciseEntity
-import com.example.androidapp.data.local.SetEntryEntity
 import com.example.androidapp.data.local.SessionExerciseEntity
+import com.example.androidapp.data.local.SetEntryEntity
+import com.example.androidapp.data.local.TemplateEntity
+import com.example.androidapp.data.local.TemplateExerciseEntity
 import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
+import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.ZoneOffsetSource
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.JointPain
+import com.example.androidapp.domain.model.MAX_REPS
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.domain.model.Side
 import com.example.androidapp.ui.history.HistoryExercise
 import com.example.androidapp.ui.history.HistorySet
 import com.example.androidapp.ui.history.WorkoutDetailUiState
-import com.example.androidapp.domain.model.Side
-import java.time.Instant
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -34,6 +35,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.time.Instant
 
 /**
  * Instrumented tests for correcting a past workout (ROADMAP P1.7).
@@ -210,6 +212,50 @@ class WorkoutEditingTest {
                 note = null,
             ) is DataResult.Success,
         )
+    }
+
+    @Test
+    fun anOversizedSet_isRefused_andNothingIsWritten() = runTest {
+        // B360: the editor's parser keeps the screen safe, but the repository is the boundary every
+        // caller and import meets. The seeded set is the only row that may remain.
+        seedOpenWorkoutWithASet()
+
+        val tooMany = repository.logSet(
+            "se1",
+            reps = MAX_REPS + 1,
+            weightGrams = 100_000L,
+            rpeHalves = null,
+            note = null
+        )
+        val tooHeavy = repository.logSet(
+            "se1",
+            reps = 5,
+            weightGrams = Weight.MAX_GRAMS + 1,
+            rpeHalves = null,
+            note = null
+        )
+        val tooHeavyBody = repository.logSet(
+            "se1",
+            reps = 5,
+            weightGrams = 100_000L,
+            rpeHalves = null,
+            note = null,
+            bodyweightGrams = Weight.MAX_GRAMS + 1,
+        )
+
+        assertTrue(tooMany is DataResult.Failure)
+        assertTrue(tooHeavy is DataResult.Failure)
+        assertTrue(tooHeavyBody is DataResult.Failure)
+        val stored = database.backupDao().allSets().single()
+        val tooHeavyEdit = repository.updateSet(
+            stored.id,
+            reps = 5,
+            weightGrams = Weight.MAX_GRAMS + 1,
+            rpeHalves = null,
+            note = null,
+        )
+        assertTrue(tooHeavyEdit is DataResult.Failure)
+        assertEquals("no refused write may add or change a row", 1, database.backupDao().allSets().size)
     }
 
     @Test
@@ -819,8 +865,10 @@ class WorkoutEditingTest {
         val records = (repository.personalRecords("back-squat") as DataResult.Success).data
         assertEquals("the working set, not the heavier warm-up", 100_000L, records.bestAt(5))
 
-        val excluding = (repository.personalRecords("back-squat", excludingSessionId = sessionId)
-            as DataResult.Success).data
+        val excluding = (
+            repository.personalRecords("back-squat", excludingSessionId = sessionId)
+                as DataResult.Success
+            ).data
         assertTrue("excluding the session in progress leaves nothing", excluding.isEmpty)
     }
 

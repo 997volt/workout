@@ -17,6 +17,12 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A set's load and rep count have ceilings at the write boundary** (B360). The editor's parser kept the
+  screen safe, but `updateSet`/`logSet` only floored weights and reps: a repository caller or a later import
+  could store a load above `Weight.MAX_GRAMS` or a rep count no human performs, and the row would then be
+  refused by the backup validator. The boundary now refuses an oversized weight, assistance, bodyweight or
+  rep count, with the same `MAX_REPS` the validator reads. The instrumented test writes each refusal and
+  asserts no row was added or changed.
 - **The export/import ViewModel has its own tests** (N273). `DataTransferViewModel` was the one place that
   decides what an export, a confirmed import, a cancelled one and a failed clear become on screen, and no test
   referenced it. `DocumentIo` is now an interface with the SAF implementation behind it, so the orchestration is
