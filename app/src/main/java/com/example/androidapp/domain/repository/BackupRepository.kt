@@ -56,8 +56,10 @@ interface BackupRepository {
      * rows.
      *
      * It leaves the library the app ships (those are app content, not the user's), the
-     * database file itself, and any file the user has exported — that one belongs to them
-     * and lives outside the app, which is exactly why the screen offers an export first.
+     * database file itself, any file the user has exported, and any copy already in the
+     * automatic-backup folder — those belong to them and live outside the app, which is why the
+     * screen offers an export first. **The automatic backup is switched off before the rows go**
+     * (B343): left on, its next empty copy would eventually prune the pre-clear ones.
      */
     suspend fun clearAllUserData(): DataResult<Unit>
 }

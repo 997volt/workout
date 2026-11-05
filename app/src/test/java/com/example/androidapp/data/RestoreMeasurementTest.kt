@@ -109,7 +109,13 @@ class RestoreMeasurementTest {
 
     private fun repository(database: WorkoutDatabase): RoomBackupRepository {
         val store = File(context.cacheDir, "restore-crash-${names.size}").apply { mkdirs() }
-        return RoomBackupRepository(context, database, clock(), CrashLogStore(store))
+        return RoomBackupRepository(
+            context = context,
+            database = database,
+            timeSource = clock(),
+            crashLogStore = CrashLogStore(store),
+            settings = PreferencesSettingsRepository(context),
+        )
     }
 
     private fun clock(): TimeSource = TimeSource { day.plusSeconds(60) }

@@ -17,6 +17,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **"Delete everything" turns the automatic backup off first** (B343). The clear emptied the database but left
+  the schedule enabled and the folder untouched, so the next due runs wrote almost-empty copies and the prune
+  kept only the newest five — five periods later the pre-clear full backups were gone, while the dialog said an
+  export was the only thing that could survive. The switch is now turned off before the rows go, a failed switch
+  refuses the clear, and the dialog says the folder copies already there are left alone.
 - **A body percentage and a tape length have a ceiling** (B359). The form accepted any non-negative number, so a
   typed 183 for 18.3% became a 183% reading and a tape site could be 9999 cm; the derived fat or muscle mass could
   then exceed the body it came from. Percentages stop at 100%, a tape site at 500 cm, the field says why, and the

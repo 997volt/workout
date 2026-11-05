@@ -70,6 +70,9 @@ class BackupRoundTripTest {
     /** Kept so a clear can be asserted against the diagnostics as well as the rows. */
     private lateinit var crashLogs: CrashLogStore
 
+    /** The switch the clear has to turn off (B343). */
+    private lateinit var settings: PreferencesSettingsRepository
+
     private val clock = TimeSource { Instant.parse("2026-09-28T08:00:00Z") }
 
     @Before
@@ -79,6 +82,7 @@ class BackupRoundTripTest {
             WorkoutDatabase::class.java,
         ).build()
         context = ApplicationProvider.getApplicationContext()
+        settings = PreferencesSettingsRepository(context)
         repository = RoomBackupRepository(
             context = context,
             database = database,
@@ -88,6 +92,7 @@ class BackupRoundTripTest {
             crashLogStore = CrashLogStore(Files.createTempDirectory("crash-logs").toFile()).also {
                 crashLogs = it
             },
+            settings = settings,
         )
         workouts = RoomWorkoutRepository(database, clock, ZoneOffsetSource { 0 })
     }
@@ -877,6 +882,9 @@ class BackupRoundTripTest {
                 deviceModel = "test",
             ),
         )
+        // The clear has to turn the scheduled writer off, or its next empty copy would eventually
+        // prune the copies taken before the clear (B343).
+        settings.setBackupEnabled(true)
         val before = counts()
         assertTrue("the fixture must have something to clear", before.total > 0)
         // A 1.x store left on the device is user data too (ROADMAP N104): 2.0 never migrates it, so
@@ -889,6 +897,10 @@ class BackupRoundTripTest {
         val cleared = repository.clearAllUserData()
 
         assertTrue("clearing is a value, not a throw", cleared is DataResult.Success)
+        assertFalse(
+            "automatic backup is off, so the folder's pre-clear copies are not overwritten",
+            settings.observeBackupSettings().first().enabled,
+        )
         val after = counts()
         assertEquals("sessions", 0, after.sessions)
         assertEquals("session exercises", 0, after.sessionExercises)

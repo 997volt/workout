@@ -947,8 +947,8 @@
 
     <!-- Starting over (ROADMAP N18). The order is fixed: export, then type, then go. -->
     <string name="clear_title">Delete everything?</string>
-    <string name="clear_body">This removes every workout, set, template, rating and comment, and the crash logs. The seeded exercise library stays.</string>
-    <string name="clear_cannot_undo">There is no undo, no soft-deleted copy and no server copy. Platform backup is off, so an export is the only thing that can survive this.</string>
+    <string name="clear_body">This removes every workout, set, template, rating and comment, and the crash logs. The seeded exercise library stays. Automatic backup is turned off; copies already in its folder are not deleted.</string>
+    <string name="clear_cannot_undo">There is no undo and no soft-deleted copy. Platform backup is off, so an export taken first is the only copy this action can put somewhere else. Files already in the backup folder are left there.</string>
     <string name="clear_export_first">Export first</string>
     <string name="clear_confirm_label">Type %1$s to confirm</string>
     <string name="clear_confirm_word">DELETE</string>

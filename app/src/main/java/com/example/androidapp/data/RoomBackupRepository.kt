@@ -28,6 +28,7 @@ import com.example.androidapp.domain.repository.BackupPreview
 import com.example.androidapp.domain.repository.BackupRepository
 import com.example.androidapp.domain.repository.ImportSummary
 import com.example.androidapp.domain.repository.PreviewCounts
+import com.example.androidapp.domain.repository.SettingsRepository
 import com.example.androidapp.platform.CrashLogStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -52,6 +53,8 @@ class RoomBackupRepository @Inject constructor(
     private val database: WorkoutDatabase,
     private val timeSource: TimeSource,
     private val crashLogStore: CrashLogStore,
+    /** The automatic-backup switch, turned off before a clear so the folder copies are not overwritten (B343). */
+    private val settings: SettingsRepository,
 ) : BackupRepository {
 
     private val dao = database.backupDao()
@@ -142,6 +145,13 @@ class RoomBackupRepository @Inject constructor(
         // Off the main thread: `clearAllTables` is a blocking call and Room asserts where
         // it runs. The DAO's own suspending methods dispatch themselves; this one does not.
         withContext(Dispatchers.IO) {
+            // The scheduled writer goes off **before** the rows do (B343). Left on, the next due run writes an
+            // almost-empty copy and the prune keeps only the newest five, so five periods later the copies
+            // taken before the clear are gone — the opposite of what the dialog promises. A failed switch is a
+            // storage failure, so the clear does not proceed on an unconfirmed setting.
+            if (settings.setBackupEnabled(false) is DataResult.Failure) {
+                throw IOException("the automatic backup switch could not be turned off")
+            }
             database.clearAllTables()
 
             // The seeder runs in `RoomDatabase.Callback.onOpen`, which fires when the

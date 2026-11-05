@@ -1805,6 +1805,13 @@ the rule; that one argues it.
 
 ## Automatic backup and bodyweight loading
 
+- **A clear turns the automatic backup off before it deletes** (B343). The schedule lived in preferences, so
+  emptying the database left it enabled: the next due run wrote an almost-empty copy, the prune kept the newest
+  five, and the copies taken before the clear were gone within five periods — while the confirmation said an
+  export was the only thing that could survive. The switch is now written off **before** the rows, and a failed
+  switch fails the clear instead of deleting data that a scheduled write could then overwrite. Files already in
+  the folder are the lifter's and are left there; the dialog says so. Rejected: deleting the app-named files on
+  clear, because the folder may be shared and a copy the lifter made deliberately is not the app's to remove.
 - **A backup pays its window at the next launch** (N218). The period is the setting; the moment is the next
   time the app comes to the front, because a real background job needs WorkManager or an exact alarm plus a
   battery exemption — the P4.7 non-goal, and the end of a manifest that declares no permissions. The

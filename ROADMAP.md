@@ -26,16 +26,6 @@ existing run at **B339** and **N268**. When a row is picked up its design argume
 
 ### Data correctness and recovery
 
-- **B343 — "Delete everything" must not let the backup folder outlive the promise it makes.** The clear writes
-  ([RoomBackupRepository.kt](app/src/main/java/com/example/androidapp/data/RoomBackupRepository.kt)) empty the
-  database, crash logs and the 1.x file, but leave the automatic-backup setting and folder untouched. The
-  confirmation says there is "no server copy" and that an export is the only thing that can survive
-  ([ClearEverythingDialog.kt](app/src/main/java/com/example/androidapp/ui/components/ClearEverythingDialog.kt)),
-  while scheduled copies do survive. Worse, the still-enabled backup then writes an almost-empty copy each
-  period and prunes to the newest five, so after five periods the pre-clear full backups are gone. Fixed means
-  clear either disables automatic backup and says exactly what remains in the folder, or records a clear
-  boundary that keeps earlier files out of the prune; the dialog must describe the real result.
-
 - **B344 — The week in review must read each session's own zone.** `weekTotals` takes one `zone` and does
   `session.startedAt.atZone(zone)` ([WeeklyReview.kt](app/src/main/java/com/example/androidapp/domain/model/WeeklyReview.kt)),
   despite its own KDoc saying the session's own zone is used. Every `WorkoutSummary` carries
