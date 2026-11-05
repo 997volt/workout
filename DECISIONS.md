@@ -1721,7 +1721,9 @@ the rule; that one argues it.
   leaves a 0-byte file behind and reports nothing — the lifter finds out when a later import calls it unreadable.
   The work and its report therefore live in the ViewModel, and the file IO is a **`DocumentIo` seam** that takes
   the caller's `Context`: a ViewModel may not hold one, and the dispatcher switch belongs in one place so neither
-  caller can forget it. The exception that keeps this honest is *any* work whose failure has no user to tell.
+  caller can forget it. **The seam is an interface** (N273), so the ViewModel's orchestration — not just the two
+  collaborators — is tested on the JVM with fake ports. The exception that keeps this honest is *any* work whose
+  failure has no user to tell.
 - **An import may only un-hide what a delete hid** (B149). A soft-hidden child row has two causes the ids cannot
   tell apart — the parent was deleted, or its list was replaced by a save — and correlating the timestamp the
   undo uses is not available to an import, which acts on a file written before either write. So the question

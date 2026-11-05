@@ -1,7 +1,7 @@
 # Workout — Roadmap
 
-> **What is planned, not what happened.** *Next* is the batch picked up before anything else, *Later* is decided and waiting,
-> *Parked* is decided against until a named trigger fires, and the non-goals are lines this app does not cross.
+> **What is planned, not what happened.** *Later* is decided and waiting, *Parked* is decided against until a
+> named trigger fires, and the non-goals are lines this app does not cross.
 > Shipped work is [CHANGELOG.md](CHANGELOG.md), how a release is cut is [RELEASING.md](RELEASING.md), and the
 > settled rules are [DECISIONS.md](DECISIONS.md) with their argument in
 > [DECISIONS-EVIDENCE.md](DECISIONS-EVIDENCE.md).
@@ -15,35 +15,11 @@ work was planned, so they do not always run in order — and an id this file doe
 shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 [CHANGELOG-1.x.md](CHANGELOG-1.x.md) for the 1.x releases.
 
-## Next — 2.23: the 2.22 review's hardening batch
-
-The whole-project review of 2.22 (4 November 2026, read-only: no source was changed) produced the items in
-this section and in the three *Later* queues below. This section is the part that should be fixed before new
-features are built; none of it is started. Each row states the current behaviour, why it matters, what
-"fixed" means and what test proves it, so a reader does not need the review conversation. Ids continue the
-existing run at **B339** and **N268**. When a row is picked up its design argument moves to
-[DECISIONS.md](DECISIONS.md) as usual; when it ships it leaves for [CHANGELOG.md](CHANGELOG.md).
-
-### Data correctness and recovery
-
-### State and interaction
-
-### Backup lifecycle
-
-### Verification and tooling
-
-- **N273 — The export/import ViewModel must be tested.** `DataTransferViewModel` is the only place that
-  produces an export, confirms an import, clears everything and decides which outcome sentence the user sees;
-  no test references it. Its collaborators are covered, but the orchestration B159 built to survive rotation
-  is not. Fixed means a JVM test with fake `BackupRepository`/`DocumentIo` ports covering export-ready,
-  export-failure, import-confirmed, import-cancelled, pending-import clearing and clear success/failure.
-
 ## Later — the rest of the 2.22 review
 
-These rows are real and specified, but they are not the first batch: a defect here is low-frequency or a
-polish item, an engineering row is not user-visible, and a feature is waiting for the hardening batch to land.
-A row moves to *Next* when it is picked up; its design argument then moves to [DECISIONS.md](DECISIONS.md).
-Nothing here is in flight.
+These rows are real and specified, but none is in flight: a defect here is low-frequency or a polish item, an
+engineering row is not user-visible, and a feature is waiting for a decision. A row leaves this section when it
+is picked up; its design argument moves to [DECISIONS.md](DECISIONS.md).
 
 ### Defects and polish
 

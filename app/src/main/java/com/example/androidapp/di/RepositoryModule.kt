@@ -27,7 +27,9 @@ import com.example.androidapp.domain.repository.TrendsRepository
 import com.example.androidapp.domain.repository.WeeklyReviewRepository
 import com.example.androidapp.domain.repository.WorkoutRepository
 import com.example.androidapp.platform.BackupFolderFiles
+import com.example.androidapp.platform.DocumentIo
 import com.example.androidapp.platform.SafBackupFolderFiles
+import com.example.androidapp.platform.SafDocumentIo
 import com.example.androidapp.ui.programs.DeloadSourceReader
 import com.example.androidapp.ui.programs.RoomDeloadSourceLoader
 import dagger.Binds
@@ -126,6 +128,10 @@ abstract class RepositoryModule {
      * provider that refuses or a grant that was revoked, and a test has to be able to produce that without a
      * document provider.
      */
+    @Binds
+    @Singleton
+    abstract fun bindDocumentIo(impl: SafDocumentIo): DocumentIo
+
     @Binds
     @Singleton
     abstract fun bindBackupFolderFiles(impl: SafBackupFolderFiles): BackupFolderFiles

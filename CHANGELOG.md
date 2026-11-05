@@ -17,6 +17,12 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The export/import ViewModel has its own tests** (N273). `DataTransferViewModel` was the one place that
+  decides what an export, a confirmed import, a cancelled one and a failed clear become on screen, and no test
+  referenced it. `DocumentIo` is now an interface with the SAF implementation behind it, so the orchestration is
+  tested on the JVM with fake document and backup ports: ready/failed export, written/storage-failed file,
+  confirmed/cancelled/refused import, unreadable document, pending-import clearing, clear success/failure and
+  outcome consumption.
 - **The workspace env script leaves a CI Gradle cache alone** (N268). `tools/android-env.sh` set
   `GRADLE_USER_HOME` into the checkout unconditionally, so a CI job that restored a cache with `setup-gradle`
   bypassed it and every build was cold — while the README and workflow header said the script is a no-op

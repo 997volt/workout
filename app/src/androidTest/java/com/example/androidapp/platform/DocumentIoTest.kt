@@ -28,7 +28,7 @@ import java.io.File
 class DocumentIoTest {
 
     private val context = ApplicationProvider.getApplicationContext<android.content.Context>()
-    private val io = DocumentIo()
+    private val io = SafDocumentIo()
 
     /** A `content://` URI for one file in this app's own cache, through the provider the manifest declares. */
     private fun uriFor(name: String): Uri {

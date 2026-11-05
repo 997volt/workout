@@ -55,7 +55,7 @@ class ProgramsViewModelTest {
     }
 
     private fun newViewModel(repository: FakeProgramRepository) =
-        ProgramsViewModel(repository, DocumentIo())
+        ProgramsViewModel(repository, com.example.androidapp.platform.SafDocumentIo())
 
     @Test
     fun anAdd_isMergedWithoutAQuestion() = runTest(dispatcher) {
