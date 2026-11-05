@@ -17,6 +17,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The editors that survived a rotation now keep their hosts too** (B376). B349 made drafts saveable, but
+  history’s open set was a data class in plain `remember` (a rotation closed it), the template planned-set
+  dialog’s draft was plain `remember` behind a saveable host, and the measurement edit form’s row was plain
+  `remember`. Each host now saves an id and derives the row, and the planned set has a saver tested field by
+  field.
 - **"Back up now" is single-flight and respects the switch** (B380). The button had no busy state, so repeated
   taps queued a copy per tap on the mutex, and `runNow` wrote whenever a folder existed even with the switch
   off. The runner now refuses a disabled backup, the ViewModel exposes a running flag, and the button is

@@ -27,18 +27,6 @@ verification claims.
 
 ### Editor state and tests
 
-- **B376 — Every editor host must survive rotation.** B349 made drafts saveable but three hosts still discard
-  them. History stores the open `HistorySet` in plain `remember`
-  ([WorkoutDetailScreen.kt](app/src/main/java/com/example/androidapp/ui/history/WorkoutDetailScreen.kt)), so a
-  rotation closes the editor before its saveable draft can restore; the template planned-set dialog's draft is
-  plain `remember`
-  ([TemplateSetDialog.kt](app/src/main/java/com/example/androidapp/ui/components/TemplateSetDialog.kt)) while
-  its host's open id is saveable; and the measurement edit form's `editingEntry` is plain `remember`
-  ([MeasurementsScreen.kt](app/src/main/java/com/example/androidapp/ui/measurements/MeasurementsScreen.kt)).
-  **Fixed** means each host saves an id (or one small state object) and derives the row, and the template set
-  editor gets its own saver. **Test:** a Robolectric rotation test for each half-filled form, not only the
-  `SetEntryDraftSaver` unit test.
-
 - **B377 — Add the UI tests the batch's acceptance criteria still lack.** B350 proves the ViewModel's
   `Written`/`Refused` values but not that a refused history edit keeps the dialog and its typed values; B356
   tests the confirm path but not cancellation; B349 has no rotated half-filled form. **Fixed** means those

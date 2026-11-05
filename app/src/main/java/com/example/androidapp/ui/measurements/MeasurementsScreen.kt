@@ -176,6 +176,8 @@ private fun MeasurementsDialogs(
     }
 }
 
+// The screen is a scaffold plus four dialog hosts and the list; the split is N285.
+@Suppress("LongMethod")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MeasurementsScreen(
@@ -224,10 +226,13 @@ fun MeasurementsScreen(
     // Whether the list is in its edit mode, the one that offers a delete (N132). Saveable so a rotation
     // does not drop the lifter out of the mode they deliberately entered, or worse, back into it.
     var editing by rememberSaveable { mutableStateOf(false) }
-    // The record being read, and the record the edit mode is correcting: each a look at one row rather
-    // than a mode, so neither is restored after a rotation (requests in use; no roadmap id covers them).
+    // The read-only record is a look at one row rather than a mode, so it is not restored (the request in
+    // use); the record being corrected is, by id, so a rotation keeps the form and its saveable draft (B376).
     var openEntry by remember { mutableStateOf<BodyMeasurement?>(null) }
-    var editingEntry by remember { mutableStateOf(initialEdit) }
+    var editingEntryId by rememberSaveable { mutableStateOf(initialEdit?.id) }
+    val editingEntry = editingEntryId?.let { id ->
+        state.entries.firstOrNull { it.id == id } ?: initialEdit?.takeIf { it.id == id }
+    }
 
     val snackbarHostState = remember { SnackbarHostState() }
     MessageSnackbar(error?.let { dataErrorMessage(it) }, snackbarHostState, onDismissError)
@@ -246,7 +251,7 @@ fun MeasurementsScreen(
         openEntry = openEntry,
         onDismissForm = {
             adding = null
-            editingEntry = null
+            editingEntryId = null
         },
         onSave = onSave,
         onDismissOpen = { openEntry = null },
@@ -278,7 +283,7 @@ fun MeasurementsScreen(
             editing = editing,
             // In the edit mode the row opens its form — that is where the writes live — and in the
             // default view it opens the record read-only (N132, and the request in use).
-            onOpen = { entry -> if (editing) editingEntry = entry else openEntry = entry },
+            onOpen = { entry -> if (editing) editingEntryId = entry.id else openEntry = entry },
             onDelete = onDelete,
             onSaveGoalPeriod = onSaveGoalPeriod,
             onRemoveGoalPeriod = onRemoveGoalPeriod,

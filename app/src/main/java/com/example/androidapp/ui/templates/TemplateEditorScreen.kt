@@ -681,6 +681,7 @@ private fun TemplateSetEditor(
             ?: exercise.sets.lastOrNull()?.toEdit()
             ?: TemplateSetEdit(),
         isNew = edited == null,
+        saveKey = edited?.id ?: ADDING_SET_ID,
         onDismiss = onDismiss,
         onSave = onSave,
     )

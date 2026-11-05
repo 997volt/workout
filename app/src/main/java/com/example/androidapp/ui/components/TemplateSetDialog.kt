@@ -11,7 +11,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.mapSaver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -75,11 +76,12 @@ fun TemplateSetDialog(
      * first, so a second drop set could not be authored at all.
      */
     holdsTheRunValue: Boolean = true,
+    /** Identifies the set so a rotation restores this dialog's draft (B376). */
+    saveKey: String = "",
 ) {
-    // `remember`, not `rememberSaveable`: a data class is not something a Bundle can
-    // hold, and registering one throws when the dialog opens. The set editor's own
-    // draft is held the same way for the same reason.
-    var draft by remember { mutableStateOf(TemplateSetDraft(initial, unit, holdsTheRunValue)) }
+    var draft by rememberSaveable(saveKey, stateSaver = TemplateSetDraftSaver) {
+        mutableStateOf(TemplateSetDraft(initial, unit, holdsTheRunValue))
+    }
 
     AlertDialog(
         modifier = modifier,
@@ -264,6 +266,38 @@ data class TemplateSetDraft(
         return stored?.coerceAtLeast(min ?: 1)?.coerceAtMost(max ?: Int.MAX_VALUE)
     }
 }
+
+/** The planned-set draft across a rotation (B376), the counterpart of the workout editor's saver. */
+internal val TemplateSetDraftSaver = mapSaver(
+    save = { draft ->
+        mapOf(
+            "role" to draft.role.name,
+            "weight" to draft.weightText,
+            "drop" to draft.dropValueText,
+            "repsMin" to draft.repsMinText,
+            "repsMax" to draft.repsMaxText,
+            "hold" to draft.holdText,
+            "current" to draft.targetRepsCurrent,
+            "note" to draft.note,
+            "unit" to draft.unit.name,
+            "holdsRun" to draft.holdsTheRunValue,
+        )
+    },
+    restore = { values ->
+        TemplateSetDraft(
+            role = (values["role"] as? String)?.let(SetType::valueOf) ?: SetType.NORMAL,
+            weightText = values["weight"] as? String ?: "",
+            dropValueText = values["drop"] as? String ?: "",
+            repsMinText = values["repsMin"] as? String ?: "",
+            repsMaxText = values["repsMax"] as? String ?: "",
+            holdText = values["hold"] as? String ?: "",
+            targetRepsCurrent = values["current"] as? Int,
+            note = values["note"] as? String ?: "",
+            unit = (values["unit"] as? String)?.let(WeightUnit::valueOf) ?: WeightUnit.KILOGRAMS,
+            holdsTheRunValue = values["holdsRun"] as? Boolean ?: true,
+        )
+    },
+)
 
 /**
  * One planned set as a line: what it loads, what it asks for, and anything it notes.

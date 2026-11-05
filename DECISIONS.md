@@ -778,8 +778,10 @@ the rule; that one argues it.
   rotation does not close it; once it is, the values in it are part of the same decision, and a plain `remember`
   silently reopens the form on the stored values and loses the correction. The measurement fields, its picked
   day, the set editor and the exercise editor each carry a `Saver` (or a list/map saver) keyed to the row, so a
-  different opening starts fresh and a rotation does not. Rejected: closing every dialog on rotation, which
-  turns a configuration change into a discarded edit.
+  different opening starts fresh and a rotation does not. **The host is part of the same decision** (B376):
+  saving an id and deriving the row keeps history's set editor, the template planned set and the measurement
+  edit open across a rotation; a saveable draft behind a host that closes is not saved at all. Rejected:
+  closing every dialog on rotation, which turns a configuration change into a discarded edit.
 - **An edit's answer is consumed by its editor, and one answer is one opening** (B284, B340). A dialog closes
   on the write's answer, so a refusal keeps the values the lifter typed; the answer therefore has to be
   state the screen can observe across a recomposition. It is **not** left sticky: equal values conflate in a

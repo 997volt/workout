@@ -205,7 +205,12 @@ fun WorkoutDetailScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     DetailNotices(state, movedDay, snackbarHostState, onDismissMovedDay)
 
-    var editing by remember { mutableStateOf<HistorySet?>(null) }
+    // The id, not the data class: a rotation must be able to reopen the same editor (B376), and the row
+    // itself is derived from the loaded state so a write refresh keeps it current.
+    var editingSetId by rememberSaveable { mutableStateOf<String?>(null) }
+    val editing = editingSetId?.let { id ->
+        state.exercises.asSequence().flatMap { it.sets.asSequence() }.firstOrNull { it.id == id }
+    }
     var confirmingDelete by remember { mutableStateOf(false) }
     var savingAsPlan by remember { mutableStateOf(false) }
     var changingDay by remember { mutableStateOf(false) }
@@ -250,7 +255,7 @@ fun WorkoutDetailScreen(
             onOpenExerciseTrends = onOpenExerciseTrends,
             state = state,
             editing = editingWorkout,
-            onEditSet = { editing = it },
+            onEditSet = { set -> editingSetId = set.id },
             onDeleteSet = onDeleteSet,
             onRate = onRateExercise,
             modifier = Modifier.padding(innerPadding),
@@ -260,7 +265,7 @@ fun WorkoutDetailScreen(
     editing?.let {
         EditSetDialog(
             set = it,
-            onDismiss = { editing = null },
+            onDismiss = { editingSetId = null },
             onUpdateSet = onUpdateSet,
             setWriteOutcome = setWriteOutcome,
         )
