@@ -1866,8 +1866,9 @@ the rule; that one argues it.
   emptying the database left it enabled: the next due run wrote an almost-empty copy, the prune kept the newest
   five, and the copies taken before the clear were gone within five periods — while the confirmation said an
   export was the only thing that could survive. The switch is now written off **before** the rows, and a failed
-  switch fails the clear instead of deleting data that a scheduled write could then overwrite. Files already in
-  the folder are the lifter's and are left there; the dialog says so. Rejected: deleting the app-named files on
+  switch fails the clear instead of deleting data that a scheduled write could then overwrite. If the clear
+  itself fails, the previous switch is restored (B378), so a half-finished action does not leave a backup
+  silently off. Files already in the folder are the lifter's and are left there; the dialog says so. Rejected: deleting the app-named files on
   clear, because the folder may be shared and a copy the lifter made deliberately is not the app's to remove.
 - **A backup pays its window at the next launch** (N218). The period is the setting; the moment is the next
   time the app comes to the front, because a real background job needs WorkManager or an exact alarm plus a

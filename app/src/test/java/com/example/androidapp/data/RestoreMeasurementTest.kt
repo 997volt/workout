@@ -104,6 +104,28 @@ class RestoreMeasurementTest {
     }
 
     @Test
+    fun aFailedClear_putsTheAutomaticBackupSwitchBack() = runTest {
+        // B378: the switch goes off before the rows, but a clear that failed must not leave a scheduled
+        // backup silently disabled while the data is still there.
+        val database = database("failed-clear")
+        val settings = PreferencesSettingsRepository(context)
+        settings.setBackupEnabled(true)
+        val repository = RoomBackupRepository(
+            context = context,
+            database = database,
+            timeSource = clock(),
+            crashLogStore = CrashLogStore(File(context.cacheDir, "failed-clear-logs").apply { mkdirs() }),
+            settings = settings,
+        )
+        database.close()
+
+        val result = repository.clearAllUserData()
+
+        assertThat(result).isInstanceOf(DataResult.Failure::class.java)
+        assertThat(settings.observeBackupSettings().first().enabled).isTrue()
+    }
+
+    @Test
     fun aFileMeasurementThatYieldsToTheDevicesDay_doesNotTakeItsSoreRowsDownWithIt() = runTest {
         val source = database("restore-sore-source")
         RoomMeasurementRepository(source, clock()).save(

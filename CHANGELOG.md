@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A failed clear puts the automatic backup switch back** (B378). "Delete everything" disables the schedule
+  before touching the rows; if the clear then failed, the data was still present and the scheduled backup
+  stayed silently off. The previous switch is restored on failure, and the clear's own error is still the one
+  reported.
 - **Export no longer holds the database transaction while reading crash logs** (B379). B346 put every export
   read in one snapshot, but that also held the transaction open while `CrashLogStore.all()` listed and parsed
   a file per crash. The logs are diagnostics, not training data; the database snapshot now closes before they

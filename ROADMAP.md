@@ -25,12 +25,6 @@ verification claims.
 
 ### Backup and restore
 
-- **B378 — A failed clear must not leave automatic backup off.** B343 disables the schedule before clearing
-  ([RoomBackupRepository.kt](app/src/main/java/com/example/androidapp/data/RoomBackupRepository.kt)); if
-  `clearAllTables` then fails, the data is still present and the scheduled backup is silently off. **Fixed**
-  means the previous switch is restored when the clear fails, or the partial state is made explicit and
-  recoverable. **Test:** a failing clear leaves the backup switch exactly as it was.
-
 - **B380 — "Back up now" must be single-flight and enabled-aware.** The button launches `runNow` with no busy
   state, so repeated taps queue copies on the mutex; `runNow` writes whenever a folder exists even if the switch
   is off ([AutomaticBackup.kt](app/src/main/java/com/example/androidapp/data/AutomaticBackup.kt)). **Fixed**
