@@ -438,6 +438,12 @@ the rule; that one argues it.
   of the file at all (N109).
   ([evidence](DECISIONS-EVIDENCE.md#n24-codec))
 
+- **A body percentage is at most 100%, and a tape site has a ceiling** (B359). The schema can hold any integer,
+  and the form used to accept any non-negative decimal, so a typed 183 for 18.3% became a real 183% reading and a
+  tape site could be 9999 cm — values from which the derived fat or muscle mass exceeds the body it came from.
+  The limit is one constant shared by the form, the repository and the backup validator; the field shows the range
+  and the save is refused while a typed value is outside it. Rejected: clamping the number, which would store a
+  reading the lifter did not type.
 - **A backup's values are validated before any of it is merged** (B342). The import bypasses the write
   boundaries by design — it restores rows, it does not re-perform them — so the checks those boundaries hold
   run once over the decoded file instead: a counted set needs a positive rep count, a hold states seconds and

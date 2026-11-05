@@ -72,14 +72,6 @@ existing run at **B339** and **N268**. When a row is picked up its design argume
   Fixed means a defaulted `retiredMovements` collection in the backup format, restored with the same additive
   rules as the other merge tables, and a test that exports, clears, restores and loads a pre-merge document.
 
-- **B359 — Body percentages and tape lengths need an upper bound.** The measurement form rejects a negative or a
-  non-finite number but not an impossible one, so a "183" typed for 18.3% is stored as 183% and a tape site can be
-  9999 cm ([MeasurementsScreen.kt](app/src/main/java/com/example/androidapp/ui/measurements/MeasurementsScreen.kt));
-  the derived fat or muscle mass can then exceed the body it was derived from. Import bypasses the form (B342), so
-  the same rule has to live at the repository boundary. Fixed means one shared maximum (100% for each percentage, a
-  stated ceiling for a tape site) applied by the form and the write, with boundary tests and a test that a valid
-  derived mass cannot exceed its input weight.
-
 ### State and interaction
 
 - **B349 — A rotation must not discard what was typed.** The measurements form is the clearest case: `adding`

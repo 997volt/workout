@@ -11,6 +11,8 @@ import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.dataResultOf
 import com.example.androidapp.domain.model.BodyMeasurement
 import com.example.androidapp.domain.model.LatestWeight
+import com.example.androidapp.domain.model.MAX_BODY_PERCENT_TENTHS
+import com.example.androidapp.domain.model.MAX_TAPE_MILLIMETRES
 import com.example.androidapp.domain.model.MeasurementKind
 import com.example.androidapp.domain.model.SoreMuscle
 import com.example.androidapp.domain.model.TapeSite
@@ -94,6 +96,9 @@ class RoomMeasurementRepository @Inject constructor(
         // is the boundary that catches anything which did not come through the form. The same rule the day's
         // targeted write holds (`setDailyWeight`), stated once for both.
         requireStatedWeight(measurement.weightGrams)
+        // A percentage that cannot be a body and a tape longer than a body are typos, not readings (B359):
+        // the form refuses them too, and an import that bypassed it is caught by BackupValidator.
+        requirePlausibleValues(measurement)
         // One entry of each kind for a day, so a tape entry edits its own row rather than the one the
         // scale wrote (N113). The day is the local one, not a fixed span (N32, B133).
         val zone = ZoneId.systemDefault()
@@ -255,6 +260,30 @@ private fun List<SoreMuscle>.toRows(measurementId: String, now: Long): List<Meas
  * writes that can carry one ask this, so the rule is one check rather than a reader-side habit; an import may
  * carry anything, which is what the repository is the boundary for.
  */
+/**
+ * The ranges a body record can state (B359).
+ *
+ * 100% is the most either percentage can be, and a tape site has a ceiling rather than none: a typed
+ * 9999 is a slip, and storing it would make a derived fat mass exceed the body it came from.
+ */
+private fun requirePlausibleValues(measurement: BodyMeasurement) {
+    measurement.bodyFatTenths?.let {
+        if (it !in 0..MAX_BODY_PERCENT_TENTHS) {
+            throw InvalidInputException("Body fat must be between 0% and 100%.")
+        }
+    }
+    measurement.muscleTenths?.let {
+        if (it !in 0..MAX_BODY_PERCENT_TENTHS) {
+            throw InvalidInputException("Muscle must be between 0% and 100%.")
+        }
+    }
+    measurement.tape.forEach { (_, millimetres) ->
+        if (millimetres !in 0..MAX_TAPE_MILLIMETRES) {
+            throw InvalidInputException("A tape measurement is outside the app's range.")
+        }
+    }
+}
+
 private fun requireStatedWeight(grams: Long?) {
     if (grams != null && grams <= 0L) throw InvalidInputException("A weight must be more than zero.")
 }

@@ -54,6 +54,8 @@ import com.example.androidapp.R
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.model.BodyMeasurement
+import com.example.androidapp.domain.model.MAX_BODY_PERCENT_TENTHS
+import com.example.androidapp.domain.model.MAX_TAPE_MILLIMETRES
 import com.example.androidapp.domain.model.MeasurementKind
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.SORE_MUSCLE_GROUPS
@@ -626,7 +628,11 @@ private fun MeasurementDialog(
         confirmButton = {
             AppTextButton(
                 onClick = { onConfirm(draft) },
-                enabled = draft.statesSomething(),
+                // A typed value the schema cannot hold is shown as an error and stops the save: silently
+                // dropping it would write a different record from the one on screen (B359).
+                enabled = draft.statesSomething() &&
+                    listOf(bodyFat, muscle).none { percentInvalid(it) } &&
+                    tape.values.none { millimetresInvalid(it) },
                 modifier = Modifier.testTag(TestTags.Measurements.CONFIRM),
             ) {
                 Text(stringResource(R.string.action_save))
@@ -672,6 +678,8 @@ internal fun DailyFields(
             onValueChange = onBodyFatChange,
             testTag = TestTags.Measurements.BODY_FAT,
             imeAction = ImeAction.Next,
+            isError = percentInvalid(bodyFat),
+            errorText = if (percentInvalid(bodyFat)) stringResource(R.string.measurements_percent_range) else null,
         )
         // Muscle is the form's last number: its action closes the keyboard rather than moving into the
         // sore-muscle editor, which is not a numeric field (N254).
@@ -681,6 +689,8 @@ internal fun DailyFields(
             onValueChange = onMuscleChange,
             testTag = TestTags.Measurements.MUSCLE,
             imeAction = ImeAction.Done,
+            isError = percentInvalid(muscle),
+            errorText = if (percentInvalid(muscle)) stringResource(R.string.measurements_percent_range) else null,
         )
         // The sore list, moved here from the workout's readiness note (N113): the same shared editor and
         // the same taxonomy, so the vocabulary is the app's one list of muscles either way.
@@ -716,13 +726,20 @@ internal fun TapeFields(tape: Map<TapeSite, String>, onTapeChange: (TapeSite, St
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         TapeSite.entries.forEachIndexed { index, site ->
+            val text = tape[site].orEmpty()
             NumberField(
                 label = stringResource(tapeLabel(site)),
-                value = tape[site].orEmpty(),
+                value = text,
                 onValueChange = { onTapeChange(site, it) },
                 testTag = TestTags.Measurements.tape(site),
                 // Calf is the last site: Done, like every form's last field (N254).
                 imeAction = if (index == TapeSite.entries.lastIndex) ImeAction.Done else ImeAction.Next,
+                isError = millimetresInvalid(text),
+                errorText = if (millimetresInvalid(text)) {
+                    stringResource(R.string.measurements_tape_range, MAX_TAPE_MILLIMETRES / 10)
+                } else {
+                    null
+                },
             )
         }
     }
@@ -753,6 +770,8 @@ private fun NumberField(
     onValueChange: (String) -> Unit,
     testTag: String,
     imeAction: ImeAction,
+    isError: Boolean = false,
+    errorText: String? = null,
 ) {
     val focusManager = LocalFocusManager.current
     val bringIntoView = remember { BringIntoViewRequester() }
@@ -761,7 +780,9 @@ private fun NumberField(
         value = value,
         onValueChange = onValueChange,
         singleLine = true,
+        isError = isError,
         label = { Text(label) },
+        supportingText = errorText?.let { message -> { Text(message) } },
         // Every field this renders is decimal — 82.5 kg, 18.3 %, 86.4 cm — and a digits-only keyboard
         // offers no separator on the IMEs that honour it (B290).
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = imeAction),
@@ -788,11 +809,21 @@ private fun NumberField(
  * body-fat percentage in this app is below zero.
  */
 private fun tenths(text: String): Int? =
-    finite(text)?.let { Math.round(it * TENTHS_PER_PERCENT).toInt() }
+    finite(text)
+        ?.let { Math.round(it * TENTHS_PER_PERCENT).toInt() }
+        ?.takeIf { it in 0..MAX_BODY_PERCENT_TENTHS }
 
-/** `86.4` reads as 864 millimetres, which is ten to the centimetre. */
+/** `86.4` reads as 864 millimetres, which is ten to the centimetre — up to the tape's ceiling (B359). */
 private fun millimetres(text: String): Long? =
-    finite(text)?.let { Math.round(it * MILLIMETRES_PER_CENTIMETRE) }
+    finite(text)
+        ?.let { Math.round(it * MILLIMETRES_PER_CENTIMETRE) }
+        ?.takeIf { it in 0..MAX_TAPE_MILLIMETRES }
+
+/** A non-blank percentage the schema cannot hold. */
+private fun percentInvalid(text: String): Boolean = text.isNotBlank() && tenths(text) == null
+
+/** A non-blank tape length the schema cannot hold. */
+private fun millimetresInvalid(text: String): Boolean = text.isNotBlank() && millimetres(text) == null
 
 /**
  * A typed measurement, or null when it is not one.

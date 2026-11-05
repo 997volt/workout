@@ -76,6 +76,31 @@ class MeasurementRepositoryTest {
     }
 
     @Test
+    fun aBodyPercentageAbove100_isRefused_andNothingIsWritten() = runTest {
+        val result = repository.save(
+            entry(at = localHour(8), weightGrams = 82_000L).copy(bodyFatTenths = 1_001),
+        )
+
+        assertTrue((result as DataResult.Failure).error is DataError.Invalid)
+        assertEquals("a refused record writes nothing", emptyList<BodyMeasurement>(), repository.observeAll().first())
+    }
+
+    @Test
+    fun aTapeLengthBeyondTheCeiling_isRefused_andNothingIsWritten() = runTest {
+        val result = repository.save(
+            BodyMeasurement(
+                id = "",
+                measuredAt = localHour(8),
+                kind = MeasurementKind.TAPE,
+                tape = mapOf(TapeSite.WAIST to 5_001L),
+            ),
+        )
+
+        assertTrue((result as DataResult.Failure).error is DataError.Invalid)
+        assertEquals(emptyList<BodyMeasurement>(), repository.observeAll().first())
+    }
+
+    @Test
     fun savingTwiceOnOneDay_editsTheFirstEntry() = runTest {
         repository.save(entry(at = localHour(8), weightGrams = 82_000L))
         repository.save(entry(at = localHour(20), weightGrams = 81_500L))

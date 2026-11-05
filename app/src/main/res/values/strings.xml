@@ -599,6 +599,9 @@
     <string name="measurements_weight">Weight</string>
     <string name="measurements_body_fat">Body fat %</string>
     <string name="measurements_muscle">Muscle %</string>
+    <!-- B359: a value the schema cannot hold is visible in the field, not silently dropped. -->
+    <string name="measurements_percent_range">Between 0 and 100%</string>
+    <string name="measurements_tape_range">At most %1$d cm</string>
     <!-- The two derived masses (N265). The parenthetical is the input: a number the scale never printed has to
          say what it was made of. -->
     <string name="measurements_fat_mass">Fat mass (from body fat %)</string>

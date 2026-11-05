@@ -730,6 +730,32 @@ class MeasurementsScreenTest {
     }
 
     @Test
+    fun aBodyPercentageOver100_isShownAsAnError_andStopsTheSave() {
+        // B359: a typed 183 for 18.3% is a percentage the schema cannot hold. The field says so and the
+        // record cannot be saved, rather than the value being silently dropped from the draft.
+        setScreen()
+        startAdding(MeasurementKind.DAILY)
+
+        composeTestRule.onNodeWithTag(TestTags.Measurements.WEIGHT).performTextInput("82.4")
+        composeTestRule.onNodeWithTag(TestTags.Measurements.BODY_FAT).performTextInput("183")
+
+        composeTestRule.onNodeWithText("Between 0 and 100%").assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Measurements.CONFIRM).assertIsNotEnabled()
+    }
+
+    @Test
+    fun aTapeLengthBeyondTheCeiling_stopsASaveThatOtherwiseHasSomething() {
+        setScreen()
+        startAdding(MeasurementKind.TAPE)
+
+        composeTestRule.onNodeWithTag(TestTags.Measurements.tape(TapeSite.CALF)).performTextInput("40")
+        composeTestRule.onNodeWithTag(TestTags.Measurements.tape(TapeSite.WAIST)).performTextInput("9999")
+
+        composeTestRule.onNodeWithText("At most 500 cm", substring = true).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Measurements.CONFIRM).assertIsNotEnabled()
+    }
+
+    @Test
     fun aSorenessOnlyMorning_canBeSaved() {
         // The rule the split exists for (N113): the weight stopped being the one thing an entry cannot
         // be without, because a rest day reporting sore muscles is exactly what the record is for.

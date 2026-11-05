@@ -17,6 +17,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A body percentage and a tape length have a ceiling** (B359). The form accepted any non-negative number, so a
+  typed 183 for 18.3% became a 183% reading and a tape site could be 9999 cm; the derived fat or muscle mass could
+  then exceed the body it came from. Percentages stop at 100%, a tape site at 500 cm, the field says why, and the
+  save is refused while a typed value is outside the range. The repository applies the same rule, so a backup or a
+  later caller cannot store one either.
 - **A backup's values are checked before any of it is merged** (B342). The import writes decoded rows straight
   to entities, so a hand-edited or foreign file could carry a negative load, a held set with reps, RPE 99, a
   5000% body fat, a 9999 cm tape reading, an out-of-range zone offset or a week outside the calendar — values no
