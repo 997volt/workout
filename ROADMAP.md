@@ -345,5 +345,5 @@ Four rules, each answering drift this file has shown before.
    that apply to every change are a reference, not a queue, and the two age differently. A
    section here that accumulates rather than drains belongs there.
 
-Everything that has **left** *Next* has its entry in [CHANGELOG.md](CHANGELOG.md). That is the whole of the
+Everything that has **shipped** has its entry in [CHANGELOG.md](CHANGELOG.md). That is the whole of the
 record: this file does not narrate it.
