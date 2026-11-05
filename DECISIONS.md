@@ -466,7 +466,12 @@ the rule; that one argues it.
   no reps, loads and RPE are in range, body percentages stop at 100%, tape lengths have a ceiling, and a zone
   offset or epoch day must be representable. The file is refused before the transaction and the preview names
   the first rows, so a hand-edited or foreign file is corrected rather than half-imported. Rejected: clamping
-  a bad value silently, which would store a number the lifter never wrote.
+  a bad value silently, which would store a number the lifter never wrote. **A file written before the limits
+  is accepted as-is** (B374): those values were valid to the build that wrote them, and refusing the whole file
+  would lose the lifter's only copy. The format carries an additive `limitsVersion` (0 for an old file, 1 for
+  a current one), so the strict pass runs only on current files; an old file's preview says its out-of-range
+  values will be restored and can be corrected afterwards. The read-back of an automatic backup runs the same
+  validator, so "last backup" means a file the import will accept.
 - **A transfer file's version is read before its body is decoded** (B62). Both codecs used to decode the
   document and only then compare its version, so a file from a newer build failed *inside* the decoder —
   on an enum name this build has no constant for, which is exactly the data a version gate exists for —

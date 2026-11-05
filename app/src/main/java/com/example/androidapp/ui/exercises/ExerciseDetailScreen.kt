@@ -445,7 +445,7 @@ private data class ExerciseDraft(
         get() {
             if (restText.isBlank()) return true
             val seconds = restSeconds ?: return false
-            return seconds >= RestTimer.MIN_PRESCRIBED_SECONDS
+            return seconds in RestTimer.MIN_PRESCRIBED_SECONDS..RestTimer.MAX_PRESCRIBED_SECONDS
         }
 
     val canSave: Boolean get() = name.isNotBlank() && restIsValid && stepIsValid

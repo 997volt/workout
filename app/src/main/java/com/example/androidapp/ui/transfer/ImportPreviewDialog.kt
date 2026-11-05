@@ -49,6 +49,13 @@ internal fun ImportPreviewDialog(
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 PreviewTable(preview = preview)
+                if (preview.legacyLimits) {
+                    Text(
+                        text = stringResource(R.string.import_preview_legacy_limits),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 if (preview.problems.isNotEmpty()) PreviewProblems(preview.problems)
             }
         },

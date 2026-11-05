@@ -69,6 +69,25 @@ class ImportPreviewDialogTest {
     }
 
     @Test
+    fun aLegacyFile_saysItsOutOfRangeValues_willBeRestoredAsIs() {
+        // B374: a file written before the current ceilings may hold a 183% reading; refusing it would
+        // lose the only copy, so the preview accepts it and says the values travel as they are.
+        show(
+            BackupPreview(
+                sessions = PreviewCounts(0, 0, 0, 0),
+                sets = PreviewCounts(0, 0, 0, 0),
+                measurements = PreviewCounts(1, 0, 0, 1),
+                exercises = PreviewCounts(0, 0, 0, 0),
+                legacyLimits = true,
+            ),
+        )
+
+        composeTestRule.onNodeWithText("written by an older version", substring = true).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.IMPORT_PREVIEW_CONFIRM).performClick()
+        assertEquals(1, confirmed)
+    }
+
+    @Test
     fun theFile_andWhatTheMergeWouldDo_areShown_andEitherAnswerIsReported() {
         show(
             BackupPreview(

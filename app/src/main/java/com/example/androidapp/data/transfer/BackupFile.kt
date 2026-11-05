@@ -36,6 +36,15 @@ import java.time.DayOfWeek
 @Serializable
 data class BackupFile(
     val schemaVersion: Int,
+    /**
+     * The value-limit rules this file was written under (B374), or 0 for a file that predates the field.
+     *
+     * **Not a schema version.** The schema describes shape and meaning; this describes the ranges the writing
+     * build enforced. A file with 0 is restored as-is: its values may be outside today's form and write
+     * ceilings because the build that wrote it allowed them, and refusing the whole file would lose the
+     * lifter's only copy. A current file is validated strictly.
+     */
+    val limitsVersion: Int = 0,
     val exportedAt: Long,
     val exercises: List<ExerciseDto>,
     val sessions: List<SessionDto>,

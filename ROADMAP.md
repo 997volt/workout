@@ -25,25 +25,6 @@ restore and verification claims.
 
 ### Backup and restore
 
-- **B374 — A backup this app can write must be a backup it can restore.** B360 closed the set write ceilings,
-  but other writers and the validator still disagree. Exercise and template rests are only checked against the
-  lower bound
-  ([ExerciseDetailScreen.kt](app/src/main/java/com/example/androidapp/ui/exercises/ExerciseDetailScreen.kt),
-  [RoomExerciseRepository.kt](app/src/main/java/com/example/androidapp/data/RoomExerciseRepository.kt),
-  [RoomTemplateRepository.kt](app/src/main/java/com/example/androidapp/data/RoomTemplateRepository.kt)); planned
-  reps and holds are checked only for a minimum. The validator refuses anything above an hour of rest, a day's
-  hold or `MAX_REPS`
-  ([BackupValidator.kt](app/src/main/java/com/example/androidapp/data/transfer/BackupValidator.kt)).
-  A database that predates B359 can also hold a 183% body fat or a 9999 cm tape row, and B359 did not bump the
-  schema, so a pre-release backup can be refused wholesale. Automatic backup makes the same mistake in the
-  other direction: it records a success after `BackupCodec.decode` only
-  ([AutomaticBackup.kt](app/src/main/java/com/example/androidapp/data/AutomaticBackup.kt)), so it can date a
-  file the import will not merge. **Fixed** means one ceiling per value shared by the form, the repository and
-  the validator, a deliberate legacy path for files written before the limit (repair, migration or a per-row
-  warning — never a silent drop or a blanket refusal), and a read-back that runs the validator. **Tests:** the
-  writer's maximum survives export → preview → import; a pre-B359 fixture with an out-of-range value is handled
-  by the chosen legacy path; a read-back that the validator refuses is not recorded as a success.
-
 - **B375 — Automatic backup verification must run off the main thread.** `AutomaticBackup.write` reads the copy
   and calls `BackupCodec.decode` in the caller's context
   ([AutomaticBackup.kt](app/src/main/java/com/example/androidapp/data/AutomaticBackup.kt)); the due run starts

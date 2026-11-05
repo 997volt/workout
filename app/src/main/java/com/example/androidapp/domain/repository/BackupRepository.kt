@@ -136,4 +136,11 @@ data class BackupPreview(
     val exercises: PreviewCounts,
     /** Values the app cannot store; non-empty means the file cannot be merged (B342). */
     val problems: List<BackupProblem> = emptyList(),
+    /**
+     * Whether the file was written before the current value limits (B374).
+     *
+     * Such a file may hold a value outside today's ceilings; it is restored as-is and the preview says so,
+     * because refusing the whole file would lose the only copy.
+     */
+    val legacyLimits: Boolean = false,
 )

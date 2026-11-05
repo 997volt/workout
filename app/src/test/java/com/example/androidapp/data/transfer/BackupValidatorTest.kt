@@ -89,10 +89,24 @@ class BackupValidatorTest {
             .contains("A planned set cannot state reps and a hold together.")
     }
 
+    @Test
+    fun aLegacyFile_mayCarryValuesOutsideTheNewCeilings() {
+        // B374: these are exactly the values a pre-B359 build could write. The file is accepted as-is
+        // and the preview says so; only a current file is held to the current ceilings.
+        val legacy = valid().copy(
+            limitsVersion = 0,
+            sets = listOf(set.copy(reps = 20_000, weightGrams = 2_000_000L)),
+            measurements = listOf(measurement.copy(bodyFatTenths = 1_830, waistMm = 9_999)),
+        )
+
+        assertThat(BackupValidator.problems(legacy)).isEmpty()
+    }
+
     private fun List<BackupProblem>.messages(): List<String> = map { it.message }
 
     private fun valid(): BackupFile = BackupFile(
         schemaVersion = BackupCodec.CURRENT_SCHEMA_VERSION,
+        limitsVersion = BackupCodec.CURRENT_LIMITS_VERSION,
         exportedAt = 0L,
         exercises = listOf(
             ExerciseDto(

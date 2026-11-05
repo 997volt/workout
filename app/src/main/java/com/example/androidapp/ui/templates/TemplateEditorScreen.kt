@@ -831,7 +831,7 @@ private fun ExercisePlanFields(
         mutableStateOf(exercise.targetRpeHalves?.let(Rpe::format).orEmpty())
     }
     val restSeconds = rest.trim().ifEmpty { null }?.toIntOrNull()
-    val restIsValid = rest.isBlank() || (restSeconds != null && restSeconds >= RestTimer.MIN_PRESCRIBED_SECONDS)
+    val restIsValid = rest.isBlank() || (restSeconds?.let(RestTimer::isValidPrescription) == true)
     val rpeHalves = rpe.trim().ifEmpty { null }?.let(Rpe::parse)
     val rpeIsValid = rpe.isBlank() || rpeHalves != null
     val changed = restSeconds != exercise.restSeconds ||

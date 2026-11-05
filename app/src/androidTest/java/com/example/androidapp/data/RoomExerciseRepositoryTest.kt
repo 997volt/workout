@@ -241,6 +241,10 @@ class RoomExerciseRepositoryTest {
         assertTrue(failure.error is DataError.Invalid)
         // Nothing was written, so the exercise still reads as "use the default".
         assertNull(stored(created.id).restSeconds)
+
+        val tooLong = repository.updateExercise(created.copy(restSeconds = 3_601)) as DataResult.Failure
+        assertTrue(tooLong.error is DataError.Invalid)
+        assertNull(stored(created.id).restSeconds)
     }
 
     @Test

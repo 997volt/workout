@@ -17,6 +17,13 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A backup made before the value limits can still be restored** (B374). B342's validator assumed every
+  writer enforced its ceilings, but the exercise and template rest writers, and the planned rep/hold writers,
+  did not — and a pre-B359 database can hold a 183% body fat or a 9999 cm tape row. A backup file now carries
+  `limitsVersion`: a current file is validated strictly, while an older file is restored as-is and the preview
+  says values outside today's ranges will travel; refusing it would lose the only copy. Automatic backup's
+  read-back now runs the validator too, instead of calling a file "written" after a bare decode. Exercise,
+  template and planned-set writers now share the same rest, rep and hold ceilings as the validator.
 - **A set's load and rep count have ceilings at the write boundary** (B360). The editor's parser kept the
   screen safe, but `updateSet`/`logSet` only floored weights and reps: a repository caller or a later import
   could store a load above `Weight.MAX_GRAMS` or a rep count no human performs, and the row would then be

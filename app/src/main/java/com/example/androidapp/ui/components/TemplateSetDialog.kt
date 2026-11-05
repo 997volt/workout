@@ -20,11 +20,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
+import com.example.androidapp.data.MAX_SET_SECONDS
 import com.example.androidapp.domain.DurationFormat
 import com.example.androidapp.domain.Load
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.HOLD_STEP_SECONDS
+import com.example.androidapp.domain.model.MAX_REPS
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.repository.TemplateSetEdit
@@ -206,8 +208,8 @@ data class TemplateSetDraft(
             // will not smart-cast it at the use site.
             val min = repsMin
             val max = repsMax
-            return (repsMinText.isBlank() || (min != null && min >= 1)) &&
-                (repsMaxText.isBlank() || (max != null && max >= 1)) &&
+            return (repsMinText.isBlank() || (min != null && min in 1..MAX_REPS)) &&
+                (repsMaxText.isBlank() || (max != null && max in 1..MAX_REPS)) &&
                 !(min != null && max != null && min > max)
         }
 
@@ -223,7 +225,8 @@ data class TemplateSetDraft(
      * answer, and the write boundary refuses it for the same reason.
      */
     val prescriptionIsValid: Boolean
-        get() = holdText.isBlank() || ((holdSeconds ?: 0) >= 1 && repsMinText.isBlank() && repsMaxText.isBlank())
+        get() = holdText.isBlank() ||
+            ((holdSeconds ?: 0) in 1..MAX_SET_SECONDS && repsMinText.isBlank() && repsMaxText.isBlank())
 
     val isValid: Boolean get() = weightIsValid && repsAreValid && dropValueIsValid && prescriptionIsValid
 

@@ -45,6 +45,13 @@ object RestTimer {
      */
     const val NEGATIVE_REST_REFUSAL = "A rest cannot be negative."
 
+    /** The refusal for a rest above [MAX_PRESCRIBED_SECONDS], which is a typo rather than a scheme. */
+    const val REST_RANGE_REFUSAL = "A rest must be between 0 and an hour."
+
+    /** Whether a stored prescription is inside the range every form and writer now enforces (B374). */
+    fun isValidPrescription(seconds: Int): Boolean =
+        seconds in MIN_PRESCRIBED_SECONDS..MAX_PRESCRIBED_SECONDS
+
     /** Whole seconds left, never negative. 0 means the rest is over or not running. */
     fun remainingSeconds(restEndsAt: Instant?, now: Instant): Int {
         val endsAt = restEndsAt ?: return 0

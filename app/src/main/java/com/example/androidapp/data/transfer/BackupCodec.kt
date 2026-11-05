@@ -71,6 +71,17 @@ object BackupCodec {
     /** The oldest file this build reads: a shape whose meaning is still this one (ROADMAP N104, N185). */
     const val MINIMUM_SCHEMA_VERSION = 5
 
+    /**
+     * The value-limit rules current files are written under (B374).
+     *
+     * B359's body/tape ceilings and B342's validator assumed every writer enforced them; older files can
+     * contain a 183% body fat, a 9999 cm tape or an over-long rest because their writer allowed it. This
+     * field distinguishes an old file (0, restored as-is with a preview notice) from a current one (strict).
+     * It is additive and defaulted, so it does not move [CURRENT_SCHEMA_VERSION] and an older build simply
+     * ignores the key.
+     */
+    const val CURRENT_LIMITS_VERSION = 1
+
     private val json = Json {
         prettyPrint = true
         // A file from a newer app may carry fields this build has never heard of.

@@ -6,6 +6,7 @@ import com.example.androidapp.domain.Load
 import com.example.androidapp.domain.model.rungLoad
 import com.example.androidapp.domain.model.rungWeightAt
 import com.example.androidapp.domain.model.runAt
+import com.example.androidapp.domain.model.MAX_REPS
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.warmUpRamp
 import androidx.room.Room
@@ -402,10 +403,14 @@ class TemplateRepositoryTest {
         val negative = repository.addSet(exercise, TemplateSetEdit(targetWeightGrams = -1))
         val zeroReps = repository.addSet(exercise, TemplateSetEdit(targetRepsMin = 0))
         val backwards = repository.addSet(exercise, TemplateSetEdit(targetRepsMin = 8, targetRepsMax = 3))
+        val tooManyReps = repository.addSet(exercise, TemplateSetEdit(targetRepsMax = MAX_REPS + 1))
+        val tooLongHold = repository.addSet(exercise, TemplateSetEdit(targetDurationSeconds = 86_401))
 
         assertTrue("a negative weight", negative is DataResult.Failure)
         assertTrue("a zero-rep target", zeroReps is DataResult.Failure)
         assertTrue("a range that runs backwards", backwards is DataResult.Failure)
+        assertTrue("a target above the rep ceiling", tooManyReps is DataResult.Failure)
+        assertTrue("a hold above a day", tooLongHold is DataResult.Failure)
         assertTrue(
             "nothing is stored when the plan is refused",
             repository.observeExercises(template).first().single().sets.isEmpty(),
@@ -620,6 +625,15 @@ class TemplateRepositoryTest {
             repository.setExercisePlan(
                 exercise,
                 restSeconds = -5,
+                techniqueNote = null,
+                targetRpeHalves = null,
+            ) is DataResult.Failure,
+        )
+        assertTrue(
+            "a rest above an hour is refused like a negative one (B374)",
+            repository.setExercisePlan(
+                exercise,
+                restSeconds = 3_601,
                 techniqueNote = null,
                 targetRpeHalves = null,
             ) is DataResult.Failure,

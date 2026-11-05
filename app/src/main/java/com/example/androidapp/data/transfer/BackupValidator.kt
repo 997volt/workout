@@ -31,16 +31,20 @@ import java.time.LocalDate
 internal object BackupValidator {
 
     fun problems(file: BackupFile): List<BackupProblem> = buildList {
-        validateExercises(file.exercises, this)
+        // A file written before the value limits is restored as-is (B374): its writer allowed values the
+        // current form does not, and refusing the whole file would lose the only copy. Structure and
+        // representability are still checked; only the upper bounds are relaxed.
+        val strict = file.limitsVersion >= BackupCodec.CURRENT_LIMITS_VERSION
+        validateExercises(file.exercises, this, strict)
         validateSessions(file.sessions, this)
-        validateSessionExercises(file.sessionExercises, this)
-        validateSets(file.sets, this)
+        validateSessionExercises(file.sessionExercises, this, strict)
+        validateSets(file.sets, this, strict)
         validateRatings(file, this)
-        validateMeasurements(file, this)
+        validateMeasurements(file, this, strict)
         validateGoals(file, this)
         validateTemplates(file, this)
-        validateTemplateExercises(file.templateExercises, this)
-        validateTemplateSets(file.templateSets, this)
+        validateTemplateExercises(file.templateExercises, this, strict)
+        validateTemplateSets(file.templateSets, this, strict)
         validatePrograms(file, this)
         validateRetired(file.retiredMovements, this)
     }
@@ -56,13 +60,13 @@ internal object BackupValidator {
         }
     }
 
-    private fun validateExercises(rows: List<ExerciseDto>, out: MutableList<BackupProblem>) {
+    private fun validateExercises(rows: List<ExerciseDto>, out: MutableList<BackupProblem>, strict: Boolean) {
         rows.forEachIndexed { index, row ->
             val where = "Movement ${index + 1}"
             row.id.required(out, where)
             row.name.required(out, where)
             row.restSeconds?.let {
-                if (it !in 0..RestTimer.MAX_PRESCRIBED_SECONDS) {
+                if (it < 0 || (strict && it > RestTimer.MAX_PRESCRIBED_SECONDS)) {
                     out += BackupProblem(where, "A rest must be between 0 and an hour.")
                 }
             }
@@ -72,7 +76,7 @@ internal object BackupValidator {
                 }
             }
             row.stepGrams?.let {
-                if (it !in 1..Weight.MAX_GRAMS) {
+                if (it < 1 || (strict && it > Weight.MAX_GRAMS)) {
                     out += BackupProblem(where, "A weight step must be positive and within the app's maximum.")
                 }
             }
@@ -101,7 +105,11 @@ internal object BackupValidator {
         }
     }
 
-    private fun validateSessionExercises(rows: List<SessionExerciseDto>, out: MutableList<BackupProblem>) {
+    private fun validateSessionExercises(
+        rows: List<SessionExerciseDto>,
+        out: MutableList<BackupProblem>,
+        strict: Boolean,
+    ) {
         rows.forEachIndexed { index, row ->
             val where = "Exercise in a workout ${index + 1}"
             row.id.required(out, where)
@@ -109,7 +117,7 @@ internal object BackupValidator {
             row.exerciseId.required(out, where)
             if (row.position < 0) out += BackupProblem(where, "A position cannot be negative.")
             row.restSeconds?.let {
-                if (it !in 0..RestTimer.MAX_PRESCRIBED_SECONDS) {
+                if (it < 0 || (strict && it > RestTimer.MAX_PRESCRIBED_SECONDS)) {
                     out += BackupProblem(where, "A rest must be between 0 and an hour.")
                 }
             }
@@ -122,33 +130,42 @@ internal object BackupValidator {
         }
     }
 
-    private fun validateSets(rows: List<SetDto>, out: MutableList<BackupProblem>) {
+    private fun validateSets(rows: List<SetDto>, out: MutableList<BackupProblem>, strict: Boolean) {
         rows.forEachIndexed { index, row ->
             val where = "Set ${index + 1}"
             row.id.required(out, where)
             row.sessionExerciseId.required(out, where)
             if (row.setIndex < 0) out += BackupProblem(where, "A set index cannot be negative.")
-            row.weightGrams.load(out, where)
-            row.assistanceGrams.load(out, where)
+            row.weightGrams.load(out, where, strict)
+            row.assistanceGrams.load(out, where, strict)
             row.bodyweightGrams?.let {
-                if (it !in 1..Weight.MAX_GRAMS) {
+                if (it < 1 || (strict && it > Weight.MAX_GRAMS)) {
                     out += BackupProblem(where, "A bodyweight must be positive and within the app's maximum.")
                 }
             }
-            row.rpeHalves?.let {
-                if (!Rpe.isValid(it)) out += BackupProblem(where, "RPE must be between 1 and 10 in half steps.")
+            validateSetShape(row, where, out, strict)
+        }
+    }
+
+    private fun validateSetShape(
+        row: SetDto,
+        where: String,
+        out: MutableList<BackupProblem>,
+        strict: Boolean,
+    ) {
+        row.rpeHalves?.let {
+            if (!Rpe.isValid(it)) out += BackupProblem(where, "RPE must be between 1 and 10 in half steps.")
+        }
+        if (row.durationSeconds == null) {
+            if (row.reps < 1 || (strict && row.reps > MAX_REPS)) {
+                out += BackupProblem(where, "A counted set needs between 1 and $MAX_REPS reps.")
             }
-            if (row.durationSeconds == null) {
-                if (row.reps !in 1..MAX_REPS) {
-                    out += BackupProblem(where, "A counted set needs between 1 and $MAX_REPS reps.")
-                }
-            } else {
-                if (row.reps != 0) {
-                    out += BackupProblem(where, "A held set records seconds instead of reps.")
-                }
-                if (row.durationSeconds !in 1..MAX_SET_SECONDS) {
-                    out += BackupProblem(where, "A hold must be between 1 second and a day.")
-                }
+        } else {
+            if (row.reps != 0) {
+                out += BackupProblem(where, "A held set records seconds instead of reps.")
+            }
+            if (row.durationSeconds < 1 || (strict && row.durationSeconds > MAX_SET_SECONDS)) {
+                out += BackupProblem(where, "A hold must be between 1 second and a day.")
             }
         }
     }
@@ -183,37 +200,39 @@ internal object BackupValidator {
         }
     }
 
-    private fun validateMeasurements(file: BackupFile, out: MutableList<BackupProblem>) {
+    private fun validateMeasurements(file: BackupFile, out: MutableList<BackupProblem>, strict: Boolean) {
         file.measurements.forEachIndexed { index, row ->
             val where = "Measurement ${index + 1}"
             row.id.required(out, where)
             row.weightGrams?.let {
-                if (it !in 1..Weight.MAX_GRAMS) {
+                if (it < 1 || (strict && it > Weight.MAX_GRAMS)) {
                     out += BackupProblem(where, "A body weight must be positive and within the app's maximum.")
                 }
             }
-            row.bodyFatTenths?.let {
-                if (it !in 0..MAX_BODY_PERCENT_TENTHS) {
-                    out += BackupProblem(where, "Body fat must be between 0% and 100%.")
+            if (strict) {
+                row.bodyFatTenths?.let {
+                    if (it !in 0..MAX_BODY_PERCENT_TENTHS) {
+                        out += BackupProblem(where, "Body fat must be between 0% and 100%.")
+                    }
                 }
-            }
-            row.muscleTenths?.let {
-                if (it !in 0..MAX_BODY_PERCENT_TENTHS) {
-                    out += BackupProblem(where, "Muscle must be between 0% and 100%.")
+                row.muscleTenths?.let {
+                    if (it !in 0..MAX_BODY_PERCENT_TENTHS) {
+                        out += BackupProblem(where, "Muscle must be between 0% and 100%.")
+                    }
                 }
-            }
-            listOf(
-                row.neckMm,
-                row.chestMm,
-                row.waistMm,
-                row.hipsMm,
-                row.upperArmMm,
-                row.thighMm,
-                row.calfMm,
-            ).forEach { millimetres ->
-                millimetres?.let {
-                    if (it !in 0..MAX_TAPE_MILLIMETRES) {
-                        out += BackupProblem(where, "A tape measurement is outside the app's range.")
+                listOf(
+                    row.neckMm,
+                    row.chestMm,
+                    row.waistMm,
+                    row.hipsMm,
+                    row.upperArmMm,
+                    row.thighMm,
+                    row.calfMm,
+                ).forEach { millimetres ->
+                    millimetres?.let {
+                        if (it !in 0..MAX_TAPE_MILLIMETRES) {
+                            out += BackupProblem(where, "A tape measurement is outside the app's range.")
+                        }
                     }
                 }
             }
@@ -251,7 +270,11 @@ internal object BackupValidator {
         }
     }
 
-    private fun validateTemplateExercises(rows: List<TemplateExerciseDto>, out: MutableList<BackupProblem>) {
+    private fun validateTemplateExercises(
+        rows: List<TemplateExerciseDto>,
+        out: MutableList<BackupProblem>,
+        strict: Boolean,
+    ) {
         rows.forEachIndexed { index, row ->
             val where = "Planned exercise ${index + 1}"
             row.id.required(out, where)
@@ -259,7 +282,7 @@ internal object BackupValidator {
             row.exerciseId.required(out, where)
             if (row.position < 0) out += BackupProblem(where, "A position cannot be negative.")
             row.restSeconds?.let {
-                if (it !in 0..RestTimer.MAX_PRESCRIBED_SECONDS) {
+                if (it < 0 || (strict && it > RestTimer.MAX_PRESCRIBED_SECONDS)) {
                     out += BackupProblem(where, "A rest must be between 0 and an hour.")
                 }
             }
@@ -272,18 +295,22 @@ internal object BackupValidator {
         }
     }
 
-    private fun validateTemplateSets(rows: List<TemplateSetDto>, out: MutableList<BackupProblem>) {
+    private fun validateTemplateSets(
+        rows: List<TemplateSetDto>,
+        out: MutableList<BackupProblem>,
+        strict: Boolean,
+    ) {
         rows.forEachIndexed { index, row ->
             val where = "Planned set ${index + 1}"
             row.id.required(out, where)
             row.templateExerciseId.required(out, where)
             if (row.setIndex < 0) out += BackupProblem(where, "A set index cannot be negative.")
-            row.targetWeightGrams?.load(out, where)
-            row.targetAssistanceGrams?.load(out, where)
-            row.dropValueGrams?.load(out, where)
-            validatePlannedReps(row, where, out)
+            row.targetWeightGrams?.load(out, where, strict)
+            row.targetAssistanceGrams?.load(out, where, strict)
+            row.dropValueGrams?.load(out, where, strict)
+            validatePlannedReps(row, where, out, strict)
             row.targetDurationSeconds?.let {
-                if (it !in 1..MAX_SET_SECONDS) {
+                if (it < 1 || (strict && it > MAX_SET_SECONDS)) {
                     out += BackupProblem(where, "A hold must be between 1 second and a day.")
                 }
                 if (row.targetRepsMin != null || row.targetRepsMax != null || row.targetRepsCurrent != null) {
@@ -293,9 +320,16 @@ internal object BackupValidator {
         }
     }
 
-    private fun validatePlannedReps(row: TemplateSetDto, where: String, out: MutableList<BackupProblem>) {
+    private fun validatePlannedReps(
+        row: TemplateSetDto,
+        where: String,
+        out: MutableList<BackupProblem>,
+        strict: Boolean,
+    ) {
         listOfNotNull(row.targetRepsMin, row.targetRepsMax, row.targetRepsCurrent).forEach {
-            if (it !in 1..MAX_REPS) out += BackupProblem(where, "Planned reps must be between 1 and $MAX_REPS.")
+            if (it < 1 || (strict && it > MAX_REPS)) {
+                out += BackupProblem(where, "Planned reps must be between 1 and $MAX_REPS.")
+            }
         }
         val min = row.targetRepsMin
         val max = row.targetRepsMax
@@ -358,8 +392,8 @@ internal object BackupValidator {
         if (isBlank()) out += BackupProblem(where, "An id or name is empty.")
     }
 
-    private fun Long.load(out: MutableList<BackupProblem>, where: String) {
-        if (this < 0L || this > Weight.MAX_GRAMS) {
+    private fun Long.load(out: MutableList<BackupProblem>, where: String, strict: Boolean) {
+        if (this < 0L || (strict && this > Weight.MAX_GRAMS)) {
             out += BackupProblem(where, "A load must be between 0 and the app's maximum.")
         }
     }

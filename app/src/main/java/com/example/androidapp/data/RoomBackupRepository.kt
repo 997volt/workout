@@ -93,6 +93,7 @@ class RoomBackupRepository @Inject constructor(
                 val openGoals = metricGoals.observeCurrent().first()
                 BackupFile(
                     schemaVersion = BackupCodec.CURRENT_SCHEMA_VERSION,
+                    limitsVersion = BackupCodec.CURRENT_LIMITS_VERSION,
                     exportedAt = timeSource.nowEpochMillis(),
                     exercises = dao.allExercises().map { it.toDto() },
                     sessions = dao.allSessions().map { it.toDto() },
@@ -198,6 +199,7 @@ class RoomBackupRepository @Inject constructor(
             val drawnSets = visibleSetIds(file)
             val problems = BackupValidator.problems(file)
             BackupPreview(
+                legacyLimits = file.limitsVersion < BackupCodec.CURRENT_LIMITS_VERSION,
                 sessions = previewCounts(
                     file.sessions.map { FileRow(it.id, it.deletedAt) },
                     dao.allSessions().associate { it.id to it.deletedAt },

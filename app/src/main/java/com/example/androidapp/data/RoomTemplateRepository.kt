@@ -17,6 +17,7 @@ import com.example.androidapp.domain.NotFoundException
 import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.dataResultOf
+import com.example.androidapp.domain.model.MAX_REPS
 import com.example.androidapp.domain.model.Rpe
 import com.example.androidapp.domain.model.RungRun
 import com.example.androidapp.domain.model.SetType
@@ -500,8 +501,9 @@ class RoomTemplateRepository @Inject constructor(
     ): DataResult<Unit> = dataResultOf {
         // Zero is a value — "this exercise has no rest" — and leaving it unset is how "use the
         // library's" is expressed (the same rule N5 applies to the library itself, amended by N45).
-        if (restSeconds != null && restSeconds < RestTimer.MIN_PRESCRIBED_SECONDS) {
-            throw InvalidInputException(RestTimer.NEGATIVE_REST_REFUSAL)
+        restSeconds?.let { rest ->
+            if (rest < RestTimer.MIN_PRESCRIBED_SECONDS) throw InvalidInputException(RestTimer.NEGATIVE_REST_REFUSAL)
+            if (rest > RestTimer.MAX_PRESCRIBED_SECONDS) throw InvalidInputException(RestTimer.REST_RANGE_REFUSAL)
         }
         if (!Rpe.isValid(targetRpeHalves)) {
             throw InvalidInputException("Target RPE must be between 1 and 10, in half steps.")
@@ -666,6 +668,9 @@ private fun validatePrescription(edit: TemplateSetEdit) {
         edit.targetDurationSeconds != null && edit.targetDurationSeconds < 1 ->
             "A hold must be at least one second."
 
+        edit.targetDurationSeconds != null && edit.targetDurationSeconds > MAX_SET_SECONDS ->
+            "A hold cannot be longer than a day."
+
         edit.targetDurationSeconds != null &&
             (edit.targetRepsMin != null || edit.targetRepsMax != null) ->
             "A set is either counted or held: it cannot name both reps and a hold."
@@ -692,10 +697,12 @@ private fun validateLoad(edit: TemplateSetEdit) {
 /** Reps are a range that can be absent at either end, and RPE sits on the scale. */
 private fun validateEffort(edit: TemplateSetEdit) {
     val problem = when {
-        edit.targetRepsMin != null && edit.targetRepsMin < 1 -> "Target reps must be at least 1."
-        edit.targetRepsMax != null && edit.targetRepsMax < 1 -> "Target reps must be at least 1."
-        edit.targetRepsCurrent != null && edit.targetRepsCurrent < 1 ->
-            "The reps the session asks for must be at least 1."
+        edit.targetRepsMin != null && edit.targetRepsMin !in 1..MAX_REPS ->
+            "Target reps must be between 1 and $MAX_REPS."
+        edit.targetRepsMax != null && edit.targetRepsMax !in 1..MAX_REPS ->
+            "Target reps must be between 1 and $MAX_REPS."
+        edit.targetRepsCurrent != null && edit.targetRepsCurrent !in 1..MAX_REPS ->
+            "The reps the session asks for must be between 1 and $MAX_REPS."
         edit.targetRepsMin != null && edit.targetRepsMax != null &&
             edit.targetRepsMin > edit.targetRepsMax ->
             "The low end of a rep range cannot exceed the high end."

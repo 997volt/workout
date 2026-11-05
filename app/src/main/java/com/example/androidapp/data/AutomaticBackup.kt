@@ -1,6 +1,7 @@
 package com.example.androidapp.data
 
 import com.example.androidapp.data.transfer.BackupCodec
+import com.example.androidapp.data.transfer.BackupValidator
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
@@ -109,7 +110,9 @@ class AutomaticBackup @Inject constructor(
                 // it cannot be mistaken for one later.
                 val restorable = written != null &&
                     files.read(folder.uri, written)?.let { text ->
-                        runCatching { BackupCodec.decode(text) }.isSuccess
+                        runCatching { BackupCodec.decode(text) }
+                            .getOrNull()
+                            ?.let { BackupValidator.problems(it).isEmpty() } == true
                     } == true
                 if (written != null && restorable) {
                     // Pruned only after the new file is on disk: a folder that cannot take the new copy must

@@ -187,8 +187,9 @@ class RoomExerciseRepository @Inject constructor(
         if (trimmed.isEmpty()) throw InvalidInputException("Give the exercise a name.")
         // Zero is a value — "this exercise has no rest" — and leaving it unset is how "use the app
         // default" is expressed, so only a negative is input we cannot use (ROADMAP N5, N45).
-        if (exercise.restSeconds != null && exercise.restSeconds < RestTimer.MIN_PRESCRIBED_SECONDS) {
-            throw InvalidInputException(RestTimer.NEGATIVE_REST_REFUSAL)
+        exercise.restSeconds?.let { rest ->
+            if (rest < RestTimer.MIN_PRESCRIBED_SECONDS) throw InvalidInputException(RestTimer.NEGATIVE_REST_REFUSAL)
+            if (rest > RestTimer.MAX_PRESCRIBED_SECONDS) throw InvalidInputException(RestTimer.REST_RANGE_REFUSAL)
         }
         // A step of zero is not a small step, it is no step at all: the ± buttons would do nothing and
         // the warm-up ramp divides by it (ROADMAP N77). Null stays "the unit's own".
