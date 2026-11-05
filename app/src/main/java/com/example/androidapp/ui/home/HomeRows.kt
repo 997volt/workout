@@ -383,7 +383,10 @@ private fun PlanCardActions(
                         }
                     },
                     dismissButton = {
-                        AppTextButton(onClick = { confirmingSkip = false }) {
+                        AppTextButton(
+                            onClick = { confirmingSkip = false },
+                            modifier = Modifier.testTag(TestTags.homeSkipCancel(plan.id)),
+                        ) {
                             Text(stringResource(R.string.action_cancel))
                         }
                     },

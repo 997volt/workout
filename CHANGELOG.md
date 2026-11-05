@@ -17,6 +17,9 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The hardening batch's UI promises have tests** (B377). The refusal path of history's set editor now proves
+  the dialog and its typed value stay, cancelling a block's skip writes nothing, and rotation tests exercise the
+  history editor, the planned-set dialog and the measurement edit form rather than only their savers.
 - **The editors that survived a rotation now keep their hosts too** (B376). B349 made drafts saveable, but
   history’s open set was a data class in plain `remember` (a rotation closed it), the template planned-set
   dialog’s draft was plain `remember` behind a saveable host, and the measurement edit form’s row was plain

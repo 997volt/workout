@@ -10,6 +10,7 @@ import androidx.compose.ui.test.assertIsNotFocused
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
@@ -753,6 +754,39 @@ class MeasurementsScreenTest {
 
         composeTestRule.onNodeWithText("At most 500 cm", substring = true).assertExists()
         composeTestRule.onNodeWithTag(TestTags.Measurements.CONFIRM).assertIsNotEnabled()
+    }
+
+    @Test
+    fun aRotation_keepsAnEditedMeasurementOpenWithItsDraft() {
+        // B376: the edit form used to be held in a plain remember, so opening a row in edit mode and
+        // rotating closed it. The id is saveable now and the row is derived from the loaded list.
+        val tester = StateRestorationTester(composeTestRule)
+        tester.setContent {
+            AndroidAppTheme {
+                MeasurementsScreen(
+                    state = MeasurementsUiState(isLoading = false, entries = listOf(today)),
+                    onSave = {},
+                    onDelete = {},
+                    onBack = {},
+                    onDismissError = {},
+                    onUndo = {},
+                    onDismissUndo = {},
+                    onDismissRateVerdict = {},
+                    onSaveGoalPeriod = { _, _, _, _ -> },
+                    onRemoveGoalPeriod = {},
+                    onDismissGoalSave = {},
+                )
+            }
+        }
+        composeTestRule.onNodeWithTag(TestTags.Measurements.EDIT).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Measurements.row(today.id)).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Measurements.WEIGHT).performTextClearance()
+        composeTestRule.onNodeWithTag(TestTags.Measurements.WEIGHT).performTextInput("83")
+
+        tester.emulateSavedInstanceStateRestore()
+
+        composeTestRule.onNodeWithTag(TestTags.Measurements.CONFIRM).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Measurements.WEIGHT).assertTextContains("83")
     }
 
     @Test

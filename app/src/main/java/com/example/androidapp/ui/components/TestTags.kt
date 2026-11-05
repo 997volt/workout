@@ -743,6 +743,8 @@ object TestTags {
     /** The confirmation's own Skip, so a tap that writes is named (B356). */
     fun homeSkipConfirm(planId: String) = "home_skip_confirm_$planId"
 
+    fun homeSkipCancel(planId: String) = "home_skip_cancel_$planId"
+
     fun homeSubstituteTemplate(id: String) = "home_substitute_template_$id"
 
     /** One exercise's own trends (ROADMAP N17). */

@@ -707,6 +707,35 @@ class WorkoutsHomeScreenTest {
     }
 
     @Test
+    fun aBlocksSkip_canBeCancelled_withoutWriting() {
+        // B356: the confirmation's other answer must leave the block exactly where it was.
+        var skipped: TodayPlan? = null
+        val block = TodayPlan(
+            id = "slot-9",
+            templateId = "t9",
+            name = "Peak day 4",
+            exerciseCount = 3,
+            slotId = "slot-9",
+            programName = "Peak",
+            isSequence = true,
+            sequencePosition = 4,
+            sequenceLength = 9,
+        )
+        setScreen(
+            state = WorkoutsHomeUiState(isLoading = false, today = DayOfWeek.FRIDAY, todaysPlan = listOf(block)),
+            actions = Actions(onSkipBlock = { skipped = it }),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.HOME_LIST)
+            .performScrollToNode(hasTestTag(TestTags.homeSkipBlock("slot-9")))
+        composeTestRule.onNodeWithTag(TestTags.homeSkipBlock("slot-9")).performClick()
+        composeTestRule.onNodeWithTag(TestTags.homeSkipCancel("slot-9")).performClick()
+
+        assertThat(skipped).isNull()
+        composeTestRule.onNodeWithText("Skip this session?").assertDoesNotExist()
+    }
+
+    @Test
     fun theSubstituteAction_offersTheTemplates_andReportsThePickByName() {
         // ROADMAP P3.11: the pick is made at the point of starting, from the row being started. ROADMAP B93:
         // the pick's **name** travels with it, so the start's own question names the workout it is about to

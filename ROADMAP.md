@@ -27,12 +27,6 @@ verification claims.
 
 ### Editor state and tests
 
-- **B377 — Add the UI tests the batch's acceptance criteria still lack.** B350 proves the ViewModel's
-  `Written`/`Refused` values but not that a refused history edit keeps the dialog and its typed values; B356
-  tests the confirm path but not cancellation; B349 has no rotated half-filled form. **Fixed** means those
-  three tests: a refusal leaves the editor open and unchanged, cancelling a block skip writes nothing, and a
-  rotation restores every field. The legacy-backup test lives in `BackupValidatorTest`.
-
 ### Release and documentation
 
 - **N271 — Test the shipping and minimum APIs, and correct the release note.** The app targets SDK 37, the

@@ -1,6 +1,7 @@
 package com.example.androidapp.ui.history
 
 import android.content.Context
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
@@ -12,6 +13,7 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -21,6 +23,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.R
+import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.model.Activity
 import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.JointPain
@@ -32,6 +35,7 @@ import com.example.androidapp.domain.model.SoreMuscle
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.WorkoutSession
 import com.example.androidapp.ui.components.TestTags
+import com.example.androidapp.ui.workout.SetWrite
 import com.google.common.truth.Truth.assertThat
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -368,6 +372,7 @@ class WorkoutDetailScreenTest {
         programs: List<WorkoutProgram> = emptyList(),
         onScheduleTemplate: (String, DayOfWeek?) -> Unit = { _, _ -> },
         movedDay: LocalDate? = null,
+        setWriteOutcome: androidx.compose.runtime.MutableState<SetWrite?>? = null,
     ) {
         composeTestRule.setContent {
             WorkoutDetailScreen(
@@ -384,6 +389,7 @@ class WorkoutDetailScreenTest {
                 programs = programs,
                 onScheduleTemplate = onScheduleTemplate,
                 movedDay = movedDay,
+                setWriteOutcome = setWriteOutcome?.value,
                 onDismissMovedDay = {},
                 onBack = {},
                 onDismissSavedTemplate = {},
@@ -416,6 +422,60 @@ class WorkoutDetailScreenTest {
         composeTestRule.onNodeWithTag(TestTags.SET_SAVE).performClick()
 
         assertEquals(105_000L, saved)
+    }
+
+    @Test
+    fun aRotation_keepsTheHistorySetEditorOpen() {
+        // B376: the host used to hold the open HistorySet in a plain remember, so a rotation closed the
+        // editor before its saveable draft could be seen. The id is saveable now; the row is derived.
+        val tester = StateRestorationTester(composeTestRule)
+        tester.setContent {
+            WorkoutDetailScreen(
+                state = state,
+                onUpdateSet = { _, _, _, _, _, _, _, _ -> },
+                onDeleteSet = {},
+                onRateExercise = { _, _, _ -> },
+                onDeleteWorkout = {},
+                onMoveToDay = {},
+                onBack = {},
+                onOpenExerciseTrends = {},
+                onSaveAsTemplate = {},
+                onDismissSavedTemplate = {},
+                onOpenTemplate = {},
+                onScheduleTemplate = { _, _ -> },
+                onDismissMovedDay = {},
+            )
+        }
+        editWorkout()
+        composeTestRule.onNodeWithText("100 kg × 5").performClick()
+        composeTestRule.onNodeWithText("Edit set").assertIsDisplayed()
+
+        tester.emulateSavedInstanceStateRestore()
+
+        composeTestRule.onNodeWithText("Edit set").assertIsDisplayed()
+    }
+
+    @Test
+    fun aRefusedHistorySetEdit_keepsTheEditorAndItsValue() {
+        // B350: the dialog closes on Written(setId), not on the tap. A refusal has to leave the correction
+        // on screen.
+        val outcome = mutableStateOf<SetWrite?>(null)
+        var savedReps: Int? = null
+        setScreen(
+            onUpdateSet = { _, reps, _, _, _, _, _, _ ->
+                savedReps = reps
+                outcome.value = SetWrite.Refused("set1", DataError.Invalid("refused"))
+            },
+            setWriteOutcome = outcome,
+        )
+        editWorkout()
+        composeTestRule.onNodeWithText("100 kg × 5").performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.SET_SAVE).performClick()
+
+        assertEquals(5, savedReps)
+        composeTestRule.onNodeWithText("Edit set").assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.SET_EDIT_REPS_FIELD).assertTextContains("5")
     }
 
     @Test

@@ -2,6 +2,7 @@ package com.example.androidapp.ui.components
 
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -20,10 +21,9 @@ import org.junit.runner.RunWith
 /**
  * The planned-set dialog (ROADMAP N14).
  *
- * The first test is the one that matters: the draft is held in a `remember`, not a
- * `rememberSaveable`, because a data class is not Bundle-saveable and registering one
- * throws as the dialog opens. That crash reached a device and no test could see it,
- * because every other test drove the ViewModel instead of the dialog.
+ * The first test is the one that matters: the draft used to be a plain `remember` because a data class is not
+ * Bundle-saveable, and registering one threw as the dialog opened. B376 gave it a saver; the rotation test
+ * below is the guard that the old crash cannot come back.
  */
 @RunWith(AndroidJUnit4::class)
 class TemplateSetDialogTest {
@@ -50,6 +50,31 @@ class TemplateSetDialogTest {
                 holdsTheRunValue = holdsTheRunValue,
             )
         }
+    }
+
+    @Test
+    fun aRotation_keepsThePlannedDraft() {
+        // B376: the host's open id is saveable, so the dialog is still on screen after a configuration
+        // change; its draft has to be there with it.
+        val tester = StateRestorationTester(composeTestRule)
+        tester.setContent {
+            TemplateSetDialog(
+                initial = TemplateSetEdit(),
+                isNew = true,
+                onDismiss = {},
+                onSave = { saved = it },
+                saveKey = "new",
+            )
+        }
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_REPS_MIN)
+            .performScrollTo()
+            .performTextInput("7")
+        tester.emulateSavedInstanceStateRestore()
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_REPS_MIN)
+            .performScrollTo()
+            .assertTextContains("7")
     }
 
     @Test
