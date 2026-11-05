@@ -179,9 +179,7 @@ class WeeklyReviewViewModel @Inject constructor(
             } else {
                 when (val found = weekly.firstStall(program.id)) {
                     is DataResult.Failure -> found
-                    is DataResult.Success -> found.data
-                        ?.let { DataResult.Success(it to program.id) }
-                        ?: acc
+                    is DataResult.Success -> found.data?.let { DataResult.Success(it to program.id) } ?: acc
                 }
             }
         }
