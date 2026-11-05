@@ -26,13 +26,6 @@ existing run at **B339** and **N268**. When a row is picked up its design argume
 
 ### Data correctness and recovery
 
-- **B344 — The week in review must read each session's own zone.** `weekTotals` takes one `zone` and does
-  `session.startedAt.atZone(zone)` ([WeeklyReview.kt](app/src/main/java/com/example/androidapp/domain/model/WeeklyReview.kt)),
-  despite its own KDoc saying the session's own zone is used. Every `WorkoutSummary` carries
-  `zoneOffsetMinutes`; history and adherence use it, the review does not. A workout performed abroad near a
-  week boundary can therefore be counted in the wrong week and wrong totals. Fixed means
-  `session.zoneIdOrNull() ?: zone`, with a test whose sessions carry a non-device offset.
-
 - **B345 — The two multi-write paths that can lose a prior value must be one transaction.**
   `rateExercise` writes the muscle rating, soft-deletes the old joint list, then inserts the new one
   ([RoomWorkoutRepository.kt](app/src/main/java/com/example/androidapp/data/RoomWorkoutRepository.kt)); a

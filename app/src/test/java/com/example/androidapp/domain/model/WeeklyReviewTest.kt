@@ -36,6 +36,23 @@ class WeeklyReviewTest {
     }
 
     @Test
+    fun aSession_isCountedInItsOwnWeek_notTheReaders() {
+        // B344: 00:30 UTC on the Monday is 01:30 in Berlin (this week) but 20:30 Sunday in New York
+        // (the previous week). The session's own offset is the frame, as it is in history and adherence.
+        val abroad = session(
+            id = "abroad",
+            at = "2026-10-26T00:30:00Z",
+            sets = 2,
+            volume = 200,
+            zoneOffsetMinutes = -240,
+        )
+
+        assertThat(weekTotals(listOf(abroad), monday, zone)).isEqualTo(WeekTotals(0, 0, 0))
+        assertThat(weekTotals(listOf(abroad), monday.minusWeeks(1), zone))
+            .isEqualTo(WeekTotals(sessions = 1, sets = 2, volumeGrams = 200))
+    }
+
+    @Test
     fun aDeload_isScheduledButNotAPlannedSession() {
         val occurrences = listOf(
             occurrence(OccurrenceState.DONE),
@@ -52,13 +69,20 @@ class WeeklyReviewTest {
         assertThat(plan.remaining).isEqualTo(2)
     }
 
-    private fun session(id: String, at: String, sets: Int, volume: Long) = WorkoutSummary(
+    private fun session(
+        id: String,
+        at: String,
+        sets: Int,
+        volume: Long,
+        zoneOffsetMinutes: Int? = null,
+    ) = WorkoutSummary(
         id = id,
         startedAt = Instant.parse(at),
         finishedAt = Instant.parse(at).plusSeconds(3_600),
         exerciseCount = 1,
         setCount = sets,
         volumeGrams = volume,
+        zoneOffsetMinutes = zoneOffsetMinutes,
     )
 
     private fun occurrence(state: OccurrenceState) = DayOccurrence(

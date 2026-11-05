@@ -17,6 +17,9 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The week in review counts each session in its own zone** (B344). `weekTotals` read every session's day in the
+  reader's zone, so a workout performed abroad near a week boundary could be counted in the wrong week and its
+  totals. It now uses `zoneIdOrNull() ?: zone`, the rule history and adherence already read.
 - **"Delete everything" turns the automatic backup off first** (B343). The clear emptied the database but left
   the schedule enabled and the folder untouched, so the next due runs wrote almost-empty copies and the prune
   kept only the newest five — five periods later the pre-clear full backups were gone, while the dialog said an

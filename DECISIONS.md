@@ -66,8 +66,9 @@ the rule; that one argues it.
   from a real `ZoneId`, but a backup can carry any integer and `ZoneOffset.ofTotalSeconds` throws outside
   ±18:00. `storedZoneOrNull` range-checks in a `Long` (an `Int` multiplication overflows), and
   `storedZoneOrFallback` answers the reading zone for a row without one or with an illegal value. History,
-  adherence and the program mappers all use it: B282 fixed the first and stopped short of the other two,
-  which is how one imported row could still kill a program flow.
+  adherence, the program mappers and the week in review all read it (B341, B344): B282 fixed the first and
+  stopped short of the rest, which is how one imported row could still kill a program flow and how a
+  session performed abroad could be counted in the reader's week.
 - **A merged movement is deleted, and its id remembered** (N238). A row that is the same movement as
   another is re-pointed and then hard-deleted rather than tombstoned: after the re-point it holds nothing,
   and a tombstone would be a row every library read must filter and every backup must carry for an id the

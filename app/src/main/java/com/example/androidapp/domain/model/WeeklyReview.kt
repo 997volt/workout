@@ -40,7 +40,8 @@ data class ReviewDay(
 fun weekTotals(sessions: List<WorkoutSummary>, weekStart: LocalDate, zone: ZoneId): WeekTotals {
     val end = weekStart.plusDays(DAYS_IN_WEEK)
     val inWeek = sessions.filter { session ->
-        val day = session.startedAt.atZone(zone).toLocalDate()
+        // The session's own zone, not the reader's (B344): the same rule history and adherence read.
+        val day = session.startedAt.atZone(session.zoneIdOrNull() ?: zone).toLocalDate()
         !day.isBefore(weekStart) && day.isBefore(end)
     }
     return WeekTotals(
