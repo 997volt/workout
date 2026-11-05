@@ -60,7 +60,8 @@ class RoomWeeklyReviewRepository @Inject constructor(
         programs.observeActivePrograms().first()
     }
 
-    override suspend fun firstStall(programId: String): PlanStall? = stalls.firstStall(programId)
+    override suspend fun firstStall(programId: String): DataResult<PlanStall?> =
+        stalls.firstStall(programId)
 
     override suspend fun blocks(): DataResult<List<BlockProgress>> = dataResultOf {
         adherence.observeBlockProgress().first()

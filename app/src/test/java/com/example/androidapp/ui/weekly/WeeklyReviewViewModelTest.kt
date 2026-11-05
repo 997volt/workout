@@ -233,7 +233,8 @@ class WeeklyReviewViewModelTest {
                 DataResult.Success(programs)
             }
 
-        override suspend fun firstStall(programId: String): PlanStall? = stall
+        override suspend fun firstStall(programId: String): DataResult<PlanStall?> =
+            DataResult.Success(stall)
 
         override suspend fun blocks(): DataResult<List<BlockProgress>> = DataResult.Success(blocks)
     }

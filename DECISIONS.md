@@ -1196,6 +1196,11 @@ the rule; that one argues it.
   the prefill (N73); the session still records only the template (P3.3), so provenance and occurrence
   matching are unchanged. Storing it would make the session's provenance say two things and would go
   stale the moment the slot moved.
+- **A failed stall read is a failure, not "the plan is moving"** (B351). The stall rule answers a question about
+  the last three sessions; when that read failed, the first cut passed an empty history and the screen said
+  nothing had stalled — an answer the app did not have. `PlanStallFinder` returns a `DataResult` and both the
+  program editor and the week review surface the error. A result nested inside another block stops it through
+  `DataError.asThrowable`, so the typed refusal survives rather than becoming a storage error.
 - **A program's order is a run, derived from what was done rather than a stored cursor** (P3.9).
   The next slot follows the last slot trained or consciously skipped; a day simply missed leaves the
   run where it is, which is what the missed-day question is for, and an edited program re-derives

@@ -44,8 +44,8 @@ interface WeeklyReviewRepository {
     /** The programs home follows. */
     suspend fun activePrograms(): DataResult<List<WorkoutProgram>>
 
-    /** The first stopped prescription in [programId], or null. */
-    suspend fun firstStall(programId: String): PlanStall?
+    /** The first stopped prescription in [programId], null when none, or the read's failure (B351). */
+    suspend fun firstStall(programId: String): DataResult<PlanStall?>
 
     /**
      * The followed blocks — sequence programs — and how far through each one is (ROADMAP N189, B329).

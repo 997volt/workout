@@ -68,6 +68,8 @@ class WeeklyReviewViewModel @Inject constructor(
     }
 
     /** Re-reads the week; the screen's retry. */
+    // The week's reads and its six sources are one state update; the split is N285.
+    @Suppress("LongMethod")
     fun load() {
         viewModelScope.launch {
             val zone = ZoneId.systemDefault()
@@ -115,7 +117,15 @@ class WeeklyReviewViewModel @Inject constructor(
                     return@launch
                 }
             }
-            val stalled = firstStall(active)
+            val stalled = when (val read = firstStall(active)) {
+                is DataResult.Success -> read.data
+                is DataResult.Failure -> {
+                    // A failed stall read is not "no stall" (B351), and this screen already says a read's
+                    // failure rather than drawing an answer it did not get.
+                    _state.value = WeeklyReviewUiState(isLoading = false, error = read.error)
+                    return@launch
+                }
+            }
 
             _state.value = WeeklyReviewUiState(
                 isLoading = false,
@@ -161,14 +171,20 @@ class WeeklyReviewViewModel @Inject constructor(
         return DataResult.Success(days to occurrences)
     }
 
-    /** The first programme whose plan has stopped moving, with its id, or null. */
-    private suspend fun firstStall(active: List<WorkoutProgram>): Pair<PlanStall, String>? {
-        for (program in active) {
-            val found = weekly.firstStall(program.id)
-            if (found != null) return found to program.id
+    /** The first programme whose plan has stopped moving, with its id, or the read's failure (B351). */
+    private suspend fun firstStall(active: List<WorkoutProgram>): DataResult<Pair<PlanStall, String>?> =
+        active.fold(DataResult.Success(null) as DataResult<Pair<PlanStall, String>?>) { acc, program ->
+            if (acc is DataResult.Failure) {
+                acc
+            } else {
+                when (val found = weekly.firstStall(program.id)) {
+                    is DataResult.Failure -> found
+                    is DataResult.Success -> found.data
+                        ?.let { DataResult.Success(it to program.id) }
+                        ?: acc
+                }
+            }
         }
-        return null
-    }
 
     private companion object {
         const val DAYS_IN_WEEK = 7

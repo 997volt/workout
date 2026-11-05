@@ -187,7 +187,12 @@ class ProgramEditorViewModel @Inject constructor(
     }
         // The stall is read from history rather than from a stored flag (N237): it is a pattern in the last few
         // sessions, so it has to be recomputed after every one of them.
-        .combine(stallForProgram()) { state, stall -> state.copy(stall = stall) }
+        .combine(stallForProgram()) { state, stall ->
+            when (stall) {
+                is DataResult.Success -> state.copy(stall = stall.data)
+                is DataResult.Failure -> state.copy(stall = null, error = stall.error)
+            }
+        }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
@@ -201,7 +206,7 @@ class ProgramEditorViewModel @Inject constructor(
      * movement on another day of the same program prescribes different work, and a session started from no
      * template is not one of these.
      */
-    private fun stallForProgram(): Flow<PlanStall?> =
+    private fun stallForProgram(): Flow<DataResult<PlanStall?>> =
         repository.observeSlots(programId).mapLatest { stallFinder.firstStall(programId) }
 
     fun onRename(name: String) = write { repository.renameProgram(programId, name) }

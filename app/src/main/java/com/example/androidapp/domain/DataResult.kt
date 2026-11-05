@@ -89,5 +89,18 @@ fun Throwable.toDataError(): DataError = when (this) {
 }
 
 
+/**
+ * The failure as something [dataResultOf] can turn back into the same [DataError] (B351).
+ *
+ * A layer that already holds a `DataResult` inside a larger `dataResultOf` block needs to stop the block
+ * without losing which refusal it was; throwing the typed cause is the one path that preserves `Invalid`
+ * and `NotFound` instead of flattening both into a storage error.
+ */
+fun DataError.asThrowable(): Throwable = when (this) {
+    DataError.NotFound -> NotFoundException("the row is gone")
+    is DataError.Invalid -> InvalidInputException(message)
+    is DataError.Storage -> cause
+}
+
 /** The success value, or null when this is a failure. */
 fun <T> DataResult<T>.getOrNull(): T? = (this as? DataResult.Success)?.data

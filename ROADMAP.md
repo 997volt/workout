@@ -28,14 +28,6 @@ existing run at **B339** and **N268**. When a row is picked up its design argume
 
 ### State and interaction
 
-- **B351 — A failed trends read must not be reported as "no stall".** `PlanStallFinder` does
-  `(trends.templateSessions(templateId) as? DataResult.Success)?.data.orEmpty()`
-  ([PlanStallFinder.kt](app/src/main/java/com/example/androidapp/domain/PlanStallFinder.kt)), so a storage
-  failure becomes an empty history and the weekly review and program editor say the plan is moving. That is
-  the "a failed read looks like an empty result" shape B4 fixed for last-trained. Fixed means `firstStall`
-  returns a `DataResult` (or otherwise carries the failure) and both callers show the read's error rather than
-  inventing a verdict.
-
 - **B352 — One template block's save outcome must not close another block's dialog.** The screen-global
   `setSaveOutcome == true && open != null` test in
   [TemplateEditorScreen.kt](app/src/main/java/com/example/androidapp/ui/templates/TemplateEditorScreen.kt)

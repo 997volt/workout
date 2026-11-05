@@ -17,6 +17,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A failed stall read is not "the plan is moving"** (B351). `PlanStallFinder` turned a failed trends read into
+  an empty session list, so a storage fault made the program editor and the week review say nothing had
+  stalled. It now returns a `DataResult`; both callers show the read's error instead of inventing a verdict, and
+  `DataError` gained the one conversion that lets a nested result stop a `dataResultOf` block without losing
+  whether it was Invalid, NotFound or Storage.
 - **History's set editor closes on the write's answer, not the tap** (B350). It called `onUpdateSet` and then
   dismissed unconditionally, so a refused correction — a rung boundary, an invalid load — closed the dialog and
   lost what was typed, the inverse of the rule the active workout enforces. The history ViewModel now exposes
