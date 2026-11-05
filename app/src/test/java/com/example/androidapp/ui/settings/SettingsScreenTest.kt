@@ -1,6 +1,7 @@
 package com.example.androidapp.ui.settings
 
 import androidx.compose.ui.test.assertContentDescriptionEquals
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -276,6 +277,24 @@ class SettingsScreenTest {
         composeTestRule.onNodeWithTag(TestTags.SETTINGS_BACKUP_NOW).performScrollTo().performClick()
 
         assertEquals(1, backupsNow)
+    }
+
+    @Test
+    fun whileACopyRuns_theBackupNowButton_isDisabled() {
+        // B380: a tap during the export must not queue a second copy.
+        show(
+            SettingsUiState(
+                backup = BackupSettings(
+                    enabled = true,
+                    folder = BackupFolder(uri = "content://tree/x", label = "x"),
+                ),
+                backupRunning = true,
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.SETTINGS_BACKUP_NOW)
+            .performScrollTo()
+            .assertIsNotEnabled()
     }
 
     @Test

@@ -1859,7 +1859,9 @@ the rule; that one argues it.
   keeping the date would delay the first copy by a period. "Back up now" is the same writer, lock and order as
   the due run, not a second path. **The file is read back and decoded before success is recorded**: a provider
   accepting a stream is not proof it committed a restorable copy, and the date exists to mean one. A failed
-  read-back deletes the bad file and records a failure. **The verification runs off the caller's thread**
+  read-back deletes the bad file and records a failure. **A manual copy is still a copy the switch authorised**
+  (B380): `runNow` refuses a disabled backup, and the button is single-flight so repeated taps cannot queue
+  several exports. **The verification runs off the caller's thread**
   (B375): the decode is the whole database, and both callers start on Main. The read, decode and validator run
   on IO, so a due backup does not jank or ANR the screen that triggered it.
 - **A clear turns the automatic backup off before it deletes** (B343). The schedule lived in preferences, so

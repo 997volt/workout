@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **"Back up now" is single-flight and respects the switch** (B380). The button had no busy state, so repeated
+  taps queued a copy per tap on the mutex, and `runNow` wrote whenever a folder existed even with the switch
+  off. The runner now refuses a disabled backup, the ViewModel exposes a running flag, and the button is
+  disabled and says "Backing up…" while a copy is in flight.
 - **A failed clear puts the automatic backup switch back** (B378). "Delete everything" disables the schedule
   before touching the rows; if the clear then failed, the data was still present and the scheduled backup
   stayed silently off. The previous switch is restored on failure, and the clear's own error is still the one

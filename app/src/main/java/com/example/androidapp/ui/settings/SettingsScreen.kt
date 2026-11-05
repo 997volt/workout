@@ -432,7 +432,11 @@ private fun BackupSection(
                     testTag = TestTags.SETTINGS_BACKUP_FOLDER,
                 )
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                BackupStatus(backup = state.backup, onBackupNow = onBackupNow)
+                BackupStatus(
+                    backup = state.backup,
+                    onBackupNow = onBackupNow,
+                    busy = state.backupRunning,
+                )
             }
         }
     }
@@ -464,6 +468,21 @@ private fun BackupPeriodChoice(
     }
 }
 
+@Composable
+private fun BackupNowButton(onClick: () -> Unit, busy: Boolean, modifier: Modifier = Modifier) {
+    AppTextButton(
+        onClick = onClick,
+        enabled = !busy,
+        modifier = modifier.testTag(TestTags.SETTINGS_BACKUP_NOW),
+    ) {
+        Text(
+            stringResource(
+                if (busy) R.string.settings_backup_now_running else R.string.settings_backup_now,
+            ),
+        )
+    }
+}
+
 /**
  * When a copy last landed, or why the last attempt did not (ROADMAP N218).
  *
@@ -474,6 +493,7 @@ private fun BackupPeriodChoice(
 private fun BackupStatus(
     backup: BackupSettings,
     onBackupNow: () -> Unit,
+    busy: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val lastSuccess = backup.lastSuccessAt?.let { instant ->
@@ -521,14 +541,7 @@ private fun BackupStatus(
             modifier = Modifier.padding(top = 4.dp),
         )
         if (backup.folder != null) {
-            AppTextButton(
-                onClick = onBackupNow,
-                modifier = Modifier
-                    .padding(top = 4.dp)
-                    .testTag(TestTags.SETTINGS_BACKUP_NOW),
-            ) {
-                Text(stringResource(R.string.settings_backup_now))
-            }
+            BackupNowButton(onClick = onBackupNow, busy = busy, modifier = Modifier.padding(top = 4.dp))
         }
     }
 }

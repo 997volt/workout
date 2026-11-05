@@ -25,12 +25,6 @@ verification claims.
 
 ### Backup and restore
 
-- **B380 — "Back up now" must be single-flight and enabled-aware.** The button launches `runNow` with no busy
-  state, so repeated taps queue copies on the mutex; `runNow` writes whenever a folder exists even if the switch
-  is off ([AutomaticBackup.kt](app/src/main/java/com/example/androidapp/data/AutomaticBackup.kt)). **Fixed**
-  means the control is disabled or coalesced while a copy runs and the runner refuses a disabled backup.
-  **Tests:** repeated taps produce one copy; a disabled backup refuses a manual run.
-
 ### Editor state and tests
 
 - **B376 — Every editor host must survive rotation.** B349 made drafts saveable but three hosts still discard

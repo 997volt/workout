@@ -108,7 +108,15 @@ class SettingsViewModel @Inject constructor(
 
     /** Writes one copy now, whatever the period says (B362); the backup flow shows the result. */
     fun onBackupNow() {
-        viewModelScope.launch { backupRunner.runNow() }
+        if (_uiState.value.backupRunning) return
+        _uiState.update { it.copy(backupRunning = true) }
+        viewModelScope.launch {
+            try {
+                backupRunner.runNow()
+            } finally {
+                _uiState.update { it.copy(backupRunning = false) }
+            }
+        }
     }
 
     /** One place where a failed write becomes the error the screen shows. */
@@ -151,6 +159,8 @@ data class SettingsUiState(
     val weightUnit: WeightUnit = WeightUnit.KILOGRAMS,
     /** The backup that writes itself: switch, period, folder and where the last attempt ended (N218). */
     val backup: BackupSettings = BackupSettings(),
+    /** True while a manual copy is in flight, so repeated taps cannot queue copies (B380). */
+    val backupRunning: Boolean = false,
     val error: DataError? = null,
 ) {
     val choices: List<Int> get() = REST_CHOICES

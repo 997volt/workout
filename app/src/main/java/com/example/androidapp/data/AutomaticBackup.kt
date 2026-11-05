@@ -95,7 +95,10 @@ class AutomaticBackup @Inject constructor(
      * the same answer the launch path gives.
      */
     override suspend fun runNow(): BackupRun = running.withLock {
-        val folder = settings.observeBackupSettings().first().folder ?: return@withLock BackupRun.NotConfigured
+        val current = settings.observeBackupSettings().first()
+        // Manual means "now", not "even though it is off": the switch is still the consent (B380).
+        if (!current.enabled) return@withLock BackupRun.NotConfigured
+        val folder = current.folder ?: return@withLock BackupRun.NotConfigured
         write(folder, time.now())
     }
 

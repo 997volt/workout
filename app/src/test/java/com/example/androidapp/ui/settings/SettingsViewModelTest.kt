@@ -12,6 +12,7 @@ import com.example.androidapp.domain.model.BackupSettings
 import com.example.androidapp.domain.model.ProgressionMode
 import com.example.androidapp.domain.model.StatisticsRange
 import com.example.androidapp.domain.repository.SettingsRepository
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -22,6 +23,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
@@ -123,6 +125,27 @@ class SettingsViewModelTest {
     }
 
     @Test
+    fun backupNow_isSingleFlight_whileACopyRuns() = runTest(dispatcher) {
+        // B380: a second tap while the first copy is still exporting must not queue another copy.
+        val viewModel = viewModel(FakeSettingsRepository(stored = 90))
+        val gate = CompletableDeferred<Unit>()
+        runner.gate = gate
+
+        viewModel.onBackupNow()
+        runCurrent()
+        viewModel.onBackupNow()
+        runCurrent()
+
+        assertEquals("only one copy was started", 1, runner.nowCalls)
+        assertEquals(true, viewModel.uiState.value.backupRunning)
+
+        gate.complete(Unit)
+        advanceUntilIdle()
+
+        assertEquals(false, viewModel.uiState.value.backupRunning)
+    }
+
+    @Test
     fun backupNow_asksTheRunner_forACopytRegardlessOfThePeriod() = runTest(dispatcher) {
         // B362: the manual copy is the same writer, not a second path around the schedule.
         val viewModel = viewModel(FakeSettingsRepository(stored = 90))
@@ -136,11 +159,13 @@ class SettingsViewModelTest {
 
 private class FakeBackupRunner : BackupRunner {
     var nowCalls = 0
+    var gate: CompletableDeferred<Unit>? = null
 
     override suspend fun runIfDue(): BackupRun = BackupRun.NotDue
 
     override suspend fun runNow(): BackupRun {
         nowCalls++
+        gate?.await()
         return BackupRun.NotDue
     }
 }

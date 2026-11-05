@@ -114,6 +114,17 @@ class AutomaticBackupTest {
     }
 
     @Test
+    fun runNow_whenTheSwitchIsOff_writesNothing() = runTest {
+        // B380: the button is hidden when the card is off, but the runner is a port and must not treat a
+        // manual call as consent the setting never gave.
+        enable()
+        settings.setBackupEnabled(false)
+
+        assertThat(backup().runNow()).isEqualTo(BackupRun.NotConfigured)
+        assertThat(files.files).isEmpty()
+    }
+
+    @Test
     fun runNow_withNoFolder_writesNothing() = runTest {
         settings.setBackupEnabled(true)
 
