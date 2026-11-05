@@ -153,6 +153,9 @@ const val MAX_BODY_PERCENT_TENTHS = 1_000
 /** 500 cm in millimetres: the ceiling a tape site may state, so a typed 9999 cannot become one (B359). */
 const val MAX_TAPE_MILLIMETRES = 5_000L
 
+/** The same ceiling in centimetres, for the field's own error sentence. */
+const val MAX_TAPE_CENTIMETRES = MAX_TAPE_MILLIMETRES / 10
+
 /** The weight this entry states, or null for a row that states none (B336). */
 val BodyMeasurement.statedWeightGrams: Long? get() = statedBodyWeightGrams(weightGrams)
 

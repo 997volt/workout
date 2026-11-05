@@ -1,3 +1,6 @@
+// The measurement screen is one screen and many small composables; the split is N285, not this fix.
+@file:Suppress("TooManyFunctions")
+
 package com.example.androidapp.ui.measurements
 
 import androidx.compose.foundation.clickable
@@ -55,6 +58,7 @@ import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.model.BodyMeasurement
 import com.example.androidapp.domain.model.MAX_BODY_PERCENT_TENTHS
+import com.example.androidapp.domain.model.MAX_TAPE_CENTIMETRES
 import com.example.androidapp.domain.model.MAX_TAPE_MILLIMETRES
 import com.example.androidapp.domain.model.MeasurementKind
 import com.example.androidapp.domain.model.MuscleGroup
@@ -630,9 +634,7 @@ private fun MeasurementDialog(
                 onClick = { onConfirm(draft) },
                 // A typed value the schema cannot hold is shown as an error and stops the save: silently
                 // dropping it would write a different record from the one on screen (B359).
-                enabled = draft.statesSomething() &&
-                    listOf(bodyFat, muscle).none { percentInvalid(it) } &&
-                    tape.values.none { millimetresInvalid(it) },
+                enabled = draft.statesSomething() && formValuesValid(bodyFat, muscle, tape),
                 modifier = Modifier.testTag(TestTags.Measurements.CONFIRM),
             ) {
                 Text(stringResource(R.string.action_save))
@@ -661,6 +663,8 @@ internal fun DailyFields(
     soreMuscles: List<SoreMuscle>,
     onSoreMusclesChange: (List<SoreMuscle>) -> Unit,
 ) {
+    val bodyFatInvalid = bodyFat.isNotBlank() && tenths(bodyFat) == null
+    val muscleInvalid = muscle.isNotBlank() && tenths(muscle) == null
     Column(
         modifier = Modifier.verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -678,8 +682,8 @@ internal fun DailyFields(
             onValueChange = onBodyFatChange,
             testTag = TestTags.Measurements.BODY_FAT,
             imeAction = ImeAction.Next,
-            isError = percentInvalid(bodyFat),
-            errorText = if (percentInvalid(bodyFat)) stringResource(R.string.measurements_percent_range) else null,
+            isError = bodyFatInvalid,
+            errorText = if (bodyFatInvalid) stringResource(R.string.measurements_percent_range) else null,
         )
         // Muscle is the form's last number: its action closes the keyboard rather than moving into the
         // sore-muscle editor, which is not a numeric field (N254).
@@ -689,8 +693,8 @@ internal fun DailyFields(
             onValueChange = onMuscleChange,
             testTag = TestTags.Measurements.MUSCLE,
             imeAction = ImeAction.Done,
-            isError = percentInvalid(muscle),
-            errorText = if (percentInvalid(muscle)) stringResource(R.string.measurements_percent_range) else null,
+            isError = muscleInvalid,
+            errorText = if (muscleInvalid) stringResource(R.string.measurements_percent_range) else null,
         )
         // The sore list, moved here from the workout's readiness note (N113): the same shared editor and
         // the same taxonomy, so the vocabulary is the app's one list of muscles either way.
@@ -734,9 +738,9 @@ internal fun TapeFields(tape: Map<TapeSite, String>, onTapeChange: (TapeSite, St
                 testTag = TestTags.Measurements.tape(site),
                 // Calf is the last site: Done, like every form's last field (N254).
                 imeAction = if (index == TapeSite.entries.lastIndex) ImeAction.Done else ImeAction.Next,
-                isError = millimetresInvalid(text),
-                errorText = if (millimetresInvalid(text)) {
-                    stringResource(R.string.measurements_tape_range, MAX_TAPE_MILLIMETRES / 10)
+                isError = text.isNotBlank() && millimetres(text) == null,
+                errorText = if (text.isNotBlank() && millimetres(text) == null) {
+                    stringResource(R.string.measurements_tape_range, MAX_TAPE_CENTIMETRES)
                 } else {
                     null
                 },
@@ -819,11 +823,10 @@ private fun millimetres(text: String): Long? =
         ?.let { Math.round(it * MILLIMETRES_PER_CENTIMETRE) }
         ?.takeIf { it in 0..MAX_TAPE_MILLIMETRES }
 
-/** A non-blank percentage the schema cannot hold. */
-private fun percentInvalid(text: String): Boolean = text.isNotBlank() && tenths(text) == null
-
-/** A non-blank tape length the schema cannot hold. */
-private fun millimetresInvalid(text: String): Boolean = text.isNotBlank() && millimetres(text) == null
+/** Whether the form's typed numbers can all be stored, so its Save is not offered over a dropped value. */
+private fun formValuesValid(bodyFat: String, muscle: String, tape: Map<TapeSite, String>): Boolean =
+    listOf(bodyFat, muscle).none { it.isNotBlank() && tenths(it) == null } &&
+        tape.values.none { it.isNotBlank() && millimetres(it) == null }
 
 /**
  * A typed measurement, or null when it is not one.

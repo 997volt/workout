@@ -267,21 +267,19 @@ private fun List<SoreMuscle>.toRows(measurementId: String, now: Long): List<Meas
  * 9999 is a slip, and storing it would make a derived fat mass exceed the body it came from.
  */
 private fun requirePlausibleValues(measurement: BodyMeasurement) {
-    measurement.bodyFatTenths?.let {
-        if (it !in 0..MAX_BODY_PERCENT_TENTHS) {
-            throw InvalidInputException("Body fat must be between 0% and 100%.")
-        }
+    val refusal = when {
+        measurement.bodyFatTenths?.let { it !in 0..MAX_BODY_PERCENT_TENTHS } == true ->
+            "Body fat must be between 0% and 100%."
+
+        measurement.muscleTenths?.let { it !in 0..MAX_BODY_PERCENT_TENTHS } == true ->
+            "Muscle must be between 0% and 100%."
+
+        measurement.tape.values.any { it !in 0..MAX_TAPE_MILLIMETRES } ->
+            "A tape measurement is outside the app's range."
+
+        else -> null
     }
-    measurement.muscleTenths?.let {
-        if (it !in 0..MAX_BODY_PERCENT_TENTHS) {
-            throw InvalidInputException("Muscle must be between 0% and 100%.")
-        }
-    }
-    measurement.tape.forEach { (_, millimetres) ->
-        if (millimetres !in 0..MAX_TAPE_MILLIMETRES) {
-            throw InvalidInputException("A tape measurement is outside the app's range.")
-        }
-    }
+    if (refusal != null) throw InvalidInputException(refusal)
 }
 
 private fun requireStatedWeight(grams: Long?) {
