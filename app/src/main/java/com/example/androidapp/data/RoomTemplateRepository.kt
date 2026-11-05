@@ -420,15 +420,17 @@ class RoomTemplateRepository @Inject constructor(
             // this row is), and the run that would be left is the one shape `rungProblem` refuses to author.
             val run = sets.runAt(index)
             val opensItsRun = run?.rung == 1
-            listOf(templateSetId) +
-                if (opensItsRun && run != null) {
-                    // The rows from here down that carry the same role, which is the run's own definition.
-                    sets.indices
-                        .filter { it >= index && sets[it].role == stored.role }
-                        .map { sets[it].id }
-                } else {
+            if (opensItsRun && run != null) {
+                // The contiguous same-role run that starts here — the same definition `runAt` reads (B339).
+                // Every later row with this role is *not* the run: a plan may hold a second drop ladder
+                // after a normal set, and taking it would delete work the lifter never touched.
+                sets.drop(index)
+                    .takeWhile { it.role == stored.role }
+                    .map { it.id }
+            } else {
+                listOf(templateSetId) +
                     sets.indices.filter { sets.runAt(it)?.anchorIndex == index }.map { sets[it].id }
-                }
+            }
         }
         val now = timeSource.nowEpochMillis()
         database.withTransaction {

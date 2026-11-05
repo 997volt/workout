@@ -26,16 +26,6 @@ existing run at **B339** and **N268**. When a row is picked up its design argume
 
 ### Data correctness and recovery
 
-- **B339 — Removing a drop or cluster opener must delete one run, not every later run of the same role.**
-  `removeSet` means "a rung that opens its run takes the run with it", but its survivor filter is
-  `it >= index && sets[it].role == stored.role` ([RoomTemplateRepository.kt](app/src/main/java/com/example/androidapp/data/RoomTemplateRepository.kt)),
-  which is every later row with that role. A plan of `NORMAL · DROP(10) · NORMAL · DROP(5)` loses **both**
-  runs when the first DROP is removed; the undo restores them only until the snackbar is gone, so a completed
-  edit silently changes a plan the lifter never touched. The run model already defines a run as contiguous
-  (`runStart`, [RungRun.kt](app/src/main/java/com/example/androidapp/domain/model/RungRun.kt)). Fixed means
-  the removal takes `sets.drop(index).takeWhile { it.role == stored.role }`, with a test that builds two
-  runs in one exercise and removes the first.
-
 - **B340 — A second successful edit of the same set must close the editor.** The workout ViewModel keeps
   `setWrite` as a `MutableStateFlow` and never clears it
   ([ActiveWorkoutViewModel.kt](app/src/main/java/com/example/androidapp/ui/workout/ActiveWorkoutViewModel.kt)).

@@ -476,6 +476,30 @@ class TemplateRepositoryTest {
     }
 
     @Test
+    fun removingARunsOpener_takesOnlyThatRun_notASecondRunOfTheSameRole() = runTest {
+        // B339: a plan may hold two drop ladders separated by a normal set. Removing the first opener
+        // must take its own contiguous run, not every later row that happens to share the role.
+        val template = create("Legs")
+        val exercise = plannedExercise(template)
+        repository.addSet(exercise, TemplateSetEdit(targetWeightGrams = 100_000L))
+        repository.addSet(exercise, TemplateSetEdit(role = SetType.DROP, dropValueGrams = 20_000L))
+        repository.addSet(exercise, TemplateSetEdit(targetWeightGrams = 60_000L))
+        repository.addSet(exercise, TemplateSetEdit(role = SetType.DROP, dropValueGrams = 10_000L))
+        val firstDrop = repository.observeExercises(template).first().single().sets[1]
+
+        repository.removeSet(firstDrop.id)
+
+        val left = repository.observeExercises(template).first().single().sets
+        assertEquals(
+            "only the first ladder goes; the second keeps its opener",
+            listOf(SetType.NORMAL, SetType.NORMAL, SetType.DROP),
+            left.map { it.role },
+        )
+        assertEquals("the survivors renumber", listOf(0, 1, 2), left.map { it.setIndex })
+        assertEquals("and the second ladder still carries its value", 10_000L, left.last().dropValueGrams)
+    }
+
+    @Test
     fun restoringARunsAnchor_putsTheWholeRunBackInOrder() = runTest {
         // N90 with N79: a rung's load is read by position (`runAt`, `rungWeightAt`), so a restore that
         // appended would silently rewrite the ladder. The whole run comes back together, because the

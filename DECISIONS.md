@@ -93,7 +93,9 @@ the rule; that one argues it.
   names no reps because the group's target is the anchor's. Deleting an anchor takes its rungs with it, and
   **the first rung does too** (B152): it is the row the run's value is stored on, so removing it alone
   stranded the survivors with nothing to derive from and no way to put the ladder back — re-typing the value
-  made the survivor rung 1 and re-valued the plan. A cluster repeats the anchor's load **as a whole
+  made the survivor rung 1 and re-valued the plan. **Only that contiguous run goes** (B339): a plan may hold a
+  second ladder after a normal set, and filtering every later same-role row took it too; the removal now stops
+  at the first different role, which is the definition `runAt` already reads. A cluster repeats the anchor's load **as a whole
   `Load`** (B153): an anchor giving 20 kg of assistance derives assistance and no added weight, so carrying
   only the weight half read it as a stated 0 kg and logged bodyweight while the machine was helping.
   ([evidence](DECISIONS-EVIDENCE.md#n79), [B59–B72](DECISIONS-EVIDENCE.md#b59-b72))

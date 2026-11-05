@@ -13,6 +13,15 @@ repeated here.
 **1.0–1.18 live in [CHANGELOG-1.x.md](CHANGELOG-1.x.md)**, kept whole rather than deleted because the
 id a 1.x commit names is still looked up by it. This file carries the current release.
 
+## [Unreleased]
+
+### Fixed
+
+- **A drop-set opener takes only its own run** (B339). Removing the first rung of a drop or cluster run
+  soft-deleted every later set with the same role, so a plan holding two ladders separated by a normal set
+  lost both when the first was removed; the undo restored them only until the snackbar went. The removal now
+  walks the contiguous same-role run — the same definition `runAt` reads — and renumbers the survivors.
+
 ## [2.22] — 2026-11-04 (versionCode 43)
 
 ### Added
