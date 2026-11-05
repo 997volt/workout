@@ -40,6 +40,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -596,7 +598,10 @@ private fun SettingSwitch(
             Switch(
                 checked = checked,
                 onCheckedChange = onCheckedChange,
-                modifier = Modifier.testTag(testTag),
+                // The label is a sibling, so without this TalkBack says "On, switch" (B353).
+                modifier = Modifier
+                    .testTag(testTag)
+                    .semantics { contentDescription = label },
             )
         }
         Text(

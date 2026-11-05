@@ -1893,7 +1893,9 @@ the rule; that one argues it.
   keeps computing "today" in a zone the device no longer has.
 - **Accessibility accompanies each screen**; it is not a later phase. Name what a control
   does (`onClickLabel`), *announce* state changes rather than only drawing them, and tag
-  things so tests do not assert on English literals.
+  things so tests do not assert on English literals. **A control whose label is a sibling is unnamed** (B353):
+  a switch carries its label as a content description, and a section or screen title calls `heading()` so a
+  reader can move between groups rather than through one flat focus list.
 - **One mechanism makes room for the keyboard, and it is the app's** (B119, B122, B127).
   The activity's window is pinned to `android:windowSoftInputMode="adjustResize"` — which
   `enableEdgeToEdge()` does not set, and which the platform otherwise resolves to `adjustPan` —

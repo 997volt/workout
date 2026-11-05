@@ -17,6 +17,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **Switches and section headings are readable to a screen reader** (B353). The settings and program-editor
+  switches had their label in a sibling `Text`, so TalkBack said "On, switch"; `SectionHeader` and
+  `TopBarTitle` were plain text, so no long screen could be navigated by heading. The switches now carry their
+  label as a content description, both title components carry `heading()`, and the settings and component tests
+  pin both.
 - **A planned set's answer names the set it wrote** (B352). The template editor kept a screen-global "a write
   succeeded" flag, so a write finishing on block A could close the dialog just opened on block B. The outcome
   now carries the set id (or the new-set sentinel), the effect compares it with the open dialog, and the test

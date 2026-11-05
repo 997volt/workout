@@ -1,5 +1,6 @@
 package com.example.androidapp.ui.settings
 
+import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -78,6 +79,15 @@ class SettingsScreenTest {
         composeTestRule.onNodeWithTag(TestTags.SETTINGS_DIAGNOSTICS).performScrollTo().performClick()
 
         assertEquals(1, diagnosticsOpened)
+    }
+
+    @Test
+    fun aSettingSwitch_isAnnouncedByItsLabel() {
+        // B353: the label is a sibling Text, so the switch itself has to carry it.
+        show(SettingsUiState(restTimerEnabled = true))
+
+        composeTestRule.onNodeWithTag(TestTags.SETTINGS_REST_TIMER)
+            .assertContentDescriptionEquals("Count the rest down")
     }
 
     @Test

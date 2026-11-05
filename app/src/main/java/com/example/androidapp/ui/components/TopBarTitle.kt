@@ -6,6 +6,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import com.example.androidapp.ui.theme.ScreenTitleStyle
 
@@ -40,6 +42,8 @@ fun TopBarTitle(
         color = MaterialTheme.colorScheme.onSurface,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
-        modifier = if (testTag == null) modifier else modifier.testTag(testTag),
+        modifier = modifier
+            .semantics { heading() }
+            .then(if (testTag == null) Modifier else Modifier.testTag(testTag)),
     )
 }

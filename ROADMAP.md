@@ -28,13 +28,6 @@ existing run at **B339** and **N268**. When a row is picked up its design argume
 
 ### State and interaction
 
-- **B353 — The app's screen-reader structure must exist.** The settings and program-editor switches are a sibling `Text` plus an
-  unnamed `Switch` ([SettingsScreen.kt](app/src/main/java/com/example/androidapp/ui/settings/SettingsScreen.kt)),
-  so TalkBack says "On, switch"; `BodyweightField` already shows the `.semantics { contentDescription = label }`
-  fix. `SectionHeader` and the top-bar titles never call `heading()`, so no long screen can be navigated by
-  section. Fixed means the switch label is the switch's own semantics (or the row is `toggleable` with
-  `Role.Switch`) and `SectionHeader`/top-bar titles carry `heading()`; a Compose semantics test proves both.
-
 - **B356 — A block's Skip must ask first or be undoable.** The one-tap `home_block_skip` button writes a skip
   that advances a sequence block permanently
   ([HomeRows.kt](app/src/main/java/com/example/androidapp/ui/home/HomeRows.kt)); there is no un-skip API, while

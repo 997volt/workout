@@ -537,14 +537,18 @@ private fun ActiveSwitch(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            val activeLabel = stringResource(R.string.program_active)
             Text(
-                text = stringResource(R.string.program_active),
+                text = activeLabel,
                 style = MaterialTheme.typography.titleMedium,
             )
             Switch(
                 checked = program.isActive,
                 onCheckedChange = onSetActive,
-                modifier = Modifier.testTag(TestTags.Programs.ACTIVE),
+                // The label is a sibling, so without this TalkBack says "On, switch" (B353).
+                modifier = Modifier
+                    .testTag(TestTags.Programs.ACTIVE)
+                    .semantics { contentDescription = activeLabel },
             )
         }
         Text(
