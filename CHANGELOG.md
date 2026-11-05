@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **Export no longer holds the database transaction while reading crash logs** (B379). B346 put every export
+  read in one snapshot, but that also held the transaction open while `CrashLogStore.all()` listed and parsed
+  a file per crash. The logs are diagnostics, not training data; the database snapshot now closes before they
+  are read.
 - **The restore preview and summary agree about what becomes visible** (B348). The summary counted a
   session exercise, joint, soreness row or planned set whenever its own `deletedAt` was null, even when the
   session, exercise or template it is drawn through stayed hidden. It also let a file row this device already

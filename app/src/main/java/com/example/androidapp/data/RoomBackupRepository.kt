@@ -139,12 +139,12 @@ class RoomBackupRepository @Inject constructor(
                     // drops whatever it is not told about, and a restore that lost these would lose the answer to
                     // "what was I asking for in March".
                     goalPeriods = metricGoals.allForBackup().map { it.toDto() },
-                    // Diagnostics ride along so they are reachable on a release
-                    // build; import ignores them, deliberately.
-                    crashLogs = crashLogStore.all(),
                 )
             }
-            BackupCodec.encode(file)
+            // Diagnostics ride along so they are reachable on a release build; import ignores them,
+            // deliberately. They are read **outside** the database transaction (B379): listing and parsing a
+            // file per crash is not training data and must not hold the snapshot open.
+            BackupCodec.encode(file.copy(crashLogs = crashLogStore.all()))
         }
     }
 

@@ -25,14 +25,6 @@ verification claims.
 
 ### Backup and restore
 
-- **B379 — Export must not hold the database transaction while it reads crash logs.** B346 wrapped every table
-  read in `database.withTransaction`; `crashLogStore.all()` — file listing and reads — is inside that transaction
-  ([RoomBackupRepository.kt](app/src/main/java/com/example/androidapp/data/RoomBackupRepository.kt)). A slow or
-  large diagnostics directory holds the read transaction and delays the export's own writes. Crash logs are
-  diagnostics, not training data, so they do not need the database snapshot. **Fixed** means the database
-  snapshot is taken in the transaction and the crash-log read happens outside it. **Test:** an export with a
-  slow or failing crash-log store still completes the database snapshot and does not hold the transaction open.
-
 - **B378 — A failed clear must not leave automatic backup off.** B343 disables the schedule before clearing
   ([RoomBackupRepository.kt](app/src/main/java/com/example/androidapp/data/RoomBackupRepository.kt)); if
   `clearAllTables` then fails, the data is still present and the scheduled backup is silently off. **Fixed**

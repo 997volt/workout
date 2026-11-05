@@ -458,8 +458,9 @@ the rule; that one argues it.
   read transaction, because independent reads could copy a set without the session exercise it hangs off: the
   file looked complete and the import then failed the foreign key and rolled the whole restore back. Import
   decodes, shapes and validates on IO, and reads `visibleSetIds` inside the write transaction, so the inventory
-  and the write see the same store. The export file is the only escape hatch; an almost-consistent one is worse
-  than a slow one.
+  and the write see the same store. **Crash logs are read after the snapshot** (B379): they are diagnostics, not
+  training data, and their file I/O must not hold the database transaction open. The export file is the only
+  escape hatch; an almost-consistent one is worse than a slow one.
 - **A backup's values are validated before any of it is merged** (B342). The import bypasses the write
   boundaries by design — it restores rows, it does not re-perform them — so the checks those boundaries hold
   run once over the decoded file instead: a counted set needs a positive rep count, a hold states seconds and
