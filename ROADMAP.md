@@ -26,17 +26,6 @@ existing run at **B339** and **N268**. When a row is picked up its design argume
 
 ### Data correctness and recovery
 
-- **B340 — A second successful edit of the same set must close the editor.** The workout ViewModel keeps
-  `setWrite` as a `MutableStateFlow` and never clears it
-  ([ActiveWorkoutViewModel.kt](app/src/main/java/com/example/androidapp/ui/workout/ActiveWorkoutViewModel.kt)).
-  After the first success it holds `Written("s1")`; reopening that set and saving again writes an equal value,
-  the `StateFlow` conflates it, and the effect keyed on the outcome
-  ([ActiveWorkoutScreen.kt](app/src/main/java/com/example/androidapp/ui/workout/ActiveWorkoutScreen.kt)) never
-  restarts — the dialog stays open and says nothing. The template editor already consumes its outcome
-  (`onDismissSetSave`); the workout path needs the same. Fixed means the outcome is cleared when read, or is
-  an event/nonce, and a test edits one set successfully twice. `saving` must also survive a rotation, or a
-  write that lands across one cannot close the dialog.
-
 - **B341 — A stored zone offset outside ±18 h must never throw inside a program flow.** The three
   `FinishedSessionRow`/`ProgramSessionRow` mappers in
   [ProgramMappers.kt](app/src/main/java/com/example/androidapp/data/local/ProgramMappers.kt) call

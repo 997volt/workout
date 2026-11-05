@@ -728,6 +728,15 @@ the rule; that one argues it.
 
 ## The workout screen
 
+- **An edit's answer is consumed by its editor, and one answer is one opening** (B284, B340). A dialog closes
+  on the write's answer, so a refusal keeps the values the lifter typed; the answer therefore has to be
+  state the screen can observe across a recomposition. It is **not** left on the ViewModel once read: equal
+  values conflate in a `StateFlow`, and a second successful edit of the same set produced no new emission,
+  leaving the dialog open and silent. The editor takes the answer when it closes, and its `saving` flag is
+  saveable so a write that lands across a rotation still closes the editor it belongs to. Rejected: a
+  one-shot channel, because the answer also has to survive the recomposition that draws the dialog, and the
+  editor is the only reader that can decide when it has been taken.
+
 - **A workout with something in it is discarded behind a prompt, and the prompt says what it costs**
   (N41). **The empty workout keeps its prompt-free discard** because there is nothing to lose, and it lives
   in the same overflow as every other session's: the way out is in one place whatever the workout holds (see

@@ -1630,6 +1630,36 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
+    fun aSecondEditOfTheSameSet_answersAgain_onceTheFirstIsTaken() = runTest(dispatcher) {
+        // B340: the answer is sticky state, not an event. Equal Written(setId) values would conflate, so
+        // the editor takes the first one when it closes and a repeat edit can emit from null again.
+        val repository = FakeWorkoutRepository()
+        val viewModel = viewModelFor(repository)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, offeredSet(viewModel))
+        settle()
+        val logged = repository.sets.value.single()
+
+        viewModel.onUpdateSet(logged.id, reps = 3, weightGrams = 90_000)
+        settle()
+        assertEquals(SetWrite.Written(logged.id), viewModel.setWriteOutcome.value)
+
+        viewModel.onSetWriteShown()
+        assertNull("the answer is consumed, not left sticky", viewModel.setWriteOutcome.value)
+
+        viewModel.onUpdateSet(logged.id, reps = 4, weightGrams = 95_000)
+        settle()
+        assertEquals(
+            "the same set edited twice answers twice",
+            SetWrite.Written(logged.id),
+            viewModel.setWriteOutcome.value,
+        )
+    }
+
+    @Test
     fun aRefusedSetEdit_answersRefused_andKeepsTheEditor() = runTest(dispatcher) {
         // The counterpart: a write that fails must not answer success, or the dialog would close and lose
         // what the lifter typed (B284).

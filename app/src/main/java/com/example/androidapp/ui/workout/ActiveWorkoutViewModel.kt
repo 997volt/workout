@@ -1150,6 +1150,18 @@ class ActiveWorkoutViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Takes the set edit's answer once the editor that read it has closed (B340).
+     *
+     * The answer is a `StateFlow` because the editor observes it across a recomposition, but a sticky
+     * value is not an event: a second successful edit produces an equal `Written(setId)`, the flow
+     * conflates it, and the effect keyed on the value never runs again. Clearing it here makes the
+     * second edit emit from null like the first.
+     */
+    fun onSetWriteShown() {
+        setWrite.value = null
+    }
+
     fun onDeleteSet(setId: String) {
         val set = setsState.value.firstOrNull { it.id == setId } ?: return
         viewModelScope.launch {

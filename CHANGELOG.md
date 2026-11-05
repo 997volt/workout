@@ -17,6 +17,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A second successful edit of the same set closes its editor** (B340). The answer was a sticky
+  `StateFlow`; after one success it held `Written(setId)` forever, so a repeat edit wrote the same value,
+  the flow conflated it, and the editor stayed open with no feedback. The screen now consumes the answer
+  when it closes the dialog, and its own `saving` flag survives a rotation, so a write that lands across
+  one can still close the right editor.
 - **A drop-set opener takes only its own run** (B339). Removing the first rung of a drop or cluster run
   soft-deleted every later set with the same role, so a plan holding two ladders separated by a normal set
   lost both when the first was removed; the undo restored them only until the snackbar went. The removal now
