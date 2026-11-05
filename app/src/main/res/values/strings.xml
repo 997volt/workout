@@ -190,7 +190,10 @@
         <item quantity="other">This file has %1$d values the app cannot store, so it cannot be merged.</item>
     </plurals>
     <string name="import_preview_problem_line">%1$s — %2$s</string>
-    <string name="import_preview_problem_more">…and %1$d more.</string>
+    <plurals name="import_preview_problem_more">
+        <item quantity="one">…and %1$d more.</item>
+        <item quantity="other">…and %1$d more.</item>
+    </plurals>
     <string name="import_preview_confirm">Merge</string>
     <string name="import_preview_cancel">Cancel</string>
 

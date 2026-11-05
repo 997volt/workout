@@ -8,6 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.net.toUri
 import com.example.androidapp.domain.model.BackupFolder
 
 /**
@@ -37,7 +38,7 @@ fun rememberBackupFolderPicker(
         // writable by the app. A release that fails is ignored — the grant is held by the system, and the
         // write path already reports a folder it cannot use.
         currentFolder?.uri?.takeIf { it != uri.toString() }?.let { old ->
-            runCatching { context.contentResolver.releasePersistableUriPermission(Uri.parse(old), flags) }
+            runCatching { context.contentResolver.releasePersistableUriPermission(old.toUri(), flags) }
         }
         onChoose(BackupFolder(uri = uri.toString(), label = folderLabel(uri)))
     }

@@ -93,7 +93,10 @@ private fun PreviewProblems(problems: List<BackupProblem>) {
         }
         if (problems.size > PROBLEMS_SHOWN) {
             Text(
-                text = stringResource(R.string.import_preview_problem_more, problems.size - PROBLEMS_SHOWN),
+                text = pluralStringResource(
+                    R.plurals.import_preview_problem_more,
+                    problems.size - PROBLEMS_SHOWN,
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.error,
             )
