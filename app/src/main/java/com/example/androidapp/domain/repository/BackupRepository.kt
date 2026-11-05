@@ -112,6 +112,15 @@ data class PreviewCounts(
 )
 
 /**
+ * One value in a backup the app cannot store (B342).
+ *
+ * [where] names the row in the lifter's terms — "Set 4", "Measurement 2" — and [message] says what is
+ * wrong with it in a sentence. The import refuses the file while any of these exists, so the preview
+ * can show what to correct instead of failing later with "does not look like a backup".
+ */
+data class BackupProblem(val where: String, val message: String)
+
+/**
  * What a backup file would do to this device, for the question asked before it is merged (ROADMAP N246, N248).
  *
  * Read-only: the counts come from decoding the file and listing what is here, never from a dry-run write. The
@@ -123,4 +132,6 @@ data class BackupPreview(
     val sets: PreviewCounts,
     val measurements: PreviewCounts,
     val exercises: PreviewCounts,
+    /** Values the app cannot store; non-empty means the file cannot be merged (B342). */
+    val problems: List<BackupProblem> = emptyList(),
 )

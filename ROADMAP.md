@@ -26,18 +26,6 @@ existing run at **B339** and **N268**. When a row is picked up its design argume
 
 ### Data correctness and recovery
 
-- **B342 — A backup must be validated before any of it is merged.** Import checks the schema version and the
-  library shape, then copies DTO values straight into entities
-  ([BackupMappers.kt](app/src/main/java/com/example/androidapp/data/transfer/BackupMappers.kt),
-  [RoomBackupRepository.kt](app/src/main/java/com/example/androidapp/data/RoomBackupRepository.kt)). A file can
-  therefore store negative reps, weights or assistance, RPE 99, a row with both reps and a duration, a 5000%
-  body fat, a 9999 cm thigh, or a `weekStart` that throws in `LocalDate.ofEpochDay` — values no write boundary
-  in the app accepts. The program-document path already validates before writing and reports per-row problems;
-  the backup needs the same shape: one decode-time pass covering non-negative grams, RPE range, reps/hold
-  exclusivity, percentage and tape ranges, and epoch-day bounds, with the problems shown in the import preview
-  and the file refused before the transaction. Fixed means a crafted backup cannot write a shape the app would
-  refuse, and the preview names what is wrong instead of the import failing with "does not look like a backup".
-
 - **B343 — "Delete everything" must not let the backup folder outlive the promise it makes.** The clear writes
   ([RoomBackupRepository.kt](app/src/main/java/com/example/androidapp/data/RoomBackupRepository.kt)) empty the
   database, crash logs and the 1.x file, but leave the automatic-backup setting and folder untouched. The

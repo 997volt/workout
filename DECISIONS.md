@@ -438,6 +438,13 @@ the rule; that one argues it.
   of the file at all (N109).
   ([evidence](DECISIONS-EVIDENCE.md#n24-codec))
 
+- **A backup's values are validated before any of it is merged** (B342). The import bypasses the write
+  boundaries by design — it restores rows, it does not re-perform them — so the checks those boundaries hold
+  run once over the decoded file instead: a counted set needs a positive rep count, a hold states seconds and
+  no reps, loads and RPE are in range, body percentages stop at 100%, tape lengths have a ceiling, and a zone
+  offset or epoch day must be representable. The file is refused before the transaction and the preview names
+  the first rows, so a hand-edited or foreign file is corrected rather than half-imported. Rejected: clamping
+  a bad value silently, which would store a number the lifter never wrote.
 - **A transfer file's version is read before its body is decoded** (B62). Both codecs used to decode the
   document and only then compare its version, so a file from a newer build failed *inside* the decoder —
   on an enum name this build has no constant for, which is exactly the data a version gate exists for —
@@ -736,12 +743,13 @@ the rule; that one argues it.
 
 - **An edit's answer is consumed by its editor, and one answer is one opening** (B284, B340). A dialog closes
   on the write's answer, so a refusal keeps the values the lifter typed; the answer therefore has to be
-  state the screen can observe across a recomposition. It is **not** left on the ViewModel once read: equal
-  values conflate in a `StateFlow`, and a second successful edit of the same set produced no new emission,
-  leaving the dialog open and silent. The editor takes the answer when it closes, and its `saving` flag is
-  saveable so a write that lands across a rotation still closes the editor it belongs to. Rejected: a
-  one-shot channel, because the answer also has to survive the recomposition that draws the dialog, and the
-  editor is the only reader that can decide when it has been taken.
+  state the screen can observe across a recomposition. It is **not** left sticky: equal values conflate in a
+  `StateFlow`, and a second successful edit of the same set produced no new emission, leaving the dialog open
+  and silent. The next edit clears the previous answer before it writes, so the flow goes Written → null →
+  Written and the second success is an event the editor can see; its `saving` flag is saveable so a write
+  that lands across a rotation still closes the editor it belongs to. Rejected: a one-shot channel, because
+  the answer also has to survive the recomposition that draws the dialog, and a callback that consumes it
+  added a parameter to an already parameter-heavy screen (N285).
 
 - **A workout with something in it is discarded behind a prompt, and the prompt says what it costs**
   (N41). **The empty workout keeps its prompt-free discard** because there is nothing to lose, and it lives

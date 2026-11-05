@@ -659,6 +659,7 @@ object TestTags {
     const val IMPORT_PREVIEW_DIALOG = "import_preview_dialog"
     const val IMPORT_PREVIEW_CONFIRM = "import_preview_confirm"
     const val IMPORT_PREVIEW_CANCEL = "import_preview_cancel"
+    const val IMPORT_PREVIEW_PROBLEMS = "import_preview_problems"
 
     /** Merging one movement into another (ROADMAP N245): the detail's action and the picker. */
     const val EXERCISE_MORE = "exercise_more"

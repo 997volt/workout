@@ -10,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -17,6 +18,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
 import com.example.androidapp.domain.repository.BackupPreview
+import com.example.androidapp.domain.repository.BackupProblem
 import com.example.androidapp.domain.repository.PreviewCounts
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.TestTags
@@ -47,11 +49,13 @@ internal fun ImportPreviewDialog(
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 PreviewTable(preview = preview)
+                if (preview.problems.isNotEmpty()) PreviewProblems(preview.problems)
             }
         },
         confirmButton = {
             AppTextButton(
                 onClick = onConfirm,
+                enabled = preview.problems.isEmpty(),
                 modifier = Modifier.testTag(TestTags.IMPORT_PREVIEW_CONFIRM),
             ) {
                 Text(stringResource(R.string.import_preview_confirm))
@@ -66,6 +70,35 @@ internal fun ImportPreviewDialog(
             }
         },
     )
+}
+
+/** The values the app cannot store, with the first few named and the rest counted (B342). */
+@Composable
+private fun PreviewProblems(problems: List<BackupProblem>) {
+    Column(
+        modifier = Modifier.testTag(TestTags.IMPORT_PREVIEW_PROBLEMS),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        Text(
+            text = pluralStringResource(R.plurals.import_preview_problems, problems.size, problems.size),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.error,
+        )
+        problems.take(PROBLEMS_SHOWN).forEach { problem ->
+            Text(
+                text = stringResource(R.string.import_preview_problem_line, problem.where, problem.message),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
+        if (problems.size > PROBLEMS_SHOWN) {
+            Text(
+                text = stringResource(R.string.import_preview_problem_more, problems.size - PROBLEMS_SHOWN),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
+    }
 }
 
 /** Four kinds against four numbers: the file's row, and the merge's three outcomes (N248). */
@@ -155,3 +188,4 @@ private fun NumberCell(value: Int, modifier: Modifier = Modifier) {
 
 private const val LABEL_WEIGHT = 1.5f
 private const val NUMBER_WEIGHT = 0.45f
+private const val PROBLEMS_SHOWN = 3

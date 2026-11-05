@@ -74,6 +74,9 @@ fun loadGrams(weightGrams: Long, bodyweightGrams: Long?, assistanceGrams: Long):
         (bodyweightGrams + weightGrams - assistanceGrams).coerceAtLeast(0L)
     }
 
+/** The largest rep count a set or a plan may state. */
+const val MAX_REPS = 10_000
+
 /**
  * What kind of set this was: a set of its own, or a *rung* of the group above it (ROADMAP N79).
  *

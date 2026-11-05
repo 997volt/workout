@@ -10,6 +10,7 @@ import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.data.local.seedMissingExercises
 import com.example.androidapp.data.transfer.BackupCodec
 import com.example.androidapp.data.transfer.BackupFile
+import com.example.androidapp.data.transfer.BackupValidator
 import com.example.androidapp.data.transfer.MeasurementDto
 import com.example.androidapp.data.transfer.MeasurementSoreMuscleDto
 import com.example.androidapp.data.transfer.SessionExerciseJointDto
@@ -18,6 +19,7 @@ import com.example.androidapp.data.transfer.toDto
 import com.example.androidapp.data.transfer.toEntity
 import com.example.androidapp.data.transfer.withValidLibraryShape
 import com.example.androidapp.domain.DataResult
+import com.example.androidapp.domain.InvalidInputException
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.dataResultOf
 import com.example.androidapp.domain.model.localDayBounds
@@ -178,6 +180,7 @@ class RoomBackupRepository @Inject constructor(
             // A set is drawn only inside its exercise inside its session (N261): one whose parents stay hidden
             // is a live row the merge writes and the history shows nowhere, so it is not one of the counts.
             val drawnSets = visibleSetIds(file)
+            val problems = BackupValidator.problems(file)
             BackupPreview(
                 sessions = previewCounts(
                     file.sessions.map { FileRow(it.id, it.deletedAt) },
@@ -192,6 +195,7 @@ class RoomBackupRepository @Inject constructor(
                     file.exercises.map { FileRow(it.id, it.deletedAt) },
                     dao.allExercises().associate { it.id to it.deletedAt },
                 ),
+                problems = problems,
             )
         }
     }
@@ -335,6 +339,15 @@ class RoomBackupRepository @Inject constructor(
         // category** rather than cleared, so the family survives the trip. A legal library is unchanged.
         val file = BackupCodec.decode(text).let { decoded ->
             decoded.copy(exercises = decoded.exercises.withValidLibraryShape())
+        }
+        // The values first (B342): a file that states a negative load or a hold for no time is refused
+        // before anything is written, with the first row named. The preview shows the whole list.
+        val problems = BackupValidator.problems(file)
+        if (problems.isNotEmpty()) {
+            val first = problems.first()
+            throw InvalidInputException(
+                "That backup cannot be merged: ${first.where.lowercase()} — ${first.message}",
+            )
         }
         // The sets both sides will count (N261): the question and the summary have to agree about a set the
         // merge writes but the history will not draw.

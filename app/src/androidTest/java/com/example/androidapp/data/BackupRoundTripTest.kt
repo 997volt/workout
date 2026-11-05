@@ -151,6 +151,24 @@ class BackupRoundTripTest {
     }
 
     @Test
+    fun aValueTheAppCannotStore_isRejectedBeforeAnyWrite() = runTest {
+        // B342: import bypasses the repositories, so a negative load (which no write boundary accepts)
+        // must be caught by the file's own validation, not written and then discovered by a reader.
+        seedAWorkout()
+        val valid = BackupCodec.decode(exportedJson())
+        val corrupted = valid.copy(sets = valid.sets.map { it.copy(weightGrams = -1) })
+        database.clearAllTables()
+
+        val result = repository.import(BackupCodec.encode(corrupted))
+
+        assertTrue(
+            "a bad value is Invalid, not a storage failure",
+            (result as DataResult.Failure).error is DataError.Invalid,
+        )
+        assertEquals("a refused import writes nothing", 0, counts().total)
+    }
+
+    @Test
     fun softDeletedRowsAreCarried_notDropped() = runTest {
         // Dropping them would restore into a database that differs from the original.
         database.exerciseDao().insertAll(listOf(seedExercise()))

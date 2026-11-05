@@ -184,6 +184,13 @@
          pairs rather than "509 in the file": a number followed by a word reads as a quantity that needs a
          plural, and the row's label already names the rows being counted. -->
     <string name="import_preview_row_spoken">%1$s — in the file: %2$d, already here: %3$d, would come back: %4$d, new: %5$d</string>
+    <!-- B342: a file with values the app cannot store is shown, not merged. The confirm is disabled. -->
+    <plurals name="import_preview_problems">
+        <item quantity="one">This file has %1$d value the app cannot store, so it cannot be merged.</item>
+        <item quantity="other">This file has %1$d values the app cannot store, so it cannot be merged.</item>
+    </plurals>
+    <string name="import_preview_problem_line">%1$s — %2$s</string>
+    <string name="import_preview_problem_more">…and %1$d more.</string>
     <string name="import_preview_confirm">Merge</string>
     <string name="import_preview_cancel">Cancel</string>
 

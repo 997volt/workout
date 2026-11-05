@@ -31,6 +31,9 @@ object RestTimer {
      */
     const val MIN_PRESCRIBED_SECONDS = 0
 
+    /** The longest rest a prescription may name: an hour. */
+    const val MAX_PRESCRIBED_SECONDS = 3_600
+
     /**
      * The one sentence a negative rest is refused with (ROADMAP N45, B58).
      *

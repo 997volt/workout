@@ -147,6 +147,12 @@ fun BodyMeasurement.isDailyOn(day: LocalDate, zone: ZoneId): Boolean =
  */
 fun statedBodyWeightGrams(weightGrams: Long?): Long? = weightGrams?.takeIf { it > 0 }
 
+/** 100% in tenths: the largest body-fat or muscle percentage a body can state (B359). */
+const val MAX_BODY_PERCENT_TENTHS = 1_000
+
+/** 500 cm in millimetres: the ceiling a tape site may state, so a typed 9999 cannot become one (B359). */
+const val MAX_TAPE_MILLIMETRES = 5_000L
+
 /** The weight this entry states, or null for a row that states none (B336). */
 val BodyMeasurement.statedWeightGrams: Long? get() = statedBodyWeightGrams(weightGrams)
 

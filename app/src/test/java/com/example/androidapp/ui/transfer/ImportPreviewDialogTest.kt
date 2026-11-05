@@ -1,5 +1,6 @@
 package com.example.androidapp.ui.transfer
 
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -7,6 +8,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.repository.BackupPreview
+import com.example.androidapp.domain.repository.BackupProblem
 import com.example.androidapp.domain.repository.PreviewCounts
 import com.example.androidapp.ui.components.TestTags
 import org.junit.Assert.assertEquals
@@ -37,6 +39,33 @@ class ImportPreviewDialogTest {
                 onDismiss = { dismissed++ },
             )
         }
+    }
+
+    @Test
+    fun aFileWithAProblem_cannotBeMerged_andNamesTheFirstRow() {
+        // B342: the import writes decoded rows straight to entities, so a value no write boundary accepts
+        // is refused before the transaction and the preview says what to correct.
+        show(
+            BackupPreview(
+                sessions = PreviewCounts(0, 0, 0, 0),
+                sets = PreviewCounts(1, 0, 0, 1),
+                measurements = PreviewCounts(0, 0, 0, 0),
+                exercises = PreviewCounts(0, 0, 0, 0),
+                problems = listOf(
+                    BackupProblem("Set 1", "A counted set needs between 1 and 10000 reps."),
+                    BackupProblem("Measurement 2", "Body fat must be between 0% and 100%."),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.IMPORT_PREVIEW_PROBLEMS).assertExists()
+        composeTestRule.onNodeWithText(
+            "This file has 2 values the app cannot store, so it cannot be merged.",
+        ).assertExists()
+        composeTestRule.onNodeWithText(
+            "Set 1 — A counted set needs between 1 and 10000 reps.",
+        ).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.IMPORT_PREVIEW_CONFIRM).assertIsNotEnabled()
     }
 
     @Test

@@ -102,6 +102,13 @@ class DataTransferViewModel @Inject constructor(
     fun confirmImport() {
         val pending = _pendingImport.value ?: return
         _pendingImport.value = null
+        if (pending.preview.problems.isNotEmpty()) {
+            // The dialog disables this action, but a direct caller must not bypass the same refusal (B342).
+            _outcome.value = TransferOutcome.Refused(
+                DataError.Invalid("That backup has values the app cannot store."),
+            )
+            return
+        }
         viewModelScope.launch {
             _outcome.value = when (val merged = import(pending.text)) {
                 is ImportOutcome.Imported -> TransferOutcome.Merged(merged.summary)

@@ -17,6 +17,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A backup's values are checked before any of it is merged** (B342). The import writes decoded rows straight
+  to entities, so a hand-edited or foreign file could carry a negative load, a held set with reps, RPE 99, a
+  5000% body fat, a 9999 cm tape reading, an out-of-range zone offset or a week outside the calendar — values no
+  write boundary accepts. A decode-time validation pass now names the first bad row, refuses the file before
+  the transaction, and the import preview lists the problems with Merge disabled.
 - **A stored zone offset outside ±18 h cannot take a program screen down** (B341). The total conversion
   B282 added for history was not used by the three program/adherence mappers, which still called
   `ZoneOffset.ofTotalSeconds` directly. One imported row with an out-of-range `zoneOffsetMinutes` could
@@ -25,9 +30,9 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   which range-checks in a `Long` before converting.
 - **A second successful edit of the same set closes its editor** (B340). The answer was a sticky
   `StateFlow`; after one success it held `Written(setId)` forever, so a repeat edit wrote the same value,
-  the flow conflated it, and the editor stayed open with no feedback. The screen now consumes the answer
-  when it closes the dialog, and its own `saving` flag survives a rotation, so a write that lands across
-  one can still close the right editor.
+  the flow conflated it, and the editor stayed open with no feedback. A new edit now clears the previous
+  answer before it writes, so the flow goes Written → null → Written and the second success emits; the
+  editor's own `saving` flag survives a rotation, so a write that lands across one still closes it.
 - **A drop-set opener takes only its own run** (B339). Removing the first rung of a drop or cluster run
   soft-deleted every later set with the same role, so a plan holding two ladders separated by a normal set
   lost both when the first was removed; the undo restored them only until the snackbar went. The removal now
