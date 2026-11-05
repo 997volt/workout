@@ -1,12 +1,14 @@
 name: Android CI
 
-# Roadmap F10. Two jobs:
-#   build       - unit tests, lint, debug + release (R8) assembly. Fast, always run.
+# Roadmap F10. Three jobs:
+#   build        - unit tests, lint, debug + release (R8) assembly. No device.
+#   docs         - the helper's node tests, fixtures and single-file build. No JDK.
 #   instrumented - the Compose UI tests, which need a booted emulator. Slower.
 #
 # This workflow deliberately does NOT use the repo's .toolchain/ directory: that
-# is a per-machine, gitignored install, and tools/android-env.sh is a no-op
-# without it (see README), so the runner's own JDK and Android SDK are used.
+# is a per-machine, gitignored install, and without it tools/android-env.sh leaves the
+# JDK, SDK and Gradle cache alone (it still adds tools/bin to PATH), so the runner's own
+# JDK and Android SDK are used.
 
 # Nightly, and on demand before a release (RELEASING.md step 1). Deliberately **not** on every push:
 # the instrumented job's emulator is the one piece of infrastructure here that has failed without a test
@@ -56,10 +58,9 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      # compileSdk and the build-tools version are pinned in app/build.gradle.kts,
-      # so they are requested explicitly rather than left to AGP's auto-download —
-      # a missing platform then fails with "package not found" instead of a
-      # confusing resource-linking error.
+      # compileSdk and buildToolsVersion are pinned in app/build.gradle.kts, so they are
+      # requested explicitly rather than left to AGP's auto-download — a missing platform
+      # then fails with "package not found" instead of a confusing resource-linking error.
       - name: Set up Android SDK
         uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
         with:

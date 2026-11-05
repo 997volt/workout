@@ -168,11 +168,12 @@ the only way data goes *out*, which is why the helper never sees your database.
 ## Continuous integration
 
 [`.github/workflows/android.yml`](.github/workflows/android.yml) has three jobs — `build`
-(`testDebugUnitTest`, `:shared:jvmTest`, `:shared:jsNodeTest`, `lint`, `detekt`, `assembleDebug`,
-`assembleRelease`), `docs` (the helper's node tests, the generated fixtures and the single-file build),
+(`testDebugUnitTest`, `:shared:jvmTest`, `:shared:jsNodeTest`, `lint`, `detekt`, `:shared:detekt`,
+`assembleDebug`, `assembleRelease`), `docs` (the helper's node tests, the generated fixtures and the single-file build),
 and `instrumented` (`connectedDebugAndroidTest` on a KVM-accelerated runner emulator). It deliberately does **not**
-use `.toolchain/`: that is a per-machine, gitignored install, and `tools/android-env.sh` is a no-op
-without it, so CI uses the runner's own JDK and Android SDK.
+use `.toolchain/`: that is a per-machine, gitignored install, and without it `tools/android-env.sh`
+leaves the JDK, SDK and Gradle cache alone (it still puts `tools/bin` on PATH), so CI uses the runner's
+own JDK and Android SDK.
 
 ### Known flakiness: intermittent task failures under memory pressure
 
@@ -207,9 +208,9 @@ This checkout carries a self-contained, **gitignored** toolchain in `.toolchain/
 
 Nothing needs to be exported by hand: [`gradlew`](gradlew) sources
 [`tools/android-env.sh`](tools/android-env.sh), which puts the local JDK and SDK on `PATH` and
-redirects the Gradle and Android CLI caches into `.toolchain/`. If `.toolchain/` is absent, both
-scripts are no-ops and the build falls back to whatever `java` and Android SDK your machine
-provides. To use the toolchain from your own shell (for `adb`, `sdkmanager`, …):
+redirects the Gradle and Android CLI caches into `.toolchain/`. If `.toolchain/` is absent, it leaves
+those caches alone (it still adds `tools/bin` to `PATH`) and the build falls back to whatever `java`
+and Android SDK your machine provides. To use the toolchain from your own shell (for `adb`, `sdkmanager`, …):
 
 ```bash
 . ./tools/android-env.sh
@@ -268,15 +269,16 @@ a library the host already has.
 
 ## Data and backup policy
 
-Workout history, body measurements, and progress photos are health data, so the app opts out of the
-platform's backup and transfer mechanisms entirely: `android:allowBackup="false"`, plus explicit
+Workout history and body measurements are health data, so the app opts out of the platform's backup and
+transfer mechanisms entirely: `android:allowBackup="false"`, plus explicit
 excludes in [`data_extraction_rules.xml`](app/src/main/res/xml/data_extraction_rules.xml) (cloud
 backup, device-to-device transfer, and iOS cross-platform transfer) and
 [`backup_rules.xml`](app/src/main/res/xml/backup_rules.xml) for API ≤ 30. `allowBackup="false"`
 alone is **not** sufficient — it disables cloud backup but leaves device-to-device transfer enabled
 when the rules file has no `<device-transfer>` section (see
-[Back up user data with Auto Backup](https://developer.android.com/identity/data/autobackup)). The
-export file is the only path off the device.
+[Back up user data with Auto Backup](https://developer.android.com/identity/data/autobackup)). The export
+file, or the folder chosen for automatic backup, is the only path off the device — both are user-chosen and
+local.
 
 ## License
 

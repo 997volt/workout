@@ -44,7 +44,8 @@ files is the hand-maintained fact [ROADMAP.md](ROADMAP.md) refuses.
 ## Environment facts that bite
 
 `$HOME` is not writable, so anything falling back to `~/.gradle` or `~/.android` fails
-with `EACCES`. Source the workspace toolchain first (a no-op without `.toolchain/`):
+with `EACCES`. Source the workspace toolchain first; without `.toolchain/` it leaves the JDK, SDK and
+Gradle cache alone but still puts `tools/bin` on PATH:
 
 ```sh
 . ./tools/android-env.sh
@@ -123,11 +124,11 @@ tests had never run at all.
 
 ## Hard constraints — do not break these
 
-- **Local only.** No `INTERNET`, accounts, analytics or server; the export file is the
-  only path off the device.
+- **Local only.** No `INTERNET`, accounts, analytics or server; the export file and the
+  optional automatic-backup folder are the only paths off the device.
 - **No Google Play services at runtime** — a degoogled device must run the app.
 - **User data is health data.** It stays in app-private storage and leaves only in an
-  export the user chose to make.
+  export or automatic-backup folder the user chose.
 
 ## Finishing a change
 

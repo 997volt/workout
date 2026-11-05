@@ -57,6 +57,8 @@ ksp {
 android {
     namespace = "com.example.androidapp"
     compileSdk = 37
+    // Pinned so the SDK package the workflow installs and the one AGP uses are the same (N280).
+    buildToolsVersion = "36.0.0"
 
     defaultConfig {
         // The permanent install identity (ROADMAP F14).

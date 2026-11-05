@@ -11,7 +11,8 @@ indent_style = space
 indent_size = 4
 
 [*.{kt,kts}]
-max_line_length = 120   # matches detekt, which is what enforces it
+# Matches detekt, which is what enforces it.
+max_line_length = 120
 
 [*.{yml,yaml,json,toml,properties}]
 indent_size = 2

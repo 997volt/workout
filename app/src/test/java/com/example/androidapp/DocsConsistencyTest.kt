@@ -10,7 +10,7 @@ import org.junit.Test
  * Nothing else checks prose, and three claims in it have already gone stale: the task set
  * AGENTS.md tells an agent to run, the paths the docs link, and an evidence anchor pointing
  * at a heading that did not exist. A green build says nothing about any of them, so they are
- * asserted rather than trusted — the same reasoning as `tools/ci-check-instrumented.py`,
+ * asserted rather than trusted — the same reasoning as `tools/ci-check-tests.py`,
  * which exists because a report with no failures looks exactly like a complete one.
  *
  * [DOCS] reaches past the repo-root docs into the on-demand skill, because a gate that only
@@ -49,6 +49,22 @@ class DocsConsistencyTest {
 
         assertThat(scriptTasks).isNotEmpty()
         assertThat(scriptTasks).containsExactlyElementsIn(gradleTasks(ciBuildJob))
+    }
+
+    @Test
+    fun the_prose_describes_the_pipeline_it_actually_has() {
+        // N280: the header said "Two jobs" and "always run" after a third job was added and pushes stopped
+        // being a trigger; the README's CI task list omitted `:shared:detekt`. These are cheap guards on the
+        // sentences that already drifted once.
+        val workflow = read(".github/workflows/android.yml")
+        val readme = read("README.md")
+        val releasing = read("RELEASING.md")
+
+        assertThat(workflow).contains("Three jobs:")
+        assertThat(workflow).doesNotContain("Two jobs")
+        assertThat(workflow).doesNotContain("always run")
+        assertThat(readme).contains(":shared:detekt")
+        assertThat(releasing).contains("all three jobs")
     }
 
     @Test

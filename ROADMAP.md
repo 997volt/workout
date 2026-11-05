@@ -29,15 +29,6 @@ truthfulness.
 
 ### Release and documentation
 
-- **N280 — Reconcile the prose with the code.** README's CI task list omits `:shared:detekt`; the workflow
-  header says "Two jobs" while the file has three and says "always run" while nothing runs on push;
-  `RELEASING.md` says "both jobs"; `.editorconfig` uses an inline comment EditorConfig does not parse;
-  build-tools are not actually pinned in the build file; the privacy prose still says the export is the only
-  path off the device (automatic backup writes a folder) and mentions progress photos the app does not hold;
-  one XML comment still asks to revisit the platform-backup rules "when export/import lands", which it did.
-  The docs test also still credits a removed `ci-check-instrumented.py`. Fixed means one docs pass, with
-  `DocsConsistencyTest` extended to the README/RELEASING claims that drifted.
-
 - **B381 — Correct the batch's KDoc, decisions and diff hygiene.** B338's weight KDoc now sits above
   `requirePlausibleValues`, leaving `requireStatedWeight` undocumented, and the new sentence says a tape typo
   would make a derived fat mass exceed the body — tape does not feed fat mass

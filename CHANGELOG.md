@@ -17,6 +17,12 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The CI, toolchain and privacy prose matches the code** (N280). The workflow header said two jobs and
+  "always run" after the docs job existed and pushes stopped being a trigger; the README's CI task list omitted
+  `:shared:detekt`; `.editorconfig` carried an inline comment the format does not parse; build tools were
+  requested by CI but not pinned in the build; the privacy text still mentioned progress photos and called the
+  export the only path off the device; and the docs test credited a removed script. All are corrected, and
+  `DocsConsistencyTest` now guards the job count, the README task list and the release wording.
 - **The release instructions say which Android API each run covers** (N271). `RELEASING.md` called the
   dispatch run "the shipping API"; it runs 36, one below the target 37, because no `default`/`aosp_atd` 37 image
   exists. The nightly is 34 and Robolectric is 35; minimum API 26 has no CI runtime, so the release now records

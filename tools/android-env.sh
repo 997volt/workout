@@ -5,7 +5,8 @@
 #
 # The toolchain lives in .toolchain/ (gitignored). Sourcing this script is only
 # needed on a machine where Java and the Android SDK are not already installed
-# system-wide; when .toolchain/ is absent the script changes nothing.
+# system-wide; when .toolchain/ is absent it leaves the JDK, SDK and Gradle cache
+# alone and only adds tools/bin to PATH.
 #
 # Callers may pre-set ANDROID_ENV_ROOT to the project root. `gradlew` does this.
 
@@ -42,7 +43,7 @@ fi
 
 # A CI runner restores its own Gradle cache and exports GRADLE_USER_HOME; overriding it here
 # would throw that cache away and make every CI build cold. The workspace home is only for a
-# machine that has the local toolchain (and therefore is the no-op claim's exception).
+# machine that has the local toolchain.
 if [ -z "${GRADLE_USER_HOME:-}" ] && [ -d "$ANDROID_ENV_ROOT/.toolchain" ]; then
     GRADLE_USER_HOME="$ANDROID_ENV_ROOT/.toolchain/gradle-home"
     export GRADLE_USER_HOME
