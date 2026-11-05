@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **Automatic backup verifies off the main thread** (B375). The read-back introduced by B362 decoded a full
+  database in the caller's context; the due run starts from `MainActivity`'s `lifecycleScope` and "Back up now"
+  from `viewModelScope`, so a large history could jank or ANR startup. The read, decode and validation now run
+  on IO.
 - **A backup made before the value limits can still be restored** (B374). B342's validator assumed every
   writer enforced its ceilings, but the exercise and template rest writers, and the planned rep/hold writers,
   did not — and a pre-B359 database can hold a 183% body fat or a 9999 cm tape row. A backup file now carries

@@ -25,15 +25,6 @@ restore and verification claims.
 
 ### Backup and restore
 
-- **B375 — Automatic backup verification must run off the main thread.** `AutomaticBackup.write` reads the copy
-  and calls `BackupCodec.decode` in the caller's context
-  ([AutomaticBackup.kt](app/src/main/java/com/example/androidapp/data/AutomaticBackup.kt)); the due run starts
-  from `MainActivity`'s `lifecycleScope` ([MainActivity.kt](app/src/main/java/com/example/androidapp/MainActivity.kt))
-  and "Back up now" from `viewModelScope` ([SettingsViewModel.kt](app/src/main/java/com/example/androidapp/ui/settings/SettingsViewModel.kt)).
-  A full database decoded on every due backup can jank or ANR startup, the exact problem import and preview
-  already fixed. **Fixed** means the read, decode and validation run on `Dispatchers.Default` or IO.
-  **Test:** the verification path does not execute on Main.
-
 - **B348 — The restore preview and the restore summary must agree about what became visible.** The summary
   counts a restored session-exercise or planned set whenever its own `deletedAt` is null, even when its parent
   stays hidden. B330 counts only rows the merge makes live, and N261 extended that honesty to sets the

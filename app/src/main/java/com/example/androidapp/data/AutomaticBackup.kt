@@ -10,9 +10,11 @@ import com.example.androidapp.domain.model.BackupSettings
 import com.example.androidapp.domain.repository.BackupRepository
 import com.example.androidapp.domain.repository.SettingsRepository
 import com.example.androidapp.platform.BackupFolderFiles
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
@@ -108,12 +110,16 @@ class AutomaticBackup @Inject constructor(
                 // Read the copy back and decode it before recording a success (B362): "the last backup" has to
                 // mean a file this app can restore, not a stream a provider accepted. A bad copy is removed so
                 // it cannot be mistaken for one later.
-                val restorable = written != null &&
+                // The read, decode and validate are all suspended work off the caller's thread (B375):
+                // MainActivity starts the due run from lifecycleScope and Settings starts "Back up now"
+                // from viewModelScope, so doing the full-database decode here would block Main.
+                val restorable = written != null && withContext(Dispatchers.IO) {
                     files.read(folder.uri, written)?.let { text ->
                         runCatching { BackupCodec.decode(text) }
                             .getOrNull()
                             ?.let { BackupValidator.problems(it).isEmpty() } == true
                     } == true
+                }
                 if (written != null && restorable) {
                     // Pruned only after the new file is on disk: a folder that cannot take the new copy must
                     // not also lose an old one, which is the one way this feature could make a user worse off.
