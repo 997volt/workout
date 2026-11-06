@@ -943,8 +943,8 @@ private suspend fun applyProgramEdit(
     writer.applySchedule()
     val exercises = writer.writeExercises()
     val templates = writer.writeTemplates()
-    val plannedIds = writer.writeTemplateExercises()
-    writer.writeSets(plannedIds)
+    writer.writeTemplateExercises()
+    writer.writeSets()
     writer.writeSlots()
 
     return ProgramImportSummary(
@@ -1040,7 +1040,7 @@ private class ProgramEditWriter(
         return added.size + updated.size
     }
 
-    suspend fun writeTemplateExercises(): Set<String> {
+    suspend fun writeTemplateExercises() {
         // A movement the document names but this library does not hold live cannot carry a plan row
         // (B363): the row would be written against a hidden id and every plan read would filter it out.
         val liveExercises = backupDao.allExercises()
@@ -1048,16 +1048,12 @@ private class ProgramEditWriter(
             .mapTo(mutableSetOf()) { it.id }
         val added = document.templateExercises
             .filter { it.id in ids(ChangeKind.TEMPLATE_EXERCISE_ADDED) && it.exerciseId in liveExercises }
-        val written = mutableSetOf<String>()
         if (added.isNotEmpty()) {
-            val results = backupDao.insertTemplateExercises(
+            backupDao.insertTemplateExercises(
                 added.map {
                     it.toEntity().copy(createdAt = now, updatedAt = now, deletedAt = null)
                 },
             )
-            added.zip(results)
-                .filter { (_, result) -> result != IGNORED_ROW }
-                .mapTo(written) { (row, _) -> row.id }
         }
         val updated = document.templateExercises
             .filter { it.id in ids(ChangeKind.TEMPLATE_EXERCISE_UPDATED) && it.exerciseId in liveExercises }
@@ -1065,20 +1061,23 @@ private class ProgramEditWriter(
             editDao.updateTemplateExercises(
                 updated.map { it.toEntity().copy(updatedAt = now, deletedAt = null) },
             )
-            written += updated.map { it.id }
         }
         val removed = ids(ChangeKind.TEMPLATE_EXERCISE_REMOVED).toList()
         if (removed.isNotEmpty()) {
             editDao.softDeleteTemplateExercises(removed, now)
             editDao.softDeleteSetsOfTemplateExercises(removed, now)
         }
-        return written
     }
 
-    suspend fun writeSets(plannedIds: Set<String>) {
-        // A set whose planned exercise was dropped above would be an orphan row (B363).
+    suspend fun writeSets() {
+        // A set whose planned exercise is hidden (or was dropped above) would be an orphan row (B363).
+        // The live rows are read back after `writeTemplateExercises`, so a newly inserted plan row is
+        // included and a hidden movement's row is not.
+        val livePlanned = backupDao.allTemplateExercises()
+            .filter { it.deletedAt == null }
+            .mapTo(mutableSetOf()) { it.id }
         val added = document.templateSets.filter {
-            it.id in ids(ChangeKind.SET_ADDED) && it.templateExerciseId in plannedIds
+            it.id in ids(ChangeKind.SET_ADDED) && it.templateExerciseId in livePlanned
         }
         if (added.isNotEmpty()) {
             backupDao.insertTemplateSets(
@@ -1088,7 +1087,7 @@ private class ProgramEditWriter(
             )
         }
         val updated = document.templateSets.filter {
-            it.id in ids(ChangeKind.SET_UPDATED) && it.templateExerciseId in plannedIds
+            it.id in ids(ChangeKind.SET_UPDATED) && it.templateExerciseId in livePlanned
         }
         if (updated.isNotEmpty()) {
             editDao.updateTemplateSets(
