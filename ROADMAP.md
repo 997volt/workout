@@ -27,14 +27,6 @@ inset fix; it is not part of 2.25.
 
 ### Controls, titles and accessibility
 
-- **B370 — The adherence grid and small accent text must meet the app's own accessibility bar.** Seven weighted
-  cells at 360 dp are about 43 dp wide, below the 48 dp target, and several 12–15 sp labels are drawn in
-  `primary`, which the palette's own contrast test says is below 4.5:1 on the raised surface. Fixed means a
-  minimum cell size (or horizontal scrolling) and the accessible accent used for small text, with the contrast
-  test extended to the actual call sites.
-
-### State and formatting
-
 - **B371 — The measurements deep link must keep its screen frame, and messages must centre inside a scroll.**
   When the daily form is requested before the list loads, the route returns a bare `CenteredMessage` with no
   Scaffold, title or back path; and `CenteredMessage` uses `fillMaxSize`, which does not centre under an

@@ -5,8 +5,8 @@ import androidx.compose.ui.graphics.luminance
 import com.example.androidapp.kotlinSources
 import com.example.androidapp.repoRoot
 import com.google.common.truth.Truth.assertThat
-import java.io.File
 import org.junit.Test
+import java.io.File
 
 /**
  * The palette's text pairs, and the one place a link may be drawn (ROADMAP N49).
@@ -82,6 +82,23 @@ class PaletteContrastTest {
         // on a high surface; neither was this change's to move, and neither may have drifted.
         assertThat(contrast(WorkoutColors.error, Ink)).isAtLeast(BODY_TEXT_MINIMUM)
         assertThat(contrast(WorkoutColors.error, InkHigh)).isAtLeast(BODY_TEXT_MINIMUM)
+    }
+
+    @Test
+    fun everySmallAccentLabel_drawsTheAccessibleLinkColour() {
+        // B370: `primary` is the fill colour (4.07:1 on the page, 3.77:1 raised), so it is not a small
+        // label. [IndigoLink] is the role that clears 4.5:1; this checks the call sites rather than only
+        // the constant, the lesson the link test above records.
+        val smallPrimary = Regex(
+            """style = MaterialTheme\.typography\.(labelMedium|labelLarge|titleSmall),\s+""" +
+                """color = MaterialTheme\.colorScheme\.primary""",
+        )
+        val stray = kotlinSources("app/src/main")
+            .filter { smallPrimary.containsMatchIn(it.readText()) }
+            .map { it.relativeTo(repoRoot).invariantSeparatorsPath }
+            .sorted()
+
+        assertThat(stray).isEmpty()
     }
 
     @Test

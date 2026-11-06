@@ -3,8 +3,10 @@ package com.example.androidapp.ui.adherence
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -13,6 +15,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -59,6 +62,7 @@ import com.example.androidapp.ui.components.TopBarTitle
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.components.shortLabel
 import com.example.androidapp.ui.history.HistoryFormat
+import com.example.androidapp.ui.theme.IndigoLink
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -400,7 +404,7 @@ private fun DeloadWeeks(
         Text(
             text = stringResource(R.string.adherence_deload_title),
             style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.primary,
+            color = IndigoLink,
             modifier = Modifier.testTag(TestTags.Adherence.DELOAD_TITLE),
         )
         Text(
@@ -518,10 +522,7 @@ private fun DeloadChip(
 /** The weekday headings and the month, kept together because neither means anything alone. */
 @Composable
 private fun Calendar(month: YearMonth, adherence: MonthAdherence, onSelectDay: (LocalDate) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        WeekdayHeader()
-        CalendarGrid(month = month, adherence = adherence, onSelectDay = onSelectDay)
-    }
+    CalendarGrid(month = month, adherence = adherence, onSelectDay = onSelectDay)
 }
 
 /** The number the feature exists for, and the three counts it is made of. */
@@ -575,15 +576,32 @@ private fun WeekdayHeader() {
 /** The month, one row of seven at a time. */
 @Composable
 private fun CalendarGrid(month: YearMonth, adherence: MonthAdherence, onSelectDay: (LocalDate) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        calendarCells(month, adherence).chunked(DAYS_IN_WEEK).forEach { week ->
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                week.forEach { day ->
-                    DayCell(
-                        day = day,
-                        onSelect = onSelectDay,
-                        modifier = Modifier.weight(1f),
-                    )
+    // B370: seven cells across a 360 dp phone leave each one about 43 dp, below the 48 dp target. The
+    // month keeps seven columns and the minimum size; on a narrow window the grid scrolls horizontally
+    // rather than shrinking the targets. The header shares the same width and scroll state so it stays
+    // aligned with the days.
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+        val minimumWidth = CELL_SIZE * DAYS_IN_WEEK + CELL_GAP * (DAYS_IN_WEEK - 1)
+        val gridWidth = maxOf(maxWidth, minimumWidth)
+        Column(
+            modifier = Modifier
+                .horizontalScroll(rememberScrollState())
+                .width(gridWidth),
+            verticalArrangement = Arrangement.spacedBy(CELL_GAP),
+        ) {
+            WeekdayHeader()
+            calendarCells(month, adherence).chunked(DAYS_IN_WEEK).forEach { week ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(CELL_GAP),
+                ) {
+                    week.forEach { day ->
+                        DayCell(
+                            day = day,
+                            onSelect = onSelectDay,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
                 }
             }
         }
@@ -657,3 +675,7 @@ private fun DayCell(day: CalendarDay?, onSelect: (LocalDate) -> Unit, modifier: 
 
 /** A ratio as the percentage the screen shows: hundredths, so `0.75` reads as `75`. */
 private const val PERCENT = 100
+
+/** The smallest a calendar day is allowed to be; seven of these plus the gaps is the grid's minimum. */
+private val CELL_SIZE = 48.dp
+private val CELL_GAP = 4.dp

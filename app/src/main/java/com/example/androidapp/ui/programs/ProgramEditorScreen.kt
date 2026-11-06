@@ -76,6 +76,7 @@ import com.example.androidapp.ui.components.exerciseWeightUnit
 import com.example.androidapp.ui.components.shortLabel
 import com.example.androidapp.ui.components.summary
 import com.example.androidapp.ui.theme.AndroidAppTheme
+import com.example.androidapp.ui.theme.IndigoLink
 import java.time.DayOfWeek
 import java.time.LocalDate
 
@@ -609,7 +610,7 @@ internal fun ProgramSlotBlock(
                         Text(
                             text = runLabel ?: stringResource(R.string.program_next_up),
                             style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary,
+                            color = IndigoLink,
                             modifier = Modifier.testTag(TestTags.Programs.runSlot(slot.id)),
                         )
                     }

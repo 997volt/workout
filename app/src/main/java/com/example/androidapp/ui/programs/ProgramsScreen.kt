@@ -54,6 +54,7 @@ import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.TopBarTitle
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.theme.AndroidAppTheme
+import com.example.androidapp.ui.theme.IndigoLink
 
 /**
  * The program list (ROADMAP P3.3).
@@ -289,7 +290,7 @@ private fun ActiveProgramCard(
             Text(
                 text = stringResource(R.string.program_in_use),
                 style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
+                color = IndigoLink,
             )
         }
     }
@@ -399,7 +400,7 @@ private fun ExampleProgramCard(
             Text(
                 text = stringResource(R.string.program_example_use),
                 style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
+                color = IndigoLink,
             )
         }
     }
@@ -514,7 +515,7 @@ private fun ProgramRow(
                     Text(
                         text = stringResource(R.string.program_in_use),
                         style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary,
+                        color = IndigoLink,
                     )
                 } else {
                     AppTextButton(

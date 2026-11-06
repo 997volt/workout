@@ -1254,6 +1254,10 @@ the rule; that one argues it.
   like any other throwable; turning it into `DataResult.Failure` tells the screen a storage read failed when
   the collector simply left. The trends flows share one `toDataResult` helper that rethrows cancellation first
   and maps only real failures, the same rule `dataResultOf` holds for suspending calls.
+- **The calendar keeps a 48 dp day and scrolls rather than shrinking** (B370). Seven cells at 360 dp are
+  about 43 dp, below the target; giving the row a minimum width preserves both the seven-column month and the
+  target, with the header scrolling in step. Small accent labels use `IndigoLink`, which the palette test holds
+  at 4.5:1 on every surface, rather than `primary`, which is the fill colour.
 - **Every top-bar title is clamped and marked as a heading** (B369). `TopBarTitle` is the one-line component;
   the workout-detail bar needs a date beneath the name, so it keeps a custom column with the same one-line,
   ellipsis and heading rule on both texts. A long user-authored name is the test.

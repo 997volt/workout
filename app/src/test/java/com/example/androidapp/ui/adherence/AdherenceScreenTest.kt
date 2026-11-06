@@ -7,6 +7,7 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
@@ -27,6 +28,7 @@ import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.theme.AndroidAppTheme
 import com.google.common.truth.Truth.assertThat
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -127,6 +129,24 @@ class AdherenceScreenTest {
         composeTestRule.onNodeWithTag(TestTags.Adherence.NO_RATIO).assertExists()
         composeTestRule.onNodeWithTag(TestTags.Adherence.RATIO).assertDoesNotExist()
         composeTestRule.onNodeWithText("Nothing was scheduled this month.").assertExists()
+    }
+
+    @Test
+    fun aCalendarDay_isAtLeastTheAccessibleTargetSize() {
+        // B370: seven equal weight cells at 360 dp were about 43 dp; the grid now keeps 48 dp and scrolls
+        // when the window is narrower than the seven cells and their gaps.
+        setScreen(
+            state = AdherenceUiState(
+                month = october,
+                currentMonth = october,
+                isLoading = false,
+                adherence = MonthAdherence(),
+            ),
+        )
+
+        val bounds = composeTestRule.onNodeWithTag(TestTags.Adherence.dayCell("2026-10-01"))
+            .getUnclippedBoundsInRoot()
+        assertTrue((bounds.right - bounds.left).value >= 48f)
     }
 
     @Test

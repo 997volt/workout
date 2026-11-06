@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The adherence calendar meets its touch-target and contrast bars** (B370). Seven equal cells at 360 dp were
+  about 43 dp wide; the grid now keeps a 48 dp minimum and scrolls horizontally on a narrower window, with the
+  weekday header sharing the scroll. Small accent labels (deload title, next-up, in-use and example markers)
+  draw `IndigoLink` instead of the fill colour `primary`, and a source scan holds the call sites to 4.5:1.
 - **Every top-bar title is one line with ellipsis** (B369). Exercise, template, program, workout, measurement,
   balance, deload, adherence and picker bars now use `TopBarTitle` or the same max-lines/overflow rule, so a
   long user-authored name cannot overflow the fixed-height bar or crowd the actions. The workout-detail title
