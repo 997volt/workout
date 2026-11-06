@@ -71,12 +71,6 @@ release conversation.
   warm-up and the rows below lose their anchor. Fixed means the role change re-runs the rule for the rows whose
   anchor is this set, or refuses a role that leaves a rung unanchored, with a test for both.
 
-- **B366 — `setDailyWeight` must apply the same future-day refusal as `save`.** The bodyweight-loading writer
-  accepts any instant while the measurement save refuses a day after today (B212). Today's callers pass today,
-  so this is an inconsistency rather than a reachable write, but the two writers should share one boundary.
-  Fixed means both call the same `isMeasurementDayAfterToday` check, with a test that the targeted writer
-  refuses tomorrow.
-
 ## Later — the rest of the 2.22 review
 
 The rows below are real and specified, but none is in flight: a defect here is low-frequency or a polish item,
