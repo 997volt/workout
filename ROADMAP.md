@@ -46,12 +46,6 @@ release conversation.
 
 ### Data integrity
 
-- **B361 — Crash logs must be bounded.** [CrashLogStore.kt](app/src/main/java/com/example/androidapp/platform/CrashLogStore.kt)
-  writes one file per crash and never prunes; `latest()` reads and parses every file, and every export carries
-  them all. A launch-time crash loop grows the directory for as long as it repeats. Fixed means the store keeps
-  a bounded newest set (and can answer `latest()` from the filenames), with a test that records more than the
-  cap.
-
 ## Later — the rest of the 2.22 review
 
 The rows below are real and specified, but none is in flight: a defect here is low-frequency or a polish item,

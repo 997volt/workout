@@ -1210,6 +1210,10 @@ the rule; that one argues it.
   the prefill (N73); the session still records only the template (P3.3), so provenance and occurrence
   matching are unchanged. Storing it would make the session's provenance say two things and would go
   stale the moment the slot moved.
+- **Crash logs are bounded by count, not by age** (B361). A launch-time crash loop is exactly when the newest
+  records matter, so an age window could delete the evidence or keep an unbounded burst; fifty files is enough
+  to diagnose a loop and bounded on disk. `latest()` reads the timestamp in the filename and parses only until a
+  valid file, rather than parsing the whole directory.
 - **A plan row may not be written against a movement that is not live** (B363). The edit snapshot is taken
   from live rows, so a locally hidden movement with the document's id looks new; the insert is ignored and the
   planned row would point at a row every plan read filters out. The writer counts actual inserts, filters the

@@ -6,6 +6,7 @@ import java.nio.file.Files
 import java.time.Instant
 import org.junit.After
 import org.junit.Assert.assertEquals
+import com.google.common.truth.Truth.assertThat
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -113,6 +114,29 @@ class CrashLogStoreTest {
         File(directory, "crash-corrupt.json").writeText("this is not json")
 
         assertEquals(1, store.all().size)
+    }
+
+    @Test
+    fun moreThanTheCap_keepsTheNewestFiles() {
+        // B361: a launch-time crash loop must not grow this directory forever.
+        repeat(MAX_CRASH_LOGS + 5) { index ->
+            store.record(logAt(1_000L + index, "Crash$index"))
+        }
+
+        val kept = store.all()
+        assertThat(kept).hasSize(MAX_CRASH_LOGS)
+        assertThat(kept.first().exceptionClass).isEqualTo("Crash${MAX_CRASH_LOGS + 4}")
+        assertThat(kept.last().exceptionClass).isEqualTo("Crash5")
+    }
+
+    @Test
+    fun latest_usesTheFilename_andSkipsACorruptNewest() {
+        store.record(logAt(1_000L, "Old"))
+        store.record(logAt(1_000_000L, "New"))
+        File(directory, "crash-999999999-corrupt.json").writeText("not json")
+
+        // The corrupt file sorts newest by name, is skipped, and the next valid one answers.
+        assertThat(store.latest()?.exceptionClass).isEqualTo("New")
     }
 
     @Test

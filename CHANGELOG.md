@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **Crash logs are bounded** (B361). The store wrote one file per crash and never pruned, while every export
+  carried all of them; a launch-time crash loop could grow the directory indefinitely. It now keeps the newest
+  50 files (named by their timestamp), prunes the rest after each record, and answers `latest()` from the
+  filenames without parsing every file.
 - **A program edit no longer writes plan rows for a locally hidden movement** (B363). The edit snapshot reads
   only live movements, so a hidden local id looked new; its insert was ignored, but the planned exercise and set
   were still written against it and every plan read filtered them out — invisible and unremovable, while the

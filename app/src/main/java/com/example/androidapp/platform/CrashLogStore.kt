@@ -18,6 +18,9 @@ import java.io.File
  * No notes, no set values, no body measurements, and no `INTERNAL` permission story
  * to reason about: this never leaves the device unless the user exports it.
  */
+/** How many crash files the store keeps (B361); enough to diagnose a loop, bounded on disk. */
+internal const val MAX_CRASH_LOGS = 50
+
 @Serializable
 data class CrashLog(
     val timestamp: Long,
@@ -59,13 +62,18 @@ class CrashLogStore(private val directory: File) {
         if (!directory.exists() && !directory.mkdirs()) return false
         File(directory, "crash-${log.timestamp}-${log.exceptionClass.hashCode()}.json")
             .writeText(json.encodeToString(log))
+        prune()
         true
     }.getOrDefault(false)
 
-    /** Newest first. Unreadable files are skipped rather than throwing. */
+    /**
+     * Newest first. Unreadable files are skipped rather than throwing.
+     *
+     * The store is bounded (B361): a launch-time crash loop must not grow the directory for as long as it
+     * repeats, and every export carries these files.
+     */
     fun all(): List<CrashLog> = runCatching {
-        directory.listFiles()
-            ?.filter { it.isFile && it.name.endsWith(".json") }
+        crashFiles()
             ?.mapNotNull { file ->
                 runCatching { json.decodeFromString<CrashLog>(file.readText()) }.getOrNull()
             }
@@ -73,8 +81,36 @@ class CrashLogStore(private val directory: File) {
             .orEmpty()
     }.getOrDefault(emptyList())
 
-    /** The most recent crash, or null. What a "did we crash last time?" check wants. */
-    fun latest(): CrashLog? = all().firstOrNull()
+    /**
+     * The most recent crash, or null.
+     *
+     * The filename carries the timestamp the record was written with, so the newest file is chosen without
+     * parsing the rest (B361); a corrupt newest file falls through to the next valid one rather than making
+     * "did we crash last time?" answer null.
+     */
+    fun latest(): CrashLog? = runCatching {
+        crashFiles()
+            ?.sortedByDescending(::timestampOf)
+            ?.firstNotNullOfOrNull { file ->
+                runCatching { json.decodeFromString<CrashLog>(file.readText()) }.getOrNull()
+            }
+    }.getOrNull()
+
+    /** The app's own files, newest-name first; other JSON in the directory is not ours to prune. */
+    private fun crashFiles(): List<File>? =
+        directory.listFiles()
+            ?.filter { it.isFile && it.name.startsWith("crash-") && it.name.endsWith(".json") }
+
+    private fun timestampOf(file: File): Long =
+        file.name.removePrefix("crash-").substringBefore('-').toLongOrNull() ?: file.lastModified()
+
+    /** Keep only the newest [MAX_CRASH_LOGS]; a malformed name is old enough to go first. */
+    private fun prune() {
+        crashFiles()
+            ?.sortedByDescending(::timestampOf)
+            ?.drop(MAX_CRASH_LOGS)
+            ?.forEach { it.delete() }
+    }
 
     fun clear(): Boolean = runCatching {
         directory.listFiles()?.forEach { it.delete() }
