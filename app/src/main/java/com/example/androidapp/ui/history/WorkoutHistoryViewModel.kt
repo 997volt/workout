@@ -53,7 +53,7 @@ data class WorkoutHistoryUiState(
 @HiltViewModel
 class WorkoutHistoryViewModel @Inject constructor(
     workoutRepository: WorkoutRepository,
-    private val savedStateHandle: SavedStateHandle = SavedStateHandle(),
+    private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
     /** The query the lifter is typing (ROADMAP N146), restored after process death (B372). */

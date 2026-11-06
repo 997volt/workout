@@ -111,7 +111,7 @@ data class ExerciseLibraryUiState(
 class ExerciseLibraryViewModel @Inject constructor(
     private val exerciseRepository: ExerciseRepository,
     private val timeSource: TimeSource,
-    private val savedStateHandle: SavedStateHandle = SavedStateHandle(),
+    private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
     /** The search and the order — the form's memory rather than the document's (ROADMAP N230). */

@@ -284,6 +284,7 @@ class ExerciseLibraryViewModelTest {
         val viewModel = ExerciseLibraryViewModel(
             exerciseRepository = repository,
             timeSource = { Instant.EPOCH },
+            savedStateHandle = SavedStateHandle(),
         )
         observe(viewModel)
         advanceUntilIdle()
@@ -343,7 +344,12 @@ class ExerciseLibraryViewModelTest {
     fun theLastTrainedRead_reachesTheState() = runTest(dispatcher) {
         val repository = FakeRepository(listOf(squat, bench))
         repository.lastTrained = mapOf("back-squat" to Instant.ofEpochSecond(42))
-        val viewModel = ExerciseLibraryViewModel(exerciseRepository = repository, timeSource = { Instant.EPOCH })
+        val viewModel =
+            ExerciseLibraryViewModel(
+                exerciseRepository = repository,
+                timeSource = { Instant.EPOCH },
+                savedStateHandle = SavedStateHandle()
+            )
         observe(viewModel)
         advanceUntilIdle()
 
@@ -359,7 +365,12 @@ class ExerciseLibraryViewModelTest {
         // the read — so the failure is a message and the map is empty (N230).
         val repository = FakeRepository(listOf(squat, bench))
         repository.failLastTrained = true
-        val viewModel = ExerciseLibraryViewModel(exerciseRepository = repository, timeSource = { Instant.EPOCH })
+        val viewModel =
+            ExerciseLibraryViewModel(
+                exerciseRepository = repository,
+                timeSource = { Instant.EPOCH },
+                savedStateHandle = SavedStateHandle()
+            )
         observe(viewModel)
         advanceUntilIdle()
 
@@ -376,7 +387,12 @@ class ExerciseLibraryViewModelTest {
     fun aMovementMadeFromTheLibrary_isFiledWhileItIsMade() = runTest(dispatcher) {
         // ROADMAP N232: two writes in the order that keeps the library valid, and the family is the second.
         val repository = FakeRepository(listOf(cat))
-        val viewModel = ExerciseLibraryViewModel(exerciseRepository = repository, timeSource = { Instant.EPOCH })
+        val viewModel =
+            ExerciseLibraryViewModel(
+                exerciseRepository = repository,
+                timeSource = { Instant.EPOCH },
+                savedStateHandle = SavedStateHandle()
+            )
         observe(viewModel)
         advanceUntilIdle()
 
@@ -394,7 +410,12 @@ class ExerciseLibraryViewModelTest {
     @Test
     fun aMovementWithNoFamily_isMadeAndLeftUnfiled() = runTest(dispatcher) {
         val repository = FakeRepository(listOf(cat))
-        val viewModel = ExerciseLibraryViewModel(exerciseRepository = repository, timeSource = { Instant.EPOCH })
+        val viewModel =
+            ExerciseLibraryViewModel(
+                exerciseRepository = repository,
+                timeSource = { Instant.EPOCH },
+                savedStateHandle = SavedStateHandle()
+            )
         observe(viewModel)
         advanceUntilIdle()
 
@@ -410,7 +431,12 @@ class ExerciseLibraryViewModelTest {
         // The movement is the action the lifter took; a family that did not land leaves a usable unfiled row
         // rather than losing it — and the failure is a message, not a silent no-op (B88's rule).
         val repository = FakeRepository(listOf(cat)).apply { failFiling = true }
-        val viewModel = ExerciseLibraryViewModel(exerciseRepository = repository, timeSource = { Instant.EPOCH })
+        val viewModel =
+            ExerciseLibraryViewModel(
+                exerciseRepository = repository,
+                timeSource = { Instant.EPOCH },
+                savedStateHandle = SavedStateHandle()
+            )
         observe(viewModel)
         advanceUntilIdle()
 
@@ -440,6 +466,7 @@ class ExerciseLibraryViewModelTest {
         // The window the "not trained" chip measures is read once, so a fixed clock keeps it out of the way
         // of every other test on this screen (N231).
         timeSource = { Instant.EPOCH },
+        savedStateHandle = SavedStateHandle(),
     )
 
     @Test
@@ -447,7 +474,8 @@ class ExerciseLibraryViewModelTest {
         // ROADMAP B4: this used to escape the flow as an exception. It is now a
         // value the screen can render where the list would have been.
         val repository = FakeRepository(emptyList()).apply { failReads = true }
-        val viewModel = ExerciseLibraryViewModel(repository, timeSource = { Instant.EPOCH })
+        val viewModel =
+            ExerciseLibraryViewModel(repository, timeSource = { Instant.EPOCH }, savedStateHandle = SavedStateHandle())
         observe(viewModel)
         advanceUntilIdle()
 
@@ -462,7 +490,8 @@ class ExerciseLibraryViewModelTest {
         // ROADMAP B88: a *New category* that did not land wrote into the same field a failed read uses, and
         // the body tests that field before the list — so the library vanished behind the read-failure page.
         val repository = FakeRepository(listOf(squat)).apply { failWrites = true }
-        val viewModel = ExerciseLibraryViewModel(repository, timeSource = { Instant.EPOCH })
+        val viewModel =
+            ExerciseLibraryViewModel(repository, timeSource = { Instant.EPOCH }, savedStateHandle = SavedStateHandle())
         observe(viewModel)
         advanceUntilIdle()
 
