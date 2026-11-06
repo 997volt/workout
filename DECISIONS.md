@@ -561,6 +561,11 @@ the rule; that one argues it.
   overall *Joint pain* series stays: it answers "did this session hurt", and the sites answer *where*.
   ([evidence](DECISIONS-EVIDENCE.md#n130))
 
+- **The release artifact is executed, not only assembled** (N270). The build job proves R8 *shrinks*; it does
+  not prove the shrunk APK starts, and a stripped Hilt or serialization member is exactly the failure a release
+  can ship while every unit test passes. The nightly/dispatch instrumented job builds a debug-signed release,
+  installs it after its debug suite and drives home → Settings → home through the exposed test tags. The key is
+  ephemeral; the certificate check still belongs to the release machine.
 - **The fast half of CI runs on every change, the emulator on a schedule** (N269, N30). A full nightly-only
   pipeline left pull requests and Dependabot changes unverified and made branch protection impossible, while
   the emulator is still the expensive, flaky half. `build` and `docs` run on `pull_request` and pushes to

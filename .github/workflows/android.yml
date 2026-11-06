@@ -280,6 +280,24 @@ jobs:
       # absence of this key meant. They are set here anyway, explicitly, for two reasons: the workflow
       # then owns the flags it depends on rather than inheriting them, and a future bump of the action's
       # SHA cannot change how the emulator boots without this file saying so.
+      # N270. A release-only R8/Hilt/serialization crash passes every gate because CI only *assembles*
+      # the release. Build one with an ephemeral key here, then install and launch it inside the
+      # emulator script below.
+      - name: Build a debug-signed release
+        run: |
+          keytool -genkeypair \
+            -keystore "$RUNNER_TEMP/release.jks" \
+            -storepass ci-release -keypass ci-release \
+            -alias workout -keyalg RSA -keysize 2048 -validity 1 \
+            -dname "CN=CI"
+          cat > keystore.properties <<EOF
+          storeFile=$RUNNER_TEMP/release.jks
+          storePassword=ci-release
+          keyAlias=workout
+          keyPassword=ci-release
+          EOF
+          ./gradlew assembleRelease --console=plain
+
       - name: Run instrumented tests
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
         with:
@@ -312,7 +330,13 @@ jobs:
           # way it goes rather than inherit it. `-gpu swiftshader_indirect` stays: GPU acceleration needs a
           # host GPU the runner does not have, and that is a different lever from VM acceleration.
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -accel auto
-          script: ./gradlew connectedDebugAndroidTest --console=plain
+          script: |
+            ./gradlew connectedDebugAndroidTest --console=plain
+            # N270: execute the signed R8 build too, then launch it and walk its primary tabs. The
+            # debug test APK has the same application id, so it has to go before the release installs.
+            adb uninstall io.github.volt997.workout || true
+            adb install -r app/build/outputs/apk/release/app-release.apk
+            python3 tools/release-smoke.py
 
       # B8, B275. A green run whose XML records fewer tests than the source declares is the
       # failure this job is least able to notice: no failures, just a short report. The check

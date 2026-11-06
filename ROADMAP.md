@@ -1,8 +1,7 @@
 # Workout — Roadmap
 
-> **What is planned, not what happened.** *Next* is the batch picked up before anything else, *Later* is decided
-> and waiting, *Parked* is decided against until a named trigger fires, and the non-goals are lines this app
-> does not cross.
+> **What is planned, not what happened.** *Later* is decided and waiting, *Parked* is decided against until a
+> named trigger fires, and the non-goals are lines this app does not cross.
 > Shipped work is [CHANGELOG.md](CHANGELOG.md), how a release is cut is [RELEASING.md](RELEASING.md), and the
 > settled rules are [DECISIONS.md](DECISIONS.md) with their argument in
 > [DECISIONS-EVIDENCE.md](DECISIONS-EVIDENCE.md).
@@ -15,24 +14,6 @@ backlog, `R#.#` releases) are stable and go in commit messages. They were assign
 work was planned, so they do not always run in order — and an id this file does not list has
 shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 [CHANGELOG-1.x.md](CHANGELOG-1.x.md) for the 1.x releases.
-
-## Next — 2.24: release guardrails and data integrity
-
-2.23 is released. This batch is deliberately not a feature release: it closes the two gaps the release
-exposed — the R8 APK was built and statically verified but never executed, and ordinary changes are not
-checked until the nightly — and the remaining data-integrity defects from the 2.22 review. The
-shell/accessibility pass, engineering debt and features stay in *Later* for a later release. Each row names
-the current behaviour, why it matters, what "fixed" means and the test, so it can be picked up without the
-release conversation.
-
-### Release and CI guardrails
-
-- **N270 — The R8 release must be executed by a test, not only built.** R8 shrinking is enabled and tested only
-  by assembling an unsigned release; a release-only Hilt/serialization/navigation crash passes every gate.
-  Fixed means CI builds a debug-signed release (ephemeral keystore), installs it on the emulator and runs a
-  smoke navigation, or runs the instrumented suite against a release build type.
-
-### Data integrity
 
 ## Later — the rest of the 2.22 review
 

@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The signed R8 release is launched by CI** (N270). The release APK was assembled and statically verified but
+  never executed, so a release-only Hilt/serialization/navigation crash could ship. The instrumented job now
+  builds a debug-signed release with an ephemeral key, installs it after the debug suite, and runs
+  `tools/release-smoke.py` through the home list and the Settings tab.
 - **The fast half of CI runs on pull requests and pushes** (N269). The workflow was scheduled/dispatch-only,
   so ordinary changes and Dependabot PRs waited for the nightly and branch protection was impossible. `build`
   and `docs` now run on `pull_request` and on pushes to `main`; `instrumented` stays on the nightly and
