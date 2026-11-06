@@ -27,6 +27,20 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
+ * A trends flow as a `DataResult` per emission (B367).
+ *
+ * A cancellation is not a storage failure and must keep propagating: the screen is gone, and reporting a
+ * failed read would make a cancelled collector look like a database error. Every other throwable becomes the
+ * value the screen renders.
+ */
+internal fun <T> Flow<T>.toDataResult(): Flow<DataResult<T>> =
+    map<T, DataResult<T>> { DataResult.Success(it) }
+        .catch { throwable ->
+            if (throwable is CancellationException) throw throwable
+            emit(DataResult.Failure(throwable.toDataError()))
+        }
+
+/**
  * Room-backed [TrendsRepository] (ROADMAP N13).
  *
  * The two aggregate queries are merged here rather than in SQL, because averaging a
@@ -115,11 +129,7 @@ class RoomTrendsRepository @Inject constructor(
                 // wrong for a chart.
                 .sortedBy { it.startedAt }
         }
-            .map<List<TrendPoint>, DataResult<List<TrendPoint>>> { DataResult.Success(it) }
-            .catch { throwable ->
-                if (throwable is CancellationException) throw throwable
-                emit(DataResult.Failure(throwable.toDataError()))
-            }
+            .toDataResult()
 
     override suspend fun templateSessions(
         templateId: String,

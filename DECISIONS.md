@@ -1210,6 +1210,10 @@ the rule; that one argues it.
   the prefill (N73); the session still records only the template (P3.3), so provenance and occurrence
   matching are unchanged. Storing it would make the session's provenance say two things and would go
   stale the moment the slot moved.
+- **A cancelled read is cancellation, not a failure** (B367). A flow's `catch` sees `CancellationException`
+  like any other throwable; turning it into `DataResult.Failure` tells the screen a storage read failed when
+  the collector simply left. The trends flows share one `toDataResult` helper that rethrows cancellation first
+  and maps only real failures, the same rule `dataResultOf` holds for suspending calls.
 - **A failed stall read is a failure, not "the plan is moving"** (B351). The stall rule answers a question about
   the last three sessions; when that read failed, the first cut passed an empty history and the screen said
   nothing had stalled — an answer the app did not have. `PlanStallFinder` returns a `DataResult` and both the

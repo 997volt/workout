@@ -77,11 +77,6 @@ release conversation.
   Fixed means both call the same `isMeasurementDayAfterToday` check, with a test that the targeted writer
   refuses tomorrow.
 
-- **B367 — A cancelled trends collection must not become a storage failure.** `observeExerciseTrends` catches
-  `Throwable` and emits `DataResult.Failure` without rethrowing `CancellationException`, while its sibling flow
-  does rethrow. A cancelled collection can therefore be reported as a failed read. Fixed means the catch
-  rethrows cancellation first, with a test that cancels the collector.
-
 ## Later — the rest of the 2.22 review
 
 The rows below are real and specified, but none is in flight: a defect here is low-frequency or a polish item,

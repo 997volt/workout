@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A cancelled trends collection is not a storage failure** (B367). `observeExerciseTrends` wrapped its flow
+  in a `catch` that turned every throwable into a `DataResult.Failure`, including cancellation; leaving the
+  screen could therefore report a failed read. The shared `toDataResult` helper rethrows cancellation and maps
+  only real failures, and both trends flows use it.
 - **The batch's KDoc and decisions match the code** (B381). B338's weight doc had been left above
   `requirePlausibleValues`, leaving `requireStatedWeight` undocumented; the new text wrongly said tape feeds a
   derived fat mass. The KDoc is back on its function, the tape sentence says what tape does, the B349 decision
