@@ -76,11 +76,24 @@ def tap(tag: str) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--package", default="io.github.volt997.workout")
+    parser.add_argument("--activity", default="com.example.androidapp.MainActivity")
     args = parser.parse_args()
 
     adb("wait-for-device")
     adb("shell", "am", "force-stop", args.package)
-    adb("shell", "am", "start", "-W", "-n", f"{args.package}/.MainActivity")
+    # The application id and the Kotlin namespace differ on purpose: MainActivity is declared under
+    # `com.example.androidapp`, so `.MainActivity` relative to the package would not resolve.
+    started = subprocess.run(
+        ["adb", "shell", "am", "start", "-W", "-n", f"{args.activity}"],
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+    if started.returncode != 0:
+        print(started.stdout, file=sys.stderr)
+        print(adb("logcat", "-d", "-t", "200", "AndroidRuntime:E", "*:S"), file=sys.stderr)
+        raise SystemExit("release smoke: MainActivity did not start")
     # The home list is the first composition; a release-only crash shows here as a timeout or a dead process.
     wait_for("home_list")
     tap("tab_settings")
