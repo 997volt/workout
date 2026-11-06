@@ -1254,6 +1254,10 @@ the rule; that one argues it.
   like any other throwable; turning it into `DataResult.Failure` tells the screen a storage read failed when
   the collector simply left. The trends flows share one `toDataResult` helper that rethrows cancellation first
   and maps only real failures, the same rule `dataResultOf` holds for suspending calls.
+- **A message is acknowledged against the state that produced it** (B354–B355). A flow-derived failure cannot be
+  cleared at the source, so the library filters the last-trained error through an acknowledged value and resets
+  it when the read succeeds; Settings now clears its own write error when the snackbar is dismissed. A snackbar
+  is the visible, announced surface in both places, rather than a line at the bottom of a scroll.
 - **A failed stall read is a failure, not "the plan is moving"** (B351). The stall rule answers a question about
   the last three sessions; when that read failed, the first cut passed an empty history and the screen said
   nothing had stalled — an answer the app did not have. `PlanStallFinder` returns a `DataResult` and both the

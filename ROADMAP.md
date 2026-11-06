@@ -27,15 +27,6 @@ inset fix; it is not part of 2.25.
 
 ### Messages and navigation
 
-- **B354–B355 — Messages the lifter can neither acknowledge nor see.** The library derives
-  `lastTrainedError` from the read flow and `onErrorShown()` clears only `writeError`
-  ([ExerciseLibraryViewModel.kt](app/src/main/java/com/example/androidapp/ui/exercises/ExerciseLibraryViewModel.kt)),
-  so the snackbar cannot be dismissed and returns on every re-entry. Settings draws its write failure as the
-  last child of a long scroll with no live region
-  ([SettingsScreen.kt](app/src/main/java/com/example/androidapp/ui/settings/SettingsScreen.kt)), so a failure
-  near the top is off-screen and unannounced. Fixed means an acknowledged-error state for the library and a
-  snackbar or live-region-plus-scroll-to for Settings.
-
 - **B357 — A tab root needs one back story.** Statistics correctly has no back arrow ("a root that offered
   back would be offering to go somewhere the user did not come from",
   [StatisticsScreen.kt](app/src/main/java/com/example/androidapp/ui/statistics/StatisticsScreen.kt)); History,

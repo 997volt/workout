@@ -77,6 +77,14 @@ class SettingsScreenTest {
     }
 
     @Test
+    fun aWriteFailure_isShown_asASnackbar() {
+        // B354: the failure used to be the last child of the scroll, where it could be off-screen.
+        show(SettingsUiState(error = DataError.Invalid("The write did not land.")))
+
+        composeTestRule.onNodeWithText("The write did not land.").assertExists()
+    }
+
+    @Test
     fun theDiagnosticsRow_opensTheScreen() {
         show(SettingsUiState())
 

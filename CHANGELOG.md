@@ -13,6 +13,16 @@ repeated here.
 **1.0–1.18 live in [CHANGELOG-1.x.md](CHANGELOG-1.x.md)**, kept whole rather than deleted because the
 id a 1.x commit names is still looked up by it. This file carries the current release.
 
+## [Unreleased]
+
+### Fixed
+
+- **Library and settings failures can be acknowledged and are visible** (B354–B355). The library's last-trained
+  failure was derived from the read flow, so dismissing the snackbar cleared the wrong field and the message
+  returned; the acknowledgement now filters that failure until a later success. Settings drew its write failure
+  as the last child of a long scroll with no live region; it is now a snackbar with an acknowledgement that
+  clears the ViewModel error.
+
 ## [2.24] — 2026-11-06 (versionCode 45)
 
 ### Fixed

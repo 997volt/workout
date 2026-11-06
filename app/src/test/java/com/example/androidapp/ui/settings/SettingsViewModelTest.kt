@@ -88,6 +88,9 @@ class SettingsViewModelTest {
 
         assertEquals("still what is stored", 90, viewModel.uiState.value.defaultRestSeconds)
         assertEquals(DataError.Invalid("refused"), viewModel.uiState.value.error)
+
+        viewModel.onErrorShown()
+        assertNull("an acknowledged write failure is gone", viewModel.uiState.value.error)
     }
 
     @Test

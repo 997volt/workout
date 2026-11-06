@@ -341,6 +341,11 @@ class ExerciseLibraryViewModelTest {
 
         assertNotNull(viewModel.uiState.value.lastTrainedError)
         assertTrue("nothing is claimed about any lift", viewModel.uiState.value.lastTrained.isEmpty())
+
+        // B354: the message is acknowledged, not re-derived from the read flow on every entry.
+        viewModel.onErrorShown()
+        advanceUntilIdle()
+        assertNull("the dismissed last-trained failure stays dismissed", viewModel.uiState.value.lastTrainedError)
     }
 
     @Test

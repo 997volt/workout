@@ -133,6 +133,18 @@ class ExerciseLibraryViewModel @Inject constructor(
     private val error = MutableStateFlow<DataError?>(null)
 
     /**
+     * The last-trained failure the lifter has already acknowledged (B354).
+     *
+     * The read result is upstream state, so it cannot be cleared at the source. The acknowledgement is a
+     * separate filter: the same failure stops being a message once dismissed, and a later success resets it
+     * so the next failure is new again.
+     */
+    private val acknowledgedLastTrainedError = MutableStateFlow<DataError?>(null)
+
+    /** The latest last-trained result, kept only to remember what the acknowledgement refers to. */
+    private val lastTrainedFailure = MutableStateFlow<DataError?>(null)
+
+    /**
      * The whole library **including removed rows**, read once for naming (ROADMAP N95).
      *
      * A deleted head still names its children (N58's rule), so a child's family has to be resolvable after
@@ -148,13 +160,24 @@ class ExerciseLibraryViewModel @Inject constructor(
     private val lastTrained: Flow<DataResult<Map<String, Instant>>> =
         exerciseRepository.observeLastTrained()
 
+    private data class ViewState(
+        val view: LibraryView,
+        val acknowledgedLastTrainedError: DataError?,
+    )
+
+    private val viewState: Flow<ViewState> =
+        combine(view, acknowledgedLastTrainedError) { currentView, acknowledged ->
+            ViewState(currentView, acknowledged)
+        }
+
     val uiState: StateFlow<ExerciseLibraryUiState> = combine(
         exerciseRepository.observeExercises(),
-        view,
+        viewState,
         error,
         includingRemoved,
         lastTrained,
-    ) { result, currentView, currentError, removed, trained ->
+    ) { result, currentViewState, currentError, removed, trained ->
+        val currentView = currentViewState.view
         // A read failure is rendered where the list would have been (ROADMAP B4),
         // instead of escaping the flow and taking the screen down.
         val exercises = result.getOrNull().orEmpty()
@@ -175,7 +198,8 @@ class ExerciseLibraryViewModel @Inject constructor(
             removedHeads = removed,
             sort = currentView.sort,
             lastTrained = trainedMap,
-            lastTrainedError = (trained as? DataResult.Failure)?.error,
+            lastTrainedError = (trained as? DataResult.Failure)?.error
+                ?.takeUnless { it == currentViewState.acknowledgedLastTrainedError },
             filter = filter,
             filterCounts = counts,
             notTrainedSince = notTrainedSince,
@@ -187,6 +211,12 @@ class ExerciseLibraryViewModel @Inject constructor(
     )
 
     init {
+        viewModelScope.launch {
+            lastTrained.collect { result ->
+                lastTrainedFailure.value = (result as? DataResult.Failure)?.error
+                if (result is DataResult.Success) acknowledgedLastTrainedError.value = null
+            }
+        }
         viewModelScope.launch {
             // Deliberately silent on failure: this only resolves names, so a read that did not happen leaves
             // a child showing no family rather than breaking the screen.
@@ -256,6 +286,7 @@ class ExerciseLibraryViewModel @Inject constructor(
 
     fun onErrorShown() {
         error.value = null
+        acknowledgedLastTrainedError.value = lastTrainedFailure.value
     }
 
     private companion object {

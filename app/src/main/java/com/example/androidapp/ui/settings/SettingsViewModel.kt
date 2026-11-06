@@ -129,6 +129,11 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    /** Dismisses the snackbar's write failure; the stored value is unchanged. */
+    fun onErrorShown() {
+        _uiState.update { it.copy(error = null) }
+    }
+
     fun onSetDefaultRest(seconds: Int) {
         viewModelScope.launch {
             when (val result = settingsRepository.setDefaultRestSeconds(seconds)) {

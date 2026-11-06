@@ -143,6 +143,7 @@ fun SettingsRoute(
         },
         message = message,
         onDismissMessage = { message = null },
+        onDismissError = viewModel::onErrorShown,
         onBack = onBack,
         modifier = modifier,
     )
@@ -170,10 +171,20 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
     message: String? = null,
     onBackupNow: () -> Unit = {},
+    onDismissError: () -> Unit = {},
 ) {
     var confirmingClear by rememberSaveable { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
-    MessageSnackbar(message, snackbarHostState, onDismissMessage)
+    // A write failure is a snackbar, not the last child of the long scroll (B354): at the bottom it could be
+    // off-screen and unannounced. Dismissing it acknowledges it, which clears the ViewModel's error.
+    MessageSnackbar(
+        message = message ?: state.error?.let { dataErrorMessage(it) },
+        hostState = snackbarHostState,
+        onDismiss = {
+            onDismissMessage()
+            onDismissError()
+        },
+    )
 
     ClearConfirmation(
         visible = confirmingClear,
@@ -287,15 +298,6 @@ private fun SettingsBody(
             onImport = onImportData,
             onClear = onClearData,
         )
-        // Outside the cards: a write that failed is not part of the setting it failed on,
-        // and inside a card it would read as the value.
-        state.error?.let { error ->
-            Text(
-                text = dataErrorMessage(error),
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        }
     }
 }
 
