@@ -84,7 +84,7 @@ def main() -> int:
     # The application id and the Kotlin namespace differ on purpose: MainActivity is declared under
     # `com.example.androidapp`, so `.MainActivity` relative to the package would not resolve.
     started = subprocess.run(
-        ["adb", "shell", "am", "start", "-W", "-n", f"{args.activity}"],
+        ["adb", "shell", "am", "start", "-W", "-n", f"{args.package}/{args.activity}"],
         check=False,
         text=True,
         stdout=subprocess.PIPE,
