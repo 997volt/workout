@@ -1,7 +1,8 @@
 # Workout — Roadmap
 
-> **What is planned, not what happened.** *Later* is decided and waiting, *Parked* is decided against until a
-> named trigger fires, and the non-goals are lines this app does not cross.
+> **What is planned, not what happened.** *Next* is the batch picked up before anything else, *Later* is decided
+> and waiting, *Parked* is decided against until a named trigger fires, and the non-goals are lines this app
+> does not cross.
 > Shipped work is [CHANGELOG.md](CHANGELOG.md), how a release is cut is [RELEASING.md](RELEASING.md), and the
 > settled rules are [DECISIONS.md](DECISIONS.md) with their argument in
 > [DECISIONS-EVIDENCE.md](DECISIONS-EVIDENCE.md).
@@ -15,13 +16,16 @@ work was planned, so they do not always run in order — and an id this file doe
 shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 [CHANGELOG-1.x.md](CHANGELOG-1.x.md) for the 1.x releases.
 
-## Later — the rest of the 2.22 review
+## Next — 2.25: shell and accessibility
 
-The rows below are real and specified, but none is in flight: a defect here is low-frequency or a polish item,
-an engineering row is not user-visible, and a feature is waiting for a decision. A row leaves this section when
-it is picked up; its design argument moves to [DECISIONS.md](DECISIONS.md).
+2.24 is released. This batch is the user-facing remainder of the 2.22 review: the messages that do not reach the
+lifter, the navigation that disagrees between roots, controls that are disabled without a reason, and the
+accessibility/state gaps around them. It is deliberately not a feature release.
 
-### Defects and polish
+**B358 stays in *Later*** until a gesture-navigation and a three-button device are available to verify the
+inset fix; it is not part of 2.25.
+
+### Messages and navigation
 
 - **B354–B355 — Messages the lifter can neither acknowledge nor see.** The library derives
   `lastTrainedError` from the read flow and `onErrorShown()` clears only `writeError`
@@ -40,12 +44,7 @@ it is picked up; its design argument moves to [DECISIONS.md](DECISIONS.md).
   Fixed means one rule applied to all roots, and the comment that argues it moved to the shared component
   rather than living on one screen.
 
-- **B358 — The shell and the screens must not both apply the navigation-bar inset.** The shell reserves the
-  tab bar, whose height already includes the system bar, and each screen's default `Scaffold` adds the system
-  inset again ([AppNavHost.kt](app/src/main/java/com/example/androidapp/ui/navigation/AppNavHost.kt)); the
-  deload screen adds a third `navigationBarsPadding()`. Fixed means the shell or the screens own the bottom
-  inset exactly once, verified on a gesture-navigation and a three-button device (this was reasoned from code,
-  not measured).
+### Controls, titles and accessibility
 
 - **B368 — A disabled primary control must say why it is disabled.** Finish with no set, and Log set with an
   incomplete field, are disabled and silent ([ActiveWorkoutScreen.kt](app/src/main/java/com/example/androidapp/ui/workout/ActiveWorkoutScreen.kt));
@@ -65,6 +64,8 @@ it is picked up; its design argument moves to [DECISIONS.md](DECISIONS.md).
   minimum cell size (or horizontal scrolling) and the accessible accent used for small text, with the contrast
   test extended to the actual call sites.
 
+### State and formatting
+
 - **B371 — The measurements deep link must keep its screen frame, and messages must centre inside a scroll.**
   When the daily form is requested before the list loads, the route returns a bare `CenteredMessage` with no
   Scaffold, title or back path; and `CenteredMessage` uses `fillMaxSize`, which does not centre under an
@@ -82,6 +83,21 @@ it is picked up; its design argument moves to [DECISIONS.md](DECISIONS.md).
   literals in Kotlin. Localization is parked, but the date is visible next to `HistoryFormat` everywhere else.
   Fixed means the date goes through `HistoryFormat` and the literals become resources (or are justified as
   punctuation), with the existing string tests extended.
+
+## Later — the rest of the 2.22 review
+
+The rows below are real and specified, but none is in flight: a defect here is low-frequency or a polish item,
+an engineering row is not user-visible, and a feature is waiting for a decision. A row leaves this section when
+it is picked up; its design argument moves to [DECISIONS.md](DECISIONS.md).
+
+### Defects and polish
+
+- **B358 — The shell and the screens must not both apply the navigation-bar inset.** The shell reserves the
+  tab bar, whose height already includes the system bar, and each screen's default `Scaffold` adds the system
+  inset again ([AppNavHost.kt](app/src/main/java/com/example/androidapp/ui/navigation/AppNavHost.kt)); the
+  deload screen adds a third `navigationBarsPadding()`. Fixed means the shell or the screens own the bottom
+  inset exactly once, verified on a gesture-navigation and a three-button device (this was reasoned from code,
+  not measured).
 
 ### Build, CI, tests and docs
 
