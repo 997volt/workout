@@ -15,6 +15,58 @@ work was planned, so they do not always run in order — and an id this file doe
 shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 [CHANGELOG-1.x.md](CHANGELOG-1.x.md) for the 1.x releases.
 
+## Next — 2.25 review fixes
+
+The 2.25 batch is implemented but not released. The review of `67494190..HEAD` found two release blockers and
+three follow-ups; each row names the failed behaviour, what fixed means and the test that would have caught it.
+**B382 and B383 must be fixed before the 2.25 tag.**
+
+- **B382 — The daily measurement shortcut must still open its form after loading.** B371 moved the loading
+  wait into the measurement Scaffold, so the route now first composes `MeasurementsScreen` with
+  `initialAdd = null` and `initialEdit = null`; `adding` and `editingEntryId` are `rememberSaveable` without a
+  key ([MeasurementsScreen.kt](app/src/main/java/com/example/androidapp/ui/measurements/MeasurementsScreen.kt#L227)),
+  so the values that arrive after loading are ignored. Home's *Today's measurement* then lands on the list,
+  and today's existing entry is not opened for editing. Fixed means the pending form is keyed or applied when
+  the initial value changes, with a test that starts loading with no form and then supplies a daily entry.
+
+- **B383 — A last-trained `Storage` failure must be acknowledgeable, and read once.** The library collects
+  `lastTrained` twice — in `init` for the acknowledgement and again inside `uiState`
+  ([ExerciseLibraryViewModel.kt](app/src/main/java/com/example/androidapp/ui/exercises/ExerciseLibraryViewModel.kt#L225)).
+  `DataError.Storage` wraps a `Throwable`, whose equality is identity-based, so the two Room collections can
+  produce different errors and the acknowledged value never equals the displayed one; the snackbar then
+  cannot be dismissed. The second collection also keeps a database read alive with no screen subscriber.
+  Fixed means one shared upstream result (or a stable failure token), with a test whose flow emits a fresh
+  `Storage` error per collection and whose dismissal clears the message.
+
+- **B384 — `CenteredMessage` must centre in the parent it is given, not only in a 200 dp fallback.** B371
+  detects an infinite height and uses `heightIn(min = 200.dp)`
+  ([CenteredMessage.kt](app/src/main/java/com/example/androidapp/ui/components/CenteredMessage.kt#L63)). That
+  stops `fillMaxSize` collapsing to the text height, but in a lazy item or a long scroll the message is still
+  near the top of the viewport rather than centred. Fixed means the caller supplies a parent-sized constraint
+  (`fillParentMaxSize` in a lazy item) or the message is placed outside the scroll, with a test inside a
+  `LazyColumn` and inside a `verticalScroll` parent.
+
+- **B385 — User-authored top-bar names must keep their case.** B369 routes exercise, template, program and
+  workout names through `TopBarTitle`, which uppercases its text
+  ([TopBarTitle.kt](app/src/main/java/com/example/androidapp/ui/components/TopBarTitle.kt#L40)). A lifter's
+  “iPhone” or “McGregor” becomes “IPHONE” or “MCGREGOR”; the old detail bars preserved the name. Fixed means
+  a title variant that keeps the one-line/ellipsis/heading rules without transforming user content, with a
+  long mixed-case-name test.
+
+- **B386 — The calendar must show the whole month, or make the horizontal scroll explicit.** B370 keeps the
+  48 dp target by making the grid 360 dp wide while the 360 dp phone leaves 328 dp after the screen's 16 dp
+  padding ([AdherenceScreen.kt](app/src/main/java/com/example/androidapp/ui/adherence/AdherenceScreen.kt#L583)),
+  so the last column is clipped at first paint. Horizontal scrolling is allowed by B370, but the month no
+  longer reads at a glance and nothing indicates the seventh column is there. Fixed means the grid uses the
+  full width, or the scroll has a visible affordance, with a 360 dp test that all seven weekdays are
+  reachable/visible as chosen.
+
+- **N296 — The review's missing tests.** B368's tests cover only the missing-weight reason; the reps, hold and
+  invalid-RPE branches are untested. B369's long-name test only checks that the title and Edit exist, not
+  that the name is clamped or the action remains usable. B372's saved-state tests reuse the same
+  `SavedStateHandle` object, so they prove the wiring but not a `Bundle` round trip. Fixed means one test for
+  each of those three gaps, with the existing assertions kept.
+
 ## Later — the rest of the 2.22 review
 
 The rows below are real and specified, but none is in flight: a defect here is low-frequency or a polish item,
