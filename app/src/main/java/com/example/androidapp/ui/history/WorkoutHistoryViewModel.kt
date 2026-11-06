@@ -1,5 +1,6 @@
 package com.example.androidapp.ui.history
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.androidapp.domain.model.WorkoutSummary
@@ -52,13 +53,18 @@ data class WorkoutHistoryUiState(
 @HiltViewModel
 class WorkoutHistoryViewModel @Inject constructor(
     workoutRepository: WorkoutRepository,
+    private val savedStateHandle: SavedStateHandle = SavedStateHandle(),
 ) : ViewModel() {
 
-    /** The query the lifter is typing (ROADMAP N146). */
-    private val query = MutableStateFlow("")
+    /** The query the lifter is typing (ROADMAP N146), restored after process death (B372). */
+    private val query = MutableStateFlow(savedStateHandle[QUERY_KEY] ?: "")
 
-    /** The chip they picked (ROADMAP N146). */
-    private val filter = MutableStateFlow(HistoryFilter.ALL)
+    /** The chip they picked (ROADMAP N146), restored after process death (B372). */
+    private val filter = MutableStateFlow(
+        savedStateHandle.get<String>(FILTER_KEY)
+            ?.let { name -> HistoryFilter.entries.firstOrNull { it.name == name } }
+            ?: HistoryFilter.ALL,
+    )
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val uiState: StateFlow<WorkoutHistoryUiState> =
@@ -81,15 +87,19 @@ class WorkoutHistoryViewModel @Inject constructor(
     /** Types a query; empty is every row the chip admits. */
     fun onQueryChange(value: String) {
         query.value = value
+        savedStateHandle[QUERY_KEY] = value
     }
 
     /** Picks a chip. */
     fun onFilterChange(value: HistoryFilter) {
         filter.value = value
+        savedStateHandle[FILTER_KEY] = value.name
     }
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L
+        const val QUERY_KEY = "history_query"
+        const val FILTER_KEY = "history_filter"
     }
 }
 

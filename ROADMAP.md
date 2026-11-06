@@ -27,11 +27,6 @@ inset fix; it is not part of 2.25.
 
 ### Controls, titles and accessibility
 
-- **B372 — Search, filter and sort must survive process death.** The library, history and picker keep their
-  query state in ViewModels, which survives rotation but not process death, while the rest of the screen is
-  restored. Fixed means those scalars live in `SavedStateHandle`, with a test that recreates the ViewModel from a
-  saved state.
-
 - **B373 — The last hardcoded date and English strings must follow the app's formatting.** The statistics custom
   range builds a raw ISO date with a hardcoded separator, and a few user-facing sentences/fragments remain as
   literals in Kotlin. Localization is parked, but the date is visible next to `HistoryFormat` everywhere else.

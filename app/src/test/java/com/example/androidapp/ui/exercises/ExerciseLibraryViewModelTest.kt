@@ -1,5 +1,6 @@
 package com.example.androidapp.ui.exercises
 
+import androidx.lifecycle.SavedStateHandle
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.LibraryFilter
@@ -299,6 +300,29 @@ class ExerciseLibraryViewModelTest {
             LibraryFilter.ALL,
             viewModel.uiState.value.filter,
         )
+    }
+
+    @Test
+    fun theQuerySortAndFilter_surviveProcessDeath() = runTest(dispatcher) {
+        // B372: these are screen scalars, not document state, so the rest of the screen restored while
+        // they reset on process death. They live in SavedStateHandle now.
+        val repository = FakeRepository(listOf(squat, bench))
+        val saved = SavedStateHandle()
+        val first = ExerciseLibraryViewModel(repository, timeSource = { Instant.EPOCH }, savedStateHandle = saved)
+        observe(first)
+        advanceUntilIdle()
+        first.onQueryChange("squat")
+        first.onSortChange(LibrarySort.LAST_TRAINED)
+        first.onFilterChange(LibraryFilter.UNFILED)
+        advanceUntilIdle()
+
+        val restored = ExerciseLibraryViewModel(repository, timeSource = { Instant.EPOCH }, savedStateHandle = saved)
+        observe(restored)
+        advanceUntilIdle()
+
+        assertEquals("squat", restored.uiState.value.query)
+        assertEquals(LibrarySort.LAST_TRAINED, restored.uiState.value.sort)
+        assertEquals(LibraryFilter.UNFILED, restored.uiState.value.filter)
     }
 
     @Test

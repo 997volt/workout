@@ -89,6 +89,33 @@ class ExercisePickerViewModelTest {
     }
 
     @Test
+    fun theQuery_survivesProcessDeath() = runTest(dispatcher) {
+        // B372: the picker's search is the same kind of screen scalar as the library's.
+        val saved = SavedStateHandle(mapOf("templateId" to null))
+        val first = ExercisePickerViewModel(
+            FakeExerciseRepository(),
+            FakeWorkoutRepository(),
+            FakeTemplateRepository(),
+            saved,
+        )
+        observe(first)
+        advanceUntilIdle()
+        first.onQueryChange("bench")
+        advanceUntilIdle()
+
+        val restored = ExercisePickerViewModel(
+            FakeExerciseRepository(),
+            FakeWorkoutRepository(),
+            FakeTemplateRepository(),
+            saved,
+        )
+        observe(restored)
+        advanceUntilIdle()
+
+        assertEquals("bench", restored.uiState.value.query)
+    }
+
+    @Test
     fun creatingAnExercise_storesIt_andAddsItToTheSession() = runTest(dispatcher) {
         val exercises = FakeExerciseRepository()
         val workouts = FakeWorkoutRepository()

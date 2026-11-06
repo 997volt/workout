@@ -1,5 +1,6 @@
 package com.example.androidapp.ui.exercises
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.androidapp.domain.DataError
@@ -110,6 +111,7 @@ data class ExerciseLibraryUiState(
 class ExerciseLibraryViewModel @Inject constructor(
     private val exerciseRepository: ExerciseRepository,
     private val timeSource: TimeSource,
+    private val savedStateHandle: SavedStateHandle = SavedStateHandle(),
 ) : ViewModel() {
 
     /** The search and the order — the form's memory rather than the document's (ROADMAP N230). */
@@ -128,7 +130,17 @@ class ExerciseLibraryViewModel @Inject constructor(
     private val notTrainedSince: Instant =
         timeSource.now().minus(LIBRARY_NOT_TRAINED_DAYS, ChronoUnit.DAYS)
 
-    private val view = MutableStateFlow(LibraryView())
+    private val view = MutableStateFlow(
+        LibraryView(
+            query = savedStateHandle[QUERY_KEY] ?: "",
+            sort = savedStateHandle.get<String>(SORT_KEY)
+                ?.let { name -> LibrarySort.entries.firstOrNull { it.name == name } }
+                ?: LibrarySort.NAME,
+            filter = savedStateHandle.get<String>(FILTER_KEY)
+                ?.let { name -> LibraryFilter.entries.firstOrNull { it.name == name } }
+                ?: LibraryFilter.ALL,
+        ),
+    )
 
     private val error = MutableStateFlow<DataError?>(null)
 
@@ -230,16 +242,19 @@ class ExerciseLibraryViewModel @Inject constructor(
 
     fun onQueryChange(value: String) {
         view.update { it.copy(query = value) }
+        savedStateHandle[QUERY_KEY] = value
     }
 
     /** Reorders the list; nothing is written, so this is a display choice (N230). */
     fun onSortChange(value: LibrarySort) {
         view.update { it.copy(sort = value) }
+        savedStateHandle[SORT_KEY] = value.name
     }
 
     /** Narrows the list to one group, inside whatever the search is (N231). */
     fun onFilterChange(value: LibraryFilter) {
         view.update { it.copy(filter = value) }
+        savedStateHandle[FILTER_KEY] = value.name
     }
 
     /**
@@ -292,5 +307,10 @@ class ExerciseLibraryViewModel @Inject constructor(
     private companion object {
         /** Keeps the upstream flow warm across a configuration change. */
         const val STOP_TIMEOUT_MILLIS = 5_000L
+
+        // The scalars survive process death with the ViewModel (B372); enums go by name, never ordinal.
+        const val QUERY_KEY = "library_query"
+        const val SORT_KEY = "library_sort"
+        const val FILTER_KEY = "library_filter"
     }
 }

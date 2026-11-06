@@ -1254,6 +1254,10 @@ the rule; that one argues it.
   like any other throwable; turning it into `DataResult.Failure` tells the screen a storage read failed when
   the collector simply left. The trends flows share one `toDataResult` helper that rethrows cancellation first
   and maps only real failures, the same rule `dataResultOf` holds for suspending calls.
+- **A screen scalar belongs in SavedStateHandle, not only a rotation-scoped ViewModel** (B372). Search, sort
+  and filter are cheap to restore and visible; keeping them in a MutableStateFlow survives rotation but not
+  process death, which restored everything around them. Enums are saved by name, and a value this version no
+  longer knows falls back to the default rather than failing the restore.
 - **A loading wait keeps the screen that will replace it** (B371). The daily shortcut's Scaffold, title and
   back path stay while the list loads, and the add button waits; a bare message would be a different screen
   with no way back. `CenteredMessage` fills a bounded parent and falls back to a centred minimum box under an

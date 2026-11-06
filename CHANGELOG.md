@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **Search, sort and filter survive process death** (B372). The library's query/sort/filter, history's
+  query/filter and the picker's query lived only in ViewModels, so a process restart restored the rest of the
+  screen but reset them. They now read from and write to `SavedStateHandle`, with enums stored by name and a
+  recreation test for each.
 - **The daily measurement shortcut keeps its screen frame while loading** (B371). The route returned a bare
   `CenteredMessage` before the Scaffold, so a wait had no title or back path. The wait is now the Scaffold's
   body, with the add button withheld. `CenteredMessage` also stops resolving `fillMaxSize` against an infinite

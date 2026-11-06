@@ -83,13 +83,13 @@ class ExercisePickerViewModel @Inject constructor(
     private val exerciseRepository: ExerciseRepository,
     private val workoutRepository: WorkoutRepository,
     private val templateRepository: TemplateRepository,
-    savedStateHandle: SavedStateHandle,
+    private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
     /** Null when picking for the open session, set when picking for a template. */
     private val templateId: String? = savedStateHandle.toRoute<ExercisePicker>().templateId
 
-    private val query = MutableStateFlow("")
+    private val query = MutableStateFlow(savedStateHandle[QUERY_KEY] ?: "")
 
     /** Emits true once the exercise is stored, so the screen can pop itself. */
     private val _added = MutableStateFlow(false)
@@ -130,6 +130,7 @@ class ExercisePickerViewModel @Inject constructor(
 
     fun onQueryChange(value: String) {
         query.value = value
+        savedStateHandle[QUERY_KEY] = value
     }
 
     fun onExerciseSelected(exerciseId: String) {
@@ -296,6 +297,7 @@ class ExercisePickerViewModel @Inject constructor(
     }
 
     private companion object {
+        const val QUERY_KEY = "picker_query"
         const val STOP_TIMEOUT_MILLIS = 5_000L
     }
 }
