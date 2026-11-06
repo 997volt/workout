@@ -83,6 +83,7 @@ object TestTags {
 
     /** The workout's Finish action, and the comment prompt behind it (ROADMAP N11). */
     const val ACTIVE_WORKOUT_FINISH = "active_workout_finish"
+    const val ACTIVE_WORKOUT_FINISH_REASON = "active_workout_finish_reason"
 
     /**
      * Leaving a workout, empty or not (ROADMAP N41, N87 amended): the overflow that holds the
@@ -702,6 +703,7 @@ object TestTags {
      * It sits beside the fields stating that set, so what it commits is what is on screen.
      */
     const val SET_LOG = "set_log"
+    const val SET_LOG_REASON = "set_log_reason"
 
     /**
      * The workout screen's scrolling exercise list (ROADMAP N53).

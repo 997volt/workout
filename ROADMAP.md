@@ -27,11 +27,6 @@ inset fix; it is not part of 2.25.
 
 ### Controls, titles and accessibility
 
-- **B368 — A disabled primary control must say why it is disabled.** Finish with no set, and Log set with an
-  incomplete field, are disabled and silent ([ActiveWorkoutScreen.kt](app/src/main/java/com/example/androidapp/ui/workout/ActiveWorkoutScreen.kt));
-  Templates already shows a reason line under a disabled Start. Fixed means the reason is visible (and
-  announced) beside the control, or the control is absent until it can act, with a UI test for each state.
-
 - **B369 — Every top-bar title must go through the one-line title component.** Several bars draw a raw `Text`
   with no `maxLines`/ellipsis, so a long user-authored exercise, template or program name can overflow the
   fixed-height bar and compete with up to three actions

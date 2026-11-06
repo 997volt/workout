@@ -260,6 +260,7 @@
     <string name="activity_rock_climbing">Rock climbing</string>
     <string name="activity_volleyball">Volleyball</string>
     <string name="active_workout_finish">Finish</string>
+    <string name="active_workout_finish_reason">Log a set to finish</string>
     <string name="active_workout_discard">Discard workout</string>
     <!-- Leaving a workout that has something in it (ROADMAP N41). The empty workout keeps its
          prompt-free discard; this is the one that would delete logged sets, so it asks first and
@@ -884,6 +885,10 @@
          the button that writes them (ROADMAP N59) — so the label carries no values: the values are
          the fields beside it. -->
     <string name="set_log">Log set</string>
+    <string name="set_log_reason_reps">Enter reps to log this set.</string>
+    <string name="set_log_reason_weight">Enter a weight to log this set.</string>
+    <string name="set_log_reason_hold">Enter a hold to log this set.</string>
+    <string name="set_log_reason_rpe">Enter an RPE from 1 to 10, in half steps.</string>
     <!-- Past the last planned set the exercise keeps accepting sets, and the control says so
          (ROADMAP N52): logging one is still what it does, so the label loses the values it no
          longer describes rather than becoming a second Finish. -->

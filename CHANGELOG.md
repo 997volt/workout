@@ -17,6 +17,9 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **Disabled primary controls say why** (B368). Finish is absent until a set (or an activity) can close the
+  session, and the top bar states "Log a set to finish" in its place, announced as a live region. Log set keeps
+  its position when the fields are incomplete and a line beneath names the missing reps, weight, hold or RPE.
 - **Tab roots no longer offer Up** (B357). History, Settings and the Library drew an arrow that called
   `popBackStack()` and therefore went Home, while Statistics correctly had none. All four now share
   `TabRootTopBar`, which has no navigation icon; screens reached from a root keep their own back arrow.

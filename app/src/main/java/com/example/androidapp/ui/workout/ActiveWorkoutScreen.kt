@@ -528,13 +528,7 @@ internal fun WorkoutTopBar(
         actions = {
             // Nothing to finish until at least one set is logged — or the session is an activity, which
             // holds none and is finished as what it records (N141).
-            AppTextButton(
-                onClick = { commenting = true },
-                enabled = canFinish,
-                modifier = Modifier.testTag(TestTags.ACTIVE_WORKOUT_FINISH),
-            ) {
-                Text(stringResource(R.string.active_workout_finish))
-            }
+            FinishAction(canFinish = canFinish, onClick = { commenting = true })
             if (canDiscard) {
                 WorkoutMenu(
                     onDiscard = {

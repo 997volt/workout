@@ -30,7 +30,9 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
@@ -55,6 +57,7 @@ import com.example.androidapp.ui.components.OpenExerciseAction
 import com.example.androidapp.ui.components.SetEdit
 import com.example.androidapp.ui.components.SetEntryDraft
 import com.example.androidapp.ui.components.SetEntryNumbers
+import com.example.androidapp.ui.components.SetEntryValues
 import com.example.androidapp.ui.components.SetNumber
 import com.example.androidapp.ui.components.SetRoleSelector
 import com.example.androidapp.ui.components.SetRpeField
@@ -648,7 +651,7 @@ private fun NextSetEditor(
                     targetRpeHalves = suggestion.targetRpeHalves,
                 )
             }
-            LogSetButton(row = row, edit = draft.toEdit(unit), enabled = values.isComplete, onLogSet = onLogSet)
+            LogSetButton(row = row, edit = draft.toEdit(unit), values = values, onLogSet = onLogSet)
         }
     }
 }
@@ -922,17 +925,37 @@ private fun NextSetHeader(row: SessionExerciseRow, unit: WeightUnit) {
 private fun LogSetButton(
     row: SessionExerciseRow,
     edit: SetEdit,
-    enabled: Boolean,
+    values: SetEntryValues,
     onLogSet: (SetEdit) -> Unit,
 ) {
-    FilledTonalButton(
-        onClick = { onLogSet(edit) },
-        enabled = enabled,
-        modifier = Modifier.fillMaxWidth().testTag(TestTags.SET_LOG),
-    ) {
-        // The plan's work is done, so the label stops promising a target the plan no longer names
-        // (ROADMAP N52). Logging an extra set is what the control still does — nothing closes, and the
-        // way to end the exercise is Done.
-        Text(stringResource(if (row.isPastPlan) R.string.set_log_extra else R.string.set_log))
+    Column {
+        FilledTonalButton(
+            onClick = { onLogSet(edit) },
+            enabled = values.isComplete,
+            modifier = Modifier.fillMaxWidth().testTag(TestTags.SET_LOG),
+        ) {
+            // The plan's work is done, so the label stops promising a target the plan no longer names
+            // (ROADMAP N52). Logging an extra set is what the control still does — nothing closes, and the
+            // way to end the exercise is Done.
+            Text(stringResource(if (row.isPastPlan) R.string.set_log_extra else R.string.set_log))
+        }
+        if (!values.isComplete) {
+            // B368: the disabled button keeps its place, and the sentence beside it says what is missing.
+            val reason = when {
+                !values.rpeValid -> R.string.set_log_reason_rpe
+                values.load == null -> R.string.set_log_reason_weight
+                values.timed && values.durationSeconds == null -> R.string.set_log_reason_hold
+                else -> R.string.set_log_reason_reps
+            }
+            Text(
+                text = stringResource(reason),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier
+                    .padding(top = 4.dp)
+                    .testTag(TestTags.SET_LOG_REASON)
+                    .semantics { liveRegion = LiveRegionMode.Polite },
+            )
+        }
     }
 }

@@ -926,7 +926,22 @@ class ActiveWorkoutScreenTest {
         // finished, so an empty session cannot be closed as a day's training.
         setScreen(state = ActiveWorkoutUiState(isLoading = false, sessionId = "s1", exercises = emptyList()))
 
-        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_FINISH).assertIsNotEnabled()
+        // B368: no silently disabled control. The action is absent until it can work, and the bar states why.
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_FINISH).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_FINISH_REASON)
+            .assertTextEquals("Log a set to finish")
+    }
+
+    @Test
+    fun anIncompleteSet_saysWhatIsMissing_besideLogSet() {
+        // B368: the disabled button keeps its place, and the line under it names the missing value.
+        setScreen(state = state(isFinished = false))
+
+        composeTestRule.onNodeWithTag(TestTags.SET_WEIGHT_FIELD).performTextClearance()
+
+        composeTestRule.onNodeWithTag(TestTags.SET_LOG).assertIsNotEnabled()
+        composeTestRule.onNodeWithTag(TestTags.SET_LOG_REASON)
+            .assertTextEquals("Enter a weight to log this set.")
     }
 
     private fun state(

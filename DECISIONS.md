@@ -1254,6 +1254,9 @@ the rule; that one argues it.
   like any other throwable; turning it into `DataResult.Failure` tells the screen a storage read failed when
   the collector simply left. The trends flows share one `toDataResult` helper that rethrows cancellation first
   and maps only real failures, the same rule `dataResultOf` holds for suspending calls.
+- **A disabled primary action must state its reason** (B368). A disabled Finish with no sentence is a silent
+  dead end, so when no set can finish the session it is replaced by the same-slot reason, announced politely;
+  Log set stays visible because its fields are right above it, with the missing value named below.
 - **A tab root has no Up arrow** (B357). A root is where the tab goes; an arrow offers to go somewhere the
   lifter did not come from, and on these roots it called `popBackStack()` and went Home. The rule lives in
   `TabRootTopBar` so all four roots get it, while pushed screens keep their own back arrow.
