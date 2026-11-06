@@ -943,8 +943,8 @@ private suspend fun applyProgramEdit(
     writer.applySchedule()
     val exercises = writer.writeExercises()
     val templates = writer.writeTemplates()
-    writer.writeTemplateExercises()
-    writer.writeSets()
+    val plannedIds = writer.writeTemplateExercises()
+    writer.writeSets(plannedIds)
     writer.writeSlots()
 
     return ProgramImportSummary(
@@ -1006,13 +1006,14 @@ private class ProgramEditWriter(
     suspend fun writeExercises(): Int {
         val added = ids(ChangeKind.EXERCISE_ADDED)
         if (added.isEmpty()) return 0
-        backupDao.insertExercises(
+        // **Count what landed, not what was asked for** (B363): a locally hidden movement has the id the
+        // document carries, so its insert is ignored and the summary must not claim it was added.
+        return backupDao.insertExercises(
             document.exercises
                 .filter { it.id in added }
                 .withValidLibraryShape()
                 .map { it.toEntity() },
-        )
-        return added.size
+        ).count { it != IGNORED_ROW }
     }
 
     suspend fun writeTemplates(): Int {
@@ -1039,32 +1040,46 @@ private class ProgramEditWriter(
         return added.size + updated.size
     }
 
-    suspend fun writeTemplateExercises() {
+    suspend fun writeTemplateExercises(): Set<String> {
+        // A movement the document names but this library does not hold live cannot carry a plan row
+        // (B363): the row would be written against a hidden id and every plan read would filter it out.
+        val liveExercises = backupDao.allExercises()
+            .filter { it.deletedAt == null }
+            .mapTo(mutableSetOf()) { it.id }
         val added = document.templateExercises
-            .filter { it.id in ids(ChangeKind.TEMPLATE_EXERCISE_ADDED) }
+            .filter { it.id in ids(ChangeKind.TEMPLATE_EXERCISE_ADDED) && it.exerciseId in liveExercises }
+        val written = mutableSetOf<String>()
         if (added.isNotEmpty()) {
-            backupDao.insertTemplateExercises(
+            val results = backupDao.insertTemplateExercises(
                 added.map {
                     it.toEntity().copy(createdAt = now, updatedAt = now, deletedAt = null)
                 },
             )
+            added.zip(results)
+                .filter { (_, result) -> result != IGNORED_ROW }
+                .mapTo(written) { (row, _) -> row.id }
         }
         val updated = document.templateExercises
-            .filter { it.id in ids(ChangeKind.TEMPLATE_EXERCISE_UPDATED) }
+            .filter { it.id in ids(ChangeKind.TEMPLATE_EXERCISE_UPDATED) && it.exerciseId in liveExercises }
         if (updated.isNotEmpty()) {
             editDao.updateTemplateExercises(
                 updated.map { it.toEntity().copy(updatedAt = now, deletedAt = null) },
             )
+            written += updated.map { it.id }
         }
         val removed = ids(ChangeKind.TEMPLATE_EXERCISE_REMOVED).toList()
         if (removed.isNotEmpty()) {
             editDao.softDeleteTemplateExercises(removed, now)
             editDao.softDeleteSetsOfTemplateExercises(removed, now)
         }
+        return written
     }
 
-    suspend fun writeSets() {
-        val added = document.templateSets.filter { it.id in ids(ChangeKind.SET_ADDED) }
+    suspend fun writeSets(plannedIds: Set<String>) {
+        // A set whose planned exercise was dropped above would be an orphan row (B363).
+        val added = document.templateSets.filter {
+            it.id in ids(ChangeKind.SET_ADDED) && it.templateExerciseId in plannedIds
+        }
         if (added.isNotEmpty()) {
             backupDao.insertTemplateSets(
                 added.map {
@@ -1072,7 +1087,9 @@ private class ProgramEditWriter(
                 },
             )
         }
-        val updated = document.templateSets.filter { it.id in ids(ChangeKind.SET_UPDATED) }
+        val updated = document.templateSets.filter {
+            it.id in ids(ChangeKind.SET_UPDATED) && it.templateExerciseId in plannedIds
+        }
         if (updated.isNotEmpty()) {
             editDao.updateTemplateSets(
                 updated.map { it.toEntity().copy(updatedAt = now, deletedAt = null) },

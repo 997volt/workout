@@ -17,6 +17,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A program edit no longer writes plan rows for a locally hidden movement** (B363). The edit snapshot reads
+  only live movements, so a hidden local id looked new; its insert was ignored, but the planned exercise and set
+  were still written against it and every plan read filtered them out — invisible and unremovable, while the
+  summary claimed they were added. The writer counts actual exercise inserts, filters planned rows to live
+  movements, and only writes sets under rows that landed.
 - **Re-roling an anchor re-checks the rungs below it** (B365). `updateSet` validated only the edited row, so
   turning a working set into a warm-up was accepted even though a rung below it then had no legal anchor. The
   write now re-runs the rung rule over the layout it would produce and refuses a change that newly breaks a

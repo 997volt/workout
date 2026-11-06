@@ -1210,6 +1210,12 @@ the rule; that one argues it.
   the prefill (N73); the session still records only the template (P3.3), so provenance and occurrence
   matching are unchanged. Storing it would make the session's provenance say two things and would go
   stale the moment the slot moved.
+- **A plan row may not be written against a movement that is not live** (B363). The edit snapshot is taken
+  from live rows, so a locally hidden movement with the document's id looks new; the insert is ignored and the
+  planned row would point at a row every plan read filters out. The writer counts actual inserts, filters the
+  planned rows and their sets to the live movements after the write, and reports what landed. Rejected: failing
+  the whole edit, because the document's other changes are still useful and the user never asked for the hidden
+  movement.
 - **A role edit re-checks every rung it could orphan** (B365). The rung rule is about a row and the row above
   it, but changing a set's role changes the *above* of the rows below: a normal anchor edited to a warm-up
   leaves an existing drop with no legal anchor, while the edited row itself is valid. The write re-runs the rule

@@ -52,14 +52,6 @@ release conversation.
   a bounded newest set (and can answer `latest()` from the filenames), with a test that records more than the
   cap.
 
-- **B363 — A program edit must not write plan rows for a locally hidden movement.** The edit snapshot reads
-  only live exercises, so an exercise that exists locally but is soft-deleted looks new; `writeExercises`
-  returns `added.size` without checking ignored inserts, the planned row is written against the hidden id, and
-  every plan read filters it out — invisible and unremovable, while the summary says it was added
-  ([RoomProgramRepository.kt](app/src/main/java/com/example/androidapp/data/RoomProgramRepository.kt)). The
-  program-add path already drops such rows. Fixed means counting actual inserts and refusing/dropping planned
-  rows whose exercise is not live afterwards, with a test for the hidden-id case.
-
 ## Later — the rest of the 2.22 review
 
 The rows below are real and specified, but none is in flight: a defect here is low-frequency or a polish item,

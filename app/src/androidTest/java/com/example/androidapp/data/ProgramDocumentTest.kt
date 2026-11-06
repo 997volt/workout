@@ -495,6 +495,45 @@ class ProgramDocumentTest {
     }
 
     @Test
+    fun anEditNamingALocallyHiddenMovement_doesNotWriteItsPlanRows() = runTest {
+        // B363: the edit snapshot sees only live movements, so a hidden local id looks new; the insert is
+        // ignored, and without this check the plan row and its set were written against a row every plan
+        // read filters out — invisible and unremovable, while the summary said they were added.
+        val programId = seedProgram()
+        database.exerciseDao().insertAll(listOf(exercise("hidden-move", name = "Hidden")))
+        database.exerciseDao().softDelete("hidden-move", 1L)
+        val original = ProgramDocumentCodec.decode(exportOf(programId))
+        val source = original.exercises.single()
+        val planned = original.templateExercises.single()
+        val set = original.templateSets.single()
+        val edit = original.copy(
+            exercises = original.exercises + source.copy(id = "hidden-move", name = "Hidden"),
+            templateExercises = original.templateExercises + planned.copy(
+                id = "pl-hidden",
+                exerciseId = "hidden-move",
+                position = 1,
+            ),
+            templateSets = original.templateSets + set.copy(
+                id = "ts-hidden",
+                templateExerciseId = "pl-hidden",
+            ),
+            edit = EditMarker(baseExportedAt = original.exportedAt),
+        )
+
+        val summary = importOf(ProgramDocumentCodec.encode(edit))
+
+        assertEquals("the ignored exercise is not counted as added", 0, summary.exercises)
+        assertTrue(
+            "no planned row was written against the hidden id",
+            database.backupDao().allTemplateExercises().none { it.id == "pl-hidden" },
+        )
+        assertTrue(
+            "and no set was left orphaned",
+            database.backupDao().allTemplateSets().none { it.id == "ts-hidden" },
+        )
+    }
+
+    @Test
     fun anEditCannotCarryHiding_soAWorkoutStaysHidden() = runTest {
         val programId = seedProgram()
         val templateId = templates.observeTemplates().first().single().id
