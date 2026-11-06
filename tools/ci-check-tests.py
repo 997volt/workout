@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Fail when a test run did not execute what its sources declare (ROADMAP B8, B268, B275).
 
-Two suites, one rule. The JVM unit suite and the instrumented suite both declare `@Test`
-methods in Kotlin sources and both write JUnit XML — and a report with no failures looks
+Three suites, one rule. The JVM unit suite, the instrumented suite and the KMP common suite all
+declare `@Test` methods in Kotlin sources and all write JUnit XML — and a report with no failures looks
 exactly like a complete one, which is how a green artifact with well under half its tests
 was produced (B8). A Gradle task that is UP-TO-DATE replays the previous report, so the
 report's age matters as much as its contents (B275).
@@ -18,6 +18,7 @@ What is checked, per suite:
 
 Usage:
     tools/ci-check-tests.py unit
+    tools/ci-check-tests.py shared
     tools/ci-check-tests.py instrumented
 
 Exit status is 0 only when every check passes.
@@ -52,6 +53,13 @@ SUITES = {
         noun="instrumented",
     ),
 }
+
+# The KMP module has one common source set and two targets with separate reports (N274).
+SHARED_SOURCES = pathlib.Path("shared/src/commonTest")
+SHARED_RESULTS = (
+    pathlib.Path("shared/build/test-results/jvmTest"),
+    pathlib.Path("shared/build/test-results/jsNodeTest"),
+)
 
 # A class declaration, and the annotation the runner reads. Matched on the stripped source,
 # so neither can be found inside a comment or a string literal.
@@ -174,7 +182,7 @@ def executed_tests(results: pathlib.Path) -> tuple[dict[str, int], int, int, flo
         newest = max(newest, path.stat().st_mtime)
         for tag in SUITE_TAG.finditer(path.read_text()):
             attributes = dict(ATTRIBUTE.findall(tag.group(1)))
-            name = attributes.get("name", "").split(".")[-1].split("$")[-1]
+            name = attributes.get("name", "").split(".")[-1].split("$")[-1].split("[")[0]
             if not name:
                 continue
             executed[name] = executed.get(name, 0) + int(attributes.get("tests", "0"))
@@ -260,9 +268,24 @@ def check(suite: Suite) -> int:
     return 0
 
 
+def check_shared() -> int:
+    """The common tests, checked separately for both KMP targets (N274)."""
+    for results in SHARED_RESULTS:
+        code = check(
+            Suite(
+                sources=SHARED_SOURCES,
+                results=results,
+                noun=results.name,
+            ),
+        )
+        if code != 0:
+            return code
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("suite", choices=sorted(SUITES))
+    parser.add_argument("suite", choices=sorted([*SUITES, "shared"]))
     parser.add_argument(
         "--sources",
         type=pathlib.Path,
@@ -274,6 +297,10 @@ def main() -> int:
         help="override the results directory (for checking the checker)",
     )
     arguments = parser.parse_args()
+    if arguments.suite == "shared":
+        if arguments.sources is not None or arguments.results is not None:
+            parser.error("--sources/--results do not apply to the shared suite")
+        return check_shared()
     suite = SUITES[arguments.suite]
     if arguments.sources is not None or arguments.results is not None:
         suite = Suite(

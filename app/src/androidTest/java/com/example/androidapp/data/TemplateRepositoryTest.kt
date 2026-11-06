@@ -1,6 +1,5 @@
 package com.example.androidapp.data
 
-import java.time.DayOfWeek
 import com.example.androidapp.domain.repository.TemplateSetEdit
 import com.example.androidapp.domain.Load
 import com.example.androidapp.domain.model.rungLoad

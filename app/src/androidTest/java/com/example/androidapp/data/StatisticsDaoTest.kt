@@ -36,7 +36,7 @@ class StatisticsDaoTest {
      * The query used to name `'WARMUP'` alone, so a drop or cluster rung was counted as a record the app never
      * announced. It takes the list now, and this is the same expression `RoomStatisticsRepository` passes.
      */
-    private val RECORDABLE = SetType.entries.filter { it.recordsEffort }.map { it.name }
+    private val recordable = SetType.entries.filter { it.recordsEffort }.map { it.name }
 
     private lateinit var database: WorkoutDatabase
     private val dao get() = database.statisticsDao()
@@ -70,7 +70,7 @@ class StatisticsDaoTest {
         // Day 4: 102.5 x 5 — heavier than the first, lighter than the best: not a record.
         session("s4", at = 3 * day, "back-squat" to listOf(set("s4-0", reps = 5, weight = 102_500L)))
 
-        assertEquals(2, dao.countRecordsIn(from = 0L, to = 10 * day, recordableRoles = RECORDABLE))
+        assertEquals(2, dao.countRecordsIn(from = 0L, to = 10 * day, recordableRoles = recordable))
     }
 
     @Test
@@ -101,7 +101,7 @@ class StatisticsDaoTest {
         assertEquals(
             "the anchor, and the 85 the rung was blocking — never the rung itself",
             2,
-            dao.countRecordsIn(0L, 10 * day, recordableRoles = RECORDABLE),
+            dao.countRecordsIn(0L, 10 * day, recordableRoles = recordable),
         )
     }
 
@@ -119,7 +119,7 @@ class StatisticsDaoTest {
         assertEquals(
             "the working set is the first real one, so it is a record",
             1,
-            dao.countRecordsIn(0L, 10 * day, recordableRoles = RECORDABLE)
+            dao.countRecordsIn(0L, 10 * day, recordableRoles = recordable)
         )
     }
 
@@ -147,7 +147,7 @@ class StatisticsDaoTest {
         assertEquals(
             "s1-0 is not a record by then, s2-0 and s2-1 are",
             2,
-            dao.countRecordsIn(0L, 10 * day, recordableRoles = RECORDABLE)
+            dao.countRecordsIn(0L, 10 * day, recordableRoles = recordable)
         )
     }
 
@@ -157,7 +157,7 @@ class StatisticsDaoTest {
         // than with a record (PersonalRecords.isRecord).
         session("s1", at = 0L, "back-squat" to listOf(set("s1-0", reps = 8, weight = 0L)))
 
-        assertEquals(0, dao.countRecordsIn(0L, 10 * day, recordableRoles = RECORDABLE))
+        assertEquals(0, dao.countRecordsIn(0L, 10 * day, recordableRoles = recordable))
     }
 
     @Test
@@ -168,17 +168,17 @@ class StatisticsDaoTest {
         assertEquals(
             "the first is outside a window that starts at day five",
             1,
-            dao.countRecordsIn(4 * day, 10 * day, recordableRoles = RECORDABLE)
+            dao.countRecordsIn(4 * day, 10 * day, recordableRoles = recordable)
         )
         assertEquals(
             "and both are inside a window that covers everything",
             2,
-            dao.countRecordsIn(0L, 10 * day, recordableRoles = RECORDABLE)
+            dao.countRecordsIn(0L, 10 * day, recordableRoles = recordable)
         )
         assertEquals(
             "the end is exclusive",
             0,
-            dao.countRecordsIn(4 * day, 5 * day, recordableRoles = RECORDABLE),
+            dao.countRecordsIn(4 * day, 5 * day, recordableRoles = recordable),
         )
     }
 
@@ -188,7 +188,7 @@ class StatisticsDaoTest {
         session("s1", at = 0L, "back-squat" to listOf(set("s1-0", reps = 5, weight = 100_000L)))
         session("s2", at = day, "bench-press" to listOf(set("s2-0", reps = 5, weight = 60_000L)))
 
-        assertEquals(2, dao.countRecordsIn(0L, 10 * day, recordableRoles = RECORDABLE))
+        assertEquals(2, dao.countRecordsIn(0L, 10 * day, recordableRoles = recordable))
     }
 
     /** A finished session at [at] (epoch millis), holding each exercise's sets in order. */

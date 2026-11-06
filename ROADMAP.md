@@ -38,12 +38,6 @@ release conversation.
   while `instrumented` stays on the emulator schedule; the three-job header and `RELEASING`'s "all three jobs"
   wording stay true.
 
-- **N274 — Close the test gates that let a suite silently shrink.** `:shared` jvm/node tests are not
-  count-gated; `app/schemas` has no CI freshness check (only `docs/shared` and `docs/fixtures` are checked);
-  detekt scans main and unit tests but not the instrumented sources. Fixed means a `shared` suite in
-  `ci-check-tests.py`, a `git status --porcelain -- app/schemas` step, and `androidTest` in the detekt source
-  set. The same row pays down the deferred `TestTag` list (D4), which has no owner or deadline today.
-
 ### Data integrity
 
 ## Later — the rest of the 2.22 review

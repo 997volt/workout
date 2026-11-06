@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The test gates cannot silently shrink** (N274). The KMP common suite now count-checks both `jvmTest` and
+  `jsNodeTest`; CI fails when a generated `app/schemas` file is stale; detekt scans `androidTest` as well as
+  main and unit tests; and a test guards that every `TestTags` name is used outside its own file. The test
+  method-length ceiling is waived in test sources, where the length is the fixture.
 - **Crash logs are bounded** (B361). The store wrote one file per crash and never pruned, while every export
   carried all of them; a launch-time crash loop could grow the directory indefinitely. It now keeps the newest
   50 files (named by their timestamp), prunes the rest after each record, and answers `latest()` from the

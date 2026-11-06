@@ -76,6 +76,11 @@ style:
     excludes: ['**/data/SeedExercises.kt']
 
 complexity:
+  LongMethod:
+    # A test method is a fixture: its length is the setup it has to state, and the behaviour it covers
+    # is the point. Production methods keep the ceiling; test sources are still scanned for everything else.
+    excludes: ['**/test/**', '**/androidTest/**']
+
   LargeClass:
     # A test class's size tracks the behaviour it covers, and the one at 1000 lines
     # covers a ViewModel with 25 actions. Excluded for the same reason MagicNumber

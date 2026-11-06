@@ -107,6 +107,23 @@ jobs:
       - name: Every declared unit test executed
         run: python3 tools/ci-check-tests.py unit
 
+      # N274. The KMP module has one common test source and two separate reports; both have to run the
+      # declared tests, or a target can stop executing them while the other stays green.
+      - name: Every declared shared test executed
+        run: python3 tools/ci-check-tests.py shared
+
+      # N274. The committed Room schemas are the migration contract. A generated schema that is not
+      # committed is a database change the next upgrade cannot be checked against.
+      - name: The Room schemas are current
+        run: |
+          stale="$(git status --porcelain -- app/schemas)"
+          if [ -n "$stale" ]; then
+            echo "$stale"
+            git diff -- app/schemas
+            echo "app/schemas is stale: commit the generated schema" >&2
+            exit 1
+          fi
+
       # N173. The page's copy of the core is generated, not hand-kept: the sync task rewrites
       # docs/shared from the Kotlin source, and a diff means the committed copy is stale. The
       # JS/node toolchain is the machine's (gradle.properties turns the download off).

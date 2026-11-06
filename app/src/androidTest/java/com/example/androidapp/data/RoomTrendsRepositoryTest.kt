@@ -10,7 +10,6 @@ import com.example.androidapp.data.local.SessionExerciseJointEntity
 import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.data.local.WorkoutSessionEntity
 import com.example.androidapp.domain.DataResult
-import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.MovementPattern
@@ -42,7 +41,6 @@ class RoomTrendsRepositoryTest {
     private lateinit var database: WorkoutDatabase
     private lateinit var repository: RoomTrendsRepository
 
-    private val clock = TimeSource { Instant.parse("2026-09-30T08:00:00Z") }
 
     @Before
     fun setUp() {

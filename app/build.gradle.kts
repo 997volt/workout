@@ -20,6 +20,11 @@ detekt {
     parallel = true
     // Only the deltas live here; detekt's defaults stay authoritative.
     config.setFrom(rootProject.files("config/detekt/detekt.yml"))
+    // Tests are code too (N274): the plugin's default is production sources only, which let
+    // complexity and Compose mistakes land in androidTest unread.
+    source.setFrom(
+        files("src/main/java", "src/test/java", "src/androidTest/java"),
+    )
 }
 
 /**

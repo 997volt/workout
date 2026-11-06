@@ -1210,6 +1210,11 @@ the rule; that one argues it.
   the prefill (N73); the session still records only the template (P3.3), so provenance and occurrence
   matching are unchanged. Storing it would make the session's provenance say two things and would go
   stale the moment the slot moved.
+- **A test gate covers every target, and a schema is checked like generated code** (N274). The KMP common tests
+  run twice, so the `shared` check reads both `jvmTest` and `jsNodeTest` reports and fails if either target
+  stopped executing a declared test. The generated Room schema is compared with the committed copy in CI, the
+  same way `docs/shared` is; detekt scans `androidTest` too. Test method length is excluded because a fixture's
+  length is its setup, not a production method doing too much.
 - **Crash logs are bounded by count, not by age** (B361). A launch-time crash loop is exactly when the newest
   records matter, so an age window could delete the evidence or keep an unbounded burst; fifty files is enough
   to diagnose a loop and bounded on disk. `latest()` reads the timestamp in the filename and parses only until a

@@ -45,3 +45,6 @@ if [ "$keep" -eq 0 ] && command -v adb >/dev/null 2>&1; then
 fi
 
 ./gradlew testDebugUnitTest :shared:jvmTest :shared:jsNodeTest lint detekt :shared:detekt assembleDebug assembleRelease --console=plain
+
+python3 tools/ci-check-tests.py unit
+python3 tools/ci-check-tests.py shared
