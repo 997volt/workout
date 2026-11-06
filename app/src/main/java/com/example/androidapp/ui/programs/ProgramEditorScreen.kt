@@ -70,6 +70,7 @@ import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.MessageSnackbar
 import com.example.androidapp.ui.components.TestTags
+import com.example.androidapp.ui.components.TopBarTitle
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.components.exerciseWeightUnit
 import com.example.androidapp.ui.components.shortLabel
@@ -316,7 +317,7 @@ private fun ProgramEditorTopBar(
 ) {
     var open by rememberSaveable { mutableStateOf(false) }
     TopAppBar(
-        title = { Text(name ?: stringResource(R.string.program_edit_title)) },
+        title = { TopBarTitle(text = name ?: stringResource(R.string.program_edit_title)) },
         navigationIcon = {
             IconButton(onClick = onBack) {
                 Icon(

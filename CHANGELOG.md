@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **Every top-bar title is one line with ellipsis** (B369). Exercise, template, program, workout, measurement,
+  balance, deload, adherence and picker bars now use `TopBarTitle` or the same max-lines/overflow rule, so a
+  long user-authored name cannot overflow the fixed-height bar or crowd the actions. The workout-detail title
+  keeps its date subtitle and also clamps both lines. An exercise-detail test uses a long name.
 - **Disabled primary controls say why** (B368). Finish is absent until a set (or an activity) can close the
   session, and the top bar states "Log a set to finish" in its place, announced as a live region. Log set keeps
   its position when the fields are incomplete and a line beneath names the missing reps, weight, hold or RPE.
@@ -80,7 +84,8 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   `requirePlausibleValues`, leaving `requireStatedWeight` undocumented; the new text wrongly said tape feeds a
   derived fat mass. The KDoc is back on its function, the tape sentence says what tape does, the B349 decision
   says "an editor whose dialog survives" (B376 fixed the hosts) and the B353 decision no longer claims every
-  raw top-bar title is a heading (B369 is still open). The trailing blank line in ProgramMappers is gone.
+  raw top-bar title is a heading (B369 later closed the remaining bars). The trailing blank line in ProgramMappers
+  is gone.
 - **The CI, toolchain and privacy prose matches the code** (N280). The workflow header said two jobs and
   "always run" after the docs job existed and pushes stopped being a trigger; the README's CI task list omitted
   `:shared:detekt`; `.editorconfig` carried an inline comment the format does not parse; build tools were

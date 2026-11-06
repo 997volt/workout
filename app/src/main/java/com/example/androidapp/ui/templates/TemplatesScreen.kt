@@ -14,12 +14,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -43,13 +43,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
 import com.example.androidapp.domain.model.WorkoutTemplate
 import com.example.androidapp.ui.components.AppFilterChip
+import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.MessageSnackbar
 import com.example.androidapp.ui.components.TestTags
+import com.example.androidapp.ui.components.TopBarTitle
 import com.example.androidapp.ui.components.dataErrorMessage
-import com.example.androidapp.ui.components.AppTextButton
-import com.example.androidapp.ui.programs.programStartGate
 import com.example.androidapp.ui.programs.StartIntent
+import com.example.androidapp.ui.programs.programStartGate
 import com.example.androidapp.ui.theme.AndroidAppTheme
 
 /**
@@ -121,9 +122,9 @@ fun TemplatesRoute(
 private fun TemplatesTopBar(onBack: () -> Unit, onOpenPrograms: () -> Unit) {
     TopAppBar(
         title = {
-            Text(
+            TopBarTitle(
                 text = stringResource(R.string.templates_title),
-                modifier = Modifier.testTag(TestTags.TEMPLATES_TITLE),
+                testTag = TestTags.TEMPLATES_TITLE,
             )
         },
         navigationIcon = {

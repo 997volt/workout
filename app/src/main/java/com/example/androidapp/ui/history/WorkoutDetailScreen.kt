@@ -42,7 +42,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -341,13 +343,19 @@ private fun DetailTopBar(
                         ?: date
                         ?: stringResource(R.string.history_detail_title),
                     style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.testTag(TestTags.HISTORY_DETAIL_TITLE),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .testTag(TestTags.HISTORY_DETAIL_TITLE)
+                        .semantics { heading() },
                 )
                 if ((activity != null || templateName != null) && date != null) {
                     Text(
                         text = date,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.testTag(TestTags.HISTORY_DETAIL_DATE),
                     )
                 }

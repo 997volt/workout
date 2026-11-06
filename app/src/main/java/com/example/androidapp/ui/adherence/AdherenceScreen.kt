@@ -55,6 +55,7 @@ import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.TestTags
+import com.example.androidapp.ui.components.TopBarTitle
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.components.shortLabel
 import com.example.androidapp.ui.history.HistoryFormat
@@ -109,7 +110,7 @@ fun AdherenceScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.adherence_title)) },
+                title = { TopBarTitle(text = stringResource(R.string.adherence_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(

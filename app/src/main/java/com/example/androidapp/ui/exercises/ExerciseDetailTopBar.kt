@@ -22,6 +22,7 @@ import com.example.androidapp.R
 import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.TestTags
+import com.example.androidapp.ui.components.TopBarTitle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,7 +35,7 @@ internal fun ExerciseDetailTopBar(
 ) {
     TopAppBar(
         title = {
-            Text(state.exercise?.name ?: stringResource(R.string.exercise_detail_title))
+            TopBarTitle(text = state.exercise?.name ?: stringResource(R.string.exercise_detail_title))
         },
         navigationIcon = {
             IconButton(onClick = onBack) {

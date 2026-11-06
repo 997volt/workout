@@ -34,6 +34,7 @@ import com.example.androidapp.domain.model.HALF_SETS_PER_SET
 import com.example.androidapp.domain.model.MuscleSets
 import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.TestTags
+import com.example.androidapp.ui.components.TopBarTitle
 
 /**
  * How a program's planned work spreads across muscles (ROADMAP N119).
@@ -67,7 +68,7 @@ fun ProgramBalanceScreen(
         modifier = modifier.fillMaxSize().testTag(TestTags.PROGRAM_BALANCE),
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.program_balance)) },
+                title = { TopBarTitle(text = stringResource(R.string.program_balance)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(

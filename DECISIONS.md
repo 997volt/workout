@@ -1254,6 +1254,9 @@ the rule; that one argues it.
   like any other throwable; turning it into `DataResult.Failure` tells the screen a storage read failed when
   the collector simply left. The trends flows share one `toDataResult` helper that rethrows cancellation first
   and maps only real failures, the same rule `dataResultOf` holds for suspending calls.
+- **Every top-bar title is clamped and marked as a heading** (B369). `TopBarTitle` is the one-line component;
+  the workout-detail bar needs a date beneath the name, so it keeps a custom column with the same one-line,
+  ellipsis and heading rule on both texts. A long user-authored name is the test.
 - **A disabled primary action must state its reason** (B368). A disabled Finish with no sentence is a silent
   dead end, so when no set can finish the session it is replaced by the same-slot reason, announced politely;
   Log set stays visible because its fields are right above it, with the missing value named below.
@@ -1990,8 +1993,9 @@ the rule; that one argues it.
   does (`onClickLabel`), *announce* state changes rather than only drawing them, and tag
   things so tests do not assert on English literals. **A control whose label is a sibling is unnamed** (B353):
   a switch carries its label as a content description, and a section or a title drawn through `TopBarTitle`
-  calls `heading()` so a reader can move between groups rather than through one flat focus list. Raw top-bar
-  `Text` is still outside that component and is B369.
+  calls `heading()` so a reader can move between groups rather than through one flat focus list. Every top-bar
+  title now goes through that component; the workout-detail title keeps its date subtitle with the same clamp
+  and heading semantics (B369).
 - **One mechanism makes room for the keyboard, and it is the app's** (B119, B122, B127).
   The activity's window is pinned to `android:windowSoftInputMode="adjustResize"` — which
   `enableEdgeToEdge()` does not set, and which the platform otherwise resolves to `adjustPan` —

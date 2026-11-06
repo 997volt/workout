@@ -27,13 +27,6 @@ inset fix; it is not part of 2.25.
 
 ### Controls, titles and accessibility
 
-- **B369 — Every top-bar title must go through the one-line title component.** Several bars draw a raw `Text`
-  with no `maxLines`/ellipsis, so a long user-authored exercise, template or program name can overflow the
-  fixed-height bar and compete with up to three actions
-  ([ExerciseDetailTopBar.kt](app/src/main/java/com/example/androidapp/ui/exercises/ExerciseDetailTopBar.kt)).
-  `TopBarTitle` already exists for this. Fixed means every top bar uses it (or the same max-lines/ellipsis), with
-  a UI test at a long name.
-
 - **B370 — The adherence grid and small accent text must meet the app's own accessibility bar.** Seven weighted
   cells at 360 dp are about 43 dp wide, below the 48 dp target, and several 12–15 sp labels are drawn in
   `primary`, which the palette's own contrast test says is below 4.5:1 on the raised surface. Fixed means a

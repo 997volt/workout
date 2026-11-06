@@ -83,6 +83,7 @@ import com.example.androidapp.ui.components.NumberStepper
 import com.example.androidapp.ui.components.OpenExerciseAction
 import com.example.androidapp.ui.components.TemplateSetDialog
 import com.example.androidapp.ui.components.TestTags
+import com.example.androidapp.ui.components.TopBarTitle
 import com.example.androidapp.ui.components.WarmUpAction
 import com.example.androidapp.ui.components.exerciseWeightUnit
 import com.example.androidapp.ui.components.label
@@ -321,9 +322,9 @@ private fun TemplateEditorTopBar(
     val canHide = (state.template?.exerciseCount ?: 0) > 0
     TopAppBar(
         title = {
-            Text(
+            TopBarTitle(
                 text = state.template?.name ?: stringResource(R.string.template_edit_title),
-                modifier = Modifier.testTag(TestTags.TEMPLATE_EDIT_TITLE),
+                testTag = TestTags.TEMPLATE_EDIT_TITLE,
             )
         },
         navigationIcon = {

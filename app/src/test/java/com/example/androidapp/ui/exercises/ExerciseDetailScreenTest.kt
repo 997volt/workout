@@ -80,6 +80,16 @@ class ExerciseDetailScreenTest {
     }
 
     @Test
+    fun aLongName_staysInTheTopBar_andLeavesItsActionsReachable() {
+        // B369: the title is one line with ellipsis, so a user-authored name cannot push Edit off the bar.
+        val longName = "Single-Leg Romanian Deadlift With A Very Long Descriptive Name"
+        show(ExerciseDetailUiState(isLoading = false, exercise = custom.copy(name = longName)))
+
+        composeTestRule.onNodeWithText(longName.uppercase()).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT).assertIsDisplayed()
+    }
+
+    @Test
     fun aMovementsMergeAction_isOffered_andReported() {
         // ROADMAP N245: the action lives in the overflow so the top bar keeps Trends and Edit, and it is only
         // offered for a movement — a category has no history to move.

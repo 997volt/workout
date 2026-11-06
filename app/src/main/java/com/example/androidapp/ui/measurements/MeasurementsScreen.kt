@@ -80,6 +80,7 @@ import com.example.androidapp.ui.components.ScoredPick
 import com.example.androidapp.ui.components.ScoredPickStrings
 import com.example.androidapp.ui.components.ScoredPicksEditor
 import com.example.androidapp.ui.components.TestTags
+import com.example.androidapp.ui.components.TopBarTitle
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.history.HistoryFormat
 import com.example.androidapp.ui.statistics.BodyMetric
@@ -304,7 +305,7 @@ fun MeasurementsScreen(
 @Composable
 private fun MeasurementsTopBar(editing: Boolean, onToggleEditing: () -> Unit, onBack: () -> Unit) {
     TopAppBar(
-        title = { Text(stringResource(R.string.measurements_title)) },
+        title = { TopBarTitle(text = stringResource(R.string.measurements_title)) },
         navigationIcon = {
             IconButton(onClick = onBack) {
                 Icon(

@@ -74,6 +74,7 @@ import com.example.androidapp.ui.components.ReadinessNoteDialog
 import com.example.androidapp.ui.components.SetEdit
 import com.example.androidapp.ui.components.SetEditorDialog
 import com.example.androidapp.ui.components.TestTags
+import com.example.androidapp.ui.components.TopBarTitle
 import com.example.androidapp.ui.components.WorkoutNoteDialog
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.components.exerciseWeightUnit
@@ -516,7 +517,7 @@ internal fun WorkoutTopBar(
     var confirmingDiscard by remember { mutableStateOf(false) }
 
     TopAppBar(
-        title = { Text(stringResource(R.string.active_workout_title)) },
+        title = { TopBarTitle(text = stringResource(R.string.active_workout_title)) },
         navigationIcon = {
             IconButton(onClick = onBack) {
                 Icon(

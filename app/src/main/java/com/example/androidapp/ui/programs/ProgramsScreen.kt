@@ -51,6 +51,7 @@ import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.MessageSnackbar
 import com.example.androidapp.ui.components.TestTags
+import com.example.androidapp.ui.components.TopBarTitle
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.theme.AndroidAppTheme
 
@@ -218,7 +219,7 @@ private fun ProgramsTopBar(
     onOpenTemplates: () -> Unit,
 ) {
     TopAppBar(
-        title = { Text(stringResource(R.string.programs_title)) },
+        title = { TopBarTitle(text = stringResource(R.string.programs_title)) },
         navigationIcon = {
             IconButton(onClick = onBack) {
                 Icon(
