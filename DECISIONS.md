@@ -561,6 +561,11 @@ the rule; that one argues it.
   overall *Joint pain* series stays: it answers "did this session hurt", and the sites answer *where*.
   ([evidence](DECISIONS-EVIDENCE.md#n130))
 
+- **The fast half of CI runs on every change, the emulator on a schedule** (N269, N30). A full nightly-only
+  pipeline left pull requests and Dependabot changes unverified and made branch protection impossible, while
+  the emulator is still the expensive, flaky half. `build` and `docs` run on `pull_request` and pushes to
+  `main`; `instrumented` stays on the nightly and the pre-release dispatch, which is the run RELEASING waits
+  for. Rejected: running the emulator on every PR, which would mostly report on the runner.
 - **CI runs nightly and before a release, not on every push** (N30). The emulator is the
   one piece of infrastructure that has failed without a test running, so a per-push run
   would mostly report on the runner; the per-change guard is the local gate set in

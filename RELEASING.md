@@ -64,8 +64,9 @@ four that do this.
 
 ### 5. Verify, before tagging
 
-**Dispatch the pipeline first** and wait for all three jobs, including the instrumented one: CI no
-longer runs on every push, so nothing else has confirmed this commit on a clean machine.
+**Dispatch the pipeline first** and wait for all three jobs, including the instrumented one: build and
+docs run on pushes and pull requests, but the emulator suite does not, so nothing else has confirmed this
+commit on a clean machine.
 
 ```sh
 gh workflow run "Android CI" --ref main

@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The fast half of CI runs on pull requests and pushes** (N269). The workflow was scheduled/dispatch-only,
+  so ordinary changes and Dependabot PRs waited for the nightly and branch protection was impossible. `build`
+  and `docs` now run on `pull_request` and on pushes to `main`; `instrumented` stays on the nightly and
+  pre-release dispatch, and the release prose says so.
 - **The test gates cannot silently shrink** (N274). The KMP common suite now count-checks both `jvmTest` and
   `jsNodeTest`; CI fails when a generated `app/schemas` file is stale; detekt scans `androidTest` as well as
   main and unit tests; and a test guards that every `TestTags` name is used outside its own file. The test

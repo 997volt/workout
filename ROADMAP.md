@@ -32,12 +32,6 @@ release conversation.
   Fixed means CI builds a debug-signed release (ephemeral keystore), installs it on the emulator and runs a
   smoke navigation, or runs the instrumented suite against a release build type.
 
-- **N269 — The fast half of CI should run on pull requests.** The workflow is scheduled/dispatch-only, which is
-  documented as deliberate, but it leaves Dependabot PRs and ordinary changes unverified until the nightly and
-  makes branch protection impossible. Fixed means `build` + `docs` run on `pull_request` (and on `push` to main)
-  while `instrumented` stays on the emulator schedule; the three-job header and `RELEASING`'s "all three jobs"
-  wording stay true.
-
 ### Data integrity
 
 ## Later — the rest of the 2.22 review

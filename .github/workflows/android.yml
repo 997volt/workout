@@ -10,16 +10,18 @@ name: Android CI
 # JDK, SDK and Gradle cache alone (it still adds tools/bin to PATH), so the runner's own
 # JDK and Android SDK are used.
 
-# Nightly, and on demand before a release (RELEASING.md step 1). Deliberately **not** on every push:
-# the instrumented job's emulator is the one piece of infrastructure here that has failed without a test
-# running, so a per-push run would mostly report on the runner rather than on the change. The per-change
-# guard is the local gate set in AGENTS.md, which is the same set the build job runs.
+# The fast half runs on every pull request and push to main (N269); the instrumented half stays on the
+# nightly and the pre-release dispatch. The emulator is the one piece of infrastructure here that has
+# failed without a test running, so it is not paid on every change; build + docs are cheap and are.
 on:
   schedule:
     # 05:17 UTC. Not on the hour: that is when every scheduled job on GitHub starts, and the runners
     # queue behind each other.
     - cron: '17 5 * * *'
   workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
 
 # A rerun of the same kind supersedes its predecessor, and the event name is part of the group so that a
 # dispatch before a release cannot cancel the nightly run or the other way round. The one time this cost
@@ -216,10 +218,9 @@ jobs:
 
   instrumented:
     name: Instrumented tests (emulator)
-    # Runs with the workflow now: nightly, and on a dispatch before a release. It is no longer gated to
-    # a manual dispatch, which is the change N30 was waiting for — the emulator gets exercised on a
-    # schedule, so a regression in this job is found by the pipeline rather than by whoever remembers to
-    # ask. Nothing is cancelled by it, because no push starts a run any more.
+    # The emulator runs nightly and on a pre-release dispatch (N269, N30); build + docs cover pull
+    # requests and pushes, so a per-change run does not pay for the emulator.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
