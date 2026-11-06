@@ -113,13 +113,12 @@ fun MeasurementsRoute(
     val rateVerdict by viewModel.rateVerdict.collectAsStateWithLifecycle()
     // The shortcut opens **today's record** (B182), and only the loaded list can say whether that is an
     // entry to edit or a day with nothing on it — so it waits for the answer rather than opening a blank
-    // form first, which would replace the day's numbers on save.
-    if (openDaily && state.isLoading) {
-        CenteredMessage(text = stringResource(R.string.history_loading), modifier = modifier)
-        return
-    }
+    // form first, which would replace the day's numbers on save. The wait is the screen's body now (B371),
+    // so the Scaffold, title and back path are there while it lasts.
+    val loading = openDaily && state.isLoading
     MeasurementsScreen(
         state = state,
+        loading = loading,
         onSave = viewModel::onSave,
         onDelete = viewModel::onDelete,
         onBack = onBack,
@@ -127,8 +126,8 @@ fun MeasurementsRoute(
         // A failed write is a snackbar, the surface every other screen uses (B102).
         error = error,
         onDismissError = viewModel::onDismissError,
-        initialAdd = if (openDaily && state.todayEntry == null) MeasurementKind.DAILY else null,
-        initialEdit = if (openDaily) state.todayEntry else null,
+        initialAdd = if (!loading && openDaily && state.todayEntry == null) MeasurementKind.DAILY else null,
+        initialEdit = if (!loading && openDaily) state.todayEntry else null,
         // The way back out of a delete (N133), held by the ViewModel until the message is taken.
         pendingUndo = pendingUndo,
         onUndo = viewModel::onUndoDelete,
@@ -195,6 +194,8 @@ fun MeasurementsScreen(
     onRemoveGoalPeriod: (String) -> Unit,
     onDismissGoalSave: () -> Unit,
     modifier: Modifier = Modifier,
+    /** The daily shortcut is waiting for the list, so the Scaffold stays and the body says why (B371). */
+    loading: Boolean = false,
     /** A write that failed, or null (B102) — shown as a snackbar, like every other screen's. */
     error: DataError? = null,
     /**
@@ -266,7 +267,7 @@ fun MeasurementsScreen(
         floatingActionButton = {
             // The default view is scroll and add, the edit mode is delete (N132): while deleting, the
             // one control that would write a new entry is out of the way.
-            if (!editing) {
+            if (!editing && !loading) {
                 FloatingActionButton(
                     onClick = { choosing = true },
                     modifier = Modifier.testTag(TestTags.Measurements.ADD),
@@ -279,19 +280,26 @@ fun MeasurementsScreen(
             }
         },
     ) { innerPadding ->
-        MeasurementList(
-            state = state,
-            editing = editing,
-            // In the edit mode the row opens its form — that is where the writes live — and in the
-            // default view it opens the record read-only (N132, and the request in use).
-            onOpen = { entry -> if (editing) editingEntryId = entry.id else openEntry = entry },
-            onDelete = onDelete,
-            onSaveGoalPeriod = onSaveGoalPeriod,
-            onRemoveGoalPeriod = onRemoveGoalPeriod,
-            goalSave = goalSave,
-            onDismissGoalSave = onDismissGoalSave,
-            modifier = Modifier.padding(innerPadding),
-        )
+        if (loading) {
+            CenteredMessage(
+                text = stringResource(R.string.history_loading),
+                modifier = Modifier.padding(innerPadding),
+            )
+        } else {
+            MeasurementList(
+                state = state,
+                editing = editing,
+                // In the edit mode the row opens its form — that is where the writes live — and in the
+                // default view it opens the record read-only (N132, and the request in use).
+                onOpen = { entry -> if (editing) editingEntryId = entry.id else openEntry = entry },
+                onDelete = onDelete,
+                onSaveGoalPeriod = onSaveGoalPeriod,
+                onRemoveGoalPeriod = onRemoveGoalPeriod,
+                goalSave = goalSave,
+                onDismissGoalSave = onDismissGoalSave,
+                modifier = Modifier.padding(innerPadding),
+            )
+        }
     }
 }
 

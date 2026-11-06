@@ -1254,6 +1254,10 @@ the rule; that one argues it.
   like any other throwable; turning it into `DataResult.Failure` tells the screen a storage read failed when
   the collector simply left. The trends flows share one `toDataResult` helper that rethrows cancellation first
   and maps only real failures, the same rule `dataResultOf` holds for suspending calls.
+- **A loading wait keeps the screen that will replace it** (B371). The daily shortcut's Scaffold, title and
+  back path stay while the list loads, and the add button waits; a bare message would be a different screen
+  with no way back. `CenteredMessage` fills a bounded parent and falls back to a centred minimum box under an
+  infinite scroll constraint rather than sitting at the top.
 - **The calendar keeps a 48 dp day and scrolls rather than shrinking** (B370). Seven cells at 360 dp are
   about 43 dp, below the target; giving the row a minimum width preserves both the seven-column month and the
   target, with the header scrolling in step. Small accent labels use `IndigoLink`, which the palette test holds

@@ -2,8 +2,11 @@ package com.example.androidapp.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -13,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
@@ -53,25 +57,31 @@ fun CenteredMessage(
      */
     action: (@Composable () -> Unit)? = null,
 ) {
-    Column(
-        modifier = modifier.fillMaxSize().padding(24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        if (showSpinner) {
-            CircularProgressIndicator(modifier = Modifier.padding(bottom = 16.dp))
-        }
-        Text(text = text, style = textStyle)
-        hint?.let {
-            Text(
-                text = it,
-                style = MaterialTheme.typography.bodyMedium,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = 8.dp),
-            )
-        }
-        action?.let {
-            Box(modifier = Modifier.padding(top = 8.dp)) { it() }
+    // B371: inside a scrolling parent the height constraint is infinite, and `fillMaxSize` then does not
+    // centre — it resolves to the child's own height at the top. A bounded parent still fills; an unbounded
+    // one gets a readable minimum box that the column can centre within.
+    BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
+        val contentHeight = if (maxHeight == Dp.Infinity) Modifier.heightIn(min = 200.dp) else Modifier.fillMaxSize()
+        Column(
+            modifier = contentHeight.padding(24.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            if (showSpinner) {
+                CircularProgressIndicator(modifier = Modifier.padding(bottom = 16.dp))
+            }
+            Text(text = text, style = textStyle)
+            hint?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            }
+            action?.let {
+                Box(modifier = Modifier.padding(top = 8.dp)) { it() }
+            }
         }
     }
 }

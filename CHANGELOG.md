@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The daily measurement shortcut keeps its screen frame while loading** (B371). The route returned a bare
+  `CenteredMessage` before the Scaffold, so a wait had no title or back path. The wait is now the Scaffold's
+  body, with the add button withheld. `CenteredMessage` also stops resolving `fillMaxSize` against an infinite
+  scroll height: a bounded parent still fills, while an unbounded one gets a centred minimum box.
 - **The adherence calendar meets its touch-target and contrast bars** (B370). Seven equal cells at 360 dp were
   about 43 dp wide; the grid now keeps a 48 dp minimum and scrolls horizontally on a narrower window, with the
   weekday header sharing the scroll. Small accent labels (deload title, next-up, in-use and example markers)

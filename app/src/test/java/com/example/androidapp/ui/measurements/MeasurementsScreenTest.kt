@@ -13,6 +13,7 @@ import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -86,11 +87,13 @@ class MeasurementsScreenTest {
         onSaveGoalPeriod: (String?, LocalDate?, LocalDate?, WeightGoal?) -> Unit = { _, _, _, _ -> },
         onRemoveGoalPeriod: (String) -> Unit = {},
         goalPeriodUi: GoalPeriodUi = GoalPeriodUi(),
+        loading: Boolean = false,
     ) {
         composeTestRule.setContent {
             AndroidAppTheme {
                 MeasurementsScreen(
                     state = state,
+                    loading = loading,
                     onSave = onSave,
                     onDelete = onDelete,
                     onBack = {},
@@ -110,6 +113,17 @@ class MeasurementsScreenTest {
                 )
             }
         }
+    }
+
+    @Test
+    fun aLoadingDailyShortcut_keepsTheScreenFrame() {
+        // B371: the route used to return a bare CenteredMessage before the Scaffold, so the loading frame
+        // had no title and no way back. The wait is now the Scaffold's body.
+        setScreen(state = MeasurementsUiState(isLoading = true), loading = true)
+
+        composeTestRule.onNodeWithContentDescription("Back").assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Measurements.LIST).assertDoesNotExist()
+        composeTestRule.onNodeWithText("Loading history…").assertExists()
     }
 
     @Test

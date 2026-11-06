@@ -27,13 +27,6 @@ inset fix; it is not part of 2.25.
 
 ### Controls, titles and accessibility
 
-- **B371 — The measurements deep link must keep its screen frame, and messages must centre inside a scroll.**
-  When the daily form is requested before the list loads, the route returns a bare `CenteredMessage` with no
-  Scaffold, title or back path; and `CenteredMessage` uses `fillMaxSize`, which does not centre under an
-  infinite height constraint, so it sits at the top of a scrolling parent. Fixed means the loading state is the
-  Scaffold's body and the message takes the parent's constraints (`fillParentMaxSize` in a lazy item, or out of
-  the scroll), with a screen test for the loading state.
-
 - **B372 — Search, filter and sort must survive process death.** The library, history and picker keep their
   query state in ViewModels, which survives rotation but not process death, while the rest of the screen is
   restored. Fixed means those scalars live in `SavedStateHandle`, with a test that recreates the ViewModel from a
