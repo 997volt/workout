@@ -60,12 +60,6 @@ release conversation.
   program-add path already drops such rows. Fixed means counting actual inserts and refusing/dropping planned
   rows whose exercise is not live afterwards, with a test for the hidden-id case.
 
-- **B364 — `restoreSet` must return a set to the place it held, not to an index later edits moved.** The undo
-  derives its splice point from the live rows' stored indexes, but a removal renumbers the survivors and a later
-  ramp addition or removal changes what those indexes mean, so Undo can put the set before a ramp or after its
-  neighbour. Fixed means the splice point is stored on the hidden block or re-derived from the live order at
-  removal time, with a test that adds a ramp between a delete and its undo.
-
 - **B365 — Re-roling an anchor must re-check the rungs below it.** `updateSet` runs the rung rule only for the
   edited row, so changing a working anchor into a warm-up is accepted although logging refuses a rung under a
   warm-up and the rows below lose their anchor. Fixed means the role change re-runs the rule for the rows whose

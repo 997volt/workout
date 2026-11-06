@@ -13,10 +13,15 @@ repeated here.
 **1.0–1.18 live in [CHANGELOG-1.x.md](CHANGELOG-1.x.md)**, kept whole rather than deleted because the
 id a 1.x commit names is still looked up by it. This file carries the current release.
 
-## [2.23] — 2026-11-05 (versionCode 44)
+## [Unreleased]
 
 ### Fixed
 
+- **A restored planned set returns after the row it followed, not after a stale index** (B364). Removing a set
+  renumbers the survivors, and a ramp added before the undo moved every index again, so Undo could put the set
+  before a warm-up or after its neighbour. A removed block now records the live row above it; the restore inserts
+  after that row's current place and falls back to the old count only for rows removed before the column
+  existed. Schema 19 adds the nullable `restoreAfterId`.
 - **The targeted daily-weight write refuses tomorrow** (B366). `save` refused a day after today, but
   `setDailyWeight` accepted any instant — the bodyweight prompt passes today, so this was an inconsistency
   rather than a reachable write, but a direct caller could store a reading from the future. Both writers now
@@ -25,6 +30,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   in a `catch` that turned every throwable into a `DataResult.Failure`, including cancellation; leaving the
   screen could therefore report a failed read. The shared `toDataResult` helper rethrows cancellation and maps
   only real failures, and both trends flows use it.
+
+## [2.23] — 2026-11-05 (versionCode 44)
+
+### Fixed
+
 - **The batch's KDoc and decisions match the code** (B381). B338's weight doc had been left above
   `requirePlausibleValues`, leaving `requireStatedWeight` undocumented; the new text wrongly said tape feeds a
   derived fat mass. The KDoc is back on its function, the tape sentence says what tape does, the B349 decision

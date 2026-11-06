@@ -71,6 +71,11 @@ data class TemplateSetEntity(
      * so the migration that adds it is a plain ALTER and every plan written before it is counted.
      */
     val targetDurationSeconds: Int? = null,
+    /**
+     * The live set immediately above this removed block, so Undo can find the gap after later edits moved
+     * every index (ROADMAP B364). Null while the row is live and on rows removed before the column existed.
+     */
+    val restoreAfterId: String? = null,
     val note: String?,
     val createdAt: Long,
     val updatedAt: Long,

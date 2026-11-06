@@ -433,9 +433,12 @@ class RoomTemplateRepository @Inject constructor(
                     sets.indices.filter { sets.runAt(it)?.anchorIndex == index }.map { sets[it].id }
             }
         }
+        // The row above the block is the stable anchor: survivors renumber, and a later ramp can move
+        // every index, but the anchor's identity does not (B364).
+        val aboveId = sets.getOrNull(index - 1)?.takeIf { index > 0 }?.id
         val now = timeSource.nowEpochMillis()
         database.withTransaction {
-            going.forEach { setDao.softDeleteTemplateSet(id = it, at = now) }
+            going.forEach { setDao.softDeleteTemplateSet(id = it, at = now, restoreAfterId = aboveId) }
             setDao.findTemplateSets(exercise.templateId)
                 .filter { it.templateExerciseId == exercise.id }
                 .sortedBy { it.setIndex }
@@ -481,12 +484,24 @@ class RoomTemplateRepository @Inject constructor(
             val coming = all.filter { it.deletedAt == hiddenAt }
             val live = all.filter { it.deletedAt == null }
 
-            val above = live.count { it.setIndex < coming.minOf { row -> row.setIndex } }
+            val anchor = coming.firstNotNullOfOrNull { it.restoreAfterId }
+            // The anchor's current place is the splice point; if it was removed later, fall back to
+            // the old count, which is the best the legacy rows can answer (B364).
+            val above = anchor
+                ?.let { id -> live.indexOfFirst { it.id == id } }
+                ?.takeIf { it >= 0 }
+                ?.plus(1)
+                ?: live.count { it.setIndex < coming.minOf { row -> row.setIndex } }
             (live.take(above) + coming.sortedBy { it.setIndex } + live.drop(above))
                 .forEachIndexed { position, set ->
-                    if (set.setIndex != position || set.deletedAt != null) {
+                    if (set.setIndex != position || set.deletedAt != null || set.restoreAfterId != null) {
                         setDao.updateTemplateSet(
-                            set.copy(setIndex = position, deletedAt = null, updatedAt = now),
+                            set.copy(
+                                setIndex = position,
+                                deletedAt = null,
+                                restoreAfterId = null,
+                                updatedAt = now,
+                            ),
                         )
                     }
                 }

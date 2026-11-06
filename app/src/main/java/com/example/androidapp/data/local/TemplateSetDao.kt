@@ -128,9 +128,13 @@ interface TemplateSetDao {
     @Query(
         """
         UPDATE template_sets
-        SET deletedAt = :at, updatedAt = :at
+        SET deletedAt = :at, updatedAt = :at, restoreAfterId = :restoreAfterId
         WHERE id = :id AND deletedAt IS NULL
         """,
     )
-    suspend fun softDeleteTemplateSet(id: String, at: Long): Int
+    suspend fun softDeleteTemplateSet(
+        id: String,
+        at: Long,
+        restoreAfterId: String? = null,
+    ): Int
 }

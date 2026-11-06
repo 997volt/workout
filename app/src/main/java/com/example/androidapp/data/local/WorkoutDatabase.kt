@@ -73,7 +73,9 @@ import androidx.room.TypeConverters
  * **Schema 18 is B327**, the flags' provenance: a nullable `seedFlagsAt` records that the seed wrote
  * isBodyweight/isTimed, so the one-time repair can raise a row the lifter edited for another reason without
  * overwriting a flag they set. Null for every row that predates it; the next open raises and stamps them. See
- * [MIGRATION_17_18].
+ * [MIGRATION_17_18]. **19 adds the restore anchor to `template_sets`**: the survivors renumber when a planned
+ * set is removed, so the row above the block is what a later undo follows back to its place (B364). See
+ * [MIGRATION_18_19].
  *
  * There is deliberately **no** `fallbackToDestructiveMigration()`: it would turn
  * a forgotten migration into silent, total data loss for a user's training
@@ -102,7 +104,7 @@ import androidx.room.TypeConverters
         MetricGoalEntity::class,
         RetiredMovementEntity::class,
     ],
-    version = 18,
+    version = 19,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)

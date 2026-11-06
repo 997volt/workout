@@ -505,6 +505,29 @@ class TemplateRepositoryTest {
     }
 
     @Test
+    fun restoringAfterARampWasAdded_putsTheSetAfterItsAnchor() = runTest {
+        // B364: the survivors renumber, and a ramp added above moves every index again. The anchor's
+        // identity is what puts the undo back after the set it originally followed.
+        val template = create("Legs")
+        val exercise = plannedExercise(template)
+        repository.addSet(exercise, TemplateSetEdit(targetRepsMax = 3))
+        repository.addSet(exercise, TemplateSetEdit(targetRepsMax = 5))
+        repository.addSet(exercise, TemplateSetEdit(targetRepsMax = 8))
+        val middle = repository.observeExercises(template).first().single().sets[1]
+
+        repository.removeSet(middle.id)
+        repository.prependSets(exercise, listOf(TemplateSetEdit(role = SetType.WARMUP, targetRepsMax = 5)))
+        now = now.plusSeconds(5)
+        repository.restoreSet(middle.id)
+
+        assertEquals(
+            "the removed set returns after its original anchor, not after the new ramp",
+            listOf(5, 3, 5, 8),
+            repository.observeExercises(template).first().single().sets.map { it.targetRepsMax },
+        )
+    }
+
+    @Test
     fun restoringARunsAnchor_putsTheWholeRunBackInOrder() = runTest {
         // N90 with N79: a rung's load is read by position (`runAt`, `rungWeightAt`), so a restore that
         // appended would silently rewrite the ladder. The whole run comes back together, because the

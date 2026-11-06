@@ -1210,6 +1210,11 @@ the rule; that one argues it.
   the prefill (N73); the session still records only the template (P3.3), so provenance and occurrence
   matching are unchanged. Storing it would make the session's provenance say two things and would go
   stale the moment the slot moved.
+- **A removed plan block remembers the row above it, not an index** (B364). Survivors renumber on removal and a
+  later ramp addition moves every index, so the splice point has to be stable across edits; the live row above
+  the block is. Removing a set stores that row's id on every row the one write hides, and Undo inserts after its
+  current place, clearing the anchor as it restores. A block removed before schema 19 has no anchor and falls
+  back to the old count; the migration is a plain nullable ALTER.
 - **Every measurement writer uses the same future-day boundary** (B366). A record is of the past; `save`
   refused a day after today, but the bodyweight prompt's targeted `setDailyWeight` did not. Both now call
   `isMeasurementDayAfterToday` with the write's own clock, so a direct caller cannot put a reading on a day
