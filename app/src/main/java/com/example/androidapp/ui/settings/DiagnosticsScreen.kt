@@ -54,12 +54,13 @@ fun DiagnosticsRoute(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val clipboardLabel = stringResource(R.string.diagnostics_clip_label)
     DiagnosticsScreen(
         state = state,
         onBack = onBack,
         onCopy = { text ->
             context.getSystemService(ClipboardManager::class.java)
-                ?.setPrimaryClip(ClipData.newPlainText("Workout diagnostics", text))
+                ?.setPrimaryClip(ClipData.newPlainText(clipboardLabel, text))
         },
         onRetry = viewModel::retry,
         modifier = modifier,
@@ -107,6 +108,7 @@ private fun DiagnosticsBody(
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val report = diagnosticsReport(state)
     Column(
         modifier = modifier
             .verticalScroll(rememberScrollState())
@@ -122,7 +124,7 @@ private fun DiagnosticsBody(
         SectionHeader(text = stringResource(R.string.diagnostics_repair_title))
         RepairCard(repair = state.repair, retrying = state.retrying, onRetry = onRetry)
         Button(
-            onClick = { onCopy(diagnosticsReport(state)) },
+            onClick = { onCopy(report) },
             modifier = Modifier.testTag(TestTags.DIAGNOSTICS_COPY),
         ) {
             Text(stringResource(R.string.diagnostics_copy))
@@ -190,21 +192,34 @@ private fun RepairCard(
 }
 
 /** The facts **Copy details** hands over: the build, the last crash and the last failed pass. */
+@Composable
 internal fun diagnosticsReport(state: DiagnosticsUiState): String = buildString {
-    appendLine("Workout ${state.appVersion} (versionCode ${state.versionCode})")
+    appendLine(stringResource(R.string.diagnostics_report_workout, state.appVersion, state.versionCode))
     val crash = state.crash
     if (crash == null) {
-        appendLine("No crash recorded.")
+        appendLine(stringResource(R.string.diagnostics_report_no_crash))
     } else {
-        appendLine("Crash at ${Instant.ofEpochMilli(crash.timestamp)}: ${crash.exceptionClass}")
-        appendLine("Android ${crash.androidVersion}, ${crash.deviceModel}")
+        appendLine(
+            stringResource(
+                R.string.diagnostics_report_crash_at,
+                Instant.ofEpochMilli(crash.timestamp).toString(),
+                crash.exceptionClass,
+            ),
+        )
+        appendLine(stringResource(R.string.diagnostics_report_android, crash.androidVersion, crash.deviceModel))
         appendLine(crash.stackTrace)
     }
     val repair = state.repair
     if (repair == null) {
-        appendLine("Housekeeping: finished.")
+        appendLine(stringResource(R.string.diagnostics_report_housekeeping_finished))
     } else {
-        appendLine("Housekeeping failed at ${Instant.ofEpochMilli(repair.at)}: ${repair.exceptionClass}")
+        appendLine(
+            stringResource(
+                R.string.diagnostics_report_housekeeping_failed,
+                Instant.ofEpochMilli(repair.at).toString(),
+                repair.exceptionClass,
+            ),
+        )
         appendLine(repair.frames)
     }
 }

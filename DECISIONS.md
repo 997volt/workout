@@ -1254,6 +1254,10 @@ the rule; that one argues it.
   like any other throwable; turning it into `DataResult.Failure` tells the screen a storage read failed when
   the collector simply left. The trends flows share one `toDataResult` helper that rethrows cancellation first
   and maps only real failures, the same rule `dataResultOf` holds for suspending calls.
+- **A visible date goes through the one history formatter, even from a UTC picker** (B373). The custom range
+  reads and writes UTC days to avoid shifting west of Greenwich, but it formats them in UTC through
+  `HistoryFormat`, so the label matches every other date; the diagnostics report's sentences are resources,
+  while its timestamps stay ISO because the report is for an exact instant.
 - **A screen scalar belongs in SavedStateHandle, not only a rotation-scoped ViewModel** (B372). Search, sort
   and filter are cheap to restore and visible; keeping them in a MutableStateFlow survives rotation but not
   process death, which restored everything around them. Enums are saved by name, and a value this version no

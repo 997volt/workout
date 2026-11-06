@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The last raw date and report strings are formatted like the rest** (B373). The statistics custom range
+  showed `LocalDate.toString()` (`2026-08-01`); it now goes through `HistoryFormat` in UTC. The diagnostics
+  report's user-facing sentences and its clipboard label became string resources; the timestamps stay ISO
+  because a report needs the exact instant.
 - **Search, sort and filter survive process death** (B372). The library's query/sort/filter, history's
   query/filter and the picker's query lived only in ViewModels, so a process restart restored the rest of the
   screen but reset them. They now read from and write to `SavedStateHandle`, with enums stored by name and a

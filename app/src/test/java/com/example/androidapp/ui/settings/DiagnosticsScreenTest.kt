@@ -96,7 +96,7 @@ class DiagnosticsScreenTest {
         composeTestRule.onNodeWithTag(TestTags.DIAGNOSTICS_RETRY).assertDoesNotExist()
 
         composeTestRule.onNodeWithTag(TestTags.DIAGNOSTICS_COPY).performScrollTo().performClick()
-        assertTrue(copied!!.contains("No crash recorded."))
+        assertTrue(copied!!.contains(text(R.string.diagnostics_report_no_crash)))
     }
 
     private fun text(id: Int, vararg args: Any): String =

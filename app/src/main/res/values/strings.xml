@@ -1063,6 +1063,13 @@
     <string name="diagnostics_copy">Copy details</string>
     <string name="diagnostics_retry">Try housekeeping again</string>
     <string name="diagnostics_retrying">Trying…</string>
+    <string name="diagnostics_clip_label">Workout diagnostics</string>
+    <string name="diagnostics_report_workout">Workout %1$s (versionCode %2$d)</string>
+    <string name="diagnostics_report_no_crash">No crash recorded.</string>
+    <string name="diagnostics_report_crash_at">Crash at %1$s: %2$s</string>
+    <string name="diagnostics_report_android">Android %1$s, %2$s</string>
+    <string name="diagnostics_report_housekeeping_finished">Housekeeping: finished.</string>
+    <string name="diagnostics_report_housekeeping_failed">Housekeeping failed at %1$s: %2$s</string>
     <string name="diagnostics_repair_reason">The pass that settles an older library stopped, so some rows may still be in the old shape. Your workouts are unchanged; a retry is safe.</string>
 
     <string name="settings_data_title">Data</string>

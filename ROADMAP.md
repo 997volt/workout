@@ -1,8 +1,7 @@
 # Workout — Roadmap
 
-> **What is planned, not what happened.** *Next* is the batch picked up before anything else, *Later* is decided
-> and waiting, *Parked* is decided against until a named trigger fires, and the non-goals are lines this app
-> does not cross.
+> **What is planned, not what happened.** *Later* is decided and waiting, *Parked* is decided against until a
+> named trigger fires, and the non-goals are lines this app does not cross.
 > Shipped work is [CHANGELOG.md](CHANGELOG.md), how a release is cut is [RELEASING.md](RELEASING.md), and the
 > settled rules are [DECISIONS.md](DECISIONS.md) with their argument in
 > [DECISIONS-EVIDENCE.md](DECISIONS-EVIDENCE.md).
@@ -15,23 +14,6 @@ backlog, `R#.#` releases) are stable and go in commit messages. They were assign
 work was planned, so they do not always run in order — and an id this file does not list has
 shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 [CHANGELOG-1.x.md](CHANGELOG-1.x.md) for the 1.x releases.
-
-## Next — 2.25: shell and accessibility
-
-2.24 is released. This batch is the user-facing remainder of the 2.22 review: the messages that do not reach the
-lifter, the navigation that disagrees between roots, controls that are disabled without a reason, and the
-accessibility/state gaps around them. It is deliberately not a feature release.
-
-**B358 stays in *Later*** until a gesture-navigation and a three-button device are available to verify the
-inset fix; it is not part of 2.25.
-
-### Controls, titles and accessibility
-
-- **B373 — The last hardcoded date and English strings must follow the app's formatting.** The statistics custom
-  range builds a raw ISO date with a hardcoded separator, and a few user-facing sentences/fragments remain as
-  literals in Kotlin. Localization is parked, but the date is visible next to `HistoryFormat` everywhere else.
-  Fixed means the date goes through `HistoryFormat` and the literals become resources (or are justified as
-  punctuation), with the existing string tests extended.
 
 ## Later — the rest of the 2.22 review
 

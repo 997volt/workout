@@ -347,6 +347,28 @@ class StatisticsScreenTest {
     }
 
     @Test
+    fun customDates_areFormattedLikeEveryOtherDate_notAsIso() {
+        // B373: the picker's days are UTC, but the label next to every other date in the app uses the
+        // history formatter. A raw `2026-08-01` was the one visible date outside it.
+        setScreen(
+            state = StatisticsUiState(
+                isLoading = false,
+                range = StatisticsRange(
+                    kind = RangeKind.CUSTOM,
+                    from = java.time.LocalDate.of(2026, 8, 1),
+                    to = java.time.LocalDate.of(2026, 8, 31),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.RANGE_MORE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.range(RangeKind.CUSTOM.name)).performClick()
+
+        composeTestRule.onNodeWithText("2026-08-01").assertDoesNotExist()
+        composeTestRule.onNodeWithText("Aug 1, 2026", substring = true).assertExists()
+    }
+
+    @Test
     fun aCustomRange_saysSoInTheChips() {
         setScreen(
             state = StatisticsUiState(

@@ -62,6 +62,7 @@ import com.example.androidapp.ui.statistics.chart.SeriesChart
 import com.example.androidapp.ui.theme.EyebrowStyle
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.ZoneOffset
 
 /** The Statistics tab (ROADMAP N35). */
 @Composable
@@ -605,8 +606,13 @@ private fun CustomRangeDialog(
 /** One end of a custom range: what it is, what it currently says, and the way to change it. */
 @Composable
 private fun DateRow(labelRes: Int, date: LocalDate?, testTag: String, onClick: () -> Unit) {
+    // The picker reports UTC days, and displaying them in the device zone would shift the day west of
+    // Greenwich (B373). The date still goes through the app's one history formatter.
+    val shown = date?.let {
+        HistoryFormat.date(it.atStartOfDay(ZoneOffset.UTC).toInstant(), zone = ZoneOffset.UTC)
+    } ?: stringResource(R.string.statistics_custom_no_date)
     AppTextButton(onClick = onClick, modifier = Modifier.testTag(testTag)) {
-        Text(stringResource(labelRes) + ": " + (date?.toString() ?: stringResource(R.string.statistics_custom_no_date)))
+        Text(stringResource(labelRes) + ": " + shown)
     }
 }
 
