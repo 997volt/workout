@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The targeted daily-weight write refuses tomorrow** (B366). `save` refused a day after today, but
+  `setDailyWeight` accepted any instant — the bodyweight prompt passes today, so this was an inconsistency
+  rather than a reachable write, but a direct caller could store a reading from the future. Both writers now
+  share the same check.
 - **A cancelled trends collection is not a storage failure** (B367). `observeExerciseTrends` wrapped its flow
   in a `catch` that turned every throwable into a `DataResult.Failure`, including cancellation; leaving the
   screen could therefore report a failed read. The shared `toDataResult` helper rethrows cancellation and maps

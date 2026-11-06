@@ -1210,6 +1210,10 @@ the rule; that one argues it.
   the prefill (N73); the session still records only the template (P3.3), so provenance and occurrence
   matching are unchanged. Storing it would make the session's provenance say two things and would go
   stale the moment the slot moved.
+- **Every measurement writer uses the same future-day boundary** (B366). A record is of the past; `save`
+  refused a day after today, but the bodyweight prompt's targeted `setDailyWeight` did not. Both now call
+  `isMeasurementDayAfterToday` with the write's own clock, so a direct caller cannot put a reading on a day
+  that has not happened.
 - **A cancelled read is cancellation, not a failure** (B367). A flow's `catch` sees `CancellationException`
   like any other throwable; turning it into `DataResult.Failure` tells the screen a storage read failed when
   the collector simply left. The trends flows share one `toDataResult` helper that rethrows cancellation first

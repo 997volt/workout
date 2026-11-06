@@ -454,6 +454,21 @@ class MeasurementRepositoryTest {
     }
 
     @Test
+    fun settingTheDaysWeight_refusesTomorrow() = runTest {
+        // B366: the targeted writer had no future-day refusal while the full save did.
+        val result = repository.setDailyWeight(
+            at = today.plusDays(1).atTime(9, 0).atZone(ZoneId.systemDefault()).toInstant(),
+            grams = 75_000L,
+        )
+
+        assertTrue(result is DataResult.Failure)
+        assertTrue(
+            "the refused write must not create a row",
+            repository.observeAll().first().isEmpty(),
+        )
+    }
+
+    @Test
     fun theLatestWeight_skipsAZeroTheStoreStillHolds() = runTest {
         // B336: an older build let a typed "0" be saved. It states no weight, so a bodyweight set loads the
         // newest *stated* one — a zero answered here would put 0 kg under every bodyweight set the app loads.

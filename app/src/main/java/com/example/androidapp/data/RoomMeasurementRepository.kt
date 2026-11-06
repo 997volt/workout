@@ -162,6 +162,11 @@ class RoomMeasurementRepository @Inject constructor(
         val (dayStart, dayEnd) = at.localDayBounds(zone)
         database.withTransaction {
             val now = nextWriteAt()
+            // The same future-day boundary as `save` (B212, B366): a bodyweight prompt passes today, but a
+            // direct caller must not put a reading on a day that has not happened.
+            if (at.isMeasurementDayAfterToday(Instant.ofEpochMilli(now), zone)) {
+                throw InvalidInputException("A measurement cannot be dated after today.")
+            }
             val existing = dao.findOnDay(from = dayStart, to = dayEnd, kind = MeasurementKind.DAILY.name)
             if (existing != null) {
                 if (dao.updateWeight(id = existing.id, grams = grams, at = now) == 0) {
