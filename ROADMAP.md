@@ -1,7 +1,8 @@
 # Workout — Roadmap
 
-> **What is planned, not what happened.** *Later* is decided and waiting, *Parked* is decided against until a
-> named trigger fires, and the non-goals are lines this app does not cross.
+> **What is planned, not what happened.** *Next* is the batch picked up before anything else, *Later* is decided
+> and waiting, *Parked* is decided against until a named trigger fires, and the non-goals are lines this app
+> does not cross.
 > Shipped work is [CHANGELOG.md](CHANGELOG.md), how a release is cut is [RELEASING.md](RELEASING.md), and the
 > settled rules are [DECISIONS.md](DECISIONS.md) with their argument in
 > [DECISIONS-EVIDENCE.md](DECISIONS-EVIDENCE.md).
@@ -15,37 +16,35 @@ work was planned, so they do not always run in order — and an id this file doe
 shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 [CHANGELOG-1.x.md](CHANGELOG-1.x.md) for the 1.x releases.
 
-## Later — the rest of the 2.22 review
+## Next — 2.24: release guardrails and data integrity
 
-These rows are real and specified, but none is in flight: a defect here is low-frequency or a polish item, an
-engineering row is not user-visible, and a feature is waiting for a decision. A row leaves this section when it
-is picked up; its design argument moves to [DECISIONS.md](DECISIONS.md).
+2.23 is released. This batch is deliberately not a feature release: it closes the two gaps the release
+exposed — the R8 APK was built and statically verified but never executed, and ordinary changes are not
+checked until the nightly — and the remaining data-integrity defects from the 2.22 review. The
+shell/accessibility pass, engineering debt and features stay in *Later* for a later release. Each row names
+the current behaviour, why it matters, what "fixed" means and the test, so it can be picked up without the
+release conversation.
 
-### Defects and polish
+### Release and CI guardrails
 
-- **B354–B355 — Messages the lifter can neither acknowledge nor see.** The library derives
-  `lastTrainedError` from the read flow and `onErrorShown()` clears only `writeError`
-  ([ExerciseLibraryViewModel.kt](app/src/main/java/com/example/androidapp/ui/exercises/ExerciseLibraryViewModel.kt)),
-  so the snackbar cannot be dismissed and returns on every re-entry. Settings draws its write failure as the
-  last child of a long scroll with no live region
-  ([SettingsScreen.kt](app/src/main/java/com/example/androidapp/ui/settings/SettingsScreen.kt)), so a failure
-  near the top is off-screen and unannounced. Fixed means an acknowledged-error state for the library and a
-  snackbar or live-region-plus-scroll-to for Settings.
+- **N270 — The R8 release must be executed by a test, not only built.** R8 shrinking is enabled and tested only
+  by assembling an unsigned release; a release-only Hilt/serialization/navigation crash passes every gate.
+  Fixed means CI builds a debug-signed release (ephemeral keystore), installs it on the emulator and runs a
+  smoke navigation, or runs the instrumented suite against a release build type.
 
-- **B357 — A tab root needs one back story.** Statistics correctly has no back arrow ("a root that offered
-  back would be offering to go somewhere the user did not come from",
-  [StatisticsScreen.kt](app/src/main/java/com/example/androidapp/ui/statistics/StatisticsScreen.kt)); History,
-  Settings and Library are equally top-level tabs but draw Up that calls `popBackStack()` and therefore goes
-  Home ([WorkoutHistoryScreen.kt](app/src/main/java/com/example/androidapp/ui/history/WorkoutHistoryScreen.kt)).
-  Fixed means one rule applied to all roots, and the comment that argues it moved to the shared component
-  rather than living on one screen.
+- **N269 — The fast half of CI should run on pull requests.** The workflow is scheduled/dispatch-only, which is
+  documented as deliberate, but it leaves Dependabot PRs and ordinary changes unverified until the nightly and
+  makes branch protection impossible. Fixed means `build` + `docs` run on `pull_request` (and on `push` to main)
+  while `instrumented` stays on the emulator schedule; the three-job header and `RELEASING`'s "all three jobs"
+  wording stay true.
 
-- **B358 — The shell and the screens must not both apply the navigation-bar inset.** The shell reserves the
-  tab bar, whose height already includes the system bar, and each screen's default `Scaffold` adds the system
-  inset again ([AppNavHost.kt](app/src/main/java/com/example/androidapp/ui/navigation/AppNavHost.kt)); the
-  deload screen adds a third `navigationBarsPadding()`. Fixed means the shell or the screens own the bottom
-  inset exactly once, verified on a gesture-navigation and a three-button device (this was reasoned from code,
-  not measured).
+- **N274 — Close the test gates that let a suite silently shrink.** `:shared` jvm/node tests are not
+  count-gated; `app/schemas` has no CI freshness check (only `docs/shared` and `docs/fixtures` are checked);
+  detekt scans main and unit tests but not the instrumented sources. Fixed means a `shared` suite in
+  `ci-check-tests.py`, a `git status --porcelain -- app/schemas` step, and `androidTest` in the detekt source
+  set. The same row pays down the deferred `TestTag` list (D4), which has no owner or deadline today.
+
+### Data integrity
 
 - **B361 — Crash logs must be bounded.** [CrashLogStore.kt](app/src/main/java/com/example/androidapp/platform/CrashLogStore.kt)
   writes one file per crash and never prunes; `latest()` reads and parses every file, and every export carries
@@ -82,6 +81,38 @@ is picked up; its design argument moves to [DECISIONS.md](DECISIONS.md).
   `Throwable` and emits `DataResult.Failure` without rethrowing `CancellationException`, while its sibling flow
   does rethrow. A cancelled collection can therefore be reported as a failed read. Fixed means the catch
   rethrows cancellation first, with a test that cancels the collector.
+
+## Later — the rest of the 2.22 review
+
+The rows below are real and specified, but none is in flight: a defect here is low-frequency or a polish item,
+an engineering row is not user-visible, and a feature is waiting for a decision. A row leaves this section when
+it is picked up; its design argument moves to [DECISIONS.md](DECISIONS.md).
+
+### Defects and polish
+
+- **B354–B355 — Messages the lifter can neither acknowledge nor see.** The library derives
+  `lastTrainedError` from the read flow and `onErrorShown()` clears only `writeError`
+  ([ExerciseLibraryViewModel.kt](app/src/main/java/com/example/androidapp/ui/exercises/ExerciseLibraryViewModel.kt)),
+  so the snackbar cannot be dismissed and returns on every re-entry. Settings draws its write failure as the
+  last child of a long scroll with no live region
+  ([SettingsScreen.kt](app/src/main/java/com/example/androidapp/ui/settings/SettingsScreen.kt)), so a failure
+  near the top is off-screen and unannounced. Fixed means an acknowledged-error state for the library and a
+  snackbar or live-region-plus-scroll-to for Settings.
+
+- **B357 — A tab root needs one back story.** Statistics correctly has no back arrow ("a root that offered
+  back would be offering to go somewhere the user did not come from",
+  [StatisticsScreen.kt](app/src/main/java/com/example/androidapp/ui/statistics/StatisticsScreen.kt)); History,
+  Settings and Library are equally top-level tabs but draw Up that calls `popBackStack()` and therefore goes
+  Home ([WorkoutHistoryScreen.kt](app/src/main/java/com/example/androidapp/ui/history/WorkoutHistoryScreen.kt)).
+  Fixed means one rule applied to all roots, and the comment that argues it moved to the shared component
+  rather than living on one screen.
+
+- **B358 — The shell and the screens must not both apply the navigation-bar inset.** The shell reserves the
+  tab bar, whose height already includes the system bar, and each screen's default `Scaffold` adds the system
+  inset again ([AppNavHost.kt](app/src/main/java/com/example/androidapp/ui/navigation/AppNavHost.kt)); the
+  deload screen adds a third `navigationBarsPadding()`. Fixed means the shell or the screens own the bottom
+  inset exactly once, verified on a gesture-navigation and a three-button device (this was reasoned from code,
+  not measured).
 
 - **B368 — A disabled primary control must say why it is disabled.** Finish with no set, and Log set with an
   incomplete field, are disabled and silent ([ActiveWorkoutScreen.kt](app/src/main/java/com/example/androidapp/ui/workout/ActiveWorkoutScreen.kt));
@@ -121,26 +152,10 @@ is picked up; its design argument moves to [DECISIONS.md](DECISIONS.md).
 
 ### Build, CI, tests and docs
 
-- **N269 — The fast half of CI should run on pull requests.** The workflow is scheduled/dispatch-only, which is
-  documented as deliberate, but it leaves Dependabot PRs and ordinary changes unverified until the nightly and
-  makes branch protection impossible. Fixed means `build` + `docs` run on `pull_request` (and on `push` to
-  main) while `instrumented` stays on the emulator schedule; the "Two jobs"/"always run" prose moves with it.
-
-- **N270 — The R8 release must be executed by a test, not only built.** R8 shrinking is enabled and tested only
-  by assembling an unsigned release; a release-only Hilt/serialization/navigation crash passes every gate.
-  Fixed means CI builds a debug-signed release (ephemeral keystore), installs it on the emulator and runs a
-  smoke navigation, or runs the instrumented suite against a release build type.
-
 - **N272 — Pin the supply chain.** The wrapper properties carry no `distributionSha256Sum` although the comment
   says the workflow validates it (it validates the JAR, not the distribution), and there is no dependency
   verification or locking. Fixed means the wrapper checksum is present and dependency verification metadata is
   committed and checked in CI.
-
-- **N274 — Close the test gates that let a suite silently shrink.** `:shared` jvm/node tests are not
-  count-gated; `app/schemas` has no CI freshness check (only `docs/shared` and `docs/fixtures` are checked);
-  detekt scans main and unit tests but not the instrumented sources. Fixed means a `shared` suite in
-  `ci-check-tests.py`, a `git status --porcelain -- app/schemas` step, and `androidTest` in the detekt source
-  set. The same row pays down the deferred `TestTag` list (D4), which has no owner or deadline today.
 
 - **N275 — Assert the manifest invariants the privacy claims rest on.** No test checks `allowBackup`,
   `dataExtractionRules`, exported components or permissions; the merged release manifest already carries
