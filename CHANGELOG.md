@@ -17,6 +17,9 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **Tab roots no longer offer Up** (B357). History, Settings and the Library drew an arrow that called
+  `popBackStack()` and therefore went Home, while Statistics correctly had none. All four now share
+  `TabRootTopBar`, which has no navigation icon; screens reached from a root keep their own back arrow.
 - **Library and settings failures can be acknowledged and are visible** (B354–B355). The library's last-trained
   failure was derived from the read flow, so dismissing the snackbar cleared the wrong field and the message
   returned; the acknowledgement now filters that failure until a later success. Settings drew its write failure

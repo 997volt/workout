@@ -1254,6 +1254,9 @@ the rule; that one argues it.
   like any other throwable; turning it into `DataResult.Failure` tells the screen a storage read failed when
   the collector simply left. The trends flows share one `toDataResult` helper that rethrows cancellation first
   and maps only real failures, the same rule `dataResultOf` holds for suspending calls.
+- **A tab root has no Up arrow** (B357). A root is where the tab goes; an arrow offers to go somewhere the
+  lifter did not come from, and on these roots it called `popBackStack()` and went Home. The rule lives in
+  `TabRootTopBar` so all four roots get it, while pushed screens keep their own back arrow.
 - **A message is acknowledged against the state that produced it** (B354–B355). A flow-derived failure cannot be
   cleared at the source, so the library filters the last-trained error through an acknowledged value and resets
   it when the read succeeds; Settings now clears its own write error when the snackbar is dismissed. A snackbar

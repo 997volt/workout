@@ -17,7 +17,6 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Straighten
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -55,8 +54,8 @@ import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.DatePrompt
 import com.example.androidapp.ui.components.MessageSnackbar
+import com.example.androidapp.ui.components.TabRootTopBar
 import com.example.androidapp.ui.components.TestTags
-import com.example.androidapp.ui.components.TopBarTitle
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.history.HistoryFormat
 import com.example.androidapp.ui.statistics.chart.SeriesChart
@@ -687,8 +686,8 @@ private fun StatisticsTopBar(
     // word-length actions want the same pixels, and on a phone the title loses: "STATISTICS"
     // ran into "Adherence" and overlapped it. The glyphs carry the meaning and their
     // descriptions carry it for a screen reader; the words were only ever doing the second job.
-    CenterAlignedTopAppBar(
-        title = { TopBarTitle(text = stringResource(R.string.tab_statistics)) },
+    TabRootTopBar(
+        title = stringResource(R.string.tab_statistics),
         actions = {
             if (onOpenAdherence != null) {
                 IconButton(

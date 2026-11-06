@@ -11,13 +11,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -53,8 +51,8 @@ import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.IconTile
 import com.example.androidapp.ui.components.MessageSnackbar
 import com.example.androidapp.ui.components.SectionHeader
+import com.example.androidapp.ui.components.TabRootTopBar
 import com.example.androidapp.ui.components.TestTags
-import com.example.androidapp.ui.components.TopBarTitle
 import com.example.androidapp.ui.programs.StartIntent
 import com.example.androidapp.ui.programs.programStartGate
 import com.example.androidapp.ui.theme.AndroidAppTheme
@@ -70,7 +68,6 @@ fun WorkoutHistoryRoute(
     onRepeatWorkout: (String) -> Unit,
     /** The missed day answered with *Do it now* (B271): the workout the question named. */
     onStartTemplate: (templateId: String, slotId: String?) -> Unit,
-    onBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: WorkoutHistoryViewModel = hiltViewModel(),
 ) {
@@ -100,7 +97,6 @@ fun WorkoutHistoryRoute(
         onRepeatWorkout = { sessionId -> requestStart(StartIntent(repeatSessionId = sessionId)) },
         onQueryChange = viewModel::onQueryChange,
         onFilterChange = viewModel::onFilterChange,
-        onBack = onBack,
         message = message,
         onDismissMessage = { message = null },
         modifier = modifier,
@@ -112,7 +108,6 @@ fun WorkoutHistoryRoute(
 fun WorkoutHistoryScreen(
     state: WorkoutHistoryUiState,
     onOpenWorkout: (String) -> Unit,
-    onBack: () -> Unit,
     onRepeatWorkout: (String) -> Unit,
     /** N146's query and chip, owned by the ViewModel so a rotation does not lose them. */
     onQueryChange: (String) -> Unit,
@@ -128,19 +123,7 @@ fun WorkoutHistoryScreen(
         modifier = modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    TopBarTitle(text = stringResource(R.string.history_title))
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.nav_back),
-                        )
-                    }
-                },
-            )
+            TabRootTopBar(title = stringResource(R.string.history_title))
         },
     ) { innerPadding ->
         when {
@@ -458,7 +441,6 @@ private fun WorkoutHistoryScreenPreview() {
                 ),
             ),
             onOpenWorkout = {},
-            onBack = {},
             onRepeatWorkout = {},
             onQueryChange = {},
             onFilterChange = {},

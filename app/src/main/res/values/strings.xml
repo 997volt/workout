@@ -1011,7 +1011,6 @@
     <string name="summary_done">Done</string>
     <!-- The app's settings (ROADMAP N21). -->
     <string name="settings_title">Settings</string>
-    <string name="settings_back">Back</string>
     <!-- Whether Done asks about the plan's next step (ROADMAP N66). On by default: it is what the
          app has done since N50, so an upgrade changes nothing for someone who never opens settings. -->
     <string name="settings_progression_suggest">Ask</string>

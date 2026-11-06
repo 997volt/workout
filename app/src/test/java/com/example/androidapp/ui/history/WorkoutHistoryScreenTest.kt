@@ -49,7 +49,6 @@ class WorkoutHistoryScreenTest {
                     onRepeatWorkout = { repeated = it },
                     onQueryChange = { typed = it },
                     onFilterChange = { picked = it },
-                    onBack = {},
                     onDismissMessage = {},
                 )
             }

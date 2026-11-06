@@ -25,16 +25,6 @@ accessibility/state gaps around them. It is deliberately not a feature release.
 **B358 stays in *Later*** until a gesture-navigation and a three-button device are available to verify the
 inset fix; it is not part of 2.25.
 
-### Messages and navigation
-
-- **B357 — A tab root needs one back story.** Statistics correctly has no back arrow ("a root that offered
-  back would be offering to go somewhere the user did not come from",
-  [StatisticsScreen.kt](app/src/main/java/com/example/androidapp/ui/statistics/StatisticsScreen.kt)); History,
-  Settings and Library are equally top-level tabs but draw Up that calls `popBackStack()` and therefore goes
-  Home ([WorkoutHistoryScreen.kt](app/src/main/java/com/example/androidapp/ui/history/WorkoutHistoryScreen.kt)).
-  Fixed means one rule applied to all roots, and the comment that argues it moved to the shared component
-  rather than living on one screen.
-
 ### Controls, titles and accessibility
 
 - **B368 — A disabled primary control must say why it is disabled.** Finish with no set, and Log set with an

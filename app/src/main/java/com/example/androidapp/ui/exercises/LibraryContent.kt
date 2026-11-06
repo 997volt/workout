@@ -127,7 +127,6 @@ internal fun LibraryContentHost(
     state: ExerciseLibraryUiState,
     title: String,
     message: String?,
-    onBack: (() -> Unit)?,
     onQueryChange: (String) -> Unit,
     onSortChange: (LibrarySort) -> Unit,
     onFilterChange: (LibraryFilter) -> Unit,
@@ -159,7 +158,6 @@ internal fun LibraryContentHost(
         state = state,
         content = content,
         title = title,
-        onBack = onBack,
         onQueryChange = onQueryChange,
         onSortChange = onSortChange,
         onFilterChange = onFilterChange,
@@ -260,7 +258,6 @@ private fun LibraryScaffold(
     state: ExerciseLibraryUiState,
     content: LibraryContent,
     title: String,
-    onBack: (() -> Unit)?,
     onQueryChange: (String) -> Unit,
     onSortChange: (LibrarySort) -> Unit,
     onFilterChange: (LibraryFilter) -> Unit,
@@ -277,7 +274,7 @@ private fun LibraryScaffold(
         floatingActionButton = {
             LibraryCreationButton(onNewMovement = onNewMovement, onNewCategory = onNewCategory)
         },
-        topBar = { LibraryTopBar(title = title, onBack = onBack) },
+        topBar = { LibraryTopBar(title = title) },
     ) { innerPadding ->
         LibraryBody(
             state = state,

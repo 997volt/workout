@@ -149,7 +149,6 @@ private fun NavGraphBuilder.homeDestinations(navController: NavHostController) {
 
     composable<Settings> {
         SettingsRoute(
-            onBack = { navController.popBackStack() },
             onOpenDiagnostics = { navController.navigate(Diagnostics) },
         )
     }
@@ -196,7 +195,6 @@ private fun NavGraphBuilder.homeDestinations(navController: NavHostController) {
             onExerciseClick = { exerciseId ->
                 navController.navigate(ExerciseDetail(exerciseId))
             },
-            onBack = { navController.popBackStack() },
         )
     }
 
@@ -313,7 +311,6 @@ private fun NavGraphBuilder.historyDestinations(navController: NavHostController
             onStartTemplate = { templateId, slotId ->
                 navController.navigate(ActiveWorkout(templateId = templateId, slotId = slotId))
             },
-            onBack = { navController.popBackStack() },
         )
     }
 

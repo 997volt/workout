@@ -11,18 +11,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Upload
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -61,8 +57,8 @@ import com.example.androidapp.ui.components.FailureMessage
 import com.example.androidapp.ui.components.IconTile
 import com.example.androidapp.ui.components.MessageSnackbar
 import com.example.androidapp.ui.components.SectionHeader
+import com.example.androidapp.ui.components.TabRootTopBar
 import com.example.androidapp.ui.components.TestTags
-import com.example.androidapp.ui.components.TopBarTitle
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.components.label
 import com.example.androidapp.ui.theme.TileAccent
@@ -88,7 +84,6 @@ private const val CHOICES_PER_ROW = 5
  */
 @Composable
 fun SettingsRoute(
-    onBack: () -> Unit,
     onOpenDiagnostics: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel(),
@@ -144,7 +139,6 @@ fun SettingsRoute(
         message = message,
         onDismissMessage = { message = null },
         onDismissError = viewModel::onErrorShown,
-        onBack = onBack,
         modifier = modifier,
     )
 }
@@ -154,7 +148,6 @@ fun SettingsRoute(
 fun SettingsScreen(
     state: SettingsUiState,
     onSetDefaultRest: (Int) -> Unit,
-    onBack: () -> Unit,
     onSetRestCue: (Boolean) -> Unit,
     onSetKeepScreenOn: (Boolean) -> Unit,
     onSetRestTimer: (Boolean) -> Unit,
@@ -200,17 +193,7 @@ fun SettingsScreen(
         modifier = modifier.fillMaxSize().testTag(TestTags.SETTINGS_SCREEN),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { TopBarTitle(text = stringResource(R.string.settings_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.settings_back),
-                        )
-                    }
-                },
-            )
+            TabRootTopBar(title = stringResource(R.string.settings_title))
         },
     ) { innerPadding ->
         SettingsBody(

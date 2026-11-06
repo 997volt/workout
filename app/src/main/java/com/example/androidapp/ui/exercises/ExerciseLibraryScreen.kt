@@ -9,13 +9,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -51,8 +49,8 @@ import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.IconTile
 import com.example.androidapp.ui.components.RowFold
+import com.example.androidapp.ui.components.TabRootTopBar
 import com.example.androidapp.ui.components.TestTags
-import com.example.androidapp.ui.components.TopBarTitle
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.theme.AndroidAppTheme
 import com.example.androidapp.ui.theme.TileAccent
@@ -66,7 +64,6 @@ import com.example.androidapp.ui.theme.TileAccent
 @Composable
 fun ExerciseLibraryRoute(
     onExerciseClick: (String) -> Unit,
-    onBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ExerciseLibraryViewModel = hiltViewModel(),
 ) {
@@ -75,7 +72,6 @@ fun ExerciseLibraryRoute(
     ExerciseLibraryScreen(
         state = state,
         title = stringResource(R.string.exercise_library_title),
-        onBack = onBack,
         onQueryChange = viewModel::onQueryChange,
         onExerciseClick = onExerciseClick,
         // A failed write is a message on the screen's own host (B88); the page's `error` stays the read's.
@@ -115,7 +111,6 @@ fun ExerciseLibraryScreen(
     /** Makes a movement, filed under the family or nowhere (ROADMAP N232). */
     onCreateMovement: (String, String?) -> Unit,
     modifier: Modifier = Modifier,
-    onBack: (() -> Unit)? = null,
     message: String? = null,
     /** Makes a family (ROADMAP N95). Set on the library, which is where the library's shape is kept. */
     onNewCategory: ((String) -> Unit)? = null,
@@ -124,7 +119,6 @@ fun ExerciseLibraryScreen(
         state = state,
         title = title,
         message = message,
-        onBack = onBack,
         onQueryChange = onQueryChange,
         onSortChange = onSortChange,
         onFilterChange = onFilterChange,
@@ -137,22 +131,9 @@ fun ExerciseLibraryScreen(
 }
 
 /** The screen's bar, split out so the screen stays inside the length this project allows. */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun LibraryTopBar(title: String, onBack: (() -> Unit)?) {
-    CenterAlignedTopAppBar(
-        title = { TopBarTitle(text = title, testTag = TestTags.LIBRARY_TITLE) },
-        navigationIcon = {
-            if (onBack != null) {
-                IconButton(onClick = onBack) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = stringResource(R.string.nav_back),
-                    )
-                }
-            }
-        },
-    )
+internal fun LibraryTopBar(title: String) {
+    TabRootTopBar(title = title, testTag = TestTags.LIBRARY_TITLE)
 }
 
 /**

@@ -38,7 +38,6 @@ class SettingsScreenTest {
     val composeTestRule = createComposeRule()
 
     private val chosen = mutableListOf<Int>()
-    private var backs = 0
     private var exported = 0
     private var imported = 0
     private var cleared = 0
@@ -56,7 +55,6 @@ class SettingsScreenTest {
             SettingsScreen(
                 state = state,
                 onSetDefaultRest = { chosen += it },
-                onBack = { backs++ },
                 onSetRestTimer = { restTimerWrites += it },
                 onSetWeightUnit = { unitWrites += it },
                 onSetProgressionMode = { progressionWrites += it },
@@ -208,14 +206,11 @@ class SettingsScreenTest {
     }
 
     @Test
-    fun back_leaves() {
+    fun aTabRoot_hasNoBackArrow() {
+        // B357: a root has no place it came from, so it must not offer Up.
         show(SettingsUiState())
 
-        // The back control is icon-only, so its label is a content description (N21's rule that
-        // accessibility accompanies each screen).
-        composeTestRule.onNodeWithContentDescription("Back").performClick()
-
-        assertEquals(1, backs)
+        composeTestRule.onNodeWithContentDescription("Back").assertDoesNotExist()
     }
 
     @Test
