@@ -60,11 +60,6 @@ release conversation.
   program-add path already drops such rows. Fixed means counting actual inserts and refusing/dropping planned
   rows whose exercise is not live afterwards, with a test for the hidden-id case.
 
-- **B365 — Re-roling an anchor must re-check the rungs below it.** `updateSet` runs the rung rule only for the
-  edited row, so changing a working anchor into a warm-up is accepted although logging refuses a rung under a
-  warm-up and the rows below lose their anchor. Fixed means the role change re-runs the rule for the rows whose
-  anchor is this set, or refuses a role that leaves a rung unanchored, with a test for both.
-
 ## Later — the rest of the 2.22 review
 
 The rows below are real and specified, but none is in flight: a defect here is low-frequency or a polish item,

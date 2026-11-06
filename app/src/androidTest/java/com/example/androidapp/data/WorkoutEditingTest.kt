@@ -215,6 +215,36 @@ class WorkoutEditingTest {
     }
 
     @Test
+    fun reRolingAnAnchorIntoAWarmUp_refusesAndKeepsTheRungAnchored() = runTest {
+        // B365: a rung under the first set is legal; turning that first set into a warm-up is not, even
+        // though the edited row's own role would be. The later rung must not lose its anchor.
+        seedOpenWorkoutWithASet()
+        val anchor = database.backupDao().allSets().single()
+        repository.logSet(
+            "se1",
+            reps = 5,
+            weightGrams = 80_000L,
+            rpeHalves = null,
+            note = null,
+            setType = SetType.DROP,
+        )
+
+        val result = repository.updateSet(
+            anchor.id,
+            reps = anchor.reps,
+            weightGrams = anchor.weightGrams,
+            rpeHalves = null,
+            note = null,
+            setType = SetType.WARMUP,
+        )
+
+        assertTrue(result is DataResult.Failure)
+        val stored = database.backupDao().allSets().sortedBy { it.setIndex }
+        assertEquals("the anchor keeps its role", SetType.NORMAL, stored.first().setType)
+        assertEquals("and the rung is still a rung", SetType.DROP, stored.last().setType)
+    }
+
+    @Test
     fun anOversizedSet_isRefused_andNothingIsWritten() = runTest {
         // B360: the editor's parser keeps the screen safe, but the repository is the boundary every
         // caller and import meets. The seeded set is the only row that may remain.

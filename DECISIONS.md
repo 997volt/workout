@@ -1210,6 +1210,12 @@ the rule; that one argues it.
   the prefill (N73); the session still records only the template (P3.3), so provenance and occurrence
   matching are unchanged. Storing it would make the session's provenance say two things and would go
   stale the moment the slot moved.
+- **A role edit re-checks every rung it could orphan** (B365). The rung rule is about a row and the row above
+  it, but changing a set's role changes the *above* of the rows below: a normal anchor edited to a warm-up
+  leaves an existing drop with no legal anchor, while the edited row itself is valid. The write re-runs the rule
+  over the layout it would produce, compares the rungs that were valid before, and refuses only a newly broken
+  one. Rejected: refusing every role change with a rung somewhere below, which would reject edits unrelated to
+  that rung.
 - **A removed plan block remembers the row above it, not an index** (B364). Survivors renumber on removal and a
   later ramp addition moves every index, so the splice point has to be stable across edits; the live row above
   the block is. Removing a set stores that row's id on every row the one write hides, and Undo inserts after its

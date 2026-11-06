@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **Re-roling an anchor re-checks the rungs below it** (B365). `updateSet` validated only the edited row, so
+  turning a working set into a warm-up was accepted even though a rung below it then had no legal anchor. The
+  write now re-runs the rung rule over the layout it would produce and refuses a change that newly breaks a
+  rung; an unrelated valid edit still goes through.
 - **A restored planned set returns after the row it followed, not after a stale index** (B364). Removing a set
   renumbers the survivors, and a ramp added before the undo moved every index again, so Undo could put the set
   before a warm-up or after its neighbour. A removed block now records the live row above it; the restore inserts

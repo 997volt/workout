@@ -462,23 +462,13 @@ class RoomWorkoutRepository @Inject constructor(
         setIndex: Int,
         role: SetType,
     ): RungRefusal? {
-        val above = dao.findSessionIdForSessionExercise(sessionExerciseId)
+        val rows = dao.findSessionIdForSessionExercise(sessionExerciseId)
             ?.let { dao.observeSetsForSession(it).first() }
             .orEmpty()
-            .filter { it.sessionExerciseId == sessionExerciseId && it.setIndex < setIndex }
-        var start = above.size
-        while (start > 0 && above[start - 1].setType == role) start--
-        val anchor = above.getOrNull(start - 1)
-        // The same three causes `SetSuggestion.refusalForLoggingAs` tells apart for the picker, read off the
-        // **stored** rows rather than the session's own type.
-        return when {
-            !role.isRung -> null
-            anchor == null -> RungRefusal.NothingAbove
-            anchor.setType.recordsEffort -> null
-            anchor.setType.isRung -> RungRefusal.ARungAbove
-            else -> RungRefusal.OnlyAWarmUp
-        }
+            .filter { it.sessionExerciseId == sessionExerciseId }
+        return rungRefusal(rows, setIndex, role)
     }
+
 
     override suspend fun logSet(
         sessionExerciseId: String,
@@ -573,6 +563,22 @@ class RoomWorkoutRepository @Inject constructor(
             // database as a rung the app reads no run for — the state the log path already refuses.
             rungRefusal(stored.sessionExerciseId, stored.setIndex, setType)?.let {
                 throw InvalidInputException(it.sentence(setType))
+            }
+            // The edited row is not the only one whose rule can change (B365): turning the set an existing
+            // rung hangs off into a warm-up leaves that rung with no anchor, even though this row's own
+            // role is legal. Re-run the rule over the layout the write would produce.
+            val sessionId = dao.findSessionIdForSessionExercise(stored.sessionExerciseId)
+                ?: throw NotFoundException("session exercise ${stored.sessionExerciseId}")
+            val before = dao.observeSetsForSession(sessionId).first()
+                .filter { it.sessionExerciseId == stored.sessionExerciseId }
+            val after = before.map { if (it.id == setId) it.copy(setType = setType) else it }
+            val validBefore = before.filter { it.setType.isRung }
+                .filter { rungRefusal(before, it.setIndex, it.setType) == null }
+                .mapTo(mutableSetOf()) { it.id }
+            val newlyBroken = after.filter { it.id in validBefore }
+                .any { rungRefusal(after, it.setIndex, it.setType) != null }
+            if (newlyBroken) {
+                throw InvalidInputException("That change would leave a later rung without an anchor.")
             }
             val shape = heldShape(reps, durationSeconds)
             val updated = stored.copy(
@@ -797,4 +803,28 @@ internal fun requireWritableLoad(
         assistanceGrams > Weight.MAX_GRAMS ||
         (bodyweightGrams != null && bodyweightGrams > Weight.MAX_GRAMS)
     if (tooHeavy) throw InvalidInputException("A load is outside the app's range.")
+}
+
+/**
+ * The rung rule against a supplied layout (B365), so an edit can ask it about the state it is about to
+ * write rather than only the row it names. [rows] may include a row whose role is being changed.
+ */
+private fun rungRefusal(
+    rows: List<SetEntryEntity>,
+    setIndex: Int,
+    role: SetType,
+): RungRefusal? {
+    val above = rows.filter { it.setIndex < setIndex }.sortedBy { it.setIndex }
+    var start = above.size
+    while (start > 0 && above[start - 1].setType == role) start--
+    val anchor = above.getOrNull(start - 1)
+    // The same three causes `SetSuggestion.refusalForLoggingAs` tells apart for the picker, read off the
+    // **stored** rows rather than the session's own type.
+    return when {
+        !role.isRung -> null
+        anchor == null -> RungRefusal.NothingAbove
+        anchor.setType.recordsEffort -> null
+        anchor.setType.isRung -> RungRefusal.ARungAbove
+        else -> RungRefusal.OnlyAWarmUp
+    }
 }
