@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The daily measurement shortcut opens its form after loading** (B382). B371 made the screen render
+  during loading with a null initial form, so the daily form that arrived with the loaded state was ignored
+  by an unkeyed `rememberSaveable`. The form state is keyed on the incoming value; a test starts in loading
+  and asserts the daily form appears when loading finishes.
 - **The last raw date and report strings are formatted like the rest** (B373). The statistics custom range
   showed `LocalDate.toString()` (`2026-08-01`); it now goes through `HistoryFormat` in UTC. The diagnostics
   report's user-facing sentences and its clipboard label became string resources; the timestamps stay ISO

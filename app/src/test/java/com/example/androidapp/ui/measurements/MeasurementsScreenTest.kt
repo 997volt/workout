@@ -1,6 +1,9 @@
 package com.example.androidapp.ui.measurements
 
 import android.content.Context
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
@@ -113,6 +116,36 @@ class MeasurementsScreenTest {
                 )
             }
         }
+    }
+
+    @Test
+    fun loadingThenLoaded_opensTheDailyForm() {
+        // B382: the route composes this screen during loading with no initial form. The form that arrives
+        // with the loaded state must open then, not be ignored by a rememberSaveable captured at null.
+        var loading by mutableStateOf(true)
+        composeTestRule.setContent {
+            AndroidAppTheme {
+                MeasurementsScreen(
+                    state = MeasurementsUiState(isLoading = loading),
+                    loading = loading,
+                    onSave = {},
+                    onDelete = {},
+                    onBack = {},
+                    onDismissError = {},
+                    onUndo = {},
+                    onDismissUndo = {},
+                    onDismissRateVerdict = {},
+                    onSaveGoalPeriod = { _, _, _, _ -> },
+                    onRemoveGoalPeriod = {},
+                    onDismissGoalSave = {},
+                    initialAdd = if (loading) null else MeasurementKind.DAILY,
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(TestTags.Measurements.WEIGHT).assertDoesNotExist()
+        composeTestRule.runOnIdle { loading = false }
+        composeTestRule.onNodeWithTag(TestTags.Measurements.WEIGHT).assertIsDisplayed()
     }
 
     @Test

@@ -21,14 +21,6 @@ The 2.25 batch is implemented but not released. The review of `67494190..HEAD` f
 three follow-ups; each row names the failed behaviour, what fixed means and the test that would have caught it.
 **B382 and B383 must be fixed before the 2.25 tag.**
 
-- **B382 — The daily measurement shortcut must still open its form after loading.** B371 moved the loading
-  wait into the measurement Scaffold, so the route now first composes `MeasurementsScreen` with
-  `initialAdd = null` and `initialEdit = null`; `adding` and `editingEntryId` are `rememberSaveable` without a
-  key ([MeasurementsScreen.kt](app/src/main/java/com/example/androidapp/ui/measurements/MeasurementsScreen.kt#L227)),
-  so the values that arrive after loading are ignored. Home's *Today's measurement* then lands on the list,
-  and today's existing entry is not opened for editing. Fixed means the pending form is keyed or applied when
-  the initial value changes, with a test that starts loading with no form and then supplies a daily entry.
-
 - **B383 — A last-trained `Storage` failure must be acknowledgeable, and read once.** The library collects
   `lastTrained` twice — in `init` for the acknowledgement and again inside `uiState`
   ([ExerciseLibraryViewModel.kt](app/src/main/java/com/example/androidapp/ui/exercises/ExerciseLibraryViewModel.kt#L225)).

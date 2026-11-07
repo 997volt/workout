@@ -1254,6 +1254,10 @@ the rule; that one argues it.
   like any other throwable; turning it into `DataResult.Failure` tells the screen a storage read failed when
   the collector simply left. The trends flows share one `toDataResult` helper that rethrows cancellation first
   and maps only real failures, the same rule `dataResultOf` holds for suspending calls.
+- **A pending form arrives with the state that names it** (B382). A loading screen cannot know whether the
+  daily shortcut needs a blank form or today's entry, so its state is composed with null and updated when the
+  answer arrives. The form flags are keyed on that incoming value, which lets them open then without reopening
+  a form the lifter dismissed; a fixed `rememberSaveable` would only remember the first null.
 - **A visible date goes through the one history formatter, even from a UTC picker** (B373). The custom range
   reads and writes UTC days to avoid shifting west of Greenwich, but it formats them in UTC through
   `HistoryFormat`, so the label matches every other date; the diagnostics report's sentences are resources,
