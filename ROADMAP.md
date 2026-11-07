@@ -34,11 +34,6 @@ APK. N276 remains a separate immediate follow-up because it changes the release 
   imprecise. Fixed means a source-manifest test plus a CI check of the merged permissions, and the README
   says "no dangerous/runtime permissions" (or explains the one).
 
-- **N278 — Artifacts need a retention policy.** The reports and the R8 mapping are uploaded with no
-  `retention-days`; on a nightly workflow the default retention compounds a large mapping file and test
-  reports. Fixed means a retention window per artifact, with the mapping attached to the release asset for
-  permanent retention.
-
 - **N281 — The test-only FileProvider should not ship.** The production manifest declares a `FileProvider`
   scoped to a cache directory only because `DocumentIoTest` needs a real content URI. Fixed means the provider
   moves to the instrumented manifest (or the test uses a test-local provider), and the release manifest no
