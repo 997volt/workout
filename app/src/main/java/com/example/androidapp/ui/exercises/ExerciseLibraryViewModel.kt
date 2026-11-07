@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -153,9 +154,6 @@ class ExerciseLibraryViewModel @Inject constructor(
      */
     private val acknowledgedLastTrainedError = MutableStateFlow<DataError?>(null)
 
-    /** The latest last-trained result, kept only to remember what the acknowledgement refers to. */
-    private val lastTrainedFailure = MutableStateFlow<DataError?>(null)
-
     /**
      * The whole library **including removed rows**, read once for naming (ROADMAP N95).
      *
@@ -172,6 +170,23 @@ class ExerciseLibraryViewModel @Inject constructor(
     private val lastTrained: Flow<DataResult<Map<String, Instant>>> =
         exerciseRepository.observeLastTrained()
 
+    /**
+     * **One** collection of the last-trained read (B383): the error the screen shows and the error an
+     * acknowledgement refers to have to be the same value. A second collector could produce a different
+     * `DataError.Storage` cause, which compares unequal and leaves the snackbar unacknowledgeable; it also
+     * kept a database query alive with no screen subscriber.
+     */
+    private val lastTrainedResult: StateFlow<DataResult<Map<String, Instant>>?> =
+        lastTrained
+            .onEach { result ->
+                if (result is DataResult.Success) acknowledgedLastTrainedError.value = null
+            }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+                initialValue = null,
+            )
+
     private data class ViewState(
         val view: LibraryView,
         val acknowledgedLastTrainedError: DataError?,
@@ -187,13 +202,13 @@ class ExerciseLibraryViewModel @Inject constructor(
         viewState,
         error,
         includingRemoved,
-        lastTrained,
+        lastTrainedResult,
     ) { result, currentViewState, currentError, removed, trained ->
         val currentView = currentViewState.view
         // A read failure is rendered where the list would have been (ROADMAP B4),
         // instead of escaping the flow and taking the screen down.
         val exercises = result.getOrNull().orEmpty()
-        val trainedMap = trained.getOrNull().orEmpty()
+        val trainedMap = trained?.getOrNull().orEmpty()
         val counts = libraryFilterCounts(exercises, trainedMap, notTrainedSince)
         // **A group that emptied falls back to all** (N231): a blank list under a selected chip would say the
         // library is empty when the chip is what is empty. The filter is one the lifter chose, and an empty
@@ -223,12 +238,6 @@ class ExerciseLibraryViewModel @Inject constructor(
     )
 
     init {
-        viewModelScope.launch {
-            lastTrained.collect { result ->
-                lastTrainedFailure.value = (result as? DataResult.Failure)?.error
-                if (result is DataResult.Success) acknowledgedLastTrainedError.value = null
-            }
-        }
         viewModelScope.launch {
             // Deliberately silent on failure: this only resolves names, so a read that did not happen leaves
             // a child showing no family rather than breaking the screen.
@@ -301,7 +310,7 @@ class ExerciseLibraryViewModel @Inject constructor(
 
     fun onErrorShown() {
         error.value = null
-        acknowledgedLastTrainedError.value = lastTrainedFailure.value
+        acknowledgedLastTrainedError.value = (lastTrainedResult.value as? DataResult.Failure)?.error
     }
 
     private companion object {

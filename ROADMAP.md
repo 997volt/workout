@@ -21,15 +21,6 @@ The 2.25 batch is implemented but not released. The review of `67494190..HEAD` f
 three follow-ups; each row names the failed behaviour, what fixed means and the test that would have caught it.
 **B382 and B383 must be fixed before the 2.25 tag.**
 
-- **B383 — A last-trained `Storage` failure must be acknowledgeable, and read once.** The library collects
-  `lastTrained` twice — in `init` for the acknowledgement and again inside `uiState`
-  ([ExerciseLibraryViewModel.kt](app/src/main/java/com/example/androidapp/ui/exercises/ExerciseLibraryViewModel.kt#L225)).
-  `DataError.Storage` wraps a `Throwable`, whose equality is identity-based, so the two Room collections can
-  produce different errors and the acknowledged value never equals the displayed one; the snackbar then
-  cannot be dismissed. The second collection also keeps a database read alive with no screen subscriber.
-  Fixed means one shared upstream result (or a stable failure token), with a test whose flow emits a fresh
-  `Storage` error per collection and whose dismissal clears the message.
-
 - **B384 — `CenteredMessage` must centre in the parent it is given, not only in a 200 dp fallback.** B371
   detects an infinite height and uses `heightIn(min = 200.dp)`
   ([CenteredMessage.kt](app/src/main/java/com/example/androidapp/ui/components/CenteredMessage.kt#L63)). That

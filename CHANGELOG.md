@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **Last-trained failures are acknowledged from one shared read** (B383). The library collected the flow once
+  for the message's acknowledgement and again for the screen; a real `Storage` error carries its own throwable
+  in each collection, so the two values compared unequal and the snackbar could not be dismissed. One shared
+  `stateIn` result now feeds both, and the failure test uses a flow that creates a fresh error per collection.
 - **The daily measurement shortcut opens its form after loading** (B382). B371 made the screen render
   during loading with a null initial form, so the daily form that arrived with the loaded state was ignored
   by an unkeyed `rememberSaveable`. The form state is keyed on the incoming value; a test starts in loading

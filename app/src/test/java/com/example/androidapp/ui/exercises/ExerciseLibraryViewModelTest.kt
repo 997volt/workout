@@ -17,6 +17,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -134,7 +135,7 @@ class ExerciseLibraryViewModelTest {
 
         override fun observeExercises(): Flow<DataResult<List<Exercise>>> =
             if (failReads) {
-                flowOf(DataResult.Failure(DataError.Storage(IOException("database is locked"))))
+                flow { emit(DataResult.Failure(DataError.Storage(IOException("database is locked")))) }
             } else {
                 state.map { DataResult.Success(it) }
             }
@@ -189,7 +190,7 @@ class ExerciseLibraryViewModelTest {
 
         override fun observeLastTrained(): Flow<DataResult<Map<String, Instant>>> =
             if (failLastTrained) {
-                flowOf(DataResult.Failure(DataError.Storage(IOException("database is locked"))))
+                flow { emit(DataResult.Failure(DataError.Storage(IOException("database is locked")))) }
             } else {
                 flowOf(DataResult.Success(lastTrained))
             }

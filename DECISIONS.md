@@ -1254,6 +1254,10 @@ the rule; that one argues it.
   like any other throwable; turning it into `DataResult.Failure` tells the screen a storage read failed when
   the collector simply left. The trends flows share one `toDataResult` helper that rethrows cancellation first
   and maps only real failures, the same rule `dataResultOf` holds for suspending calls.
+- **A flow-derived message and its acknowledgement read the same result** (B383). Two collectors of a Room
+  flow can produce different `DataError.Storage` causes, and the class compares by cause identity; an
+  acknowledgement from one then never dismisses the other. The library shares one `stateIn` result, which also
+  stops the read with the screen subscription rather than holding a query open for the ViewModel's life.
 - **A pending form arrives with the state that names it** (B382). A loading screen cannot know whether the
   daily shortcut needs a blank form or today's entry, so its state is composed with null and updated when the
   answer arrives. The form flags are keyed on that incoming value, which lets them open then without reopening
