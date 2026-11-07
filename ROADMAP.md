@@ -1,7 +1,8 @@
 # Workout — Roadmap
 
-> **What is planned, not what happened.** *Later* is decided and waiting, *Parked* is decided against until a
-> named trigger fires, and the non-goals are lines this app does not cross.
+> **What is planned, not what happened.** *Next* is the batch picked up before anything else, *Later* is decided
+> and waiting, *Parked* is decided against until a named trigger fires, and the non-goals are lines this app
+> does not cross.
 > Shipped work is [CHANGELOG.md](CHANGELOG.md), how a release is cut is [RELEASING.md](RELEASING.md), and the
 > settled rules are [DECISIONS.md](DECISIONS.md) with their argument in
 > [DECISIONS-EVIDENCE.md](DECISIONS-EVIDENCE.md).
@@ -15,22 +16,12 @@ work was planned, so they do not always run in order — and an id this file doe
 shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 [CHANGELOG-1.x.md](CHANGELOG-1.x.md) for the 1.x releases.
 
-## Later — the rest of the 2.22 review
+## Next — 2.26: release and CI hardening
 
-The rows below are real and specified, but none is in flight: a defect here is low-frequency or a polish item,
-an engineering row is not user-visible, and a feature is waiting for a decision. A row leaves this section when
-it is picked up; its design argument moves to [DECISIONS.md](DECISIONS.md).
-
-### Defects and polish
-
-- **B358 — The shell and the screens must not both apply the navigation-bar inset.** The shell reserves the
-  tab bar, whose height already includes the system bar, and each screen's default `Scaffold` adds the system
-  inset again ([AppNavHost.kt](app/src/main/java/com/example/androidapp/ui/navigation/AppNavHost.kt)); the
-  deload screen adds a third `navigationBarsPadding()`. Fixed means the shell or the screens own the bottom
-  inset exactly once, verified on a gesture-navigation and a three-button device (this was reasoned from code,
-  not measured).
-
-### Build, CI, tests and docs
+2.25 is released. This batch closes the release-integrity and CI gaps left in *Later* before another feature is
+taken: pinning the toolchain, testing the privacy manifest, making the emulator timeout match the measured
+boot, bounding artifact retention, using one Node major, and keeping the test-only provider out of the release
+APK. N276 remains a separate immediate follow-up because it changes the release verifier itself.
 
 - **N272 — Pin the supply chain.** The wrapper properties carry no `distributionSha256Sum` although the comment
   says the workflow validates it (it validates the JAR, not the distribution), and there is no dependency
@@ -42,12 +33,6 @@ it is picked up; its design argument moves to [DECISIONS.md](DECISIONS.md).
   androidx's signature-level `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`, so "no permissions at all" is
   imprecise. Fixed means a source-manifest test plus a CI check of the merged permissions, and the README
   says "no dangerous/runtime permissions" (or explains the one).
-
-- **N276 — Verify release monotonicity and tag binding.** `verify-release.py` compares the APK to
-  `version.properties` but not to the previous tag, so a typo that lowers `versionCode` passes; the "tag points
-  at the commit that built the APK" rule is procedural. Fixed means the script reads the latest tag's version
-  and requires a strictly greater `versionCode`, the release notes record the built commit, and the
-  keystore password is read from the environment or a file rather than passed on `keytool`'s argv.
 
 - **N277 — The emulator timeout must exceed the boot time the workflow itself records.** The workflow's comment
   records a nightly boot of about sixteen and a half minutes while `emulator-boot-timeout` is 900 seconds, and
@@ -70,6 +55,29 @@ it is picked up; its design argument moves to [DECISIONS.md](DECISIONS.md).
   scoped to a cache directory only because `DocumentIoTest` needs a real content URI. Fixed means the provider
   moves to the instrumented manifest (or the test uses a test-local provider), and the release manifest no
   longer carries it.
+
+## Later — the rest of the 2.22 review
+
+The rows below are real and specified, but none is in flight: a defect here is low-frequency or a polish item,
+an engineering row is not user-visible, and a feature is waiting for a decision. A row leaves this section when
+it is picked up; its design argument moves to [DECISIONS.md](DECISIONS.md).
+
+### Defects and polish
+
+- **B358 — The shell and the screens must not both apply the navigation-bar inset.** The shell reserves the
+  tab bar, whose height already includes the system bar, and each screen's default `Scaffold` adds the system
+  inset again ([AppNavHost.kt](app/src/main/java/com/example/androidapp/ui/navigation/AppNavHost.kt)); the
+  deload screen adds a third `navigationBarsPadding()`. Fixed means the shell or the screens own the bottom
+  inset exactly once, verified on a gesture-navigation and a three-button device (this was reasoned from code,
+  not measured).
+
+### Build, CI, tests and docs
+
+- **N276 — Verify release monotonicity and tag binding.** `verify-release.py` compares the APK to
+  `version.properties` but not to the previous tag, so a typo that lowers `versionCode` passes; the "tag points
+  at the commit that built the APK" rule is procedural. Fixed means the script reads the latest tag's version
+  and requires a strictly greater `versionCode`, the release notes record the built commit, and the
+  keystore password is read from the environment or a file rather than passed on `keytool`'s argv.
 
 - **N282 — Reads should stay cheap as the history grows.** `workout_sessions` has no index on `templateId`,
   `measurements` has none on `measuredAt`, the program-document merge does an N+1 read per template/exercise,
