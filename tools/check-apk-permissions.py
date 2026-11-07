@@ -42,13 +42,16 @@ def main() -> int:
     parser.add_argument("--aapt2")
     args = parser.parse_args()
     tool = args.aapt2 or aapt2()
-    output = subprocess.run(
+    result = subprocess.run(
         [tool, "dump", "permissions", str(args.apk)],
-        check=True,
+        check=False,
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
-    ).stdout
+    )
+    if result.returncode != 0:
+        print(result.stdout, file=sys.stderr)
+        raise SystemExit(f"check-apk-permissions: {tool} failed on {args.apk}")
     package = PACKAGE.search(output)
     if package is None:
         raise SystemExit("check-apk-permissions: the APK declares no package")
