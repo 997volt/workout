@@ -1,5 +1,6 @@
 package com.example.androidapp.platform
 
+import android.content.Intent
 import android.net.Uri
 import androidx.core.content.FileProvider
 import androidx.test.core.app.ApplicationProvider
@@ -42,7 +43,15 @@ class DocumentIoTest {
     private fun uriFor(name: String): Uri {
         val directory = File(testContext.cacheDir, "document-io-test").apply { mkdirs() }
         val file = File(directory, name)
-        return FileProvider.getUriForFile(testContext, "${testContext.packageName}.fileprovider", file)
+        val uri = FileProvider.getUriForFile(testContext, "${testContext.packageName}.fileprovider", file)
+        // The provider is exported so the target app can resolve it; FileProvider still requires an explicit
+        // read/write grant for that one URI.
+        testContext.grantUriPermission(
+            context.packageName,
+            uri,
+            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+        )
+        return uri
     }
 
     @Test
