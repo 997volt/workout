@@ -82,10 +82,11 @@ class ExerciseDetailScreenTest {
     @Test
     fun aLongName_staysInTheTopBar_andLeavesItsActionsReachable() {
         // B369: the title is one line with ellipsis, so a user-authored name cannot push Edit off the bar.
-        val longName = "Single-Leg Romanian Deadlift With A Very Long Descriptive Name"
+        val longName = "McGregor Single-Leg Romanian Deadlift With A Very Long Name"
         show(ExerciseDetailUiState(isLoading = false, exercise = custom.copy(name = longName)))
 
-        composeTestRule.onNodeWithText(longName.uppercase()).assertIsDisplayed()
+        composeTestRule.onNodeWithText(longName).assertIsDisplayed()
+        composeTestRule.onNodeWithText(longName.uppercase()).assertDoesNotExist()
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT).assertIsDisplayed()
     }
 

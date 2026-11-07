@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **User-authored top-bar names keep their case** (B385). `TopBarTitle` uppercases screen labels, but it is
+  also used for exercise, template and program names; “McGregor” became “MCGREGOR”. A `preserveCase` variant
+  is used for those names while keeping the one-line, ellipsis and heading rules; the long-name test now uses
+  a mixed-case name.
 - **Whole-body messages reach a parent-sized viewport** (B384). `CenteredMessage` got a `LazyItemScope`
   overload that fills the item's page, and Statistics/Adherence now put their loading and error messages
   outside the vertical scroll instead of inside it, so those messages centre in the Scaffold body rather

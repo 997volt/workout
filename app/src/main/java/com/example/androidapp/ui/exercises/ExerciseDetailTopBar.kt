@@ -35,7 +35,10 @@ internal fun ExerciseDetailTopBar(
 ) {
     TopAppBar(
         title = {
-            TopBarTitle(text = state.exercise?.name ?: stringResource(R.string.exercise_detail_title))
+            TopBarTitle(
+                text = state.exercise?.name ?: stringResource(R.string.exercise_detail_title),
+                preserveCase = true,
+            )
         },
         navigationIcon = {
             IconButton(onClick = onBack) {

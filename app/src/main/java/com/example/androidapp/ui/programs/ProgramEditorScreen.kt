@@ -318,7 +318,7 @@ private fun ProgramEditorTopBar(
 ) {
     var open by rememberSaveable { mutableStateOf(false) }
     TopAppBar(
-        title = { TopBarTitle(text = name ?: stringResource(R.string.program_edit_title)) },
+        title = { TopBarTitle(text = name ?: stringResource(R.string.program_edit_title), preserveCase = true) },
         navigationIcon = {
             IconButton(onClick = onBack) {
                 Icon(

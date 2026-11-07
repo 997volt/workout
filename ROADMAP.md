@@ -21,13 +21,6 @@ The 2.25 batch is implemented but not released. The review of `67494190..HEAD` f
 three follow-ups; each row names the failed behaviour, what fixed means and the test that would have caught it.
 **B382 and B383 must be fixed before the 2.25 tag.**
 
-- **B385 — User-authored top-bar names must keep their case.** B369 routes exercise, template, program and
-  workout names through `TopBarTitle`, which uppercases its text
-  ([TopBarTitle.kt](app/src/main/java/com/example/androidapp/ui/components/TopBarTitle.kt#L40)). A lifter's
-  “iPhone” or “McGregor” becomes “IPHONE” or “MCGREGOR”; the old detail bars preserved the name. Fixed means
-  a title variant that keeps the one-line/ellipsis/heading rules without transforming user content, with a
-  long mixed-case-name test.
-
 - **B386 — The calendar must show the whole month, or make the horizontal scroll explicit.** B370 keeps the
   48 dp target by making the grid 360 dp wide while the 360 dp phone leaves 328 dp after the screen's 16 dp
   padding ([AdherenceScreen.kt](app/src/main/java/com/example/androidapp/ui/adherence/AdherenceScreen.kt#L583)),

@@ -325,6 +325,7 @@ private fun TemplateEditorTopBar(
             TopBarTitle(
                 text = state.template?.name ?: stringResource(R.string.template_edit_title),
                 testTag = TestTags.TEMPLATE_EDIT_TITLE,
+                preserveCase = true,
             )
         },
         navigationIcon = {

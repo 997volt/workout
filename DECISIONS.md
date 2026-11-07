@@ -1254,6 +1254,9 @@ the rule; that one argues it.
   like any other throwable; turning it into `DataResult.Failure` tells the screen a storage read failed when
   the collector simply left. The trends flows share one `toDataResult` helper that rethrows cancellation first
   and maps only real failures, the same rule `dataResultOf` holds for suspending calls.
+- **A top-bar label is uppercased; a user-authored name is not** (B385). The eyebrow treatment is for the
+  app's screen names, and applying it to content rewrites the lifter's words. `TopBarTitle(preserveCase = true)`
+  keeps the clamp and heading semantics for exercise, template and program names.
 - **A message that must centre in a page is given the page's constraints** (B384). A child under
   `verticalScroll` cannot see the viewport height; a fixed fallback only centres inside its own box. Full-body
   loading/error states now sit outside the scroll, and a lazy-item overload uses `fillParentMaxSize`, which is

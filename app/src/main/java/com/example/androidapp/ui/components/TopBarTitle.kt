@@ -28,16 +28,20 @@ import com.example.androidapp.ui.theme.ScreenTitleStyle
  *
  * [maxLines] is 1 with ellipsis because the bar does not scroll and a long translated title
  * must not push the navigation icon off the screen.
+ *
+ * [preserveCase] is for a **user-authored name** (B385): the eyebrow treatment uppercases screen names, but
+ * a lifter's “iPhone” or “McGregor” is content, not a label, and must not be rewritten.
  */
 @Composable
 fun TopBarTitle(
     text: String,
     modifier: Modifier = Modifier,
     testTag: String? = null,
+    preserveCase: Boolean = false,
 ) {
     val locale = LocalConfiguration.current.locales[0]
     Text(
-        text = text.uppercase(locale),
+        text = if (preserveCase) text else text.uppercase(locale),
         style = ScreenTitleStyle,
         color = MaterialTheme.colorScheme.onSurface,
         maxLines = 1,
