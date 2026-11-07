@@ -39,11 +39,6 @@ APK. N276 remains a separate immediate follow-up because it changes the release 
   reports. Fixed means a retention window per artifact, with the mapping attached to the release asset for
   permanent retention.
 
-- **N279 — The docs job must run the same pinned Node as the build.** The build job pins Node 22; the docs job
-  only echoes `node --version` and runs the helper's tests on whatever the runner ships, so the two jobs can
-  test the same generated `docs/shared` on different majors. Fixed means the same `setup-node` version in both
-  jobs.
-
 - **N281 — The test-only FileProvider should not ship.** The production manifest declares a `FileProvider`
   scoped to a cache directory only because `DocumentIoTest` needs a real content URI. Fixed means the provider
   moves to the instrumented manifest (or the test uses a test-local provider), and the release manifest no

@@ -17,6 +17,9 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Changed
 
+- **The docs job uses the same pinned Node as the build** (N279). It previously ran the helper's tests on
+  whatever Node the runner shipped, so the two jobs could compile and test the same `docs/shared` on different
+  majors; both now set up Node 22 through the same pinned action.
 - **The emulator boot timeout now exceeds the recorded worst case** (N277). The workflow documented a
   sixteen-and-a-half-minute boot while killing the emulator at 900 seconds; it now waits 1,200 seconds, and
   the stale “no hardware acceleration” sentence is gone.

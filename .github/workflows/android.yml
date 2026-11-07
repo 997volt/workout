@@ -195,7 +195,13 @@ jobs:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Node is the runner's own
+      # N279: the build job pins Node 22; this job must test the same generated core on the same major.
+      - name: Set up Node 22
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+
+      - name: Node version
         run: node --version
 
       - name: The generated fixtures are current
