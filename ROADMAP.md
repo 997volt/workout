@@ -15,18 +15,6 @@ work was planned, so they do not always run in order — and an id this file doe
 shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 [CHANGELOG-1.x.md](CHANGELOG-1.x.md) for the 1.x releases.
 
-## Next — 2.25 review fixes
-
-The 2.25 batch is implemented but not released. The review of `67494190..HEAD` found two release blockers and
-three follow-ups; each row names the failed behaviour, what fixed means and the test that would have caught it.
-**B382 and B383 must be fixed before the 2.25 tag.**
-
-- **N296 — The review's missing tests.** B368's tests cover only the missing-weight reason; the reps, hold and
-  invalid-RPE branches are untested. B369's long-name test only checks that the title and Edit exist, not
-  that the name is clamped or the action remains usable. B372's saved-state tests reuse the same
-  `SavedStateHandle` object, so they prove the wiring but not a `Bundle` round trip. Fixed means one test for
-  each of those three gaps, with the existing assertions kept.
-
 ## Later — the rest of the 2.22 review
 
 The rows below are real and specified, but none is in flight: a defect here is low-frequency or a polish item,

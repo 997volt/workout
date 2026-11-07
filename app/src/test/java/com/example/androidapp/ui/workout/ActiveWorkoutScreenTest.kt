@@ -933,6 +933,32 @@ class ActiveWorkoutScreenTest {
     }
 
     @Test
+    fun aSetWithoutReps_namesTheReps() {
+        setScreen(state = state(isFinished = false))
+
+        composeTestRule.onNodeWithTag(TestTags.SET_REPS_FIELD).performTextClearance()
+
+        composeTestRule.onNodeWithTag(TestTags.SET_LOG_REASON)
+            .assertTextEquals("Enter reps to log this set.")
+    }
+
+    @Test
+    fun aTimedSetWithoutAHold_namesTheHold() {
+        setScreen(
+            state = state(
+                isFinished = false,
+                isTimed = true,
+                suggestion = SetSuggestion(reps = 0, weightGrams = 0, durationSeconds = 60),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.SET_DURATION_FIELD).performTextClearance()
+
+        composeTestRule.onNodeWithTag(TestTags.SET_LOG_REASON)
+            .assertTextEquals("Enter a hold to log this set.")
+    }
+
+    @Test
     fun anIncompleteSet_saysWhatIsMissing_besideLogSet() {
         // B368: the disabled button keeps its place, and the line under it names the missing value.
         setScreen(state = state(isFinished = false))
@@ -960,6 +986,8 @@ class ActiveWorkoutScreenTest {
         weightUnit: WeightUnit = WeightUnit.KILOGRAMS,
         /** The library exercise's own weight step, or null for the unit's (ROADMAP N77). */
         stepGrams: Long? = null,
+        /** A held movement, so the next-set fields state a duration instead of reps (N220). */
+        isTimed: Boolean = false,
     ) = ActiveWorkoutUiState(
         isLoading = false,
         sessionId = "s1",
@@ -977,6 +1005,7 @@ class ActiveWorkoutScreenTest {
                 progression = progression,
                 weightUnit = weightUnit,
                 stepGrams = stepGrams,
+                isTimed = isTimed,
             ),
         ),
     )

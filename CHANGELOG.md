@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The review's missing test branches are covered** (N296). Log set's reps and hold reasons now have UI tests
+  (the RPE reason is unreachable because the stepper only produces valid values), the long top-bar name test
+  keeps its mixed case and action, and the history saved-state test crosses a real `Bundle` rather than reusing
+  the same handle.
 - **The adherence calendar shows the whole month at 360 dp** (B386). The 48 dp grid was 360 dp wide inside
   a 328 dp padded column, hiding part of the last column. The calendar is now full-bleed while its header and
   surrounding sections keep the page margin, so all seven days fit; narrower windows retain the horizontal
