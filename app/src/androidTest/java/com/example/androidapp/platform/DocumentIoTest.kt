@@ -1,6 +1,5 @@
 package com.example.androidapp.platform
 
-import android.content.Intent
 import android.net.Uri
 import androidx.core.content.FileProvider
 import androidx.test.core.app.ApplicationProvider
@@ -36,20 +35,14 @@ class DocumentIoTest {
     /**
      * A `content://` URI for one file in the test APK's cache (B281).
      *
-     * The provider is test-only now, so the URI is created by the test package and the target app is granted
-     * read/write access to that one URI; `DocumentIo` still runs against the target context and its real
-     * `ContentResolver`.
+     * The provider is test-only now, so the URI is created by the test package; it is exported in the test APK
+     * so the target app can resolve it, while the release APK has no provider at all. `DocumentIo` still runs
+     * against the target context and its real `ContentResolver`.
      */
     private fun uriFor(name: String): Uri {
         val directory = File(testContext.cacheDir, "document-io-test").apply { mkdirs() }
         val file = File(directory, name)
-        val uri = FileProvider.getUriForFile(testContext, "${testContext.packageName}.fileprovider", file)
-        testContext.grantUriPermission(
-            context.packageName,
-            uri,
-            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
-        )
-        return uri
+        return FileProvider.getUriForFile(testContext, "${testContext.packageName}.fileprovider", file)
     }
 
     @Test

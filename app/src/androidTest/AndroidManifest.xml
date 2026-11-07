@@ -2,14 +2,14 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!--
       N281: the provider exists only for the instrumented DocumentIo test. It lives in the test APK, so no
-      release build carries a FileProvider it never uses. The authority is the test package's; the test grants
-      the target app read/write access to the one URI it creates.
+      release build carries a FileProvider it never uses. It is exported so the target app can resolve the
+      test-created URI without a cross-package grant; the paths still expose one test cache directory only.
     -->
     <application>
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="io.github.volt997.workout.test.fileprovider"
-            android:exported="false"
+            android:exported="true"
             android:grantUriPermissions="true">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
