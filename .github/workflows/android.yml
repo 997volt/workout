@@ -172,6 +172,7 @@ jobs:
             app/build/reports/lint-results-*.html
             app/build/reports/lint-results-*.txt
           if-no-files-found: ignore
+          retention-days: 14
 
       # Without this, an obfuscated release crash trace is unreadable.
       - name: Upload R8 mapping
@@ -181,6 +182,8 @@ jobs:
           name: r8-mapping
           path: app/build/outputs/mapping/release/mapping.txt
           if-no-files-found: ignore
+          # Kept longer because a release trace can arrive weeks after the run; the release also gets a copy.
+          retention-days: 90
 
   # N173. The helper's own checks, in the toolchain the page actually runs in: no JDK, no Android
   # SDK, no emulator. The generated fixtures are regenerated and compared, the editor's model
@@ -367,3 +370,4 @@ jobs:
           name: instrumented-reports
           path: app/build/reports/androidTests
           if-no-files-found: ignore
+          retention-days: 14

@@ -17,6 +17,9 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Changed
 
+- **Artifacts have a retention policy and the release keeps its R8 mapping** (N278). Test/lint and instrumented
+  reports expire after 14 days, the mapping after 90, and the release process uploads a copy of the mapping as
+  `mapping-<version>.txt` so a release crash trace stays readable for as long as the APK does.
 - **The docs job uses the same pinned Node as the build** (N279). It previously ran the helper's tests on
   whatever Node the runner shipped, so the two jobs could compile and test the same `docs/shared` on different
   majors; both now set up Node 22 through the same pinned action.
