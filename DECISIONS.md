@@ -1261,6 +1261,9 @@ the rule; that one argues it.
 - **A top-bar label is uppercased; a user-authored name is not** (B385). The eyebrow treatment is for the
   app's screen names, and applying it to content rewrites the lifter's words. `TopBarTitle(preserveCase = true)`
   keeps the clamp and heading semantics for exercise, template and program names.
+- **A test-only component belongs in the test APK** (N281). The FileProvider existed solely so `DocumentIoTest`
+  could hand `DocumentIo` a real content URI; shipping it in the release declared an unused surface. It now lives
+  in the instrumented manifest and resources, and the test grants the target app access to the one URI it makes.
 - **A message that must centre in a page is given the page's constraints** (B384). A child under
   `verticalScroll` cannot see the viewport height; a fixed fallback only centres inside its own box. Full-body
   loading/error states now sit outside the scroll, and a lazy-item overload uses `fillParentMaxSize`, which is

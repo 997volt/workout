@@ -1,9 +1,11 @@
 package com.example.androidapp.platform
 
+import android.content.Intent
 import android.net.Uri
 import androidx.core.content.FileProvider
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -28,13 +30,26 @@ import java.io.File
 class DocumentIoTest {
 
     private val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+    private val testContext = InstrumentationRegistry.getInstrumentation().context
     private val io = SafDocumentIo()
 
-    /** A `content://` URI for one file in this app's own cache, through the provider the manifest declares. */
+    /**
+     * A `content://` URI for one file in the test APK's cache (B281).
+     *
+     * The provider is test-only now, so the URI is created by the test package and the target app is granted
+     * read/write access to that one URI; `DocumentIo` still runs against the target context and its real
+     * `ContentResolver`.
+     */
     private fun uriFor(name: String): Uri {
-        val directory = File(context.cacheDir, "document-io-test").apply { mkdirs() }
+        val directory = File(testContext.cacheDir, "document-io-test").apply { mkdirs() }
         val file = File(directory, name)
-        return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+        val uri = FileProvider.getUriForFile(testContext, "${testContext.packageName}.fileprovider", file)
+        testContext.grantUriPermission(
+            context.packageName,
+            uri,
+            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+        )
+        return uri
     }
 
     @Test

@@ -28,11 +28,6 @@ APK. N276 remains a separate immediate follow-up because it changes the release 
   verification or locking. Fixed means the wrapper checksum is present and dependency verification metadata is
   committed and checked in CI.
 
-- **N281 — The test-only FileProvider should not ship.** The production manifest declares a `FileProvider`
-  scoped to a cache directory only because `DocumentIoTest` needs a real content URI. Fixed means the provider
-  moves to the instrumented manifest (or the test uses a test-local provider), and the release manifest no
-  longer carries it.
-
 ## Later — the rest of the 2.22 review
 
 The rows below are real and specified, but none is in flight: a defect here is low-frequency or a polish item,
