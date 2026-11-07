@@ -52,6 +52,7 @@ def main() -> int:
     if result.returncode != 0:
         print(result.stdout, file=sys.stderr)
         raise SystemExit(f"check-apk-permissions: {tool} failed on {args.apk}")
+    output = result.stdout
     package = PACKAGE.search(output)
     if package is None:
         raise SystemExit("check-apk-permissions: the APK declares no package")
