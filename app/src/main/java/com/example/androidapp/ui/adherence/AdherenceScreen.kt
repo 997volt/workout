@@ -176,16 +176,17 @@ private fun AdherenceLoadedContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp),
+            .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        MonthHeader(
-            month = state.month,
-            canGoForward = state.canGoForward,
-            onPreviousMonth = onPreviousMonth,
-            onNextMonth = onNextMonth,
-        )
+        Box(modifier = Modifier.padding(horizontal = 16.dp)) {
+            MonthHeader(
+                month = state.month,
+                canGoForward = state.canGoForward,
+                onPreviousMonth = onPreviousMonth,
+                onNextMonth = onNextMonth,
+            )
+        }
         AdherenceBody(
             state = state,
             onToggleDeload = onToggleDeload,
@@ -361,47 +362,59 @@ private fun AdherenceBody(
 ) {
     val ratio = state.adherence.ratio
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        if (ratio == null) {
-            Text(
-                text = stringResource(
-                    if (state.hasActiveProgram) {
-                        R.string.adherence_nothing_scheduled
-                    } else {
-                        R.string.adherence_no_program
-                    },
-                ),
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.testTag(TestTags.Adherence.NO_RATIO),
-            )
-        } else {
-            RatioSummary(adherence = state.adherence, ratio = ratio)
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            if (ratio == null) {
+                Text(
+                    text = stringResource(
+                        if (state.hasActiveProgram) {
+                            R.string.adherence_nothing_scheduled
+                        } else {
+                            R.string.adherence_no_program
+                        },
+                    ),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.testTag(TestTags.Adherence.NO_RATIO),
+                )
+            } else {
+                RatioSummary(adherence = state.adherence, ratio = ratio)
+            }
+
+            // A number with its start, never a nudge: the app has no notifications, and a streak that
+            // pushes is a coach (ROADMAP P3.15).
+            state.streak?.let { StreakSummary(streak = it) }
+
+            // The blocks this screen cannot score, by their own measure (ROADMAP N189): a sequence's
+            // weekday is not a recurrence, so its progress replaces the ratio it is excluded from.
+            BlockProgressLines(blocks = state.blocks)
         }
 
-        // A number with its start, never a nudge: the app has no notifications, and a streak that
-        // pushes is a coach (ROADMAP P3.15).
-        state.streak?.let { StreakSummary(streak = it) }
-
-        // The blocks this screen cannot score, by their own measure (ROADMAP N189): a sequence's
-        // weekday is not a recurrence, so its progress replaces the ratio it is excluded from.
-        BlockProgressLines(blocks = state.blocks)
-
+        // B386: the calendar is the one section that takes the full window width, so seven 48 dp days
+        // fit on a 360 dp phone without hiding a column.
         Calendar(month = state.month, adherence = state.adherence, onSelectDay = onSelectDay)
 
-        // The same counts, read per slot and per lift (ROADMAP P3.14). Empty with no active
-        // program, for the ratio's reason: the pins carry no skip record to break down.
-        // The grid keeps its month and the ratio gains a history (ROADMAP P3.16).
-        RatioHistory(rows = state.history)
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            // The same counts, read per slot and per lift (ROADMAP P3.14). Empty with no active
+            // program, for the ratio's reason: the pins carry no skip record to break down.
+            // The grid keeps its month and the ratio gains a history (ROADMAP P3.16).
+            RatioHistory(rows = state.history)
 
-        SlotBreakdown(rows = state.adherence.bySlot)
-        ExerciseBreakdown(rows = state.adherence.byExercise)
+            SlotBreakdown(rows = state.adherence.bySlot)
+            ExerciseBreakdown(rows = state.adherence.byExercise)
 
-        DeloadWeeks(
-            programs = state.programs,
-            weeks = state.markableWeeks,
-            deloadWeeks = state.deloadWeeks,
-            plans = state.deloadPlans,
-            onToggle = onToggleDeload,
-        )
+            DeloadWeeks(
+                programs = state.programs,
+                weeks = state.markableWeeks,
+                deloadWeeks = state.deloadWeeks,
+                plans = state.deloadPlans,
+                onToggle = onToggleDeload,
+            )
+        }
     }
 }
 

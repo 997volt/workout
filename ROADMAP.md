@@ -21,14 +21,6 @@ The 2.25 batch is implemented but not released. The review of `67494190..HEAD` f
 three follow-ups; each row names the failed behaviour, what fixed means and the test that would have caught it.
 **B382 and B383 must be fixed before the 2.25 tag.**
 
-- **B386 — The calendar must show the whole month, or make the horizontal scroll explicit.** B370 keeps the
-  48 dp target by making the grid 360 dp wide while the 360 dp phone leaves 328 dp after the screen's 16 dp
-  padding ([AdherenceScreen.kt](app/src/main/java/com/example/androidapp/ui/adherence/AdherenceScreen.kt#L583)),
-  so the last column is clipped at first paint. Horizontal scrolling is allowed by B370, but the month no
-  longer reads at a glance and nothing indicates the seventh column is there. Fixed means the grid uses the
-  full width, or the scroll has a visible affordance, with a 360 dp test that all seven weekdays are
-  reachable/visible as chosen.
-
 - **N296 — The review's missing tests.** B368's tests cover only the missing-weight reason; the reps, hold and
   invalid-RPE branches are untested. B369's long-name test only checks that the title and Edit exist, not
   that the name is clamped or the action remains usable. B372's saved-state tests reuse the same

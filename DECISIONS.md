@@ -1254,6 +1254,10 @@ the rule; that one argues it.
   like any other throwable; turning it into `DataResult.Failure` tells the screen a storage read failed when
   the collector simply left. The trends flows share one `toDataResult` helper that rethrows cancellation first
   and maps only real failures, the same rule `dataResultOf` holds for suspending calls.
+- **The calendar alone takes the full page width** (B386). Seven 48 dp days plus gaps need the 360 dp the
+  screen has, not the 328 dp left by the page margin; padding the sections around it preserves the reading
+  column, and the calendar remains horizontal-scrollable below that minimum. The alternative was shrinking the
+  targets B370 had just fixed.
 - **A top-bar label is uppercased; a user-authored name is not** (B385). The eyebrow treatment is for the
   app's screen names, and applying it to content rewrites the lifter's words. `TopBarTitle(preserveCase = true)`
   keeps the clamp and heading semantics for exercise, template and program names.

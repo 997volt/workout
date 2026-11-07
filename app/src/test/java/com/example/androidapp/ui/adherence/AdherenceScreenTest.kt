@@ -12,6 +12,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -32,6 +33,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 import java.io.IOException
 import java.time.LocalDate
 import java.time.YearMonth
@@ -129,6 +131,28 @@ class AdherenceScreenTest {
         composeTestRule.onNodeWithTag(TestTags.Adherence.NO_RATIO).assertExists()
         composeTestRule.onNodeWithTag(TestTags.Adherence.RATIO).assertDoesNotExist()
         composeTestRule.onNodeWithText("Nothing was scheduled this month.").assertExists()
+    }
+
+    @Test
+    @Config(qualifiers = "w360dp-h640dp")
+    fun at360dp_allSevenDaysOfAFullWeek_areOnScreen() {
+        // B386: the calendar is full-bleed now, so the 48 dp cells fit a 360 dp phone without clipping
+        // the seventh column. Monday 5 October through Sunday 11 October 2026 is a full week.
+        setScreen(
+            state = AdherenceUiState(
+                month = october,
+                currentMonth = october,
+                isLoading = false,
+                adherence = MonthAdherence(),
+            ),
+        )
+
+        val root = composeTestRule.onRoot().getUnclippedBoundsInRoot()
+        (5..11).forEach { day ->
+            val bounds = composeTestRule.onNodeWithTag(TestTags.Adherence.dayCell("2026-10-%02d".format(day)))
+                .getUnclippedBoundsInRoot()
+            assertTrue("day $day must be on screen", bounds.right.value <= root.right.value + 1f)
+        }
     }
 
     @Test
