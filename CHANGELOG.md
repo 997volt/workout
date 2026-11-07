@@ -21,9 +21,8 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   committed `gradle/verification-metadata.xml` checksums every dependency. CI resolves the release runtime
   classpath with strict dependency verification, so an unrecorded artifact fails there rather than entering a
   build silently.
-- **The test-only FileProvider no longer ships** (N281). The provider and its path file moved to the
-  instrumented APK; `DocumentIoTest` creates its URI from the test package and grants the target app access to
-  that one URI. The release manifest now has no FileProvider at all.
+- **The test-only FileProvider no longer ships** (N281). The provider and its path file moved to the debug
+  variant, which the instrumented test runs against; the release manifest now has no FileProvider at all.
 - **The manifest's privacy promises are tested at the source and in the APK** (N275). A JVM test checks
   `allowBackup`, both extraction rule files, an empty source permission list and every non-launcher component's
   export state; CI checks the merged release APK for permissions. The README no longer says "no permissions at

@@ -1265,9 +1265,10 @@ the rule; that one argues it.
   published distribution hash; `gradle/verification-metadata.xml` records the SHA-256 of every dependency
   artifact. Gradle verifies them on every resolve, and CI makes that explicit on the release runtime classpath.
   A new artifact is a deliberate metadata change rather than a silent download.
-- **A test-only component belongs in the test APK** (N281). The FileProvider existed solely so `DocumentIoTest`
-  could hand `DocumentIo` a real content URI; shipping it in the release declared an unused surface. It now lives
-  in the instrumented manifest and resources, and the test grants the target app access to the one URI it makes.
+- **A test-only component must not ship in the release** (N281). The FileProvider existed solely so
+  `DocumentIoTest` could hand `DocumentIo` a real content URI; shipping it in the release declared an unused
+  surface. It now lives in the debug manifest and resources, which the instrumented test runs against; the
+  release manifest carries no provider.
 - **A message that must centre in a page is given the page's constraints** (B384). A child under
   `verticalScroll` cannot see the viewport height; a fixed fallback only centres inside its own box. Full-body
   loading/error states now sit outside the scroll, and a lazy-item overload uses `fillParentMaxSize`, which is
