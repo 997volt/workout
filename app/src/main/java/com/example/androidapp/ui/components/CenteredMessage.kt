@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -41,21 +42,53 @@ fun CenteredMessage(
     modifier: Modifier = Modifier,
     hint: String? = null,
     textStyle: TextStyle = MaterialTheme.typography.titleMedium,
-    /**
-     * A spinner above the message.
-     *
-     * Here because the two screens that had their own copy needed it, and a shared
-     * component that cannot do what its callers do is a component they stop using.
-     */
     showSpinner: Boolean = false,
-    /**
-     * One control under the message, or nothing.
-     *
-     * Extracted at its second caller: a search that matched nothing has to offer the way back to everything
-     * (N146), and the same slot is what a future "add your first exercise" would use. A component that cannot
-     * do what its callers do is a component they stop using.
-     */
     action: (@Composable () -> Unit)? = null,
+) {
+    CenteredMessageLayout(
+        text = text,
+        modifier = modifier,
+        hint = hint,
+        textStyle = textStyle,
+        showSpinner = showSpinner,
+        action = action,
+    )
+}
+
+/**
+ * A message that fills one lazy item's viewport (B384).
+ *
+ * A plain [CenteredMessage] inside a `LazyColumn` item sees an infinite height and cannot know how tall the
+ * viewport is. This overload applies `fillParentMaxSize`, which is the constraint only a lazy item can give,
+ * so the message centres in the visible page rather than in its own text.
+ */
+@Composable
+fun LazyItemScope.CenteredMessage(
+    text: String,
+    modifier: Modifier = Modifier,
+    hint: String? = null,
+    textStyle: TextStyle = MaterialTheme.typography.titleMedium,
+    showSpinner: Boolean = false,
+    action: (@Composable () -> Unit)? = null,
+) {
+    CenteredMessageLayout(
+        text = text,
+        modifier = modifier.fillParentMaxSize(),
+        hint = hint,
+        textStyle = textStyle,
+        showSpinner = showSpinner,
+        action = action,
+    )
+}
+
+@Composable
+private fun CenteredMessageLayout(
+    text: String,
+    hint: String?,
+    textStyle: TextStyle,
+    showSpinner: Boolean,
+    modifier: Modifier = Modifier,
+    action: (@Composable () -> Unit)?,
 ) {
     // B371: inside a scrolling parent the height constraint is infinite, and `fillMaxSize` then does not
     // centre — it resolves to the child's own height at the top. A bounded parent still fills; an unbounded

@@ -18,6 +18,7 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onChildren
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
@@ -45,6 +46,7 @@ import com.example.androidapp.ui.statistics.chart.INLINE_CHART_MAX_HEIGHT
 import com.example.androidapp.ui.theme.AndroidAppTheme
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -980,6 +982,19 @@ class StatisticsScreenTest {
         )
 
         composeTestRule.onNodeWithText("Barbell Bench Press").assertExists()
+    }
+
+    @Test
+    fun aLoadingMessage_isCentredInTheBody() {
+        // B384: the message is outside the vertical scroll now, so it gets the Scaffold body's bounded height.
+        setScreen(state = StatisticsUiState(isLoading = true))
+
+        val message = composeTestRule.onNodeWithText("Loading statistics…").getUnclippedBoundsInRoot()
+        val root = composeTestRule.onRoot().getUnclippedBoundsInRoot()
+        val messageCentre = (message.top + message.bottom) / 2
+        val rootCentre = (root.top + root.bottom) / 2
+
+        assertTrue((messageCentre - rootCentre).value < 80f)
     }
 
     @Test

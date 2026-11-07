@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **Whole-body messages reach a parent-sized viewport** (B384). `CenteredMessage` got a `LazyItemScope`
+  overload that fills the item's page, and Statistics/Adherence now put their loading and error messages
+  outside the vertical scroll instead of inside it, so those messages centre in the Scaffold body rather
+  than in a 200 dp fallback.
 - **Last-trained failures are acknowledged from one shared read** (B383). The library collected the flow once
   for the message's acknowledgement and again for the screen; a real `Storage` error carries its own throwable
   in each collection, so the two values compared unequal and the snackbar could not be dismissed. One shared

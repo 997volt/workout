@@ -151,42 +151,71 @@ fun StatisticsScreen(
             )
         },
     ) { innerPadding ->
-        Column(
+        Box(
             modifier = Modifier
                 .padding(innerPadding)
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .fillMaxSize(),
         ) {
-            RangeControl(
-                range = state.range,
-                onSelectRange = onSelectRange,
-                onChooseDates = { choosingDates = true },
-            )
-            RecentSeries(state = state, onSelectRecent = onSelectRecent)
-            MetricPicker(selected = state.selection.metric, onSelectMetric = onSelectMetric)
-
-            // The overview and the chart both read the series, so neither is drawn until it exists: a frame
-            // that printed "0 workouts · 0 kg" while loading was making a claim about data it had not read
-            // yet, and the same zeros appeared behind a failed read with no message at all.
             when {
                 state.isLoading -> CenteredMessage(
                     text = stringResource(R.string.statistics_loading),
                     showSpinner = true,
+                    modifier = Modifier.fillMaxSize(),
                 )
 
-                state.error != null -> CenteredMessage(text = dataErrorMessage(state.error))
+                state.error != null -> CenteredMessage(
+                    text = dataErrorMessage(state.error),
+                    modifier = Modifier.fillMaxSize(),
+                )
 
-                else -> StatisticsBody(
+                else -> StatisticsLoadedContent(
                     state = state,
-                    series = state.series,
+                    onSelectRange = onSelectRange,
+                    onSelectRecent = onSelectRecent,
+                    onSelectMetric = onSelectMetric,
+                    onChooseDates = { choosingDates = true },
                     onSelectExercise = onSelectExercise,
                     onPinch = onPinch,
                     onSetGoal = onSetGoal,
                 )
             }
         }
+    }
+}
+
+/** The scrollable statistics body, split out so the screen stays under the length ceiling (B384). */
+@Composable
+private fun StatisticsLoadedContent(
+    state: StatisticsUiState,
+    onSelectRange: (StatisticsRange) -> Unit,
+    onSelectRecent: (StatisticsSelection) -> Unit,
+    onSelectMetric: (MetricKey) -> Unit,
+    onChooseDates: () -> Unit,
+    onSelectExercise: (String) -> Unit,
+    onPinch: (scale: Float, focus: Float) -> Unit,
+    onSetGoal: (Double?) -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        RangeControl(
+            range = state.range,
+            onSelectRange = onSelectRange,
+            onChooseDates = onChooseDates,
+        )
+        RecentSeries(state = state, onSelectRecent = onSelectRecent)
+        MetricPicker(selected = state.selection.metric, onSelectMetric = onSelectMetric)
+        StatisticsBody(
+            state = state,
+            series = state.series,
+            onSelectExercise = onSelectExercise,
+            onPinch = onPinch,
+            onSetGoal = onSetGoal,
+        )
     }
 }
 

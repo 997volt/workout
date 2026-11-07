@@ -126,31 +126,27 @@ fun AdherenceScreen(
             )
         },
     ) { innerPadding ->
-        Column(
+        Box(
             modifier = Modifier
                 .padding(innerPadding)
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                .fillMaxSize(),
         ) {
-            MonthHeader(
-                month = state.month,
-                canGoForward = state.canGoForward,
-                onPreviousMonth = onPreviousMonth,
-                onNextMonth = onNextMonth,
-            )
-
             when {
                 state.isLoading -> CenteredMessage(
                     text = stringResource(R.string.adherence_loading),
                     showSpinner = true,
+                    modifier = Modifier.fillMaxSize(),
                 )
 
-                state.error != null -> CenteredMessage(text = dataErrorMessage(state.error))
+                state.error != null -> CenteredMessage(
+                    text = dataErrorMessage(state.error),
+                    modifier = Modifier.fillMaxSize(),
+                )
 
-                else -> AdherenceBody(
+                else -> AdherenceLoadedContent(
                     state = state,
+                    onPreviousMonth = onPreviousMonth,
+                    onNextMonth = onNextMonth,
                     onToggleDeload = onToggleDeload,
                     onSelectDay = onSelectDay,
                 )
@@ -164,6 +160,36 @@ fun AdherenceScreen(
             correction = correction,
             onSkipToggle = onSkipToggle,
             onDismiss = onDismissDay,
+        )
+    }
+}
+
+/** The scrollable adherence body, split out so the screen stays under the length ceiling (B384). */
+@Composable
+private fun AdherenceLoadedContent(
+    state: AdherenceUiState,
+    onPreviousMonth: () -> Unit,
+    onNextMonth: () -> Unit,
+    onToggleDeload: (String, LocalDate, Boolean) -> Unit,
+    onSelectDay: (LocalDate) -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        MonthHeader(
+            month = state.month,
+            canGoForward = state.canGoForward,
+            onPreviousMonth = onPreviousMonth,
+            onNextMonth = onNextMonth,
+        )
+        AdherenceBody(
+            state = state,
+            onToggleDeload = onToggleDeload,
+            onSelectDay = onSelectDay,
         )
     }
 }

@@ -21,14 +21,6 @@ The 2.25 batch is implemented but not released. The review of `67494190..HEAD` f
 three follow-ups; each row names the failed behaviour, what fixed means and the test that would have caught it.
 **B382 and B383 must be fixed before the 2.25 tag.**
 
-- **B384 — `CenteredMessage` must centre in the parent it is given, not only in a 200 dp fallback.** B371
-  detects an infinite height and uses `heightIn(min = 200.dp)`
-  ([CenteredMessage.kt](app/src/main/java/com/example/androidapp/ui/components/CenteredMessage.kt#L63)). That
-  stops `fillMaxSize` collapsing to the text height, but in a lazy item or a long scroll the message is still
-  near the top of the viewport rather than centred. Fixed means the caller supplies a parent-sized constraint
-  (`fillParentMaxSize` in a lazy item) or the message is placed outside the scroll, with a test inside a
-  `LazyColumn` and inside a `verticalScroll` parent.
-
 - **B385 — User-authored top-bar names must keep their case.** B369 routes exercise, template, program and
   workout names through `TopBarTitle`, which uppercases its text
   ([TopBarTitle.kt](app/src/main/java/com/example/androidapp/ui/components/TopBarTitle.kt#L40)). A lifter's

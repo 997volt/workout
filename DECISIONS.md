@@ -1254,6 +1254,10 @@ the rule; that one argues it.
   like any other throwable; turning it into `DataResult.Failure` tells the screen a storage read failed when
   the collector simply left. The trends flows share one `toDataResult` helper that rethrows cancellation first
   and maps only real failures, the same rule `dataResultOf` holds for suspending calls.
+- **A message that must centre in a page is given the page's constraints** (B384). A child under
+  `verticalScroll` cannot see the viewport height; a fixed fallback only centres inside its own box. Full-body
+  loading/error states now sit outside the scroll, and a lazy-item overload uses `fillParentMaxSize`, which is
+  the one place the viewport is available to the child.
 - **A flow-derived message and its acknowledgement read the same result** (B383). Two collectors of a Room
   flow can produce different `DataError.Storage` causes, and the class compares by cause identity; an
   acknowledgement from one then never dismisses the other. The library shares one `stateIn` result, which also
