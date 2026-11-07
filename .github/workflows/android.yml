@@ -150,6 +150,11 @@ jobs:
       - name: Verify the release APK
         run: python3 tools/verify-release.py
 
+      # N275. The source manifest declares no permissions, but AndroidX adds one signature-level permission to
+      # the merged APK. Check the actual artifact, not only the file a reviewer edits.
+      - name: The merged release declares no user-granted permission
+        run: python3 tools/check-apk-permissions.py app/build/outputs/apk/release/app-release.apk
+
       # F18. Gradle prints only "There were failing tests" with --console=plain; the
       # names live in the JUnit XML. Without this a red run says nothing about what
       # broke — which cost real time here twice.

@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Changed
 
+- **The manifest's privacy promises are tested at the source and in the APK** (N275). A JVM test checks
+  `allowBackup`, both extraction rule files, an empty source permission list and every non-launcher component's
+  export state; CI checks the merged release APK for permissions. The README no longer says "no permissions at
+  all" — AndroidX adds one signature-level permission that grants no user-visible access.
 - **Artifacts have a retention policy and the release keeps its R8 mapping** (N278). Test/lint and instrumented
   reports expire after 14 days, the mapping after 90, and the release process uploads a copy of the mapping as
   `mapping-<version>.txt` so a release crash trace stays readable for as long as the APK does.

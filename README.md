@@ -5,9 +5,12 @@ A local-only workout planner and logger for Android, written in Kotlin with Jetp
 the import helper's page — and one activity; Compose UI tests run on the JVM under Robolectric
 rather than on a device.
 
-**No permissions at all.** The app declares none: no storage, no network, no notifications. The
-background rest alert was the only one it ever had, and removing it in 1.7 left the manifest
-empty — which says more about where your training data lives than any wording could.
+**No user-granted permissions.** The source manifest declares none: no storage, no network, no
+notifications. The merged release adds one signature-level AndroidX permission
+(`DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`) for dynamically registered receivers; it is not a runtime
+permission and grants no access. The background rest alert was the only user-facing permission the app
+ever had, and removing it in 1.7 left the source manifest empty — which says more about where your
+training data lives than any wording could.
 
 Docs: [ROADMAP](ROADMAP.md) · [DECISIONS](DECISIONS.md) · [CHANGELOG](CHANGELOG.md) ·
 [RELEASING](RELEASING.md) · [AGENTS](AGENTS.md) · [IMPORT-HELPER](IMPORT-HELPER.md) — the map of what

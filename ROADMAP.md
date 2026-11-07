@@ -28,12 +28,6 @@ APK. N276 remains a separate immediate follow-up because it changes the release 
   verification or locking. Fixed means the wrapper checksum is present and dependency verification metadata is
   committed and checked in CI.
 
-- **N275 — Assert the manifest invariants the privacy claims rest on.** No test checks `allowBackup`,
-  `dataExtractionRules`, exported components or permissions; the merged release manifest already carries
-  androidx's signature-level `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`, so "no permissions at all" is
-  imprecise. Fixed means a source-manifest test plus a CI check of the merged permissions, and the README
-  says "no dangerous/runtime permissions" (or explains the one).
-
 - **N281 — The test-only FileProvider should not ship.** The production manifest declares a `FileProvider`
   scoped to a cache directory only because `DocumentIoTest` needs a real content URI. Fixed means the provider
   moves to the instrumented manifest (or the test uses a test-local provider), and the release manifest no
