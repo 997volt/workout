@@ -34,13 +34,6 @@ APK. N276 remains a separate immediate follow-up because it changes the release 
   imprecise. Fixed means a source-manifest test plus a CI check of the merged permissions, and the README
   says "no dangerous/runtime permissions" (or explains the one).
 
-- **N277 — The emulator timeout must exceed the boot time the workflow itself records.** The workflow's comment
-  records a nightly boot of about sixteen and a half minutes while `emulator-boot-timeout` is 900 seconds, and
-  another comment still says the hosted runner has no hardware acceleration although the KVM step below it
-  exists. A recurrence of the recorded boot is killed before a test runs; the stale sentence misleads the next
-  person debugging it. Fixed means the timeout is above the recorded worst case (or the post-KVM measurement is
-  recorded and the value lowered deliberately), and the stale sentence is gone.
-
 - **N278 — Artifacts need a retention policy.** The reports and the R8 mapping are uploaded with no
   `retention-days`; on a nightly workflow the default retention compounds a large mapping file and test
   reports. Fixed means a retention window per artifact, with the mapping attached to the release asset for

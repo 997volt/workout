@@ -261,8 +261,8 @@ jobs:
           sudo udevadm trigger --name-match=kvm
 
       # The slowest and most environment-sensitive job here, and the only one that has failed on
-      # infrastructure rather than on a test. The hosted runner has no hardware acceleration, so a boot
-      # takes minutes, and it has now gone red without a test running three times, with three different
+      # infrastructure rather than on a test. KVM is enabled above, but a boot still takes minutes, and it
+      # has now gone red without a test running three times, with three different
       # signatures: a corrupt system-image download ("Error on ZipFile unknown archive"), a boot that
       # outran the default 600 s timeout, and an emulator that booted and then died — the runner's own
       # adb emulator-kill failing while the job's failure summary printed no failing tests.
@@ -324,7 +324,7 @@ jobs:
           target: ${{ github.event_name == 'workflow_dispatch' && 'default' || 'aosp_atd' }}
           arch: x86_64
           disable-animations: true
-          emulator-boot-timeout: 900
+          emulator-boot-timeout: 1200
           # `-accel auto`, not the action's default, because the default now resolves to hardware
           # acceleration (the KVM step above is what makes it available) and this file should say which
           # way it goes rather than inherit it. `-gpu swiftshader_indirect` stays: GPU acceleration needs a
