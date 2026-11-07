@@ -20,6 +20,8 @@ each file is for.
 
 - **Build**: AGP 9.4.1 · Gradle 9.8.2 (wrapper) · Kotlin 2.4.21 · JDK 21 (AGP 9.4 needs ≥ 17)
 - **Android**: compileSdk/targetSdk 37 · minSdk 26 · Build Tools 36.0.0 · Compose BOM 2026.09.00
+- **Supply chain**: the wrapper pins Gradle's distribution SHA-256; `gradle/verification-metadata.xml`
+  checksums every dependency, and a new or changed artifact fails the build until its checksum is recorded.
 - **minSdk 26 is deliberate**: it is the Health Connect client's floor and makes `java.time`
   available without core library desugaring.
 

@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Changed
 
+- **The supply chain is pinned** (N272). The wrapper now checks Gradle's published distribution SHA-256, and the
+  committed `gradle/verification-metadata.xml` checksums every dependency. CI resolves the release runtime
+  classpath with strict dependency verification, so an unrecorded artifact fails there rather than entering a
+  build silently.
 - **The test-only FileProvider no longer ships** (N281). The provider and its path file moved to the
   instrumented APK; `DocumentIoTest` creates its URI from the test package and grants the target app access to
   that one URI. The release manifest now has no FileProvider at all.

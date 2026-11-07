@@ -77,6 +77,12 @@ jobs:
       - name: Validate Gradle wrapper
         uses: gradle/actions/wrapper-validation@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
 
+      # N272. The wrapper checksum is checked by the wrapper itself; every dependency checksum is checked by
+      # Gradle against the committed metadata. This step makes the dependency half explicit in CI, and resolves
+      # the release runtime classpath so an unrecorded artifact fails here with a clear message.
+      - name: Verify dependency checksums
+        run: ./gradlew --dependency-verification=strict :app:dependencies --configuration releaseRuntimeClasspath --console=plain > /dev/null
+
       # Lint covers Android-specific issues and fails on any warning
       # (warningsAsErrors); detekt adds complexity checks and the Compose ruleset,
       # pinned to a detekt-1.x-compatible version in gradle/libs.versions.toml because

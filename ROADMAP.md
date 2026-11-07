@@ -1,8 +1,7 @@
 # Workout — Roadmap
 
-> **What is planned, not what happened.** *Next* is the batch picked up before anything else, *Later* is decided
-> and waiting, *Parked* is decided against until a named trigger fires, and the non-goals are lines this app
-> does not cross.
+> **What is planned, not what happened.** *Later* is decided and waiting, *Parked* is decided against until a
+> named trigger fires, and the non-goals are lines this app does not cross.
 > Shipped work is [CHANGELOG.md](CHANGELOG.md), how a release is cut is [RELEASING.md](RELEASING.md), and the
 > settled rules are [DECISIONS.md](DECISIONS.md) with their argument in
 > [DECISIONS-EVIDENCE.md](DECISIONS-EVIDENCE.md).
@@ -15,18 +14,6 @@ backlog, `R#.#` releases) are stable and go in commit messages. They were assign
 work was planned, so they do not always run in order — and an id this file does not list has
 shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 [CHANGELOG-1.x.md](CHANGELOG-1.x.md) for the 1.x releases.
-
-## Next — 2.26: release and CI hardening
-
-2.25 is released. This batch closes the release-integrity and CI gaps left in *Later* before another feature is
-taken: pinning the toolchain, testing the privacy manifest, making the emulator timeout match the measured
-boot, bounding artifact retention, using one Node major, and keeping the test-only provider out of the release
-APK. N276 remains a separate immediate follow-up because it changes the release verifier itself.
-
-- **N272 — Pin the supply chain.** The wrapper properties carry no `distributionSha256Sum` although the comment
-  says the workflow validates it (it validates the JAR, not the distribution), and there is no dependency
-  verification or locking. Fixed means the wrapper checksum is present and dependency verification metadata is
-  committed and checked in CI.
 
 ## Later — the rest of the 2.22 review
 

@@ -1261,6 +1261,10 @@ the rule; that one argues it.
 - **A top-bar label is uppercased; a user-authored name is not** (B385). The eyebrow treatment is for the
   app's screen names, and applying it to content rewrites the lifter's words. `TopBarTitle(preserveCase = true)`
   keeps the clamp and heading semantics for exercise, template and program names.
+- **Every downloaded artifact is checksummed, not just the wrapper JAR** (N272). The wrapper pins Gradle's
+  published distribution hash; `gradle/verification-metadata.xml` records the SHA-256 of every dependency
+  artifact. Gradle verifies them on every resolve, and CI makes that explicit on the release runtime classpath.
+  A new artifact is a deliberate metadata change rather than a silent download.
 - **A test-only component belongs in the test APK** (N281). The FileProvider existed solely so `DocumentIoTest`
   could hand `DocumentIo` a real content URI; shipping it in the release declared an unused surface. It now lives
   in the instrumented manifest and resources, and the test grants the target app access to the one URI it makes.
