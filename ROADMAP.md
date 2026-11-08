@@ -26,12 +26,6 @@ stay in *Later* too, especially multi-week phases.
 
 ### 2.27 — correctness and scale
 
-- **N283 — Test the orchestration ViewModels that have no direct tests.** `WorkoutsHomeViewModel` (discard,
-  skip, substitute), `WorkoutHistoryViewModel` (query/filter), `ProgramEditorViewModel` (write/export),
-  `DiagnosticsViewModel` (retry), `ProgramBalanceViewModel`, `HousekeepingViewModel` and
-  `WeightUnitViewModel` are covered only through helpers and screens. Fixed means focused JVM tests with fake
-  ports for their state transitions, starting with the destructive Home handlers.
-
 - **N285 — Split the largest files.** `ActiveWorkoutViewModel`, `TestTags`, `RoomProgramRepository`,
   `TemplateEditorScreen` and `ActiveWorkoutScreen` are the files where review misses happen and where detekt
   suppressions accumulate. Fixed means each is split by responsibility without changing behaviour, with the
