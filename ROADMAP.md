@@ -15,16 +15,26 @@ work was planned, so they do not always run in order — and an id this file doe
 shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 [CHANGELOG-1.x.md](CHANGELOG-1.x.md) for the 1.x releases.
 
-## Next — release verification, correctness, then features
+## Later — the rest of the 2.22 review
 
-The order from the 2.26 review. N276 is implemented in [Unreleased] as the release-verifier prerequisite.
-**2.27** is the correctness-and-scale batch. Features follow only after that, in the order below; they are
-product candidates, not a commitment to one release.
+The rows below are real and specified, but none is in flight: a defect here is low-frequency or a polish item,
+an engineering row is not user-visible, and a feature is waiting for a decision. A row leaves this section when
+it is picked up; its design argument moves to [DECISIONS.md](DECISIONS.md).
 
-**B358 stays in *Later*** until a gesture-navigation and a three-button device are available; **N291–N294**
-stay in *Later* too, especially multi-week phases.
+### Defects and polish
 
-### Features after 2.27
+- **B358 — The shell and the screens must not both apply the navigation-bar inset.** The shell reserves the
+  tab bar, whose height already includes the system bar, and each screen's default `Scaffold` adds the system
+  inset again ([AppNavHost.kt](app/src/main/java/com/example/androidapp/ui/navigation/AppNavHost.kt)); the
+  deload screen adds a third `navigationBarsPadding()`. Fixed means the shell or the screens own the bottom
+  inset exactly once, verified on a gesture-navigation and a three-button device (this was reasoned from code,
+  not measured).
+
+### Features
+
+Each row below is a product candidate, not an agreed design; the constraints and the decision it touches are
+named so the row can be picked up without re-arguing it from scratch. The id is the planning id; no row here is
+agreed to ship.
 
 - **N291 — Substitute an exercise inside a workout.** Weekly programs can substitute a workout for an
   occurrence, but mid-session the only options are remove and add, which loses the plan context. A session
