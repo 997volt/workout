@@ -50,6 +50,10 @@ KEYSTORE_FILE = ROOT / "keystore.properties"
 # Where a released APK is attached (RELEASING.md step 7 names it `workout-<version>.apk`).
 ASSET = "workout-{version}.apk"
 
+# The mapping is what makes a release stack trace readable; the release keeps a copy (N278, B388).
+MAPPING = ROOT / "app/build/outputs/mapping/release/mapping.txt"
+MAPPING_ASSET = "mapping-{version}.txt"
+
 
 def default_apk() -> pathlib.Path:
     """The APK to check when `--apk` is not given (B131).
@@ -252,6 +256,30 @@ def verify_asset(
             )
 
 
+def verify_mapping(tag: str, expected_name: str) -> None:
+    """The release carries a non-empty mapping for this version (B388)."""
+    asset = MAPPING_ASSET.format(version=expected_name)
+    with tempfile.TemporaryDirectory() as directory:
+        download = subprocess.run(
+            ["gh", "release", "download", tag, "--pattern", asset, "--dir", directory],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if download.returncode != 0:
+            raise CheckFailed(
+                f"gh could not download {asset} from {tag}; the release has no mapping asset",
+            )
+        published = pathlib.Path(directory) / asset
+        if not published.is_file() or published.stat().st_size == 0:
+            raise CheckFailed(f"{tag} has no non-empty {asset}")
+        if MAPPING.is_file() and sha256(published) != sha256(MAPPING):
+            raise CheckFailed(
+                f"the published {asset} is not the mapping built with this release",
+            )
+        print(f"mapping     {asset} on {tag} is present")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -324,6 +352,7 @@ def main() -> int:
                 expected_certificate=verified_certificate,
             )
             print(f"published   {ASSET.format(version=expected_name)} on {args.remote} is this APK")
+            verify_mapping(args.remote, expected_name)
     except CheckFailed as failure:
         print(f"\nFAIL: {failure}", file=sys.stderr)
         return 1

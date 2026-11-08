@@ -23,6 +23,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   build silently.
 - **The test-only FileProvider no longer ships** (N281). The provider and its path file moved to the debug
   variant, which the instrumented test runs against; the release manifest now has no FileProvider at all.
+- **The remote release check verifies the mapping asset** (B388). `verify-release.py --remote` now downloads
+  `mapping-<version>.txt`, requires it to be non-empty and, when the local mapping exists, compares its hash.
+  RELEASING uploads the mapping before the remote check so a missing asset is a failure rather than a silent
+  reliance on the 90-day CI copy.
 - **The merged APK's exported components are checked, not only its source manifest** (B387). The source test
   saw only `MainActivity`; the release also carries AndroidX's `ProfileInstallReceiver`, exported but guarded by
   `android.permission.DUMP`. The APK check now allows exactly the launcher and that guarded receiver, and the

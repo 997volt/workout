@@ -1265,6 +1265,9 @@ the rule; that one argues it.
   published distribution hash; `gradle/verification-metadata.xml` records the SHA-256 of every dependency
   artifact. Gradle verifies them on every resolve, and CI makes that explicit on the release runtime classpath.
   A new artifact is a deliberate metadata change rather than a silent download.
+- **The release's mapping is part of the remote verification** (B388). A mapping upload that silently fails
+  leaves a stack trace unreadable, so the remote verifier requires the mapping asset and compares it to the local
+  build when one is available; the procedure uploads it before asking the verifier.
 - **An exported-component claim is checked on the merged APK** (B387). Source components are only the ones
   the app writes; dependencies add providers, services and receivers. The release check allowlists the launcher
   and `ProfileInstallReceiver` only while the latter keeps `android.permission.DUMP`; anything else exported

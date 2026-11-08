@@ -154,17 +154,21 @@ the same key as previous releases, so it upgrades in place — do not uninstall 
 delete the history.
 ```
 
+The mapping is what turns a release stack trace back into names. Upload it before the remote check, so
+the check can confirm it is there; CI keeps its copy for 90 days, the release keeps it for as long as
+the APK is downloadable:
+
+```bash
+gh run download <the dispatch run id> -n r8-mapping -D /tmp/r8-mapping
+gh release upload v1.3 /tmp/r8-mapping/mapping.txt#mapping-1.3.txt --clobber
+```
+
 Then check that what is published is the file the notes describe. This is the one step that needs
-the network and a token, so it is opt-in — it downloads the asset with `gh` and compares it to the
-APK just verified:
+the network and a token, so it is opt-in — it downloads the APK and mapping with `gh` and compares them
+to the files just verified:
 
 ```bash
 ./tools/verify-release.py --remote v1.3
-
-# N278: the mapping is what turns a release stack trace back into names. CI keeps it for 90 days;
-# the release keeps it for as long as the APK is downloadable.
-gh run download <the dispatch run id> -n r8-mapping -D /tmp/r8-mapping
-gh release upload v1.3 /tmp/r8-mapping/mapping.txt#mapping-1.3.txt --clobber
 ```
 
 **Do not skip it because the upload looked right.** The two failures it catches are a wrong file

@@ -21,11 +21,6 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 The 2.26 batch is implemented but unreleased. Review found two release-integrity gaps, one accepted-scope
 question and two tooling/test weaknesses. **B387 and B388 must be fixed before the 2.26 tag.**
 
-- **B388 — Verify the release mapping is actually attached.** `verify-release.py --remote` checks only the APK;
-  the mapping upload is a manual step in RELEASING.md, so a skipped or failed upload passes silently and leaves
-  only the 90-day CI artifact. Fixed means the remote verifier asserts a non-empty `mapping-<version>.txt` is
-  attached, with the upload moved before the remote check.
-
 - **B389 — Make the test provider genuinely test-only.** N281 moved the FileProvider to the debug variant; the
   release is clean and CI passes, but any debug APK still carries the provider. Fixed means the URI comes from a
   test-local provider in the instrumented APK, with no provider in either the debug or release application.
