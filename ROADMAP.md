@@ -33,32 +33,6 @@ stay in *Later* too, especially multi-week phases.
 
 ### Features after 2.27
 
-- **N290 — A records timeline.** The app celebrates a record at the moment it happens and per-lift bests exist,
-  but the story — first time at this rep count, a best beaten, a hold extended — is not readable. It is
-  derivable from the existing sets with `PersonalRecords`' rules; no schema. Medium; a windowed list keeps the
-  query cheap.
-
-## Later — the rest of the 2.22 review
-
-The rows below are real and specified, but none is in flight: a defect here is low-frequency or a polish item,
-an engineering row is not user-visible, and a feature is waiting for a decision. A row leaves this section when
-it is picked up; its design argument moves to [DECISIONS.md](DECISIONS.md).
-
-### Defects and polish
-
-- **B358 — The shell and the screens must not both apply the navigation-bar inset.** The shell reserves the
-  tab bar, whose height already includes the system bar, and each screen's default `Scaffold` adds the system
-  inset again ([AppNavHost.kt](app/src/main/java/com/example/androidapp/ui/navigation/AppNavHost.kt)); the
-  deload screen adds a third `navigationBarsPadding()`. Fixed means the shell or the screens own the bottom
-  inset exactly once, verified on a gesture-navigation and a three-button device (this was reasoned from code,
-  not measured).
-
-### Features
-
-Each row below is a product candidate, not an agreed design; the constraints and the decision it touches are
-named so the row can be picked up without re-arguing it from scratch. The id is the planning id; no row here is
-agreed to ship.
-
 - **N291 — Substitute an exercise inside a workout.** Weekly programs can substitute a workout for an
   occurrence, but mid-session the only options are remove and add, which loses the plan context. A session
   exercise's menu could offer "Substitute exercise", keeping its position and marking the stand-in so plan

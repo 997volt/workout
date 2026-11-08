@@ -12,6 +12,7 @@ import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.ExerciseTrendMetric
 import com.example.androidapp.domain.model.PlanTarget
 import com.example.androidapp.domain.model.RangeKind
+import com.example.androidapp.domain.model.RecordEvent
 import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.StatisticsRange
 import com.example.androidapp.domain.model.TrendPoint
@@ -53,8 +54,8 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
-import kotlin.math.roundToInt
 import javax.inject.Inject
+import kotlin.math.roundToInt
 
 /**
  * What the picker starts on (ROADMAP N35).
@@ -105,6 +106,15 @@ data class StatisticsUiState(
      */
     val recentSeries: List<StatisticsSelection> = emptyList(),
     val overview: StatisticsOverview = StatisticsOverview(),
+    /**
+     * The newest records, for the timeline at the foot of the page (ROADMAP N290).
+     *
+     * Newest first and bounded to `RECORDS_SHOWN`: the read returns only sets the record rule judged, so the
+     * screen never holds the training history to draw this section. A record is the existing
+     * [com.example.androidapp.domain.model.PersonalRecords] rule applied over history; this is its result,
+     * not a second answer.
+     */
+    val records: List<RecordEvent> = emptyList(),
     val series: MetricSeries? = null,
     /** The read failed, shown in place of the chart (the same shape the trends screen uses). */
     val error: DataError? = null,

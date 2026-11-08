@@ -1265,6 +1265,10 @@ the rule; that one argues it.
   published distribution hash; `gradle/verification-metadata.xml` records the SHA-256 of every dependency
   artifact. Gradle verifies them on every resolve, and CI makes that explicit on the release runtime classpath.
   A new artifact is a deliberate metadata change rather than a silent download.
+- **The records timeline is bounded and reuses the record rule** (N290). It reads the newest records rather
+  than promising a complete ledger, and the DAO applies the same strictly-heavier/never-warm-up/longest-hold
+  rule as [PersonalRecords]; the UI only groups and formats. A timed hold is its own row shape, because a hold
+  and a load do not share a number.
 - **Trained-muscle counts are counts, not a target** (N289). The same credit rule as the plan balance (primary
   1, secondary 0.5, warm-ups excluded) is applied to logged working sets in a window; the result is shown as
   counts only. P2.8's balance warnings remain parked until a target exists to warn against.

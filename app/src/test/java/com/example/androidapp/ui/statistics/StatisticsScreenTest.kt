@@ -36,6 +36,7 @@ import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.PlanTarget
 import com.example.androidapp.domain.model.RangeKind
+import com.example.androidapp.domain.model.RecordEvent
 import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.Side
 import com.example.androidapp.domain.model.StatisticsRange
@@ -142,6 +143,30 @@ class StatisticsScreenTest {
         composeTestRule.onNodeWithTag(TestTags.Statistics.OVERVIEW_WORKOUTS).assertExists()
         composeTestRule.onNodeWithTag(TestTags.Statistics.OVERVIEW_VOLUME).assertExists()
         composeTestRule.onNodeWithTag(TestTags.Statistics.OVERVIEW_RECORDS).assertExists()
+    }
+
+    @Test
+    fun theRecordsTimeline_isPartOfTheStatisticsPage() {
+        // N290: the timeline is a section of this page rather than a destination of its own, so the page
+        // draws the state it is given — the read that fills it is the ViewModel's.
+        setScreen(
+            state = StatisticsUiState(
+                isLoading = false,
+                records = listOf(
+                    RecordEvent.Load(
+                        exerciseName = "Back squat",
+                        performedAt = Instant.parse("2026-10-04T10:00:00Z"),
+                        zoneOffsetMinutes = 0,
+                        weightUnit = null,
+                        weightGrams = 100_000L,
+                        reps = 5,
+                    ),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(RecordTimelineTags.TIMELINE).assertExists()
+        composeTestRule.onNodeWithTag(RecordTimelineTags.row(0, 0)).assertExists()
     }
 
     @Test

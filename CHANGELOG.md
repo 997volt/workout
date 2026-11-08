@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A recent records timeline appears in Statistics** (N290). Weighted bests and timed holds are read with the
+  existing record rule, newest first and grouped by the month they were performed, capped at a recent window.
+  The empty state says what would create a record; the section is titled *recent* rather than promising a
+  complete ledger.
 - **The balance screen can show what the log actually trained** (N289). A Plan/Trained toggle reuses the
   planned-count rule — primary 1, each secondary 0.5, warm-ups excluded — over logged working sets in a 7- or
   28-day window. It is a factual count list, with no target band or warning.

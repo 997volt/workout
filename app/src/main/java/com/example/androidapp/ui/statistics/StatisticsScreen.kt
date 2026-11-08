@@ -217,6 +217,9 @@ private fun StatisticsLoadedContent(
             onPinch = onPinch,
             onSetGoal = onSetGoal,
         )
+        // The records are the page's own story rather than a reading of the selected series, so they follow
+        // the series' evidence rather than interrupting it (N290).
+        RecordsTimeline(records = state.records)
     }
 }
 

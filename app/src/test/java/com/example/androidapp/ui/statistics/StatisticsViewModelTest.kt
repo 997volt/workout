@@ -13,6 +13,7 @@ import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.ExerciseTrendMetric
 import com.example.androidapp.domain.model.ExerciseTrendPoint
+import com.example.androidapp.domain.model.ExerciseWorkingSets
 import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.LatestWeight
 import com.example.androidapp.domain.model.MeasurementKind
@@ -945,6 +946,12 @@ private class FakeStatisticsRepository(
         planIdsAsked = exerciseIds
         return flowOf(planTargets)
     }
+
+    /** The trained balance's read (N289), which this screen never asks for; empty rather than an error. */
+    override fun observeWorkingSetsIn(
+        from: Instant,
+        toExclusive: Instant,
+    ): Flow<DataResult<List<ExerciseWorkingSets>>> = flowOf(DataResult.Success(emptyList()))
 
     override suspend fun countRecordsIn(from: Instant, to: Instant): DataResult<Int> {
         asked = true
