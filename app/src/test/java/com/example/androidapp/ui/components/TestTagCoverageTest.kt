@@ -16,16 +16,16 @@ class TestTagCoverageTest {
 
     @Test
     fun every_test_tag_isUsedSomewhereOutsideItsOwnFile() {
-        val tagsFile = File(
-            repoRoot,
-            "app/src/main/java/com/example/androidapp/ui/components/TestTags.kt",
-        )
+        val tagsDir = File(repoRoot, "app/src/main/java/com/example/androidapp/ui/components")
+        val tagsFiles = tagsDir.listFiles().orEmpty().filter { it.name.endsWith("Tags.kt") }
         val names = buildSet {
-            Regex("""const val ([A-Z0-9_]+)""").findAll(tagsFile.readText()).forEach { add(it.groupValues[1]) }
-            Regex("""fun ([a-zA-Z0-9_]+)\(""").findAll(tagsFile.readText()).forEach { add(it.groupValues[1]) }
+            tagsFiles.forEach { tagsFile ->
+                Regex("""(?:const )?val ([A-Z0-9_]+)""").findAll(tagsFile.readText()).forEach { add(it.groupValues[1]) }
+                Regex("""fun ([a-zA-Z0-9_]+)\(""").findAll(tagsFile.readText()).forEach { add(it.groupValues[1]) }
+            }
         }
         val used = File(repoRoot, "app/src").walkTopDown()
-            .filter { it.isFile && it.extension == "kt" && it != tagsFile }
+            .filter { it.isFile && it.extension == "kt" && it !in tagsFiles }
             .joinToString("\n") { it.readText() }
 
         assertThat(names).isNotEmpty()

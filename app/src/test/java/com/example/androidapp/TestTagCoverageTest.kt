@@ -30,9 +30,9 @@ class TestTagCoverageTest {
     }
 
     private fun tagNames(): List<String> {
-        val text = File(repoRoot, TAG_FILE).readText()
-        return (CONST.findAll(text).map { it.groupValues[1] } +
-            FUN.findAll(text).map { it.groupValues[1] })
+        val texts = tagFiles().map { it.readText() }
+        return (texts.flatMap { text -> CONST.findAll(text).map { it.groupValues[1] }.toList() } +
+            texts.flatMap { text -> FUN.findAll(text).map { it.groupValues[1] }.toList() })
             .distinct()
             .sorted()
             .toList()
@@ -40,7 +40,7 @@ class TestTagCoverageTest {
 
     private val productionSources: List<String> by lazy {
         kotlinSources("app/src/main")
-            .filterNot { it.name == File(TAG_FILE).name }
+            .filterNot { it in tagFiles() }
             .map { stripComments(it.readText()) }
     }
 
@@ -53,9 +53,12 @@ class TestTagCoverageTest {
     }
 
     private companion object {
-        const val TAG_FILE = "app/src/main/java/com/example/androidapp/ui/components/TestTags.kt"
+        fun tagFiles(): List<File> = File(
+            repoRoot,
+            "app/src/main/java/com/example/androidapp/ui/components",
+        ).listFiles().orEmpty().filter { it.name.endsWith("Tags.kt") }
 
-        val CONST = Regex("""const val ([A-Za-z0-9_]+)""")
+        val CONST = Regex("""(?:const )?val ([A-Z0-9_]+)""")
         val FUN = Regex("""fun ([A-Za-z0-9_]+)\s*\(""")
 
         fun nameMatch(name: String) = Regex("""\b${Regex.escape(name)}\b""")

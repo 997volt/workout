@@ -49,6 +49,15 @@ naming:
     # project is reported.
     ignoreAnnotated: ['Composable']
 
+  VariableNaming:
+    # The tag registry is one name per control, and its names are the CONSTANT_CASE they have always been.
+    # N285 split it into an interface per screen area so the files stay small; an interface cannot declare
+    # `const val`, so each tag is a `val` with a getter and this rule reads it as a variable that should be
+    # camelCase. Renaming them would rename every tag and every test that reads one, which is the thing the
+    # registry exists to avoid — so the tag files are the rule's false positive, excluded as a family
+    # (`TestTags.kt` and the `<Area>Tags.kt` files beside it).
+    excludes: ['**/ui/components/*Tags.kt']
+
 style:
   UnusedImports:
     # Off by default in detekt 1.23.8, and the compiler does not run with `-Werror`, so an
