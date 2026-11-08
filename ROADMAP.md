@@ -21,10 +21,6 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 The 2.26 batch is implemented but unreleased. Review found two release-integrity gaps, one accepted-scope
 question and two tooling/test weaknesses. **B387 and B388 must be fixed before the 2.26 tag.**
 
-- **N297 — The permission checker should not pick an arbitrary `aapt2`.** Its fallback takes the
-  lexicographically last build-tools directory; CI had to pass the pinned 36.0.0 explicitly after 37 failed.
-  Fixed means prefer the project-pinned 36.0.0 or try candidates until one works.
-
 - **N298 — The source manifest test must identify the launcher by intent filter.** It currently takes the first
   `<activity>` element; a future activity inserted before `MainActivity` would make the test fail for the wrong
   reason. Fixed means locate the activity with the MAIN/LAUNCHER filter.

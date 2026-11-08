@@ -26,18 +26,21 @@ PERMISSION = re.compile(r'A: .*:permission\([^)]*\)=(?:"([^"]+)"|([^\s]+))')
 
 
 def aapt2() -> str:
+    """The project's pinned build-tools first; PATH's arbitrary aapt2 is the last resort (N297)."""
+    roots = [os.environ.get("ANDROID_HOME"), os.environ.get("ANDROID_SDK_ROOT")]
+    roots.append(str(Path(__file__).resolve().parent.parent / ".toolchain/android-sdk"))
+    for root in roots:
+        if not root:
+            continue
+        pinned = Path(root) / "build-tools" / "36.0.0" / "aapt2"
+        if pinned.is_file():
+            return str(pinned)
+        candidates = sorted((Path(root) / "build-tools").glob("*/aapt2"))
+        if candidates:
+            return str(candidates[-1])
     found = shutil.which("aapt2")
     if found:
         return found
-    for root in (os.environ.get("ANDROID_HOME"), os.environ.get("ANDROID_SDK_ROOT")):
-        if root:
-            candidates = sorted(glob.glob(os.path.join(root, "build-tools", "*", "aapt2")))
-            if candidates:
-                return candidates[-1]
-    local = Path(__file__).resolve().parent.parent / ".toolchain/android-sdk/build-tools"
-    candidates = sorted(local.glob("*/aapt2"))
-    if candidates:
-        return str(candidates[-1])
     raise SystemExit("check-apk-permissions: aapt2 not found; pass --aapt2 or set ANDROID_HOME")
 
 

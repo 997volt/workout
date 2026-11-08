@@ -28,6 +28,9 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   `mapping-<version>.txt`, requires it to be non-empty and, when the local mapping exists, compares its hash.
   RELEASING uploads the mapping before the remote check so a missing asset is a failure rather than a silent
   reliance on the 90-day CI copy.
+- **The permission checker prefers the pinned build-tools** (N297). Its fallback took the lexicographically
+  last `aapt2`, which picked an incompatible 37 on the runner; it now prefers the project's pinned 36.0.0
+  before other build-tools or PATH.
 - **The merged APK's exported components are checked, not only its source manifest** (B387). The source test
   saw only `MainActivity`; the release also carries AndroidX's `ProfileInstallReceiver`, exported but guarded by
   `android.permission.DUMP`. The APK check now allows exactly the launcher and that guarded receiver, and the
