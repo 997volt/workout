@@ -1265,6 +1265,9 @@ the rule; that one argues it.
   published distribution hash; `gradle/verification-metadata.xml` records the SHA-256 of every dependency
   artifact. Gradle verifies them on every resolve, and CI makes that explicit on the release runtime classpath.
   A new artifact is a deliberate metadata change rather than a silent download.
+- **Lean mass is derived, never stored** (N287). It is weight minus the fat mass the same day states; the two
+  inputs are already recorded, so a stored third number could disagree with them. Missing either input is a gap,
+  not a zero.
 - **One write outcome names the row, for every editor** (N284). A shared `WriteOutcome<T>` — `Written(value)` or
   `Refused(value, error)` — replaces the three shapes that let B340 and B352 happen. The host clears it before
   the next write, so an equal-success is a new emission; a refusal stays observable and keeps the editor open.

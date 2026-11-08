@@ -94,6 +94,13 @@ private fun bodyValue(metric: BodyMetric, measurement: BodyMeasurement): Double?
     // can disagree with the row it came from.
     BodyMetric.FAT_MASS -> massFrom(measurement.statedWeightGrams, measurement.bodyFatTenths)
     BodyMetric.MUSCLE_MASS -> massFrom(measurement.statedWeightGrams, measurement.muscleTenths)
+    BodyMetric.LEAN_MASS -> leanMassFrom(measurement.statedWeightGrams, measurement.bodyFatTenths)
+}
+
+/** Weight minus the fat mass it states, in grams; null when either half is missing (N287). */
+private fun leanMassFrom(statedWeightGrams: Long?, fatTenths: Int?): Double? {
+    val fat = massFrom(statedWeightGrams, fatTenths) ?: return null
+    return requireNotNull(statedWeightGrams) - fat
 }
 
 /**

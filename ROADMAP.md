@@ -39,12 +39,6 @@ stay in *Later* too, especially multi-week phases.
 
 ### Features after 2.27
 
-- **N287 — Lean mass, derived from the body the app already records.** `weight − fat mass` is a series of its
-  own, exactly as N265 made fat and muscle mass derived series; the two inputs are already stored and nothing
-  new is persisted. `null` when either input is missing, the name says what it was made of, and it reads in the
-  same mass unit as fat mass. Small; the only open question is whether the Statistics unit follower (N295)
-  lands first.
-
 - **N288 — Search history by what was written, not only by plan/activity/month.** N146 reaches the session's
   plan, activity and month; notes and exercise names are in the store but unsearchable. A query over session
   notes and the names of logged exercises (optionally set notes) would answer "when did I last write down the

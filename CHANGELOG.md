@@ -17,6 +17,9 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **Lean mass is a series derived from the body the app already records** (N287). Weight minus fat mass is
+  offered beside fat and muscle mass, is null when either half is missing, and reads in the same mass unit;
+  nothing new is stored.
 - **The set, template and history editors share one write answer** (N284). `WriteOutcome<T>` names the row
   that was written and carries a refusal's error; the workout and history set editors keep their existing
   `SetWrite` name as an alias, and the template planned-set editor now uses the same type instead of a bare id.

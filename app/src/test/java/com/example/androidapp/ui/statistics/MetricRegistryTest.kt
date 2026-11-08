@@ -55,18 +55,18 @@ class MetricRegistryTest {
                 .isEqualTo(1)
         }
 
-        // Three ratings, eight exercise metrics, five body metrics — three stored and two derived (N265) —
+        // Three ratings, eight exercise metrics, six body metrics — three stored and three derived (N265/N287) —
         // seven tape sites, one soreness series per selectable muscle (N118), and a joint-pain series per site
         // a rating may name (N130) — the site being the joint *and* the side, at both of the levels ratings
         // live at.
-        assertThat(entries.size).isEqualTo(23 + SORE_MUSCLE_GROUPS.size + JOINT_SITES.size * 2)
+        assertThat(entries.size).isEqualTo(24 + SORE_MUSCLE_GROUPS.size + JOINT_SITES.size * 2)
     }
 
     @Test
     fun theDerivedMasses_areBodySeriesInGrams() {
         // N265: the derivation lives in the series, so the registry's job is only to say what the answer is — a
         // body metric, and a mass the kilogram unit formats like a weight rather than a percentage.
-        listOf(BodyMetric.FAT_MASS, BodyMetric.MUSCLE_MASS).forEach { metric ->
+        listOf(BodyMetric.FAT_MASS, BodyMetric.MUSCLE_MASS, BodyMetric.LEAN_MASS).forEach { metric ->
             val entry = MetricRegistry.entryFor(MetricKey.Body(metric))
 
             assertWithMessage("$metric describes the body").that(entry.group).isEqualTo(MetricGroup.BODY)

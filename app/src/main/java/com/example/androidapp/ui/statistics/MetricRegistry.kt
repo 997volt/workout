@@ -121,6 +121,9 @@ enum class BodyMetric {
 
     /** Grams of muscle that percentage covers — derived, never stored (N265). */
     MUSCLE_MASS,
+
+    /** Grams left after fat mass — derived as weight minus fat (N287). */
+    LEAN_MASS,
 }
 
 /**
@@ -359,6 +362,16 @@ object MetricRegistry {
                 key = MetricKey.Body(BodyMetric.MUSCLE_MASS),
                 group = MetricGroup.BODY,
                 labelRes = R.string.measurements_muscle_mass,
+                unit = MetricUnit.KILOGRAMS,
+                isBars = false,
+            ),
+        )
+        // N287: the remainder is a series of its own, derived from the same two stored numbers.
+        add(
+            MetricEntry(
+                key = MetricKey.Body(BodyMetric.LEAN_MASS),
+                group = MetricGroup.BODY,
+                labelRes = R.string.measurements_lean_mass,
                 unit = MetricUnit.KILOGRAMS,
                 isBars = false,
             ),

@@ -162,6 +162,10 @@ class MetricSeriesTest {
             metricSeries(MetricKey.Body(BodyMetric.MUSCLE_MASS), measurements = listOf(entry))
                 .readings.single().value
         ).isEqualTo(34_690.4)
+        assertThat(
+            metricSeries(MetricKey.Body(BodyMetric.LEAN_MASS), measurements = listOf(entry))
+                .readings.single().value
+        ).isEqualTo(82_400.0 - 15_079.2)
     }
 
     @Test
@@ -171,7 +175,7 @@ class MetricSeriesTest {
         val weighedOnly = measurement(at = first, weight = 82_400L)
         val measuredOnly = measurement(at = second, bodyFat = 183, muscle = 421)
 
-        listOf(BodyMetric.FAT_MASS, BodyMetric.MUSCLE_MASS).forEach { metric ->
+        listOf(BodyMetric.FAT_MASS, BodyMetric.MUSCLE_MASS, BodyMetric.LEAN_MASS).forEach { metric ->
             assertWithMessage("$metric has nothing to derive")
                 .that(metricSeries(MetricKey.Body(metric), measurements = listOf(weighedOnly, measuredOnly)).readings)
                 .isEmpty()
