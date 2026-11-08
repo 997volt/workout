@@ -39,11 +39,6 @@ stay in *Later* too, especially multi-week phases.
 
 ### Features after 2.27
 
-- **N295 — Let weight-based Statistics follow the app's unit.** N64 deliberately excluded Statistics and body
-  measurements from the kg/lb switch so a chart could not change with the lift picked last. A narrower rule
-  — follow the app-wide unit for weight-based series, keep body metrics metric-owned — would fix the surprise
-  a pounds user meets today, but it is a decision change and needs the same round-trip tests as N64.
-
 - **N289 — Show what the log actually trained, per muscle, as counts only.** `muscleBalance` already defines
   the counting rule for a *plan* (primary 1, each secondary 0.5, warm-ups excluded); the same rule over logged
   sets in a 7/28-day window is a factual read. It must present counts, never a target range or a warning, which

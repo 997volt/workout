@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.example.androidapp.R
 import com.example.androidapp.domain.Weight
+import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.ExerciseTrendMetric
 import com.example.androidapp.domain.model.JOINT_SITES
 import com.example.androidapp.domain.model.Joint
@@ -147,6 +148,15 @@ enum class MetricUnit(
         // reading's rule would refuse the sign and leave no way to ask for it (N98).
         override fun parseRate(text: String): Double? =
             signed(text) { it.times(GRAMS_PER_KILOGRAM) }
+    },
+    POUNDS(R.string.unit_pounds) {
+        override fun format(value: Double): String = Weight.format(value.toLong(), WeightUnit.POUNDS)
+
+        override fun parse(text: String): Double? =
+            measure(text) { it.times(GRAMS_PER_POUND) }
+
+        override fun parseRate(text: String): Double? =
+            signed(text) { it.times(GRAMS_PER_POUND) }
     },
     RATING(R.string.unit_rating) {
         // **Points, because that is what every read produces** (B270). A series divides the stored halves
@@ -389,7 +399,15 @@ object MetricRegistry {
     }
 
     /** The entry for a key. Every key has one, which a test asserts in both directions. */
-    fun entryFor(key: MetricKey): MetricEntry = entries.first { it.key == key }
+    fun entryFor(key: MetricKey, weightUnit: WeightUnit = WeightUnit.KILOGRAMS): MetricEntry =
+        entries.first { it.key == key }.withUnit(weightUnit)
+
+    private fun MetricEntry.withUnit(weightUnit: WeightUnit): MetricEntry =
+        if (group == MetricGroup.EXERCISE && unit == MetricUnit.KILOGRAMS) {
+            copy(unit = if (weightUnit == WeightUnit.POUNDS) MetricUnit.POUNDS else MetricUnit.KILOGRAMS)
+        } else {
+            this
+        }
 
     /**
      * The entry with this [MetricKey.id], or null.
@@ -559,6 +577,7 @@ private fun ExerciseTrendMetric.labelRes(): Int = when (this) {
 
 /** Stored units per displayed unit: grams, millimetres, tenths of a percent, half-points of RPE. */
 private const val GRAMS_PER_KILOGRAM = 1000.0
+private const val GRAMS_PER_POUND = 453.59237
 private const val MILLIMETRES_PER_CENTIMETRE = 10.0
 private const val TENTHS_PER_PERCENT = 10.0
 

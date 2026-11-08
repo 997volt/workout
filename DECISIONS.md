@@ -1265,6 +1265,10 @@ the rule; that one argues it.
   published distribution hash; `gradle/verification-metadata.xml` records the SHA-256 of every dependency
   artifact. Gradle verifies them on every resolve, and CI makes that explicit on the release runtime classpath.
   A new artifact is a deliberate metadata change rather than a silent download.
+- **Statistics follows the app unit for exercise loads, not for body metrics** (N295, narrowing N64). A chart
+  whose values are grams of load should read in the unit the lifter chose; body weight and composition remain
+  metric-owned because they are not the exercise's load and a body series should not change when the lift changes.
+  The resolution happens in the metric entry at the screen, beside `LocalWeightUnit`, and storage stays grams.
 - **History search reaches notes and exercise names without per-row reads** (N288). The history projection
   carries a GROUP_CONCAT of the live exercise names and the session note; the pure filter searches those and
   says which extra field matched, so the row does not look as if the plan name explained the hit.

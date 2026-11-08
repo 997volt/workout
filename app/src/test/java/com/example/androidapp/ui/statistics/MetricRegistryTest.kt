@@ -1,5 +1,6 @@
 package com.example.androidapp.ui.statistics
 
+import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.ExerciseTrendMetric
 import com.example.androidapp.domain.model.JOINT_SITES
 import com.example.androidapp.domain.model.Joint
@@ -63,6 +64,19 @@ class MetricRegistryTest {
     }
 
     @Test
+    fun exerciseLoads_followTheAppUnit_butBodyMetricsKeepTheirs() {
+        // N295: the chart's load series follows the app-wide unit; body weight and masses stay metric-owned.
+        val load = MetricRegistry.entryFor(
+            MetricKey.Exercise(ExerciseTrendMetric.HEAVIEST_SET),
+            WeightUnit.POUNDS,
+        )
+        val body = MetricRegistry.entryFor(MetricKey.Body(BodyMetric.WEIGHT), WeightUnit.POUNDS)
+
+        assertThat(load.unit).isEqualTo(MetricUnit.POUNDS)
+        assertThat(body.unit).isEqualTo(MetricUnit.KILOGRAMS)
+    }
+
+    @Test
     fun theDerivedMasses_areBodySeriesInGrams() {
         // N265: the derivation lives in the series, so the registry's job is only to say what the answer is — a
         // body metric, and a mass the kilogram unit formats like a weight rather than a percentage.
@@ -105,6 +119,7 @@ class MetricRegistryTest {
         // A target is typed in the unit on screen and stored in the unit on disk, so the two have to agree:
         // 80 kilograms is 80000 grams, which is what every other weight in the app is.
         assertThat(MetricUnit.KILOGRAMS.parse("80")).isEqualTo(80_000.0)
+        assertThat(MetricUnit.POUNDS.parse("220.5")).isWithin(0.1).of(100_017.117585)
         assertThat(MetricUnit.CENTIMETRES.parse("82.5")).isEqualTo(825.0)
         assertThat(MetricUnit.PERCENT.parse("18")).isEqualTo(180.0)
         assertThat(MetricUnit.RATING.parse("7.5")).isEqualTo(7.5)
@@ -116,6 +131,7 @@ class MetricRegistryTest {
         // B270: the rating unit parsed into halves and formatted points, so the two never agreed. A unit is
         // one scale, and the assertion is the pair rather than one direction of it.
         assertThat(MetricUnit.KILOGRAMS.format(MetricUnit.KILOGRAMS.parse("82.5")!!)).isEqualTo("82.5")
+        assertThat(MetricUnit.POUNDS.format(MetricUnit.POUNDS.parse("220.5")!!)).isEqualTo("220.5")
         assertThat(MetricUnit.CENTIMETRES.format(MetricUnit.CENTIMETRES.parse("82.5")!!)).isEqualTo("82.5")
         assertThat(MetricUnit.PERCENT.format(MetricUnit.PERCENT.parse("18.3")!!)).isEqualTo("18.3")
         assertThat(MetricUnit.RATING.format(MetricUnit.RATING.parse("7.5")!!)).isEqualTo("7.5")

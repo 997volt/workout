@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **Exercise statistics follow the app weight unit** (N295). Load, volume and estimated-1RM charts, readings
+  and goals now format and parse in pounds when the app is set to pounds, while body weight, fat, muscle and lean
+  mass stay in their metric-owned kilograms. The unit resolves at the screen from `LocalWeightUnit`, so changing
+  the setting changes the chart without changing stored grams.
 - **History search reaches session notes and logged exercise names** (N288). The history projection carries
   the session note and the names joined from its live exercises, so a query can answer "when did I write down
   the shoulder tweak" without loading every set. A matched note or exercise is named in the row's supporting

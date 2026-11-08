@@ -53,6 +53,7 @@ import com.example.androidapp.ui.components.AppFilterChip
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.DatePrompt
+import com.example.androidapp.ui.components.LocalWeightUnit
 import com.example.androidapp.ui.components.MessageSnackbar
 import com.example.androidapp.ui.components.TabRootTopBar
 import com.example.androidapp.ui.components.TestTags
@@ -255,7 +256,7 @@ private fun StatisticsBody(
         }
 
         series?.let { series ->
-            val entry = MetricRegistry.entryFor(series.key)
+            val entry = MetricRegistry.entryFor(series.key, LocalWeightUnit.current)
             SeriesChart(
                 series = series,
                 metric = entry,
@@ -293,7 +294,7 @@ private fun StatisticsBody(
         // canvas this app blanks out.
         Overview(overview = state.overview)
         series?.let { current ->
-            ReadingsSection(series = current, metric = MetricRegistry.entryFor(current.key))
+            ReadingsSection(series = current, metric = MetricRegistry.entryFor(current.key, LocalWeightUnit.current))
         }
     }
 }
@@ -320,9 +321,10 @@ private fun SettingsErrorSnackbar(state: StatisticsUiState, host: SnackbarHostSt
 @Composable
 private fun RecentSeries(state: StatisticsUiState, onSelectRecent: (StatisticsSelection) -> Unit) {
     if (state.recentSeries.size < 2) return
+    val weightUnit = LocalWeightUnit.current
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         state.recentSeries.forEach { recent ->
-            val entry = MetricRegistry.entryFor(recent.metric)
+            val entry = MetricRegistry.entryFor(recent.metric, weightUnit)
             val lift = state.lifts.firstOrNull { it.id == recent.exerciseId }?.name
             AppFilterChip(
                 selected = recent == state.selection,
