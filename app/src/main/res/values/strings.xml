@@ -508,6 +508,12 @@
     <string name="statistics_overview_volume">Volume</string>
     <string name="statistics_overview_records">Records</string>
     <string name="statistics_not_counted">—</string>
+    <!-- N290: the records timeline under the series. "Recent" is honest about the bounded read; the empty
+         state says what would make a row appear rather than leaving a heading over nothing. -->
+    <string name="statistics_records_title">Recent records</string>
+    <string name="statistics_records_empty">No records yet.</string>
+    <string name="statistics_records_empty_hint">A set that beats your best at its rep count, or a hold longer than your longest, will appear here.</string>
+    <string name="statistics_records_hold">Held %1$s</string>
     <string name="statistics_choose_lift">Choose a lift to see its trend.</string>
     <!-- A category reads as one number (ROADMAP N97), so the picker says which rows are a family. -->
     <string name="statistics_lift_all_in_family">All in this family</string>
@@ -1221,6 +1227,19 @@
          rules, which only ever see whole numbers. -->
     <string name="program_balance_set_one">%1$s set</string>
     <string name="program_balance_sets_many">%1$s sets</string>
+    <!-- What the log actually trained (ROADMAP N289): the same counts over performed work, in a 7/28-day
+         window. Counts only — no target, no minimum and no warning; P2.8 stays parked. -->
+    <string name="program_balance_plan">Plan</string>
+    <string name="program_balance_trained">Trained</string>
+    <string name="program_balance_window_7">Last 7 days</string>
+    <string name="program_balance_window_28">Last 28 days</string>
+    <plurals name="program_balance_trained_total">
+        <item quantity="one">%1$d working set logged</item>
+        <item quantity="other">%1$d working sets logged</item>
+    </plurals>
+    <string name="program_balance_trained_weighting">A set counts once for its main muscle, and half for each assisting one. Warm-ups are not counted.</string>
+    <string name="program_balance_trained_empty">No working sets logged in this window.</string>
+    <string name="program_balance_trained_failed">Couldn’t read the log.</string>
     <string name="program_loaded">Program loaded.</string>
     <string name="program_already_loaded">That program is already here.</string>
     <!-- The idempotent sentence is false about a program the device has never seen (B267): a pasted table's

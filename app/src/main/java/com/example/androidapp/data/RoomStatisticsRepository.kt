@@ -1,16 +1,22 @@
 package com.example.androidapp.data
 
+import com.example.androidapp.data.local.ExerciseWorkingSetCount
 import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.data.local.toDomain
 import com.example.androidapp.data.local.toPlannedSetTarget
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.dataResultOf
+import com.example.androidapp.domain.model.ExerciseWorkingSets
 import com.example.androidapp.domain.model.PlanTarget
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.WorkoutSummary
+import com.example.androidapp.domain.model.loggedWorkRoles
 import com.example.androidapp.domain.model.planTargets
 import com.example.androidapp.domain.repository.StatisticsRepository
+import com.example.androidapp.domain.toDataError
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import java.time.Instant
 import javax.inject.Inject
@@ -30,6 +36,30 @@ class RoomStatisticsRepository @Inject constructor(
 
     override fun observePlanTargets(exerciseIds: List<String>): Flow<List<PlanTarget>> =
         dao.observePlanTargets(exerciseIds).map { rows -> planTargets(rows.map { it.toPlannedSetTarget() }) }
+
+    override fun observeWorkingSetsIn(
+        from: Instant,
+        toExclusive: Instant,
+    ): Flow<DataResult<List<ExerciseWorkingSets>>> =
+        dao.observeWorkingSetsIn(
+            from = from.toEpochMilli(),
+            toExclusive = toExclusive.toEpochMilli(),
+            // **The roles come from the rule, not from the query** (N112, B155): `SetType.isWork` is the one
+            // place that says a warm-up is preparation rather than work, so the SQL is handed its names
+            // instead of spelling a literal a later role could drift from.
+            workRoles = loggedWorkRoles(),
+        )
+            .map<List<ExerciseWorkingSetCount>, DataResult<List<ExerciseWorkingSets>>> { rows ->
+                DataResult.Success(
+                    rows.map { ExerciseWorkingSets(exerciseId = it.exerciseId, workingSets = it.workingSets) },
+                )
+            }
+            // A read that did not happen is said rather than drawn as an empty window (B4): "no work logged"
+            // is a claim about the training, and this is a fact about the database.
+            .catch { throwable ->
+                if (throwable is CancellationException) throw throwable
+                emit(DataResult.Failure(throwable.toDataError()))
+            }
 
     override suspend fun countRecordsIn(from: Instant, to: Instant): DataResult<Int> = dataResultOf {
         // **The roles come from the rule, not from the query** (B155): `SetType.recordsEffort` is the one place

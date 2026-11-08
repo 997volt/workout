@@ -33,12 +33,6 @@ stay in *Later* too, especially multi-week phases.
 
 ### Features after 2.27
 
-- **N289 — Show what the log actually trained, per muscle, as counts only.** `muscleBalance` already defines
-  the counting rule for a *plan* (primary 1, each secondary 0.5, warm-ups excluded); the same rule over logged
-  sets in a 7/28-day window is a factual read. It must present counts, never a target range or a warning, which
-  keeps P2.8 ("muscle-group balance warnings") parked. Medium; a Statistics group or a Plan/Trained toggle on
-  the balance screen.
-
 - **N290 — A records timeline.** The app celebrates a record at the moment it happens and per-lift bests exist,
   but the story — first time at this rep count, a best beaten, a hold extended — is not readable. It is
   derivable from the existing sets with `PersonalRecords`' rules; no schema. Medium; a windowed list keeps the

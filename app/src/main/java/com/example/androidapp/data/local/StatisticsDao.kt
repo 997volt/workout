@@ -5,10 +5,10 @@ import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 
 /**
- * The Statistics screen's own queries (ROADMAP N35).
+ * The Statistics screen's own queries (ROADMAP N35), and the balance view's trained read (N289).
  *
  * Its own DAO rather than another method on `WorkoutDao`, which is at its function ceiling — and the
- * statistics screen's questions are not the workout editor's.
+ * questions asked of the log here are not the workout editor's.
  */
 @Dao
 interface StatisticsDao {
@@ -86,6 +86,47 @@ interface StatisticsDao {
     suspend fun countRecordsIn(from: Long, to: Long, recordableRoles: List<String>): Int
 
     /**
+     * How many working sets each movement was given in the window (ROADMAP N289).
+     *
+     * **One row per movement, already counted**: the balance view needs counts per muscle, not the sets, so
+     * the `GROUP BY` is what keeps a year of history out of the UI layer. The muscles are not resolved here —
+     * a movement's own-or-category's muscle is a live library fact (N110), and the library is the domain's
+     * input.
+     *
+     * Four liveness rules are in the SQL, where they can be tested against the real database:
+     *
+     * - **Finished, live sessions only.** An open session is not history yet, and a workout or a row deleted
+     *   since is not training a lifter would recognise — the same reading the history and the weekly review
+     *   take (P3.5, N251).
+     * - **The join to `exercises` drops a movement deleted since**, both because a removed row is not a
+     *   current muscle and because its family may be gone with it.
+     * - **Warm-ups are not work** (N112), which is why the roles arrive as [workRoles] rather than as a
+     *   literal: the caller takes them from `SetType.isWork`, so a ramp cannot count and a rung still does.
+     * - **The window is half-open on `startedAt`** — the instant the session began — for the reason the
+     *   statistics window uses it: it is when the work happened, and a session that crosses midnight belongs
+     *   to the day it started.
+     */
+    @Query(
+        """
+        SELECT se.exerciseId AS exerciseId, COUNT(*) AS workingSets
+        FROM set_entries s
+        JOIN session_exercises se ON se.id = s.sessionExerciseId
+        JOIN workout_sessions ws ON ws.id = se.sessionId
+        JOIN exercises e ON e.id = se.exerciseId
+        WHERE ws.finishedAt IS NOT NULL AND ws.deletedAt IS NULL
+          AND se.deletedAt IS NULL AND s.deletedAt IS NULL AND e.deletedAt IS NULL
+          AND ws.startedAt >= :from AND ws.startedAt < :toExclusive
+          AND s.setType IN (:workRoles)
+        GROUP BY se.exerciseId
+        """,
+    )
+    fun observeWorkingSetsIn(
+        from: Long,
+        toExclusive: Long,
+        workRoles: List<String>,
+    ): Flow<List<ExerciseWorkingSetCount>>
+
+    /**
      * What the live plans prescribe for the lifts in [exerciseIds] (ROADMAP N39, B143).
      *
      * A flat read of the three plan tables, reduced to one row per plan in `planTargets`: the aggregation is
@@ -121,3 +162,9 @@ interface StatisticsDao {
     )
     fun observePlanTargets(exerciseIds: List<String>): Flow<List<PlanTargetRow>>
 }
+
+/** One movement's working-set count in the trained balance's window (ROADMAP N289). */
+data class ExerciseWorkingSetCount(
+    val exerciseId: String,
+    val workingSets: Int,
+)

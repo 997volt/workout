@@ -17,6 +17,9 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The balance screen can show what the log actually trained** (N289). A Plan/Trained toggle reuses the
+  planned-count rule — primary 1, each secondary 0.5, warm-ups excluded — over logged working sets in a 7- or
+  28-day window. It is a factual count list, with no target band or warning.
 - **Exercise statistics follow the app weight unit** (N295). Load, volume and estimated-1RM charts, readings
   and goals now format and parse in pounds when the app is set to pounds, while body weight, fat, muscle and lean
   mass stay in their metric-owned kilograms. The unit resolves at the screen from `LocalWeightUnit`, so changing

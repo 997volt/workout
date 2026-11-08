@@ -1,16 +1,18 @@
 package com.example.androidapp.domain.repository
 
 import com.example.androidapp.domain.DataResult
+import com.example.androidapp.domain.model.ExerciseWorkingSets
 import com.example.androidapp.domain.model.PlanTarget
 import com.example.androidapp.domain.model.WorkoutSummary
 import kotlinx.coroutines.flow.Flow
 import java.time.Instant
 
 /**
- * The questions the Statistics screen asks that no other screen does (ROADMAP N35).
+ * The questions the app asks of the logged history (ROADMAP N35, N289).
  *
  * Its own port rather than more methods on `WorkoutRepository`: statistics reads history to summarise it,
- * which is a different job from logging a set, and the workout repository is at its function ceiling.
+ * which is a different job from logging a set, and the workout repository is at its function ceiling. The
+ * trained balance's read is here for the same reason: it is an aggregate over the log, not a workout edit.
  */
 interface StatisticsRepository {
 
@@ -39,6 +41,21 @@ interface StatisticsRepository {
      * removed, so neither is a prescription the chart may draw.
      */
     fun observePlanTargets(exerciseIds: List<String>): Flow<List<PlanTarget>>
+
+    /**
+     * How many working sets each live movement was given between [from] (inclusive) and [toExclusive]
+     * (ROADMAP N289).
+     *
+     * **Counts, not sets**: the query groups by movement, so the balance view never loads a set per muscle.
+     * Only finished, live sessions count; warm-ups are excluded by the same `SetType.isWork` rule the plan
+     * uses (N112); deleted sets, exercises and sessions are not training. The muscles are deliberately not
+     * resolved here — a movement's own-or-category's muscle is a live library fact (N110), so the balance
+     * function takes the library and credits the counts.
+     */
+    fun observeWorkingSetsIn(
+        from: Instant,
+        toExclusive: Instant,
+    ): Flow<DataResult<List<ExerciseWorkingSets>>>
 
     /**
      * Records set between [from] (inclusive) and [to] (exclusive).
