@@ -23,6 +23,8 @@ import androidx.room.PrimaryKey
         // asks `IS NOT NULL`, this one asks a range on another column. Without it the record count reads
         // every set ever logged (ROADMAP B46).
         Index(value = ["startedAt"]),
+        // N282: a program's adherence/repeat reads filter by the template that started the session.
+        Index(value = ["templateId"]),
     ],
 )
 data class WorkoutSessionEntity(

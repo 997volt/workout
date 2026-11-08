@@ -715,16 +715,15 @@ private suspend fun buildProgramDocument(
     // slot survives it while `findById` hides the row — and a document carrying the slot without its workout is
     // one the app's own validator refuses (`DANGLING_SLOT_TEMPLATE`), which the receiving merge then drops in
     // silence. The screen does not show that day either: the document says what the program is.
-    val liveTemplates = programDao.findSlots(programId)
-        .map { it.templateId }
-        .distinct()
-        .mapNotNull { database.templateDao().findById(it) }
+    val allSlots = programDao.findSlots(programId)
+    val templateDao = database.templateDao()
+    val liveTemplates = templateDao.findLiveByIds(allSlots.map { it.templateId }.distinct())
     val kept = liveTemplates.mapTo(mutableSetOf()) { it.id }
-    val slots = programDao.findSlots(programId).filter { it.templateId in kept }
+    val slots = allSlots.filter { it.templateId in kept }
     val templateIds = slots.map { it.templateId }.distinct()
     val templates = liveTemplates
-    val templateExercises = templateIds.flatMap { database.templateDao().findTemplateExercises(it) }
-    val templateSets = templateIds.flatMap { database.templateSetDao().findTemplateSets(it) }
+    val templateExercises = templateDao.findTemplateExercisesForTemplates(templateIds)
+    val templateSets = database.templateSetDao().findTemplateSetsForTemplates(templateIds)
     // The definition of every exercise the plan names, so a receiving device can create the ones it
     // has never seen — a user's own exercise id means nothing anywhere else (N47) — **and of every row above
     // them** (N103, N110). A movement's category is part of its definition: a document naming a movement
@@ -846,11 +845,12 @@ private suspend fun mergeProgramDocument(
     ).count { it != IGNORED_ROW }
 
     val carriedTemplates = resolved.templates.map { it.id }.toSet()
-    val knownTemplates = (carriedTemplates + resolved.slots.map { it.templateId }).filter {
-        it in carriedTemplates || database.templateDao().findById(it) != null
-    }.toSet()
+    val referencedTemplateIds = (carriedTemplates + resolved.slots.map { it.templateId }).toList()
+    val liveTemplateIds = database.templateDao().findLiveByIds(referencedTemplateIds).mapTo(mutableSetOf()) { it.id }
+    val knownTemplates = referencedTemplateIds.filter { it in carriedTemplates || it in liveTemplateIds }.toSet()
     val referenced = resolved.templateExercises.map { it.exerciseId }.toSet()
-    val presentExercises = referenced.filter { database.exerciseDao().findById(it) != null }.toSet()
+    val presentExercises = database.exerciseDao().findLiveByIds(referenced.toList())
+        .mapTo(mutableSetOf()) { it.id }
 
     val templatesAdded = backupDao.insertTemplates(resolved.templates.map { it.toEntity() })
         .count { it != IGNORED_ROW }

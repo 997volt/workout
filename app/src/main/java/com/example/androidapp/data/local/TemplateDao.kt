@@ -290,6 +290,20 @@ interface TemplateDao {
     )
     suspend fun findTemplateExercises(templateId: String): List<TemplateExerciseEntity>
 
+    /** Live plans by id, for a program document's whole set (N282). */
+    @Query("SELECT * FROM templates WHERE id IN (:ids) AND deletedAt IS NULL")
+    suspend fun findLiveByIds(ids: List<String>): List<TemplateEntity>
+
+    /** Every live exercise of several plans, for a program document (N282). */
+    @Query(
+        """
+        SELECT * FROM template_exercises
+        WHERE templateId IN (:ids) AND deletedAt IS NULL
+        ORDER BY templateId ASC, position ASC
+        """,
+    )
+    suspend fun findTemplateExercisesForTemplates(ids: List<String>): List<TemplateExerciseEntity>
+
     /** One exercise of a plan, as seeding needs it. */
     @Suppress("LongParameterList")
     data class PlannedExercise(

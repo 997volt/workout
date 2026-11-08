@@ -1,6 +1,7 @@
 package com.example.androidapp.data.local
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.example.androidapp.domain.model.MeasurementKind
 
@@ -24,7 +25,11 @@ import com.example.androidapp.domain.model.MeasurementKind
  *
  * Sync-shaped like every other table (id, createdAt, updatedAt, deletedAt), so it rides the export.
  */
-@Entity(tableName = "measurements")
+@Entity(
+    tableName = "measurements",
+    // N282: the range and newest-entry reads filter and order by the measurement date.
+    indices = [Index(value = ["measuredAt"])],
+)
 data class MeasurementEntity(
     @PrimaryKey val id: String,
     /** When it was measured, which is the date the entry belongs to. */

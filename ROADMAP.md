@@ -26,12 +26,6 @@ stay in *Later* too, especially multi-week phases.
 
 ### 2.27 — correctness and scale
 
-- **N282 — Reads should stay cheap as the history grows.** `workout_sessions` has no index on `templateId`,
-  `measurements` has none on `measuredAt`, the program-document merge does an N+1 read per template/exercise,
-  and `buildProgramDocument` queries the program's slots twice. Fixed means a new migration adds the two
-  indices (if measurement/plan sizes justify it) and the merge reads its ids in one query; a query-plan or
-  timing test proves the change.
-
 - **N284 — One write-outcome abstraction for every editor.** B284's "close on the answer, not the tap" rule is
   implemented three ways (workout `SetWrite`, template `Boolean`, history a bare callback), which is how B340
   and B352 happened. Fixed means one `WriteOutcome<T>`/consume-once pattern used by the set, template and

@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **Program and history reads stop growing per row** (N282). Migration 20 adds the session `templateId` and
+  measurement `measuredAt` indices; a program document reads its templates, exercises and sets in three
+  queries instead of one per template, and the import checks its templates and movements in one read each.
+  A 360-degree query-plan test asserts SQLite selects both indices.
 - **Screens re-read the day on resume** (N286). Home, Measurements and the weekly review now take a
   `ZoneSource` beside `TimeSource` and refresh their screen-local day when they resume, so a screen left open
   across midnight shows the new plan and measurement row instead of yesterday's.

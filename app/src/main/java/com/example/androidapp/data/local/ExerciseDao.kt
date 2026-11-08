@@ -20,6 +20,10 @@ interface ExerciseDao {
     @Query("SELECT * FROM exercises WHERE id = :id AND deletedAt IS NULL")
     suspend fun findById(id: String): ExerciseEntity?
 
+    /** The live rows among [ids], in one read for a document's referenced movements (N282). */
+    @Query("SELECT * FROM exercises WHERE id IN (:ids) AND deletedAt IS NULL")
+    suspend fun findLiveByIds(ids: List<String>): List<ExerciseEntity>
+
     /**
      * Every row, **soft-deleted ones included** (ROADMAP N95).
      *

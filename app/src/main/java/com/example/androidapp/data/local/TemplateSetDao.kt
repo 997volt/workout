@@ -30,6 +30,19 @@ interface TemplateSetDao {
     )
     suspend fun findTemplateSets(templateId: String): List<TemplateSetEntity>
 
+    /** Every live planned set of several plans, for a program document (N282). */
+    @Query(
+        """
+        SELECT s.* FROM template_sets s
+        JOIN template_exercises e ON e.id = s.templateExerciseId
+        WHERE e.templateId IN (:ids)
+          AND e.deletedAt IS NULL
+          AND s.deletedAt IS NULL
+        ORDER BY e.templateId ASC, e.position ASC, s.setIndex ASC
+        """,
+    )
+    suspend fun findTemplateSetsForTemplates(ids: List<String>): List<TemplateSetEntity>
+
     /**
      * Every planned set of a template, ordered by the exercise's position then the
      * set's index (ROADMAP N14).
