@@ -94,7 +94,7 @@ signed APK and open a workout; otherwise record in the release notes that the mi
 runtime-tested. The release note must not call the dispatch "the shipping API".
 
 ```bash
-./tools/verify-release.py
+./tools/verify-release.py --release
 ```
 
 It asserts the four things by hand used to be, and prints the numbers the notes need:
@@ -145,6 +145,7 @@ step 5:
 
 ```
 **Version:** 1.3 (versionCode 4)
+**Commit:** <the release commit>
 **File:** workout-1.3.apk — <bytes> bytes
 **SHA-256:** <from step 5>
 **Requires:** Android 8.0+ (API 26)
@@ -168,7 +169,7 @@ the network and a token, so it is opt-in — it downloads the APK and mapping wi
 to the files just verified:
 
 ```bash
-./tools/verify-release.py --remote v1.3
+./tools/verify-release.py --remote v1.3 --commit <the release commit>
 ```
 
 **Do not skip it because the upload looked right.** The two failures it catches are a wrong file

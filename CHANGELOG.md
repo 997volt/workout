@@ -17,6 +17,14 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The release verifier checks version monotonicity and tag binding** (N276). `--release` refuses a
+  `versionCode` that does not exceed the latest `v*` tag; `--remote` accepts the release commit recorded in
+  the notes and verifies the tag points at it. The keystore password is passed to `keytool` through the
+  environment rather than its argv.
+
+
+### Fixed
+
 - **The remote verifier compares the mapping's stable identity** (B388 follow-up). R8's mapping text is not
   byte-stable across build runs — obfuscated lambda names move — so the first implementation failed a valid
   release mapping. `verify-release.py --remote` now compares `pg_map_id`, the header R8 uses to identify the

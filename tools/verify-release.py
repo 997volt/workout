@@ -40,6 +40,7 @@ import sys
 import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
+TAG = re.compile(r"^v(\d+)\.(\d+)(?:\.(\d+))?$")
 # A release machine signs and writes app-release.apk; CI has no keystore and writes only the
 # unsigned fallback, so the version and hash checks have to read either name (B131).
 SIGNED_APK = ROOT / "app/build/outputs/apk/release/app-release.apk"
@@ -174,6 +175,10 @@ def keystore_certificate(properties: dict[str, str]) -> str:
         raise CheckFailed(f"keystore {store} not found (see README: Install on your own phone)")
     keytool = pathlib.Path(os.environ.get("JAVA_HOME", "")) / "bin/keytool"
     keytool = str(keytool) if keytool.is_file() else "keytool"
+    # N276: the password is read from keystore.properties but handed to keytool through the environment,
+    # never as an argument a process listing could expose.
+    environment = os.environ.copy()
+    environment["WORKOUT_KEYSTORE_PASSWORD"] = properties.get("storePassword", "")
     listing = subprocess.run(
         [
             keytool,
@@ -181,14 +186,15 @@ def keystore_certificate(properties: dict[str, str]) -> str:
             "-v",
             "-keystore",
             str(store),
-            "-storepass",
-            properties.get("storePassword", ""),
+            "-storepass:env",
+            "WORKOUT_KEYSTORE_PASSWORD",
             "-alias",
             properties.get("keyAlias", ""),
         ],
         capture_output=True,
         text=True,
         check=False,
+        env=environment,
     )
     # keytool prints the password prompt to stdout on some builds, so the failure goes by return
     # code rather than by matching text — a mismatch here is never a wording change.
@@ -292,6 +298,60 @@ def verify_mapping(tag: str, expected_name: str) -> None:
         print(f"mapping     {asset} on {tag} is present")
 
 
+def git_output(*args: str) -> str:
+    result = subprocess.run(
+        ["git", *args],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        raise CheckFailed(f"git {' '.join(args)} failed:\n{result.stderr.strip()}")
+    return result.stdout.strip()
+
+
+def previous_tag() -> tuple[str, int] | None:
+    """The numerically newest version tag and its versionCode (N276)."""
+    tags = git_output("tag", "--list", "v*").splitlines()
+    versions = [(TAG.match(tag), tag) for tag in tags]
+    parsed = [(tuple(int(part or 0) for part in match.groups()), tag) for match, tag in versions if match]
+    if not parsed:
+        return None
+    _, tag = max(parsed, key=lambda item: item[0])
+    properties = git_output("show", f"{tag}:version.properties")
+    code = next(
+        (line.partition("=")[2].strip() for line in properties.splitlines() if line.startswith("versionCode=")),
+        "",
+    )
+    if not code.isdigit():
+        raise CheckFailed(f"{tag} has no numeric versionCode")
+    return tag, int(code)
+
+
+def check_monotonic_version(expected_code: str) -> None:
+    """The new versionCode is strictly greater than the last release (N276)."""
+    previous = previous_tag()
+    if previous is None:
+        raise CheckFailed("N276: no earlier v* release tag to compare against")
+    tag, previous_code = previous
+    if int(expected_code) <= previous_code:
+        raise CheckFailed(
+            f"versionCode {expected_code} is not greater than {tag}'s {previous_code}",
+        )
+    print(f"version     {expected_code} > {tag}'s {previous_code}")
+
+
+def check_tag_binding(tag: str, built_commit: str) -> None:
+    """The local release tag points at the commit recorded in the notes (N276)."""
+    tag_commit = git_output("rev-list", "-n", "1", tag)
+    if tag_commit != built_commit:
+        raise CheckFailed(
+            f"N276: tag {tag} points at {tag_commit[:12]}, not the recorded {built_commit[:12]}",
+        )
+    print(f"tag         {tag} points at the recorded {built_commit[:12]}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -300,9 +360,19 @@ def main() -> int:
         help="the built release APK (default: the signed one, else CI's unsigned one)",
     )
     parser.add_argument(
+        "--release",
+        action="store_true",
+        help="also require the versionCode to exceed the latest release tag (N276)",
+    )
+    parser.add_argument(
         "--remote",
         metavar="TAG",
         help="also check the asset published against this tag (needs gh)",
+    )
+    parser.add_argument(
+        "--commit",
+        metavar="SHA",
+        help="the release commit recorded in the notes; verifies the tag points at it (N276)",
     )
     args = parser.parse_args()
     apk = pathlib.Path(args.apk) if args.apk else default_apk()
@@ -324,6 +394,8 @@ def main() -> int:
                 f"{expected_name} ({expected_code}) — rebuild after the bump",
             )
         print(f"version     {name} ({code}) — matches version.properties")
+        if args.release:
+            check_monotonic_version(code)
 
         verified_certificate: str | None = None
         signing = read_properties(KEYSTORE_FILE) if KEYSTORE_FILE.is_file() else {}
@@ -365,6 +437,8 @@ def main() -> int:
             )
             print(f"published   {ASSET.format(version=expected_name)} on {args.remote} is this APK")
             verify_mapping(args.remote, expected_name)
+            if args.commit:
+                check_tag_binding(args.remote, args.commit)
     except CheckFailed as failure:
         print(f"\nFAIL: {failure}", file=sys.stderr)
         return 1

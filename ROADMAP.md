@@ -17,20 +17,12 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next — release verification, correctness, then features
 
-The order from the 2.26 review. **N276** comes first because every later release depends on the tag and version
-check being machine-held. **2.27** is the correctness-and-scale batch. Features follow only after that, in the
-order below; they are product candidates, not a commitment to one release.
+The order from the 2.26 review. N276 is implemented in [Unreleased] as the release-verifier prerequisite.
+**2.27** is the correctness-and-scale batch. Features follow only after that, in the order below; they are
+product candidates, not a commitment to one release.
 
 **B358 stays in *Later*** until a gesture-navigation and a three-button device are available; **N291–N294**
 stay in *Later* too, especially multi-week phases.
-
-### First — release verification
-
-- **N276 — Verify release monotonicity and tag binding.** `verify-release.py` compares the APK to
-  `version.properties` but not to the previous tag, so a typo that lowers `versionCode` passes; the "tag points
-  at the commit that built the APK" rule is procedural. Fixed means the script reads the latest tag's version
-  and requires a strictly greater `versionCode`, the release notes record the built commit, and the
-  keystore password is read from the environment or a file rather than passed on `keytool`'s argv.
 
 ### 2.27 — correctness and scale
 
