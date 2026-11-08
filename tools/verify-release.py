@@ -53,6 +53,13 @@ ASSET = "workout-{version}.apk"
 # The mapping is what makes a release stack trace readable; the release keeps a copy (N278, B388).
 MAPPING = ROOT / "app/build/outputs/mapping/release/mapping.txt"
 MAPPING_ASSET = "mapping-{version}.txt"
+MAPPING_ID = re.compile(r"^# pg_map_id: (\S+)$", re.MULTILINE)
+
+
+def mapping_id(path: pathlib.Path) -> str | None:
+    """The stable identity R8 puts in the mapping header (B388)."""
+    match = MAPPING_ID.search(path.read_text())
+    return match.group(1) if match else None
 
 
 def default_apk() -> pathlib.Path:
@@ -273,10 +280,15 @@ def verify_mapping(tag: str, expected_name: str) -> None:
         published = pathlib.Path(directory) / asset
         if not published.is_file() or published.stat().st_size == 0:
             raise CheckFailed(f"{tag} has no non-empty {asset}")
-        if MAPPING.is_file() and sha256(published) != sha256(MAPPING):
-            raise CheckFailed(
-                f"the published {asset} is not the mapping built with this release",
-            )
+        if MAPPING.is_file():
+            # The mapping text is not byte-stable across R8 runs (obfuscated lambda names move), but
+            # `pg_map_id` identifies the mapping for this build. Compare that, not the whole file.
+            local_id = mapping_id(MAPPING)
+            remote_id = mapping_id(published)
+            if local_id is not None and local_id != remote_id:
+                raise CheckFailed(
+                    f"the published {asset} is not the mapping built with this release",
+                )
         print(f"mapping     {asset} on {tag} is present")
 
 

@@ -13,6 +13,15 @@ repeated here.
 **1.0–1.18 live in [CHANGELOG-1.x.md](CHANGELOG-1.x.md)**, kept whole rather than deleted because the
 id a 1.x commit names is still looked up by it. This file carries the current release.
 
+## [Unreleased]
+
+### Fixed
+
+- **The remote verifier compares the mapping's stable identity** (B388 follow-up). R8's mapping text is not
+  byte-stable across build runs — obfuscated lambda names move — so the first implementation failed a valid
+  release mapping. `verify-release.py --remote` now compares `pg_map_id`, the header R8 uses to identify the
+  mapping, rather than the whole file hash.
+
 ## [2.26] — 2026-11-08 (versionCode 47)
 
 ### Changed
