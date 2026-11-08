@@ -11,7 +11,6 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.io.File
 
 /**
  * The document seam, against a real `ContentResolver` (ROADMAP B158, B159).
