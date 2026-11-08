@@ -1265,6 +1265,10 @@ the rule; that one argues it.
   published distribution hash; `gradle/verification-metadata.xml` records the SHA-256 of every dependency
   artifact. Gradle verifies them on every resolve, and CI makes that explicit on the release runtime classpath.
   A new artifact is a deliberate metadata change rather than a silent download.
+- **An exported-component claim is checked on the merged APK** (B387). Source components are only the ones
+  the app writes; dependencies add providers, services and receivers. The release check allowlists the launcher
+  and `ProfileInstallReceiver` only while the latter keeps `android.permission.DUMP`; anything else exported
+  fails the build.
 - **A test-only component must not ship in the release** (N281). The FileProvider existed solely so
   `DocumentIoTest` could hand `DocumentIo` a real content URI; shipping it in the release declared an unused
   surface. It now lives in the debug manifest and resources, which the instrumented test runs against; the

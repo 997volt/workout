@@ -21,13 +21,6 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 The 2.26 batch is implemented but unreleased. Review found two release-integrity gaps, one accepted-scope
 question and two tooling/test weaknesses. **B387 and B388 must be fixed before the 2.26 tag.**
 
-- **B387 — The merged APK must be checked for exported components, not only the source manifest.** The source
-  test sees only `MainActivity`, but the release manifest also contains AndroidX's
-  `profileinstaller.ProfileInstallReceiver`, exported with `android.permission.DUMP`. The source test named
-  `onlyTheLauncher_isExported` therefore does not hold for the artifact, and CI checks permissions but not
-  exported components. Fixed means a merged-manifest check that allows the profile receiver only with its
-  `DUMP` guard, with the source test selecting the launcher by intent filter rather than position.
-
 - **B388 — Verify the release mapping is actually attached.** `verify-release.py --remote` checks only the APK;
   the mapping upload is a manual step in RELEASING.md, so a skipped or failed upload passes silently and leaves
   only the 90-day CI artifact. Fixed means the remote verifier asserts a non-empty `mapping-<version>.txt` is

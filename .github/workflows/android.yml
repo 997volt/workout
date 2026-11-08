@@ -158,7 +158,7 @@ jobs:
 
       # N275. The source manifest declares no permissions, but AndroidX adds one signature-level permission to
       # the merged APK. Check the actual artifact, not only the file a reviewer edits.
-      - name: The merged release declares no user-granted permission
+      - name: The merged release keeps its permission and exported-component invariants
         run: |
           APK=app/build/outputs/apk/release/app-release.apk
           [ -f "$APK" ] || APK=app/build/outputs/apk/release/app-release-unsigned.apk
