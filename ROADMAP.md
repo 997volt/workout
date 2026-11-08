@@ -26,11 +26,6 @@ stay in *Later* too, especially multi-week phases.
 
 ### 2.27 — correctness and scale
 
-- **N284 — One write-outcome abstraction for every editor.** B284's "close on the answer, not the tap" rule is
-  implemented three ways (workout `SetWrite`, template `Boolean`, history a bare callback), which is how B340
-  and B352 happened. Fixed means one `WriteOutcome<T>`/consume-once pattern used by the set, template and
-  history editors, with the sticky-state and cross-dialog regressions covered by shared tests.
-
 - **N283 — Test the orchestration ViewModels that have no direct tests.** `WorkoutsHomeViewModel` (discard,
   skip, substitute), `WorkoutHistoryViewModel` (query/filter), `ProgramEditorViewModel` (write/export),
   `DiagnosticsViewModel` (retry), `ProgramBalanceViewModel`, `HousekeepingViewModel` and

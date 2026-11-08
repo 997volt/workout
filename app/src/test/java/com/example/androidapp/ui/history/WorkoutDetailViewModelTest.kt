@@ -33,7 +33,7 @@ import com.example.androidapp.domain.repository.StartedSession
 import com.example.androidapp.domain.repository.TemplateRepository
 import com.example.androidapp.domain.repository.TemplateSetEdit
 import com.example.androidapp.domain.repository.WorkoutRepository
-import com.example.androidapp.ui.workout.SetWrite
+import com.example.androidapp.ui.components.WriteOutcome
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -101,12 +101,12 @@ class WorkoutDetailViewModelTest {
 
         viewModel.onUpdateSet("set1", reps = 8, weightGrams = 100_000L)
         advanceUntilIdle()
-        assertEquals(SetWrite.Written("set1"), viewModel.setWriteOutcome.value)
+        assertEquals(WriteOutcome.Written("set1"), viewModel.setWriteOutcome.value)
 
         repository.updateSetResult = DataResult.Failure(DataError.Storage(IllegalStateException("disk full")))
         viewModel.onUpdateSet("set1", reps = 9, weightGrams = 100_000L)
         advanceUntilIdle()
-        assertTrue(viewModel.setWriteOutcome.value is SetWrite.Refused)
+        assertTrue(viewModel.setWriteOutcome.value is WriteOutcome.Refused)
         assertEquals("set1", repository.updatedSetId)
     }
 

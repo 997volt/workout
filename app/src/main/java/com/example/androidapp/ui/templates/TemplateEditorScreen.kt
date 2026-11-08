@@ -85,6 +85,7 @@ import com.example.androidapp.ui.components.TemplateSetDialog
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.TopBarTitle
 import com.example.androidapp.ui.components.WarmUpAction
+import com.example.androidapp.ui.components.WriteOutcome
 import com.example.androidapp.ui.components.exerciseWeightUnit
 import com.example.androidapp.ui.components.label
 import com.example.androidapp.ui.components.rememberRowFold
@@ -182,7 +183,7 @@ fun TemplateEditorScreen(
     onBack: () -> Unit,
     onAddWarmUpSets: (String, Long) -> Unit,
     /** The last planned-set write's answer, so its editor closes on success only (B284). */
-    setSaveOutcome: String?,
+    setSaveOutcome: WriteOutcome<String>?,
     onDismissSetSave: () -> Unit,
     onDismissMessage: () -> Unit,
     onAddSet: (String, TemplateSetEdit) -> Unit,
@@ -383,7 +384,7 @@ private fun TemplateEditorBody(
     onOpenExercise: (String) -> Unit,
     onMoveExercise: (String, Int) -> Unit,
     /** The last planned-set write's answer, so its editor closes on success only (B284). */
-    setSaveOutcome: String?,
+    setSaveOutcome: WriteOutcome<String>?,
     onDismissSetSave: () -> Unit,
     onAddSet: (String, TemplateSetEdit) -> Unit,
     onAddSets: (String, Int, TemplateSetEdit) -> Unit,
@@ -530,7 +531,7 @@ private fun TemplateExerciseBlock(
     onRemove: () -> Unit,
     onOpenExercise: () -> Unit,
     /** The last planned-set write's answer, so the editor closes on success only (B284). */
-    setSaveOutcome: String?,
+    setSaveOutcome: WriteOutcome<String>?,
     onDismissSetSave: () -> Unit,
     onAddSet: (TemplateSetEdit) -> Unit,
     onUpdateSet: (String, TemplateSetEdit) -> Unit,
@@ -552,7 +553,7 @@ private fun TemplateExerciseBlock(
     val edited = exercise.sets.firstOrNull { it.id == open }
     val dismissSave by rememberUpdatedState(onDismissSetSave)
     LaunchedEffect(setSaveOutcome) {
-        if (open != null && setSaveOutcome == open) {
+        if (open != null && setSaveOutcome == WriteOutcome.Written(open)) {
             open = null
             dismissSave()
         }

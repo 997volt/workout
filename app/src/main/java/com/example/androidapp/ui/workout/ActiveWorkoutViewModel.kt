@@ -45,6 +45,7 @@ import com.example.androidapp.domain.repository.TemplateRepository
 import com.example.androidapp.domain.repository.TemplateSetEdit
 import com.example.androidapp.domain.repository.WorkoutRepository
 import com.example.androidapp.ui.components.SetEdit
+import com.example.androidapp.ui.components.WriteOutcome
 import com.example.androidapp.ui.components.setNumbers
 import com.example.androidapp.ui.navigation.ActiveWorkout
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -104,17 +105,9 @@ data class SetRow(
 )
 
 /**
- * The answer to one set edit (ROADMAP B284).
- *
- * The editor closes on this rather than on the tap: a refusal — a rung boundary, a load the plan refuses —
- * must leave the dialog and the values where they are, which is the rule the goal editor already follows
- * (B234).
+ * The answer to one set edit (ROADMAP B284/N284): the shared write outcome names the set.
  */
-sealed interface SetWrite {
-    data class Written(val setId: String) : SetWrite
-
-    data class Refused(val setId: String, val error: DataError) : SetWrite
-}
+typealias SetWrite = WriteOutcome<String>
 
 /**
  * A bodyweight set held while the lifter says what they weigh (ROADMAP N219).
@@ -1147,8 +1140,8 @@ class ActiveWorkoutViewModel @Inject constructor(
                 )
                 handle(result)
                 setWrite.value = when (result) {
-                    is DataResult.Success -> SetWrite.Written(setId)
-                    is DataResult.Failure -> SetWrite.Refused(setId, result.error)
+                    is DataResult.Success -> WriteOutcome.Written(setId)
+                    is DataResult.Failure -> WriteOutcome.Refused(setId, result.error)
                 }
             }
         }

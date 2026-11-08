@@ -17,6 +17,9 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The set, template and history editors share one write answer** (N284). `WriteOutcome<T>` names the row
+  that was written and carries a refusal's error; the workout and history set editors keep their existing
+  `SetWrite` name as an alias, and the template planned-set editor now uses the same type instead of a bare id.
 - **Program and history reads stop growing per row** (N282). Migration 20 adds the session `templateId` and
   measurement `measuredAt` indices; a program document reads its templates, exercises and sets in three
   queries instead of one per template, and the import checks its templates and movements in one read each.

@@ -42,6 +42,7 @@ import com.example.androidapp.domain.model.jointSiteKey
 import com.example.androidapp.domain.model.pendingProgressionFor
 import com.example.androidapp.ui.components.SetEdit
 import com.example.androidapp.ui.components.TestTags
+import com.example.androidapp.ui.components.WriteOutcome
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -92,7 +93,7 @@ class ActiveWorkoutScreenTest {
     )
 
     /** The last set edit's answer, or null for "nothing has been written yet" (B284). */
-    private val setWriteOutcome = mutableStateOf<SetWrite?>(null)
+    private val setWriteOutcome = mutableStateOf<WriteOutcome<String>?>(null)
 
     private fun setScreen(
         state: ActiveWorkoutUiState,
@@ -1097,7 +1098,7 @@ class ActiveWorkoutScreenTest {
     }
 
     @Test
-    fun theNextSet_isStatedByFields_andLogSetWritesThem() {
+    fun theNextSet_isStatedByFields_andLogWriteOutcomesThem() {
         // ROADMAP N59: the values are on screen before anything is written, and the button beside
         // them writes exactly those values — B7's display-agrees-with-storage, back on this path.
         val logged = mutableListOf<Pair<String, SetEdit>>()

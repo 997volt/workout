@@ -1265,6 +1265,9 @@ the rule; that one argues it.
   published distribution hash; `gradle/verification-metadata.xml` records the SHA-256 of every dependency
   artifact. Gradle verifies them on every resolve, and CI makes that explicit on the release runtime classpath.
   A new artifact is a deliberate metadata change rather than a silent download.
+- **One write outcome names the row, for every editor** (N284). A shared `WriteOutcome<T>` — `Written(value)` or
+  `Refused(value, error)` — replaces the three shapes that let B340 and B352 happen. The host clears it before
+  the next write, so an equal-success is a new emission; a refusal stays observable and keeps the editor open.
 - **A history-shaped read is a bounded number of queries** (N282). The program document and import merge
   should not cost one query per template or movement as a library grows; the two indices cover the session
   template and measurement date filters, and the document is assembled from whole-id sets. A query-plan test

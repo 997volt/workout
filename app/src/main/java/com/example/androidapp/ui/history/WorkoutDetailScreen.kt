@@ -65,6 +65,7 @@ import com.example.androidapp.ui.components.LocalWeightUnit
 import com.example.androidapp.ui.components.SetEditorDialog
 import com.example.androidapp.ui.components.SetNumber
 import com.example.androidapp.ui.components.TestTags
+import com.example.androidapp.ui.components.WriteOutcome
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.components.exerciseWeightUnit
 import com.example.androidapp.ui.components.label
@@ -891,7 +892,7 @@ private fun EditSetDialog(
     var saving by rememberSaveable(set.id) { mutableStateOf(false) }
     val dismiss by rememberUpdatedState(onDismiss)
     LaunchedEffect(setWriteOutcome) {
-        if (saving && setWriteOutcome == SetWrite.Written(set.id)) {
+        if (saving && setWriteOutcome == WriteOutcome.Written(set.id)) {
             saving = false
             dismiss()
         }

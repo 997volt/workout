@@ -52,6 +52,7 @@ import com.example.androidapp.domain.repository.TemplateSetEdit
 import com.example.androidapp.domain.repository.WorkoutRepository
 import com.example.androidapp.ui.components.DEFAULT_RPE_HALVES
 import com.example.androidapp.ui.components.SetEdit
+import com.example.androidapp.ui.components.WriteOutcome
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -1628,7 +1629,7 @@ class ActiveWorkoutViewModelTest {
         viewModel.onUpdateSet(logged.id, reps = 3, weightGrams = 90_000)
         settle()
 
-        assertEquals(SetWrite.Written(logged.id), viewModel.setWriteOutcome.value)
+        assertEquals(WriteOutcome.Written(logged.id), viewModel.setWriteOutcome.value)
     }
 
     @Test
@@ -1645,7 +1646,7 @@ class ActiveWorkoutViewModelTest {
         viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, offeredSet(viewModel))
         settle()
         val logged = repository.sets.value.single()
-        val answers = mutableListOf<SetWrite?>()
+        val answers = mutableListOf<WriteOutcome<String>?>()
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             viewModel.setWriteOutcome.collect { answers += it }
         }
@@ -1657,7 +1658,7 @@ class ActiveWorkoutViewModelTest {
         settle()
 
         assertEquals(
-            listOf(null, SetWrite.Written(logged.id), null, SetWrite.Written(logged.id)),
+            listOf(null, WriteOutcome.Written(logged.id), null, WriteOutcome.Written(logged.id)),
             answers,
         )
     }
@@ -1681,8 +1682,8 @@ class ActiveWorkoutViewModelTest {
         settle()
 
         val outcome = viewModel.setWriteOutcome.value
-        assertEquals(SetWrite.Refused::class.java, outcome?.javaClass)
-        assertEquals(logged.id, (outcome as SetWrite.Refused).setId)
+        assertEquals(WriteOutcome.Refused::class.java, outcome?.javaClass)
+        assertEquals(logged.id, (outcome as WriteOutcome.Refused).value)
     }
 
     @Test
@@ -2270,7 +2271,7 @@ class ActiveWorkoutViewModelTest {
          * overlap here. The lock's whole promise is that this never exceeds one, and an undo that is a
          * write too is the case the first cut left out.
          */
-        var maxConcurrentSetWrites = 0
+        var maxConcurrentWriteOutcomes = 0
         private var setWritesInFlight = 0
 
         /** What the next added exercise carries, so N5's plumbing can be asserted. */
@@ -2499,7 +2500,7 @@ class ActiveWorkoutViewModelTest {
             loggedDurations += durationSeconds
             // The write is in flight: a second log's read can land before this row does (B126).
             setWritesInFlight++
-            maxConcurrentSetWrites = maxOf(maxConcurrentSetWrites, setWritesInFlight)
+            maxConcurrentWriteOutcomes = maxOf(maxConcurrentWriteOutcomes, setWritesInFlight)
             try {
                 if (yieldBeforeWritingSet) yield()
                 sets.value = sets.value + SetEntry(
@@ -3062,7 +3063,7 @@ class ActiveWorkoutViewModelTest {
         assertEquals(
             "one set write at a time, the undo included",
             1,
-            repository.maxConcurrentSetWrites,
+            repository.maxConcurrentWriteOutcomes,
         )
     }
 

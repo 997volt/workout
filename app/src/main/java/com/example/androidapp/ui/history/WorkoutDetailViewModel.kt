@@ -16,6 +16,7 @@ import com.example.androidapp.domain.model.loadGrams
 import com.example.androidapp.domain.repository.ProgramRepository
 import com.example.androidapp.domain.repository.TemplateRepository
 import com.example.androidapp.domain.repository.WorkoutRepository
+import com.example.androidapp.ui.components.WriteOutcome
 import com.example.androidapp.ui.navigation.WorkoutDetail
 import com.example.androidapp.ui.workout.SetWrite
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -331,12 +332,12 @@ class WorkoutDetailViewModel @Inject constructor(
             when (result) {
                 is DataResult.Success -> {
                     lastError.value = null
-                    _setWrite.value = SetWrite.Written(setId)
+                    _setWrite.value = WriteOutcome.Written(setId)
                 }
 
                 is DataResult.Failure -> {
                     lastError.value = result.error
-                    _setWrite.value = SetWrite.Refused(setId, result.error)
+                    _setWrite.value = WriteOutcome.Refused(setId, result.error)
                 }
             }
         }

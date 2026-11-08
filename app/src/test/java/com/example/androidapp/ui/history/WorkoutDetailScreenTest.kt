@@ -35,7 +35,7 @@ import com.example.androidapp.domain.model.SoreMuscle
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.WorkoutSession
 import com.example.androidapp.ui.components.TestTags
-import com.example.androidapp.ui.workout.SetWrite
+import com.example.androidapp.ui.components.WriteOutcome
 import com.google.common.truth.Truth.assertThat
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -372,7 +372,7 @@ class WorkoutDetailScreenTest {
         programs: List<WorkoutProgram> = emptyList(),
         onScheduleTemplate: (String, DayOfWeek?) -> Unit = { _, _ -> },
         movedDay: LocalDate? = null,
-        setWriteOutcome: androidx.compose.runtime.MutableState<SetWrite?>? = null,
+        setWriteOutcome: androidx.compose.runtime.MutableState<WriteOutcome<String>?>? = null,
     ) {
         composeTestRule.setContent {
             WorkoutDetailScreen(
@@ -459,12 +459,12 @@ class WorkoutDetailScreenTest {
     fun aRefusedHistorySetEdit_keepsTheEditorAndItsValue() {
         // B350: the dialog closes on Written(setId), not on the tap. A refusal has to leave the correction
         // on screen.
-        val outcome = mutableStateOf<SetWrite?>(null)
+        val outcome = mutableStateOf<WriteOutcome<String>?>(null)
         var savedReps: Int? = null
         setScreen(
             onUpdateSet = { _, reps, _, _, _, _, _, _ ->
                 savedReps = reps
-                outcome.value = SetWrite.Refused("set1", DataError.Invalid("refused"))
+                outcome.value = WriteOutcome.Refused("set1", DataError.Invalid("refused"))
             },
             setWriteOutcome = outcome,
         )

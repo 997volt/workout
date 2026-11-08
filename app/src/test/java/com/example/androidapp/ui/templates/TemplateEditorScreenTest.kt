@@ -33,6 +33,7 @@ import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.WorkoutTemplate
 import com.example.androidapp.domain.repository.TemplateSetEdit
 import com.example.androidapp.ui.components.TestTags
+import com.example.androidapp.ui.components.WriteOutcome
 import com.google.common.truth.Truth.assertThat
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -110,7 +111,7 @@ class TemplateEditorScreenTest {
     }
 
     /** The last planned-set write's answer; null is "nothing has been written yet" (B284). */
-    private val setSaveOutcome = mutableStateOf<String?>(null)
+    private val setSaveOutcome = mutableStateOf<WriteOutcome<String>?>(null)
     private val onDismissSetSave: () -> Unit = { setSaveOutcome.value = null }
 
     private fun setScreen(
@@ -209,10 +210,10 @@ class TemplateEditorScreenTest {
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_SAVE).assertIsDisplayed()
 
         // A different block's success must not close this one (B352); only this dialog's own id does.
-        composeTestRule.runOnIdle { setSaveOutcome.value = "another-set" }
+        composeTestRule.runOnIdle { setSaveOutcome.value = WriteOutcome.Written("another-set") }
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_SAVE).assertIsDisplayed()
 
-        composeTestRule.runOnIdle { setSaveOutcome.value = ADDING_SET_ID }
+        composeTestRule.runOnIdle { setSaveOutcome.value = WriteOutcome.Written(ADDING_SET_ID) }
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_SAVE).assertDoesNotExist()
     }
 

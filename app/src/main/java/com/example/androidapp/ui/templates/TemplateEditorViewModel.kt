@@ -15,6 +15,7 @@ import com.example.androidapp.domain.model.warmUpRampFor
 import com.example.androidapp.domain.repository.SettingsRepository
 import com.example.androidapp.domain.repository.TemplateRepository
 import com.example.androidapp.domain.repository.TemplateSetEdit
+import com.example.androidapp.ui.components.WriteOutcome
 import com.example.androidapp.ui.navigation.TemplateEditor
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -408,9 +409,9 @@ class TemplateEditorViewModel @Inject constructor(
         }
     }
 
-    /** The planned set the last write made, so only that set's editor closes (B352). */
-    private val setSave = MutableStateFlow<String?>(null)
-    val setSaveOutcome: StateFlow<String?> = setSave.asStateFlow()
+    /** The planned set the last write made, so only that set's editor closes (B352/N284). */
+    private val setSave = MutableStateFlow<WriteOutcome<String>?>(null)
+    val setSaveOutcome: StateFlow<WriteOutcome<String>?> = setSave.asStateFlow()
 
     /** Takes the outcome once its editor has closed, so the next one does not close itself. */
     fun onDismissSetSave() {
@@ -423,7 +424,10 @@ class TemplateEditorViewModel @Inject constructor(
             setSave.value = null
             val result = action()
             error.value = (result as? DataResult.Failure)?.error
-            setSave.value = if (result is DataResult.Success) setId else null
+            setSave.value = when (result) {
+                is DataResult.Success -> WriteOutcome.Written(setId)
+                is DataResult.Failure -> WriteOutcome.Refused(setId, result.error)
+            }
         }
     }
 
