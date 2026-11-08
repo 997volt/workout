@@ -21,10 +21,6 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 The 2.26 batch is implemented but unreleased. Review found two release-integrity gaps, one accepted-scope
 question and two tooling/test weaknesses. **B387 and B388 must be fixed before the 2.26 tag.**
 
-- **B389 — Make the test provider genuinely test-only.** N281 moved the FileProvider to the debug variant; the
-  release is clean and CI passes, but any debug APK still carries the provider. Fixed means the URI comes from a
-  test-local provider in the instrumented APK, with no provider in either the debug or release application.
-
 - **N297 — The permission checker should not pick an arbitrary `aapt2`.** Its fallback takes the
   lexicographically last build-tools directory; CI had to pass the pinned 36.0.0 explicitly after 37 failed.
   Fixed means prefer the project-pinned 36.0.0 or try candidates until one works.

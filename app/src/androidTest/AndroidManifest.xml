@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!--
+      B389: the provider lives in the instrumented APK, not in the debug or release application. It is
+      exported for this test only and opens one cache subdirectory; no production build carries it.
+    -->
+    <application>
+        <provider
+            android:name="com.example.androidapp.platform.TestDocumentProvider"
+            android:authorities="io.github.volt997.workout.test.fileprovider"
+            android:exported="true" />
+    </application>
+</manifest>

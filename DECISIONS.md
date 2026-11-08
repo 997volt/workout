@@ -1272,10 +1272,10 @@ the rule; that one argues it.
   the app writes; dependencies add providers, services and receivers. The release check allowlists the launcher
   and `ProfileInstallReceiver` only while the latter keeps `android.permission.DUMP`; anything else exported
   fails the build.
-- **A test-only component must not ship in the release** (N281). The FileProvider existed solely so
-  `DocumentIoTest` could hand `DocumentIo` a real content URI; shipping it in the release declared an unused
-  surface. It now lives in the debug manifest and resources, which the instrumented test runs against; the
-  release manifest carries no provider.
+- **A test-only component belongs in the instrumentation APK** (N281, B389). The provider existed solely so
+  `DocumentIoTest` could hand `DocumentIo` a real content URI. It is now a small `ContentProvider` in the
+  instrumented APK with one cache directory; neither the debug nor the release application carries a provider.
+  The instrumented APK is not a shippable artifact, which is the line that matters.
 - **A message that must centre in a page is given the page's constraints** (B384). A child under
   `verticalScroll` cannot see the viewport height; a fixed fallback only centres inside its own box. Full-body
   loading/error states now sit outside the scroll, and a lazy-item overload uses `fillParentMaxSize`, which is
