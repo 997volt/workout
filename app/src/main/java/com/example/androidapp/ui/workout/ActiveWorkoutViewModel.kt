@@ -12,7 +12,6 @@ import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.getOrNull
 import com.example.androidapp.domain.model.Activity
 import com.example.androidapp.domain.model.JointPain
-import com.example.androidapp.domain.model.LatestWeight
 import com.example.androidapp.domain.model.PendingProgression
 import com.example.androidapp.domain.model.PerformedSetSpec
 import com.example.androidapp.domain.model.PersonalRecordMoment
@@ -57,7 +56,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.time.Duration
-import java.time.ZoneId
 import javax.inject.Inject
 
 /**
@@ -383,6 +381,16 @@ class ActiveWorkoutViewModel @Inject constructor(
         initialValue = WorkoutClock(),
     )
 
+    /** The history read this session opens with (ROADMAP N73, P3.8), kept in its own file (N285). */
+    private val previousPerformanceSeeder = PreviousPerformanceSeeder(
+        sessionExercises = sessionExercises,
+        activeSession = activeSession,
+        previousByExercise = previousByExercise,
+        slotId = slotId,
+        programRepository = programRepository,
+        workoutRepository = workoutRepository,
+    )
+
     init {
         viewModelScope.launch {
             // Repeating is the same open, with one finished workout's exercises as the seed instead
@@ -413,38 +421,10 @@ class ActiveWorkoutViewModel @Inject constructor(
             }
         }
 
-        // Load each exercise's previous performance once, when it first appears.
-        // Doing it here rather than per recomposition keeps the next-set prefill
-        // from re-querying on every tick of the elapsed clock.
+        // Load each exercise's previous performance once, when it first appears. The read itself lives in
+        // PreviousPerformanceSeeder.kt with the rest of the history lookup (ROADMAP N285).
         viewModelScope.launch {
-            sessionExercises.collect { exercises ->
-                val sessionId = activeSession.replayCache.firstOrNull()?.id ?: return@collect
-                exercises
-                    .map { it.exerciseId }
-                    .distinct()
-                    .filterNot { it in previousByExercise.value }
-                    .forEach { exerciseId ->
-                        // A slot's own history where there is a slot (P3.8), so two slots naming
-                        // one template progress apart; otherwise the exercise's last session.
-                        val result = slotId?.let { slot ->
-                            programRepository.slotPreviousPerformance(
-                                slotId = slot,
-                                exerciseId = exerciseId,
-                                currentSessionId = sessionId,
-                                // Read when it is needed rather than captured (B45).
-                                zone = ZoneId.systemDefault(),
-                            )
-                        } ?: workoutRepository.previousPerformance(exerciseId, sessionId)
-                        if (result is DataResult.Success) {
-                            previousByExercise.update { it + (exerciseId to result.data) }
-                        } else if (result is DataResult.Failure) {
-                            // The fields fall back to the app's defaults when history cannot be read (B272);
-                            // saying so is what keeps that fallback from being a silent claim about a lift
-                            // the lifter has actually done before.
-                            lastError.value = result.error
-                        }
-                    }
-            }
+            previousPerformanceSeeder.seed { lastError.value = it }
         }
     }
 
@@ -721,7 +701,7 @@ class ActiveWorkoutViewModel @Inject constructor(
     private suspend fun writeLoggedSet(row: SessionExerciseRow, edit: SetEdit) {
         var bodyweight: Long? = null
         if (row.isBodyweight) {
-            when (val read = latestWeight()) {
+            when (val read = newestWeight(measurementRepository)) {
                 is DataResult.Failure -> {
                     lastError.value = read.error
                     return
@@ -729,12 +709,12 @@ class ActiveWorkoutViewModel @Inject constructor(
 
                 is DataResult.Success -> {
                     val latest = read.data
-                    if (latest == null || latest.isStale()) {
+                    if (latest == null || latest.isStale(timeSource.now())) {
                         _bodyweightPrompt.value = PendingBodyweight(
                             sessionExerciseId = row.id,
                             exerciseName = row.name,
                             edit = edit,
-                            staleDays = latest?.ageInDays(),
+                            staleDays = latest?.ageInDays(timeSource.now()),
                         )
                         return
                     }
@@ -991,7 +971,7 @@ class ActiveWorkoutViewModel @Inject constructor(
         val pending = _bodyweightPrompt.value ?: return
         if (grams <= 0L) return
         viewModelScope.launch {
-            when (val saved = saveTodayWeight(grams)) {
+            when (val saved = saveTodayWeight(measurementRepository, timeSource.now(), grams)) {
                 is DataResult.Success -> {
                     _bodyweightPrompt.value = null
                     // The lookup inside onLogSet now finds it, which keeps one write path for a set.
@@ -1010,31 +990,6 @@ class ActiveWorkoutViewModel @Inject constructor(
     fun onDismissBodyweightPrompt() {
         _bodyweightPrompt.value = null
     }
-
-    /** The newest weight on record, with its day (ROADMAP N219, B251). */
-    private suspend fun latestWeight(): DataResult<LatestWeight?> = measurementRepository.latestWeight()
-
-    /**
-     * Whether the newest weigh-in is too old to be used without being asked about (B251).
-     *
-     * A month is the line: the body moves, and a number from last season written into today's sets would
-     * put a figure in every total that was never measured. The lifter answers with today's weight, which
-     * is then what the app keeps.
-     */
-    private fun LatestWeight.isStale(): Boolean = ageInDays() >= STALE_WEIGH_IN_DAYS
-
-    private fun LatestWeight.ageInDays(): Long =
-        Duration.between(at, timeSource.now()).toDays().coerceAtLeast(0L)
-
-    /**
-     * Writes [grams] as today's daily weight, keeping whatever else today already says (N62, N113).
-     *
-     * The targeted write rather than a whole-entry save: a save replaces the day's record, so answering this
-     * prompt used to copy the day's body fat and soreness back by hand — after scanning every measurement to
-     * find them (B255). The day keeps its numbers, and the logging path performs one query.
-     */
-    private suspend fun saveTodayWeight(grams: Long): DataResult<Unit> =
-        measurementRepository.setDailyWeight(at = timeSource.now(), grams = grams)
 
     /**
      * Writes the readiness note (ROADMAP N4), from the row in the workout header — the only way in since N140
@@ -1199,8 +1154,6 @@ class ActiveWorkoutViewModel @Inject constructor(
 
         const val STOP_TIMEOUT_MILLIS = 5_000L
 
-        /** A weigh-in older than this is a question rather than an answer (ROADMAP N219, B251). */
-        const val STALE_WEIGH_IN_DAYS = 30L
         const val TICK_MILLIS = 1_000L
     }
 }

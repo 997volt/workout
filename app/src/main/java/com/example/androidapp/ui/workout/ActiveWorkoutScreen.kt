@@ -1,38 +1,18 @@
 package com.example.androidapp.ui.workout
 
-import android.media.AudioManager
-import android.media.ToneGenerator
-import android.view.HapticFeedbackConstants
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
@@ -41,45 +21,29 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
 import com.example.androidapp.domain.RestTimer
-import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.model.Activity
 import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.PendingProgression
 import com.example.androidapp.domain.model.PersonalRecordMoment
 import com.example.androidapp.domain.model.ProgressionDirection
-import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.domain.model.SetType
-import com.example.androidapp.ui.components.AppTextButton
-import com.example.androidapp.ui.components.BodyweightPromptDialog
 import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.ProgressionDialog
-import com.example.androidapp.ui.components.ReadinessNoteDialog
 import com.example.androidapp.ui.components.SetEdit
 import com.example.androidapp.ui.components.SetEditorDialog
-import com.example.androidapp.ui.components.TestTags
-import com.example.androidapp.ui.components.TopBarTitle
-import com.example.androidapp.ui.components.WorkoutNoteDialog
 import com.example.androidapp.ui.components.WriteOutcome
 import com.example.androidapp.ui.components.dataErrorMessage
-import com.example.androidapp.ui.components.exerciseWeightUnit
-import com.example.androidapp.ui.components.label
 import com.example.androidapp.ui.theme.AndroidAppTheme
 
 @Composable
@@ -310,21 +274,6 @@ fun ActiveWorkoutScreen(
  * The *open* state stays with the screen, because the body is what opens it; this is
  * only the rendering, which is where the lines were.
  */
-/** The bodyweight question, shown only while a set is held for one (N219, B251). */
-@Composable
-private fun BodyweightPrompt(
-    prompt: PendingBodyweight?,
-    onSave: (Long) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    if (prompt == null) return
-    BodyweightPromptDialog(
-        exerciseName = prompt.exerciseName,
-        onSave = onSave,
-        onDismiss = onDismiss,
-        staleDays = prompt.staleDays,
-    )
-}
 
 @Composable
 internal fun SetEditorSection(
@@ -392,287 +341,6 @@ internal fun SetEditorSection(
                 edit.assistanceGrams,
                 edit.durationSeconds,
             )
-        },
-    )
-}
-
-@Composable
-private fun ShowUndoSnackbar(
-    pendingUndo: SetEntry?,
-    hostState: SnackbarHostState,
-    onUndo: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    val message = stringResource(R.string.set_deleted)
-    val undoLabel = stringResource(R.string.set_undo)
-    val currentOnUndo by rememberUpdatedState(onUndo)
-    val currentOnDismiss by rememberUpdatedState(onDismiss)
-
-    LaunchedEffect(pendingUndo) {
-        if (pendingUndo == null) return@LaunchedEffect
-        val result = hostState.showSnackbar(
-            message = message,
-            actionLabel = undoLabel,
-            duration = SnackbarDuration.Short,
-        )
-        if (result == SnackbarResult.ActionPerformed) currentOnUndo() else currentOnDismiss()
-    }
-}
-
-/**
- * Both undo snackbars, and the rule that keeps them honest (ROADMAP B3).
- *
- * An undo is offered only while the thing it refers to is still in the session. The
- * two share one [SnackbarHostState], so without that rule a deleted set's Undo can
- * outlive its exercise: the row is gone, the button stays, and the write it fires is
- * refused. Filtering here is the dismissal; the ViewModel reports if a tap still
- * races through.
- */
-@Composable
-private fun UndoOffers(
-    state: ActiveWorkoutUiState,
-    hostState: SnackbarHostState,
-    onUndoDelete: () -> Unit,
-    onDismissUndo: () -> Unit,
-    onUndoFinishExercise: () -> Unit,
-    onDismissFinishUndo: () -> Unit,
-) {
-    ShowUndoSnackbar(
-        pendingUndo = state.undoableSet,
-        hostState = hostState,
-        onUndo = onUndoDelete,
-        onDismiss = onDismissUndo,
-    )
-    ShowFinishSnackbar(
-        state = state,
-        hostState = hostState,
-        onUndo = onUndoFinishExercise,
-        onDismiss = onDismissFinishUndo,
-    )
-}
-
-/**
- * Undo for the exercise just marked done (ROADMAP N7).
- *
- * The same argument as the deleted-set snackbar: "Done" is accident protection, so
- * it needs a way back — and the exercise is only dimmed, never removed, so the undo
- * is a plain reopen rather than a re-insert.
- */
-@Composable
-private fun ShowFinishSnackbar(
-    state: ActiveWorkoutUiState,
-    hostState: SnackbarHostState,
-    onUndo: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    // Null once the exercise is gone, which keys the effect below to dismiss the
-    // snackbar rather than leave an Undo for a row that no longer exists (B3).
-    val finishedId = state.undoableFinishedExerciseId
-    val name = state.exercises.firstOrNull { it.id == finishedId }?.name
-    val message = if (name == null) {
-        stringResource(R.string.active_workout_exercise_done)
-    } else {
-        stringResource(R.string.active_workout_exercise_done_named, name)
-    }
-    val undoLabel = stringResource(R.string.set_undo)
-    val currentOnUndo by rememberUpdatedState(onUndo)
-    val currentOnDismiss by rememberUpdatedState(onDismiss)
-
-    LaunchedEffect(finishedId) {
-        if (finishedId == null) return@LaunchedEffect
-        val result = hostState.showSnackbar(
-            message = message,
-            actionLabel = undoLabel,
-            duration = SnackbarDuration.Short,
-        )
-        if (result == SnackbarResult.ActionPerformed) currentOnUndo() else currentOnDismiss()
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-internal fun WorkoutTopBar(
-    canFinish: Boolean,
-    canDiscard: Boolean,
-    /** An open session with nothing in it, so a discard costs nothing and is not asked about (N41). */
-    isEmpty: Boolean,
-    /**
-     * The session is an **activity**, so "nothing in it" does not mean "nothing to lose" (N143).
-     *
-     * An activity holds no sets by construction, so `isEmpty` is true for exactly the session a lifter
-     * deliberately recorded — and the one unconfirmed tap then deleted the day's record with no undo. The
-     * prompt-free branch is for a session that is empty *because nothing was done*, which an activity never is.
-     */
-    isActivity: Boolean,
-    setCount: Int,
-    countsAgainstProgram: Boolean,
-    onFinish: (String?) -> Unit,
-    onDiscard: () -> Unit,
-    onBack: () -> Unit,
-) {
-    // Whether the finish prompt is up. Dismissing it finishes without a comment
-    // (ROADMAP N11): the user asked to finish, and the comment is optional.
-    var commenting by rememberSaveable { mutableStateOf(false) }
-    // The discard lives behind the overflow rather than beside Finish: it is the destructive
-    // action, and the top bar's visible slot is the one the user reaches for mid-workout.
-    var confirmingDiscard by remember { mutableStateOf(false) }
-
-    TopAppBar(
-        title = { TopBarTitle(text = stringResource(R.string.active_workout_title)) },
-        navigationIcon = {
-            IconButton(onClick = onBack) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.nav_back),
-                )
-            }
-        },
-        actions = {
-            // Nothing to finish until at least one set is logged — or the session is an activity, which
-            // holds none and is finished as what it records (N141).
-            FinishAction(canFinish = canFinish, onClick = { commenting = true })
-            if (canDiscard) {
-                WorkoutMenu(
-                    onDiscard = {
-                        // **Nothing to lose, so nothing to ask** (N41, N87): the dialog exists to name what a
-                        // discard costs, and an empty *workout* has nothing to name. An activity is the
-                        // exception that proves it (N143): it is empty because it holds no sets, not because
-                        // nobody did anything, so it is always asked about.
-                        if (isEmpty && !isActivity) onDiscard() else confirmingDiscard = true
-                    },
-                )
-            }
-        },
-    )
-
-    if (confirmingDiscard) {
-        DiscardWorkoutDialog(
-            setCount = setCount,
-            isActivity = isActivity,
-            countsAgainstProgram = countsAgainstProgram,
-            onDismiss = { confirmingDiscard = false },
-            onConfirm = {
-                confirmingDiscard = false
-                onDiscard()
-            },
-        )
-    }
-
-    if (commenting) {
-        WorkoutNoteDialog(
-            onDismiss = {
-                commenting = false
-                onFinish(null)
-            },
-            onSave = { note ->
-                commenting = false
-                onFinish(note)
-            },
-        )
-    }
-}
-
-/**
- * The workout's overflow, which holds the discard (ROADMAP N41, N87).
- *
- * **It is the one entry it has**, because N87 took the two plans back out: mid-workout the overflow is the
- * logger's own business, and the lists that answer "what is next" belong where the decision to train is
- * taken — home's start bar (N42), which stays visible while a session is open, so looking at a plan is
- * still one step back rather than the end of the workout. N34 is what keeps this screen off the tab bar,
- * and N78 put the plans here for that reason; N87 keeps the argument and drops the half that was never
- * argued, since home reaches both without ending anything.
- *
- * Because the discard is all that is left, the ⋮ is drawn only when there is something to discard — see
- * [WorkoutTopBar]. An empty session's discard is prompt-free and drawn in the body (N41), so it has no use
- * for a menu at all. The menu's open state belongs with the button that opens it, which is why it is split
- * out rather than inlined into a top bar already at the length this project allows.
- */
-@Composable
-private fun WorkoutMenu(onDiscard: () -> Unit) {
-    var menuOpen by remember { mutableStateOf(false) }
-
-    Box {
-        IconButton(
-            onClick = { menuOpen = true },
-            modifier = Modifier.testTag(TestTags.ACTIVE_WORKOUT_MENU),
-        ) {
-            Icon(
-                imageVector = Icons.Filled.MoreVert,
-                contentDescription = stringResource(R.string.active_workout_more),
-            )
-        }
-        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.active_workout_discard)) },
-                onClick = {
-                    menuOpen = false
-                    onDiscard()
-                },
-                modifier = Modifier.testTag(TestTags.ACTIVE_WORKOUT_DISCARD),
-            )
-        }
-    }
-}
-
-/**
- * The prompt a discard asks before it deletes anything (ROADMAP N41).
- *
- * It says what goes — the count, because the user is deciding whether it is worth keeping — and
- * when the workout came from a program it says the second consequence too: only a *finished*
- * session settles a scheduled occurrence (P3.5), so abandoning this one is recorded as a miss
- * rather than as no workout at all. The empty workout never reaches this dialog, because there is
- * nothing to lose and its prompt-free discard is right.
- */
-@Composable
-private fun DiscardWorkoutDialog(
-    setCount: Int,
-    /** An activity records the day rather than sets, so what a discard costs is said differently (N143). */
-    isActivity: Boolean,
-    countsAgainstProgram: Boolean,
-    onDismiss: () -> Unit,
-    onConfirm: () -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.active_workout_discard_title)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    text = when {
-                        isActivity -> stringResource(R.string.active_workout_discard_text_activity)
-                        setCount > 0 -> pluralStringResource(
-                            R.plurals.active_workout_discard_text,
-                            setCount,
-                            setCount,
-                        )
-
-                        else -> stringResource(R.string.active_workout_discard_text_no_sets)
-                    },
-                    modifier = Modifier.testTag(TestTags.ACTIVE_WORKOUT_DISCARD_TEXT),
-                )
-                if (countsAgainstProgram) {
-                    Text(
-                        text = stringResource(R.string.active_workout_discard_program),
-                        modifier = Modifier.testTag(TestTags.ACTIVE_WORKOUT_DISCARD_PROGRAM),
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            AppTextButton(
-                onClick = onConfirm,
-                modifier = Modifier.testTag(TestTags.ACTIVE_WORKOUT_DISCARD_CONFIRM),
-            ) {
-                Text(stringResource(R.string.active_workout_discard))
-            }
-        },
-        dismissButton = {
-            AppTextButton(
-                onClick = onDismiss,
-                modifier = Modifier.testTag(TestTags.ACTIVE_WORKOUT_DISCARD_CANCEL),
-            ) {
-                Text(stringResource(R.string.action_cancel))
-            }
         },
     )
 }
@@ -775,178 +443,6 @@ private fun WorkoutBody(
     }
 }
 
-@Composable
-private fun RestBar(
-    clock: State<WorkoutClock>,
-    onSkip: () -> Unit,
-    onAdjust: (Int) -> Unit,
-    modifier: Modifier = Modifier,
-    /** False when the timer is switched off (ROADMAP N44), so nothing is counted or adjusted. */
-    enabled: Boolean = true,
-) {
-    // Deciding whether to show this bar in the *parent* would recompose the exercise
-    // list once a second. Returning early here keeps the tick inside this composable.
-    val remaining = clock.value.restSecondsRemaining
-    if (!enabled || remaining <= 0) return
-
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.secondaryContainer,
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = stringResource(R.string.rest_remaining, RestTimer.format(remaining)),
-                style = MaterialTheme.typography.titleMedium,
-            )
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                // The one surface whose links are drawn *on* the filled container: the readable role
-                // here is the container's own content colour, not the page's link colour (ROADMAP N49).
-                AppTextButton(
-                    onClick = { onAdjust(-RestTimer.ADJUST_STEP_SECONDS) },
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                ) {
-                    Text(stringResource(R.string.rest_subtract))
-                }
-                AppTextButton(
-                    onClick = { onAdjust(RestTimer.ADJUST_STEP_SECONDS) },
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                ) {
-                    Text(stringResource(R.string.rest_add))
-                }
-                AppTextButton(
-                    onClick = onSkip,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                ) {
-                    Text(stringResource(R.string.rest_skip))
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun WorkoutHeader(
-    startedAt: String,
-    clock: State<WorkoutClock>,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Text(
-            text = stringResource(R.string.active_workout_started, startedAt),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        // The only place the elapsed time is read, so a tick stops here.
-        Text(text = clock.value.elapsed, style = MaterialTheme.typography.titleMedium)
-    }
-}
-
-/**
- * The readiness line and the dialog behind it (ROADMAP N4).
- *
- * "A form is open" is transient UI state, so it lives here next to the row that
- * opens it, and that row is the **only** way in: the prompt a brand-new session used to open with went with
- * N140.
- */
-@Composable
-private fun ReadinessSection(
-    note: String?,
-    onSave: (String?) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    var editing by rememberSaveable { mutableStateOf(false) }
-
-    ReadinessRow(note = note, onEdit = { editing = true }, modifier = modifier)
-    // **Only the row opens it** (N140). There is no prompt to dismiss, so the dialog's own dismiss is the
-    // whole of closing it.
-    if (editing) {
-        ReadinessNoteDialog(
-            initialNote = note.orEmpty(),
-            onDismiss = { editing = false },
-            onSave = { written ->
-                editing = false
-                onSave(written)
-            },
-        )
-    }
-}
-
-/**
- * The readiness note in the workout header (ROADMAP N4).
- *
- * Always present, so the field stays findable whether or not the lifter writes it — which is the whole of the
- * job now that this row is the only way in (N140). A field nobody can find again is the failure that made it a
- * prompt in the first place, and the row is the cheaper answer to it.
- *
- * **The sore list is not read here any more** (N113): a live session's header is an editor, and soreness
- * is the day's own record now. A session that recorded one before the move still shows it in history.
- */
-@Composable
-private fun ReadinessRow(
-    note: String?,
-    onEdit: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val editLabel = stringResource(R.string.readiness_edit_action)
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .testTag(TestTags.READINESS_ROW)
-            .clickable(onClickLabel = editLabel, onClick = onEdit)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-    ) {
-        Text(
-            text = stringResource(R.string.readiness_label),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            text = note ?: stringResource(R.string.readiness_add),
-            style = MaterialTheme.typography.bodyMedium,
-            color = if (note == null) {
-                MaterialTheme.colorScheme.onSurfaceVariant
-            } else {
-                MaterialTheme.colorScheme.onSurface
-            },
-        )
-    }
-}
-
-/**
- * What an empty session says: nothing is in it yet, and the one action that answers that is below it.
- *
- * It no longer carries a discard of its own (ROADMAP N41, N87 amended). The overflow is drawn for an empty
- * session too now, so the action has one home rather than a second copy here — and the copy here is what a
- * *test* anchors the order of the message and the add button on.
- */
-@Composable
-internal fun EmptyWorkout(modifier: Modifier = Modifier) {
-    Column(
-        // A list item since N82, so it takes the width it is given rather than the whole screen: the
-        // centring it used was against a viewport this no longer owns.
-        modifier = modifier.fillMaxWidth().padding(24.dp).testTag(TestTags.ACTIVE_WORKOUT_EMPTY),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(
-            text = stringResource(R.string.active_workout_empty),
-            style = MaterialTheme.typography.titleMedium,
-        )
-        Text(
-            text = stringResource(R.string.active_workout_empty_hint),
-            style = MaterialTheme.typography.bodyMedium,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 8.dp),
-        )
-    }
-}
-
 /**
  * The preview's session: one exercise with two logged sets.
  *
@@ -1018,94 +514,3 @@ private fun ActiveWorkoutScreenPreview() {
         )
     }
 }
-
-/**
- * The record just set (ROADMAP N23).
- *
- * It says what was beaten rather than only what was done — "5 reps at 100 kg, best yet" — and
- * it says the *first* time at a rep count differently, because there was no bar to clear then
- * and claiming otherwise would be a lie the data does not support.
- */
-@Composable
-private fun PersonalRecordBanner(
-    record: PersonalRecordMoment,
-    modifier: Modifier = Modifier,
-) {
-    Surface(
-        modifier = modifier.fillMaxWidth().testTag(TestTags.PERSONAL_RECORD),
-        color = MaterialTheme.colorScheme.primaryContainer,
-        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-    ) {
-        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-            val unit = exerciseWeightUnit(record.weightUnit)
-            Text(
-                text = stringResource(
-                    R.string.personal_record_title,
-                    record.reps,
-                    Weight.display(record.weightGrams, 0, unit),
-                    unit.label(),
-                ),
-                style = MaterialTheme.typography.titleSmall,
-            )
-            Text(
-                text = record.previousBestGrams?.let { previous ->
-                    stringResource(
-                        R.string.personal_record_beats,
-                        record.exerciseName,
-                        Weight.display(previous, 0, unit),
-                        unit.label(),
-                    )
-                } ?: stringResource(R.string.personal_record_first, record.exerciseName),
-                style = MaterialTheme.typography.bodySmall,
-            )
-        }
-    }
-}
-
-/**
- * The two things a workout asks of the device rather than of the database (ROADMAP N27).
- *
- * Both live inside the permission-free envelope N26 bought, which is recorded in DECISIONS.md:
- * keep-screen-on is a window flag rather than a wake lock, and the cue is an in-process tone plus
- * **view-level** haptics. `Vibrator` would have been the obvious call and it costs
- * `android.permission.VIBRATE` — the one permission the app just stopped declaring.
- */
-@Composable
-private fun RestCueAndScreenOn(
-    clock: State<WorkoutClock>,
-    restCueEnabled: Boolean,
-    keepScreenOn: Boolean,
-    restTimerEnabled: Boolean,
-) {
-    val view = LocalView.current
-    DisposableEffect(keepScreenOn) {
-        view.keepScreenOn = keepScreenOn
-        onDispose { view.keepScreenOn = false }
-    }
-
-    val tone = remember { ToneGenerator(AudioManager.STREAM_NOTIFICATION, TONE_VOLUME) }
-    DisposableEffect(Unit) { onDispose { tone.release() } }
-
-    // The cue is the *transition* out of resting, not the state: a rest is cued when it ends, and a
-    // workout that opens with no rest must not chime.
-    var wasResting by remember { mutableStateOf(false) }
-    LaunchedEffect(clock) {
-        snapshotFlow { clock.value.isResting }.collect { resting ->
-            // Split, because four tests in one condition is where a reader stops counting: the rest
-            // ended, and both switches can silence it.
-            val restEnded = !resting && wasResting
-            if (restEnded && restCueEnabled && restTimerEnabled) {
-                tone.startTone(ToneGenerator.TONE_PROP_BEEP, TONE_MILLIS)
-                // `CONFIRM` is API 30 and this app supports 26; lint's InlinedApi rule caught that,
-                // which is what it is for. `VIRTUAL_KEY` is the same short tick and has existed since
-                // API 1.
-                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-            }
-            wasResting = resting
-        }
-    }
-}
-
-/** Loud enough to hear across a gym; short enough to be a cue rather than a ringtone. */
-private const val TONE_VOLUME = 70
-private const val TONE_MILLIS = 250

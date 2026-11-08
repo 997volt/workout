@@ -1265,6 +1265,11 @@ the rule; that one argues it.
   published distribution hash; `gradle/verification-metadata.xml` records the SHA-256 of every dependency
   artifact. Gradle verifies them on every resolve, and CI makes that explicit on the release runtime classpath.
   A new artifact is a deliberate metadata change rather than a silent download.
+- **Large files split by responsibility, not by line count** (N285). The tag registry became one file per
+  screen area behind the same `TestTags` API; the program document/import/schedule, template exercise block,
+  workout top bar/feedback/status and workout state/snapshot/progression/seeding/weigh-in each moved to the file
+  that owns them. `ActiveWorkoutViewModel` still owns all session actions — splitting the actions into several
+  ViewModels is an architectural change the detekt note records as out of scope, not a mechanical move.
 - **The records timeline is bounded and reuses the record rule** (N290). It reads the newest records rather
   than promising a complete ledger, and the DAO applies the same strictly-heavier/never-warm-up/longest-hold
   rule as [PersonalRecords]; the UI only groups and formats. A timed hold is its own row shape, because a hold

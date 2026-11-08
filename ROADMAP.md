@@ -24,13 +24,6 @@ product candidates, not a commitment to one release.
 **B358 stays in *Later*** until a gesture-navigation and a three-button device are available; **N291–N294**
 stay in *Later* too, especially multi-week phases.
 
-### 2.27 — correctness and scale
-
-- **N285 — Split the largest files.** `ActiveWorkoutViewModel`, `TestTags`, `RoomProgramRepository`,
-  `TemplateEditorScreen` and `ActiveWorkoutScreen` are the files where review misses happen and where detekt
-  suppressions accumulate. Fixed means each is split by responsibility without changing behaviour, with the
-  existing tests as the safety net.
-
 ### Features after 2.27
 
 - **N291 — Substitute an exercise inside a workout.** Weekly programs can substitute a workout for an

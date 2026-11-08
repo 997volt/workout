@@ -17,6 +17,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The largest files are split by responsibility** (N285). The 536 test tags now live one file per screen
+  area behind a thin aggregator; program documents/imports/schedules, the template exercise block, the workout
+  top bar/feedback/status, and the workout's state/snapshot/progression/seeding/weigh-in have their own files.
+  `ActiveWorkoutViewModel` still owns every session action and remains the one workout logger, as its recorded
+  detekt note argues.
 - **A recent records timeline appears in Statistics** (N290). Weighted bests and timed holds are read with the
   existing record rule, newest first and grouped by the month they were performed, capped at a recent window.
   The empty state says what would create a record; the section is titled *recent* rather than promising a
