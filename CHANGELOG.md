@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **History search reaches session notes and logged exercise names** (N288). The history projection carries
+  the session note and the names joined from its live exercises, so a query can answer "when did I write down
+  the shoulder tweak" without loading every set. A matched note or exercise is named in the row's supporting
+  line.
 - **Lean mass is a series derived from the body the app already records** (N287). Weight minus fat mass is
   offered beside fat and muscle mass, is null when either half is missing, and reads in the same mass unit;
   nothing new is stored.

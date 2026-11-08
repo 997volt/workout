@@ -39,12 +39,6 @@ stay in *Later* too, especially multi-week phases.
 
 ### Features after 2.27
 
-- **N288 — Search history by what was written, not only by plan/activity/month.** N146 reaches the session's
-  plan, activity and month; notes and exercise names are in the store but unsearchable. A query over session
-  notes and the names of logged exercises (optionally set notes) would answer "when did I last write down the
-  shoulder tweak" without loading every set for every keystroke. Small–medium; the result row must say which
-  field matched.
-
 - **N295 — Let weight-based Statistics follow the app's unit.** N64 deliberately excluded Statistics and body
   measurements from the kg/lb switch so a chart could not change with the lift picked last. A narrower rule
   — follow the app-wide unit for weight-based series, keep body metrics metric-owned — would fix the surprise

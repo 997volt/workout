@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
+import com.example.androidapp.domain.model.HistoryMatch
 import com.example.androidapp.domain.model.WorkoutSummary
 import com.example.androidapp.domain.model.zoneIdOrNull
 import com.example.androidapp.ui.components.AppFilterChip
@@ -371,6 +372,11 @@ private fun WorkoutRow(
             // An activity has no sets; printing "0 sets" beside its name was the row reading as a workout
             // somebody forgot to log (B167).
             setCount.takeUnless { workout.activity != null },
+            when (workout.searchMatch) {
+                HistoryMatch.NOTES -> stringResource(R.string.history_match_notes)
+                HistoryMatch.EXERCISES -> stringResource(R.string.history_match_exercises)
+                null -> null
+            },
         )
             .filter { it.isNotEmpty() }
             .joinToString(" · "),

@@ -1265,6 +1265,9 @@ the rule; that one argues it.
   published distribution hash; `gradle/verification-metadata.xml` records the SHA-256 of every dependency
   artifact. Gradle verifies them on every resolve, and CI makes that explicit on the release runtime classpath.
   A new artifact is a deliberate metadata change rather than a silent download.
+- **History search reaches notes and exercise names without per-row reads** (N288). The history projection
+  carries a GROUP_CONCAT of the live exercise names and the session note; the pure filter searches those and
+  says which extra field matched, so the row does not look as if the plan name explained the hit.
 - **Lean mass is derived, never stored** (N287). It is weight minus the fat mass the same day states; the two
   inputs are already recorded, so a stored third number could disagree with them. Missing either input is a gap,
   not a zero.

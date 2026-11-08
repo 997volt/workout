@@ -1145,6 +1145,8 @@
     <string name="history_empty_hint">Finished workouts will appear here.</string>
     <!-- N146: a log long enough to need searching, and the two questions it gets asked. The hint names what
          a query can reach, because it cannot reach an exercise name without loading every set. -->
+    <string name="history_match_notes">Matched a note</string>
+    <string name="history_match_exercises">Matched a logged exercise</string>
     <string name="history_search_hint">Search by plan, activity or month</string>
     <string name="history_search_clear">Clear the search</string>
     <string name="history_filter_all">All</string>

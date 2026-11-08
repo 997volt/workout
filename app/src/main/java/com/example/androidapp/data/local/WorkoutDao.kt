@@ -97,7 +97,14 @@ interface WorkoutDao {
                t.name AS templateName,
                -- What the day was, when it was not a workout (N141): the history list says *cycling*
                -- where it would otherwise say nothing, and N146's search reads it.
-               ws.activity AS activity
+               ws.activity AS activity,
+               ws.notes AS notes,
+               (
+                   SELECT GROUP_CONCAT(e.name, ' ')
+                   FROM session_exercises se
+                   JOIN exercises e ON e.id = se.exerciseId
+                   WHERE se.sessionId = ws.id AND se.deletedAt IS NULL AND e.deletedAt IS NULL
+               ) AS exerciseNames
         FROM workout_sessions ws
         LEFT JOIN templates t ON t.id = ws.templateId
         WHERE ws.finishedAt IS NOT NULL AND ws.deletedAt IS NULL

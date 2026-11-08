@@ -30,6 +30,10 @@ data class WorkoutSummaryRow(
      * build does not know reads as *not an activity* rather than throwing, and the list still draws.
      */
     val activity: String?,
+    /** The session's free-text note (N288). */
+    val notes: String?,
+    /** Logged exercise names joined by spaces, for search only (N288). */
+    val exerciseNames: String?,
 )
 
 internal fun WorkoutSummaryRow.toDomain(): WorkoutSummary = WorkoutSummary(
@@ -43,4 +47,6 @@ internal fun WorkoutSummaryRow.toDomain(): WorkoutSummary = WorkoutSummary(
     repeatableExerciseCount = repeatableExerciseCount,
     templateName = templateName,
     activity = activity?.let { name -> Activity.entries.firstOrNull { it.name == name } },
+    notes = notes,
+    exerciseNames = exerciseNames,
 )

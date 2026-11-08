@@ -1,6 +1,7 @@
 package com.example.androidapp.ui.history
 
 import com.example.androidapp.domain.model.Activity
+import com.example.androidapp.domain.model.HistoryMatch
 import com.example.androidapp.domain.model.WorkoutSummary
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
@@ -153,6 +154,44 @@ class HistorySearchTest {
     }
 
     @Test
+    fun aNote_isSearchable_andTheRowSaysWhichFieldMatched() {
+        val noted = summary(
+            id = "noted",
+            at = "2026-09-30T07:00:00Z",
+            notes = "shoulder tweak after the press",
+        )
+
+        val groups = historyGroups(
+            workouts = listOf(noted),
+            query = "shoulder",
+            filter = HistoryFilter.ALL,
+            zone = zone,
+            locale = locale,
+        )
+
+        assertThat(groups.flatMap { it.workouts }.single().searchMatch).isEqualTo(HistoryMatch.NOTES)
+    }
+
+    @Test
+    fun aLoggedExerciseName_isSearchable_andTheRowSaysWhichFieldMatched() {
+        val lifted = summary(
+            id = "lifted",
+            at = "2026-09-30T07:00:00Z",
+            exerciseNames = "Back Squat Romanian Deadlift",
+        )
+
+        val groups = historyGroups(
+            workouts = listOf(lifted),
+            query = "deadlift",
+            filter = HistoryFilter.ALL,
+            zone = zone,
+            locale = locale,
+        )
+
+        assertThat(groups.flatMap { it.workouts }.single().searchMatch).isEqualTo(HistoryMatch.EXERCISES)
+    }
+
+    @Test
     fun aSetCount_isSearchedOnlyOnTheRowThatShowsIt() {
         // B167: an activity's row prints no set count, so a query must not find it by one.
         val swimWithSets = summary(
@@ -206,6 +245,8 @@ class HistorySearchTest {
         templateName: String? = null,
         setCount: Int = 0,
         activity: Activity? = null,
+        notes: String? = null,
+        exerciseNames: String? = null,
     ) = WorkoutSummary(
         id = id,
         startedAt = Instant.parse(at),
@@ -215,5 +256,7 @@ class HistorySearchTest {
         volumeGrams = setCount * 1_000L,
         templateName = templateName,
         activity = activity,
+        notes = notes,
+        exerciseNames = exerciseNames,
     )
 }

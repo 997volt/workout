@@ -1,5 +1,6 @@
 package com.example.androidapp.ui.history
 
+import com.example.androidapp.domain.model.HistoryMatch
 import com.example.androidapp.domain.model.WorkoutSummary
 import java.time.ZoneId
 import java.util.Locale
@@ -35,7 +36,9 @@ internal fun historyGroups(
                 group
             } else {
                 val month = HistoryFormat.month(group.month, locale)
-                val rows = group.workouts.filter { row -> row.searchWords(month).contains(wanted) }
+                val rows = group.workouts
+                    .filter { row -> row.searchWords(month).contains(wanted) }
+                    .map { row -> row.withMatch(wanted) }
                 // A month with nothing left in it is not a heading over an empty list: the heading exists to
                 // group rows, and a query that removed them all has nothing to group.
                 rows.takeIf { it.isNotEmpty() }?.let { HistoryGroup(month = group.month, workouts = it) }
@@ -44,6 +47,15 @@ internal fun historyGroups(
 }
 
 /** What a row is searched by: the month above it, what it was, and a workout's set count. */
+private fun WorkoutSummary.withMatch(wanted: String): WorkoutSummary {
+    val match = when {
+        notes?.searchKey()?.contains(wanted) == true -> HistoryMatch.NOTES
+        exerciseNames?.searchKey()?.contains(wanted) == true -> HistoryMatch.EXERCISES
+        else -> null
+    }
+    return copy(searchMatch = match)
+}
+
 private fun WorkoutSummary.searchWords(month: String): String = buildString {
     append(month)
     append(' ')
@@ -52,6 +64,10 @@ private fun WorkoutSummary.searchWords(month: String): String = buildString {
     append(activity?.name.orEmpty())
     append(' ')
     append(templateName.orEmpty())
+    append(' ')
+    append(notes.orEmpty())
+    append(' ')
+    append(exerciseNames.orEmpty())
     // A workout's set count is on its row; an activity's row prints none (B167), so searching it would find a
     // row by a word that is not on it (N146).
     if (activity == null) {

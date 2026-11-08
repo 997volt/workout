@@ -52,6 +52,12 @@ data class WorkoutSummary(
      * because N146's search over the list is a search over what the row says.
      */
     val activity: Activity? = null,
+    /** The session note, searchable in history but not otherwise drawn (N288). */
+    val notes: String? = null,
+    /** The names of the exercises logged, aggregated for the history search (N288). */
+    val exerciseNames: String? = null,
+    /** Which extra field the active query matched, for the row's label (N288). */
+    val searchMatch: HistoryMatch? = null,
 ) {
     /** Null while the workout is still open; history only holds finished ones. */
     val duration: Duration? get() = finishedAt?.let { Duration.between(startedAt, it) }
@@ -67,3 +73,6 @@ data class WorkoutSummary(
 
     /** Warm-up-only workouts have no weight to speak of, but they did happen. */
 }
+
+/** The part of a history row a query matched when it is not already visible (N288). */
+enum class HistoryMatch { NOTES, EXERCISES }
