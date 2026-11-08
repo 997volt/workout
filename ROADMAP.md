@@ -1,7 +1,8 @@
 # Workout — Roadmap
 
-> **What is planned, not what happened.** *Later* is decided and waiting, *Parked* is decided against until a
-> named trigger fires, and the non-goals are lines this app does not cross.
+> **What is planned, not what happened.** *Next* is the batch picked up before anything else, *Later* is decided
+> and waiting, *Parked* is decided against until a named trigger fires, and the non-goals are lines this app
+> does not cross.
 > Shipped work is [CHANGELOG.md](CHANGELOG.md), how a release is cut is [RELEASING.md](RELEASING.md), and the
 > settled rules are [DECISIONS.md](DECISIONS.md) with their argument in
 > [DECISIONS-EVIDENCE.md](DECISIONS-EVIDENCE.md).
@@ -14,6 +15,35 @@ backlog, `R#.#` releases) are stable and go in commit messages. They were assign
 work was planned, so they do not always run in order — and an id this file does not list has
 shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 [CHANGELOG-1.x.md](CHANGELOG-1.x.md) for the 1.x releases.
+
+## Next — 2.26 review fixes
+
+The 2.26 batch is implemented but unreleased. Review found two release-integrity gaps, one accepted-scope
+question and two tooling/test weaknesses. **B387 and B388 must be fixed before the 2.26 tag.**
+
+- **B387 — The merged APK must be checked for exported components, not only the source manifest.** The source
+  test sees only `MainActivity`, but the release manifest also contains AndroidX's
+  `profileinstaller.ProfileInstallReceiver`, exported with `android.permission.DUMP`. The source test named
+  `onlyTheLauncher_isExported` therefore does not hold for the artifact, and CI checks permissions but not
+  exported components. Fixed means a merged-manifest check that allows the profile receiver only with its
+  `DUMP` guard, with the source test selecting the launcher by intent filter rather than position.
+
+- **B388 — Verify the release mapping is actually attached.** `verify-release.py --remote` checks only the APK;
+  the mapping upload is a manual step in RELEASING.md, so a skipped or failed upload passes silently and leaves
+  only the 90-day CI artifact. Fixed means the remote verifier asserts a non-empty `mapping-<version>.txt` is
+  attached, with the upload moved before the remote check.
+
+- **B389 — Make the test provider genuinely test-only.** N281 moved the FileProvider to the debug variant; the
+  release is clean and CI passes, but any debug APK still carries the provider. Fixed means the URI comes from a
+  test-local provider in the instrumented APK, with no provider in either the debug or release application.
+
+- **N297 — The permission checker should not pick an arbitrary `aapt2`.** Its fallback takes the
+  lexicographically last build-tools directory; CI had to pass the pinned 36.0.0 explicitly after 37 failed.
+  Fixed means prefer the project-pinned 36.0.0 or try candidates until one works.
+
+- **N298 — The source manifest test must identify the launcher by intent filter.** It currently takes the first
+  `<activity>` element; a future activity inserted before `MainActivity` would make the test fail for the wrong
+  reason. Fixed means locate the activity with the MAIN/LAUNCHER filter.
 
 ## Later — the rest of the 2.22 review
 
