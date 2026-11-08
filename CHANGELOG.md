@@ -21,9 +21,9 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   committed `gradle/verification-metadata.xml` checksums every dependency. CI resolves the release runtime
   classpath with strict dependency verification, so an unrecorded artifact fails there rather than entering a
   build silently.
-- **The test-only document provider no longer ships** (N281, B389). `DocumentIoTest` now uses a deliberately
-  open provider in the instrumented APK, with its own one-directory cache and no `FileProvider` in either the
-  debug or release application.
+- **The test-only FileProvider does not ship in release** (N281, B389). It lives only in the debug variant,
+  which the instrumented test runs against; release builds have no provider. A test-APK provider was attempted,
+  but cross-package URI access made it unreliable; the debug-only surface is the accepted tradeoff.
 - **The remote release check verifies the mapping asset** (B388). `verify-release.py --remote` now downloads
   `mapping-<version>.txt`, requires it to be non-empty and, when the local mapping exists, compares its hash.
   RELEASING uploads the mapping before the remote check so a missing asset is a failure rather than a silent

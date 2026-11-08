@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Debug only (N281): one cache subdirectory, used by DocumentIoTest. -->
+<paths>
+    <cache-path name="document-io-test" path="document-io-test/" />
+</paths>

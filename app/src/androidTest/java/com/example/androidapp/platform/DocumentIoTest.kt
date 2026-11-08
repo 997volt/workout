@@ -1,9 +1,9 @@
 package com.example.androidapp.platform
 
 import android.net.Uri
+import androidx.core.content.FileProvider
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -11,6 +11,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.io.File
 
 /**
  * The document seam, against a real `ContentResolver` (ROADMAP B158, B159).
@@ -27,17 +28,19 @@ import org.junit.runner.RunWith
 class DocumentIoTest {
 
     private val context = ApplicationProvider.getApplicationContext<android.content.Context>()
-    private val testContext = InstrumentationRegistry.getInstrumentation().context
     private val io = SafDocumentIo()
 
     /**
-     * A `content://` URI owned by the test APK (B389).
+     * A `content://` URI for one file in the debug app's cache (B281).
      *
-     * The test provider opens its own cache directory, so neither a release nor a debug application carries a
-     * FileProvider. `DocumentIo` still runs against the target context and its real `ContentResolver`.
+     * The provider lives in the debug manifest only, so the release APK has no FileProvider; this test still
+     * runs against the target context and its real `ContentResolver`.
      */
-    private fun uriFor(name: String): Uri =
-        Uri.parse("content://${testContext.packageName}.fileprovider/$name")
+    private fun uriFor(name: String): Uri {
+        val directory = File(context.cacheDir, "document-io-test").apply { mkdirs() }
+        val file = File(directory, name)
+        return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+    }
 
     @Test
     fun aWrittenDocument_readsBackByteForByte() = runTest {
