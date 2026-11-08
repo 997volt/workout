@@ -33,6 +33,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
 import com.example.androidapp.domain.DataError
@@ -50,6 +52,9 @@ import com.example.androidapp.ui.theme.AndroidAppTheme
 import com.example.androidapp.ui.workout.WorkoutClock
 import kotlinx.coroutines.CoroutineScope
 
+// The route already carries every home destination; the resume hook is one line and splitting it would
+// separate the day refresh from the screen it refreshes (N286).
+@Suppress("LongMethod")
 @Composable
 fun WorkoutsHomeRoute(
     onStartWorkout: () -> Unit,
@@ -77,6 +82,7 @@ fun WorkoutsHomeRoute(
     viewModel: WorkoutsHomeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.onResume() }
     // Not unwrapped with `by`: reading it here would rebuild the list every second.
     val clock = viewModel.clock.collectAsStateWithLifecycle()
 

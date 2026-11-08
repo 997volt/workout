@@ -2,6 +2,7 @@ package com.example.androidapp.di
 
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.ZoneOffsetSource
+import com.example.androidapp.domain.ZoneSource
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -29,6 +30,11 @@ object TimeModule {
     @Singleton
     fun provideZoneOffsetSource(): ZoneOffsetSource =
         ZoneOffsetSource { OffsetDateTime.now().offset.totalSeconds / SECONDS_PER_MINUTE }
+
+    /** The device's current zone, for a screen-local day (N286). */
+    @Provides
+    @Singleton
+    fun provideZoneSource(): ZoneSource = ZoneSource { java.time.ZoneId.systemDefault() }
 }
 
 /** Both offsets and durations here are in whole minutes. */

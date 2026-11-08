@@ -1265,6 +1265,10 @@ the rule; that one argues it.
   published distribution hash; `gradle/verification-metadata.xml` records the SHA-256 of every dependency
   artifact. Gradle verifies them on every resolve, and CI makes that explicit on the release runtime classpath.
   A new artifact is a deliberate metadata change rather than a silent download.
+- **A screen-local day is a flow refreshed on resume** (N286). The day a plan, measurement row or week review
+  names is not a constant for a screen's lifetime: a device crosses midnight, and a screen can cross a zone.
+  `ZoneSource` names the zone; the VMs keep the day in a state flow and re-read it on resume, so the row and the
+  write agree without recreating the screen.
 - **The release's mapping is part of the remote verification** (B388). A mapping upload that silently fails
   leaves a stack trace unreadable, so the remote verifier requires the mapping asset and compares it to the local
   build when one is available; the procedure uploads it before asking the verifier.

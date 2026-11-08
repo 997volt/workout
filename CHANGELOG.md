@@ -17,6 +17,9 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **Screens re-read the day on resume** (N286). Home, Measurements and the weekly review now take a
+  `ZoneSource` beside `TimeSource` and refresh their screen-local day when they resume, so a screen left open
+  across midnight shows the new plan and measurement row instead of yesterday's.
 - **The release verifier checks version monotonicity and tag binding** (N276). `--release` refuses a
   `versionCode` that does not exceed the latest `v*` tag; `--remote` accepts the release commit recorded in
   the notes and verifies the tag points at it. The keystore password is passed to `keytool` through the

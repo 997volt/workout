@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
+import com.example.androidapp.domain.ZoneSource
 import com.example.androidapp.domain.model.DeloadWeek
 import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.model.ProgramSchedule
@@ -246,6 +247,7 @@ class WorkoutsHomeViewModel @Inject constructor(
     private val deloadRepository: DeloadRepository,
     private val measurementRepository: MeasurementRepository,
     private val timeSource: TimeSource,
+    private val zoneSource: ZoneSource = ZoneSource { ZoneId.systemDefault() },
 ) : ViewModel() {
 
     private val activeSession = workoutRepository.observeActiveSession()
@@ -319,27 +321,15 @@ class WorkoutsHomeViewModel @Inject constructor(
      * shows the day it was opened on until it is rebuilt, which is the same accepted staleness the
      * plan's own heading already carries.
      */
-    private val todayDate: LocalDate = timeSource.now().atZone(ZoneId.systemDefault()).toLocalDate()
+    /** The screen-local day, re-read on resume (N286). */
+    private val todayDate = MutableStateFlow(timeSource.now().atZone(zoneSource.zone()).toLocalDate())
+    private val zone: ZoneId = zoneSource.zone()
 
     /** The weekday of [todayDate], for the "Today" heading and the plan it selects. */
-    private val today: DayOfWeek = todayDate.dayOfWeek
+    private val today: DayOfWeek get() = todayDate.value.dayOfWeek
 
-    /**
-     * The Monday of [todayDate]'s week, which is the key a deload plan is stored under (ROADMAP N147).
-     *
-     * Captured with the day for the same reason [todayDate] is: a screen left open across midnight shows
-     * the day it was opened on, and the week that day belongs to has to agree with it.
-     */
-    private val weekStart: LocalDate = ProgramSchedule.weekStartOf(todayDate)
-
-    /**
-     * The zone [todayDate] was read in, captured with it (ROADMAP N114).
-     *
-     * The row that offers to record today's measurement asks the same question the repository answers when it
-     * keys an entry to a day, so it reads the same zone the day was captured in rather than taking a second
-     * reading that could cross a boundary the first one did not.
-     */
-    private val zone: ZoneId = ZoneId.systemDefault()
+    /** The Monday of [todayDate]'s week, which is the key a deload plan is stored under (ROADMAP N147). */
+    private val weekStart: LocalDate get() = ProgramSchedule.weekStartOf(todayDate.value)
 
     /**
      * Every program home follows, in the authored order (ROADMAP P3.12).
@@ -378,13 +368,15 @@ class WorkoutsHomeViewModel @Inject constructor(
      * not part of today. A program with no plan is absent from the list, which leaves its slots to
      * prescribe what they always did.
      */
-    private val deloadWeeks: Flow<List<DeloadWeek>> = activePrograms.flatMapLatest { programs ->
-        if (programs.isEmpty()) {
-            flowOf(emptyList())
-        } else {
-            deloadRepository.observeWeekPlans(weekStart)
-        }
-    }
+    private val deloadWeeks: Flow<List<DeloadWeek>> =
+        combine(activePrograms, todayDate) { programs, day -> programs to day }
+            .flatMapLatest { (programs, day) ->
+                if (programs.isEmpty()) {
+                    flowOf(emptyList())
+                } else {
+                    deloadRepository.observeWeekPlans(ProgramSchedule.weekStartOf(day))
+                }
+            }
 
     /**
      * Each followed sequence's place (ROADMAP N176).
@@ -424,8 +416,8 @@ class WorkoutsHomeViewModel @Inject constructor(
             activePrograms,
             activeProgramSlots,
             deloadWeeks,
-            combine(activePrograms, sequenceSchedules) { programs, schedules ->
-                sequenceTodayPlans(programs, schedules, todayDate) to schedules
+            combine(activePrograms, sequenceSchedules, todayDate) { programs, schedules, day ->
+                sequenceTodayPlans(programs, schedules, day) to schedules
             },
         ) { programs, slots, deloads, sequences ->
             ProgramsPart(
@@ -445,21 +437,23 @@ class WorkoutsHomeViewModel @Inject constructor(
         templateRepository.observeTemplates(includeHidden = true),
         programsPart,
         measurementRepository.observeAll(),
-    ) { workout, templates, programs, measurements ->
+        todayDate,
+    ) { workout, templates, programs, measurements, day ->
+        val weekday = day.dayOfWeek
         WorkoutsHomeUiState(
             isLoading = false,
             activeWorkout = workout,
-            today = today,
+            today = weekday,
             // N114: the day the row is about is this screen's own captured one, not a live reading.
-            todayIsMeasured = measurements.any { it.isDailyOn(todayDate, zone) },
+            todayIsMeasured = measurements.any { it.isDailyOn(day, zone) },
             todaysPlan = todaysPlanFor(
                 programs = programs.programs,
                 slots = programs.slots,
                 deloadWeeks = programs.deloadWeeks,
-                day = today,
+                day = weekday,
             ) + programs.sequencePlans,
             nextSession = earlierOf(
-                nextWeeklySession(programs.programs, programs.slots, todayDate, programs.deloadWeeks),
+                nextWeeklySession(programs.programs, programs.slots, day, programs.deloadWeeks),
                 nextSequenceSession(programs.programs, programs.schedules),
             ),
             // N126: what makes an empty day a rest day rather than a day with nothing to say.
@@ -507,13 +501,18 @@ class WorkoutsHomeViewModel @Inject constructor(
      * A block's session happens once, so this is the only way past one that cannot be trained — the
      * week-keyed *Continue* is the weekly program's answer and means nothing to a sequence.
      */
+    /** Re-reads the device day after a resume; a no-op until the date actually changes. */
+    fun onResume() {
+        todayDate.update { timeSource.now().atZone(zoneSource.zone()).toLocalDate() }
+    }
+
     suspend fun skipBlockSession(slotId: String): DataResult<Unit> =
-        programRepository.skipBlockSession(slotId, todayDate)
+        programRepository.skipBlockSession(slotId, todayDate.value)
 
     suspend fun setSubstitution(slotId: String, templateId: String?): DataResult<Unit> =
         programRepository.setSubstitution(
             slotId = slotId,
-            weekStart = ProgramSchedule.weekStartOf(todayDate),
+            weekStart = weekStart,
             templateId = templateId,
         )
 

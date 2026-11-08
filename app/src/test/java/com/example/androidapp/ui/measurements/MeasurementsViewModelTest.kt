@@ -3,6 +3,7 @@ package com.example.androidapp.ui.measurements
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
+import com.example.androidapp.domain.ZoneSource
 import com.example.androidapp.domain.model.BodyMeasurement
 import com.example.androidapp.domain.model.LatestWeight
 import com.example.androidapp.domain.model.MeasurementKind
@@ -62,6 +63,28 @@ class MeasurementsViewModelTest {
 
     @After
     fun tearDown() = Dispatchers.resetMain()
+
+    @Test
+    fun aResumeAcrossMidnight_reReadsTheDay() = runTest(dispatcher) {
+        // N286: the screen must not keep calling yesterday "today" after a resume.
+        var now = Instant.parse("2026-10-21T10:00:00Z")
+        val zone = ZoneId.of("UTC")
+        val viewModel = MeasurementsViewModel(
+            repository = FakeMeasurementRepository(entries),
+            goals = FakeGoalRepository(),
+            timeSource = TimeSource { now },
+            zoneSource = ZoneSource { zone },
+        )
+        backgroundScope.launch(dispatcher) { viewModel.uiState.collect {} }
+        advanceUntilIdle()
+        val before = viewModel.uiState.value.today
+
+        now = now.plusSeconds(86_400)
+        viewModel.onResume()
+        advanceUntilIdle()
+
+        assertEquals(before.plusDays(1), viewModel.uiState.value.today)
+    }
 
     @Test
     fun settingADirectionGoal_opensAPeriodWithTheKind_andNoWeight() = runTest(dispatcher) {

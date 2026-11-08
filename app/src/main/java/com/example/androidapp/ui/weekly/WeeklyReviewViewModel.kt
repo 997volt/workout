@@ -6,6 +6,7 @@ import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.PlanStallFinder
 import com.example.androidapp.domain.TimeSource
+import com.example.androidapp.domain.ZoneSource
 import com.example.androidapp.domain.model.BlockProgress
 import com.example.androidapp.domain.model.DayOccurrence
 import com.example.androidapp.domain.model.MovementGain
@@ -58,6 +59,7 @@ data class WeeklyReviewUiState(
 class WeeklyReviewViewModel @Inject constructor(
     private val weekly: WeeklyReviewRepository,
     private val timeSource: TimeSource,
+    private val zoneSource: ZoneSource = ZoneSource { ZoneId.systemDefault() },
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(WeeklyReviewUiState())
@@ -67,12 +69,15 @@ class WeeklyReviewViewModel @Inject constructor(
         load()
     }
 
+    /** Re-reads the week when the screen resumes, so a week boundary is not missed (N286). */
+    fun onResume() = load()
+
     /** Re-reads the week; the screen's retry. */
     // The week's reads and its six sources are one state update; the split is N285.
     @Suppress("LongMethod")
     fun load() {
         viewModelScope.launch {
-            val zone = ZoneId.systemDefault()
+            val zone = zoneSource.zone()
             val today = timeSource.now().atZone(zone).toLocalDate()
             val weekStart = ProgramSchedule.weekStartOf(today)
 

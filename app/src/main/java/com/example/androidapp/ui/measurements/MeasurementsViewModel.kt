@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
+import com.example.androidapp.domain.ZoneSource
 import com.example.androidapp.domain.model.BodyMeasurement
 import com.example.androidapp.domain.model.MeasurementKind
 import com.example.androidapp.domain.model.WeightGoal
@@ -30,6 +31,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.ZoneId
@@ -88,7 +90,8 @@ data class MeasurementsUiState(
 class MeasurementsViewModel @Inject constructor(
     private val repository: MeasurementRepository,
     private val goals: GoalRepository,
-    timeSource: TimeSource,
+    private val timeSource: TimeSource,
+    private val zoneSource: ZoneSource = ZoneSource { ZoneId.systemDefault() },
 ) : ViewModel() {
 
     /**
@@ -97,8 +100,8 @@ class MeasurementsViewModel @Inject constructor(
      * Captured for the reason home captures its own (N114): the row and the write have to agree about which
      * day "today" is, and a screen left open across midnight keeps the day it opened on.
      */
-    private val todayDate: LocalDate = timeSource.now().atZone(ZoneId.systemDefault()).toLocalDate()
-    private val zone: ZoneId = ZoneId.systemDefault()
+    private val todayDate = MutableStateFlow(timeSource.now().atZone(zoneSource.zone()).toLocalDate())
+    private val zone: ZoneId = zoneSource.zone()
 
     private val lastError = MutableStateFlow<DataError?>(null)
 
@@ -106,7 +109,8 @@ class MeasurementsViewModel @Inject constructor(
         repository.observeAll(),
         goals.observeCurrent(),
         goals.observePeriods(WEIGHT_METRIC_ID),
-    ) { entries, current, periods ->
+        todayDate,
+    ) { entries, current, periods, day ->
         // The readings the goal is read against: every recorded weight, oldest first, whatever the list shows
         // (B141's whole-series rule, which the goal history shares). A stored zero is no weight (B336), so it is
         // not a reading the goal is judged on.
@@ -118,10 +122,10 @@ class MeasurementsViewModel @Inject constructor(
         MeasurementsUiState(
             isLoading = false,
             entries = entries,
-            todayEntry = entries.firstOrNull { it.isDailyOn(todayDate, zone) },
+            todayEntry = entries.firstOrNull { it.isDailyOn(day, zone) },
             weightGoal = current[WEIGHT_METRIC_ID]?.weightGoal,
             goalHistory = goalOutcomes(periods, readings),
-            today = todayDate,
+            today = day,
         )
     }
         .stateIn(
@@ -129,6 +133,11 @@ class MeasurementsViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
             initialValue = MeasurementsUiState(),
         )
+
+    /** Re-reads the device day on resume (N286). */
+    fun onResume() {
+        todayDate.update { timeSource.now().atZone(zoneSource.zone()).toLocalDate() }
+    }
 
     val error: StateFlow<DataError?> = lastError.asStateFlow()
 

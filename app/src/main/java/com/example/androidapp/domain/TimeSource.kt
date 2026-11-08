@@ -27,3 +27,13 @@ fun interface ZoneOffsetSource {
 
 /** Epoch milliseconds — the representation the entities store. */
 fun TimeSource.nowEpochMillis(): Long = now().toEpochMilli()
+
+/**
+ * The zone a screen's local day is read in (ROADMAP N286).
+ *
+ * Separate from [TimeSource] for the same reason [ZoneOffsetSource] is: the API takes no arguments, so it can
+ * be a SAM in tests. A screen that crosses midnight or changes zone asks this again on resume.
+ */
+fun interface ZoneSource {
+    fun zone(): java.time.ZoneId
+}

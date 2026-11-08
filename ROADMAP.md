@@ -26,12 +26,6 @@ stay in *Later* too, especially multi-week phases.
 
 ### 2.27 — correctness and scale
 
-- **N286 — Inject "today" and "now", and refresh the day when a screen resumes.** Most screens capture
-  `ZoneId.systemDefault()` and `todayDate` when the ViewModel is built, so a screen left open across midnight
-  (or a flight) keeps yesterday's plan and measurement row; this is documented as accepted staleness, but it
-  is also why the date-boundary tests are hard to write. Fixed means a `ZoneSource`/clock seam beside
-  `TimeSource` and a resume check that re-reads the day on Home, Measurements and the weekly review.
-
 - **N282 — Reads should stay cheap as the history grows.** `workout_sessions` has no index on `templateId`,
   `measurements` has none on `measuredAt`, the program-document merge does an N+1 read per template/exercise,
   and `buildProgramDocument` queries the program's slots twice. Fixed means a new migration adds the two

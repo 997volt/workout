@@ -44,7 +44,7 @@ class WeeklyReviewViewModelTest {
 
     private val dispatcher = StandardTestDispatcher()
     private val zone = ZoneId.systemDefault()
-    private val now = Instant.parse("2026-10-28T12:00:00Z")
+    private var now = Instant.parse("2026-10-28T12:00:00Z")
     private val today = now.atZone(zone).toLocalDate()
     private val monday = ProgramSchedule.weekStartOf(today)
 
@@ -56,6 +56,23 @@ class WeeklyReviewViewModelTest {
     @After
     fun tearDown() {
         Dispatchers.resetMain()
+    }
+
+    @Test
+    fun onResume_reloadsTheWeekTheClockNowNames() = runTest(dispatcher) {
+        // N286: a week boundary must not wait for the screen to be recreated.
+        val viewModel = WeeklyReviewViewModel(
+            weekly = FakeWeekly(history = emptyList(), occurrences = emptyMap()),
+            timeSource = TimeSource { now },
+        )
+        advanceUntilIdle()
+        assertThat(viewModel.state.value.weekStart).isEqualTo(monday)
+
+        now = now.plusSeconds(7 * 86_400)
+        viewModel.onResume()
+        advanceUntilIdle()
+
+        assertThat(viewModel.state.value.weekStart).isEqualTo(monday.plusWeeks(1))
     }
 
     @Test
