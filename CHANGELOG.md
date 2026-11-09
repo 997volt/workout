@@ -17,6 +17,9 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The trained side reads history only when it is showing** (B394). `ProgramBalanceViewModel` selects the
+  logged-sets flow by `BalanceView`; opening the Plan tab no longer queries the log, and a failure is still
+  reported once the trained side is selected.
 - **Program documents read exercise ancestry a level at a time** (B393). `withAncestors` now batches each
   level through `findLiveByIds` instead of calling `findById` per row; the document's chain is unchanged.
 - **Weekly Review no longer loads twice on first resume** (B392). The ViewModel keeps one in-flight `loadJob`

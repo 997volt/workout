@@ -174,6 +174,13 @@ class ProgramBalanceViewModelTest {
         backgroundScope.launch { viewModel.uiState.collect {} }
         advanceUntilIdle()
 
+        // B394: opening on the plan does not read the log.
+        assertThat(statistics.windows).isEmpty()
+        assertThat(viewModel.uiState.value.trained).isEmpty()
+
+        viewModel.onSelectView(BalanceView.TRAINED)
+        advanceUntilIdle()
+
         // The trained side is a count of work, so the halves are the secondary's share (N122): lats 4 and
         // biceps 2 from two row sets, quads 6 from three squat sets.
         assertThat(viewModel.uiState.value.trained).containsExactly(
@@ -182,7 +189,7 @@ class ProgramBalanceViewModelTest {
             MuscleSets(MuscleGroup.BICEPS, 2),
         ).inOrder()
         assertThat(viewModel.uiState.value.trainedSets).isEqualTo(5)
-        assertThat(viewModel.uiState.value.view).isEqualTo(BalanceView.PLAN)
+        assertThat(viewModel.uiState.value.view).isEqualTo(BalanceView.TRAINED)
         assertThat(viewModel.uiState.value.window).isEqualTo(TrainedWindow.LAST_7_DAYS)
         // Seven dates including today, half-open at tomorrow's midnight (N289).
         assertThat(statistics.windows.single()).isEqualTo(
@@ -240,6 +247,8 @@ class ProgramBalanceViewModelTest {
         val viewModel = viewModel()
         backgroundScope.launch { viewModel.uiState.collect {} }
         advanceUntilIdle()
+        viewModel.onSelectView(BalanceView.TRAINED)
+        advanceUntilIdle()
 
         assertThat(viewModel.uiState.value.trainedReadFailed).isTrue()
         assertThat(viewModel.uiState.value.trained).isEmpty()
@@ -256,6 +265,8 @@ class ProgramBalanceViewModelTest {
 
         val viewModel = viewModel()
         backgroundScope.launch { viewModel.uiState.collect {} }
+        advanceUntilIdle()
+        viewModel.onSelectView(BalanceView.TRAINED)
         advanceUntilIdle()
 
         now = Instant.parse("2026-10-03T09:00:00Z")

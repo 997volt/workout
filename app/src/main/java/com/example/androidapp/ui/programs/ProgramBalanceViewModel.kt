@@ -141,11 +141,17 @@ class ProgramBalanceViewModel @Inject constructor(
      * screen's own day, which is why the day is part of the read rather than a constant inside it.
      */
     private val trainedCounts: Flow<DataResult<List<ExerciseWorkingSets>>> =
-        combine(window, screenDay) { selected, screen -> selected to screen }
-            .flatMapLatest { (selected, screen) ->
-                val bounds = selected.window(screen.date, screen.zone)
+        combine(view, window, screenDay) { selectedView, selectedWindow, screen ->
+            Triple(selectedView, selectedWindow, screen)
+        }.flatMapLatest { (selectedView, selectedWindow, screen) ->
+            // B394: opening the Plan side is not a reason to query the log.
+            if (selectedView != BalanceView.TRAINED) {
+                flowOf(DataResult.Success(emptyList()))
+            } else {
+                val bounds = selectedWindow.window(screen.date, screen.zone)
                 statisticsRepository.observeWorkingSetsIn(bounds.from, bounds.toExclusive)
             }
+        }
 
     /**
      * The three plan reads and the log read, gathered so the final combine stays inside its typed arity.

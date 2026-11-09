@@ -15,15 +15,6 @@ work was planned, so they do not always run in order — and an id this file doe
 shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 [CHANGELOG-1.x.md](CHANGELOG-1.x.md) for the 1.x releases.
 
-## Next — the 2.27 review fixes
-
-The review of `v2.26..HEAD` found five concrete gaps. **B390 is a release blocker**: the records timeline is
-wired to a state field no production code fills, so it always renders empty.
-
-- **B394 — Read trained counts only when the trained side is showing.** `ProgramBalanceViewModel` puts the logged
-  sets query in `sources`, so opening the Plan tab also queries history. Fixed means the trained flow is selected
-  by `view`, and the Plan side opens without a log read.
-
 ## Later — the rest of the 2.22 review
 
 The rows below are real and specified, but none is in flight: a defect here is low-frequency or a polish item,
