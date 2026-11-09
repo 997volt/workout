@@ -15,6 +15,28 @@ work was planned, so they do not always run in order — and an id this file doe
 shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 [CHANGELOG-1.x.md](CHANGELOG-1.x.md) for the 1.x releases.
 
+## Next — the post-2.27 feature batch
+
+The three remaining product rows, in the order agreed after 2.27. **N291** is the next training-flow gap;
+**N293** is the small companion; **N292** is the large one and follows only when the first two are settled.
+
+- **N291 — Substitute an exercise inside a workout.** Weekly programs can substitute a workout for an
+  occurrence, but mid-session the only options are remove and add, which loses the plan context. A session
+  exercise's menu could offer "Substitute exercise", keeping its position and marking the stand-in so plan
+  comparison says "substituted" rather than "missed". Medium; the plan-comparison rule is the open design
+  question, and the app still suggests rather than writes.
+
+- **N293 — Manual duration and distance for activities.** An activity is currently a marker with no numbers, so
+  a swim or a ride records only "the day was trained". Manual duration/distance fields would extend the
+  notebook without adding GPS or a new permission. Medium–large: schema, backup and helper format, and a
+  decision about whether the values live on the session or a record of their own.
+
+- **N292 — Multi-week program phases.** A weekly program repeats forever and a sequence block happens once;
+  there is no authored multi-week block (week 1/2/3 prescriptions). This is a real programming capability and
+  the largest item on this list: new schema and program-document fields, a format-version bump, and an editor
+  for the phases. Each week is authored by the lifter; the app does not auto-progress loads, which keeps N22's
+  "no percentage/coach rule" decision intact.
+
 ## Later — the rest of the 2.22 review
 
 The rows below are real and specified, but none is in flight: a defect here is low-frequency or a polish item,
@@ -35,23 +57,6 @@ it is picked up; its design argument moves to [DECISIONS.md](DECISIONS.md).
 Each row below is a product candidate, not an agreed design; the constraints and the decision it touches are
 named so the row can be picked up without re-arguing it from scratch. The id is the planning id; no row here is
 agreed to ship.
-
-- **N291 — Substitute an exercise inside a workout.** Weekly programs can substitute a workout for an
-  occurrence, but mid-session the only options are remove and add, which loses the plan context. A session
-  exercise's menu could offer "Substitute exercise", keeping its position and marking the stand-in so plan
-  comparison says "substituted" rather than "missed". Medium; the plan-comparison rule is the open design
-  question, and the app still suggests rather than writes.
-
-- **N292 — Multi-week program phases.** A weekly program repeats forever and a sequence block happens once;
-  there is no authored multi-week block (week 1/2/3 prescriptions). This is a real programming capability and
-  the largest item on this list: new schema and program-document fields, a format-version bump, and an editor
-  for the phases. Each week is authored by the lifter; the app does not auto-progress loads, which keeps N22's
-  "no percentage/coach rule" decision intact.
-
-- **N293 — Manual duration and distance for activities.** An activity is currently a marker with no numbers, so
-  a swim or a ride records only "the day was trained". Manual duration/distance fields would extend the
-  notebook without adding GPS or a new permission. Medium–large: schema, backup and helper format, and a
-  decision about whether the values live on the session or a record of their own.
 
 - **N294 — An encrypted backup file.** Encryption at rest is parked; an encrypted *export* is narrower: a
   password-protected file for a folder another app syncs, still user-chosen and local. It needs a new format
