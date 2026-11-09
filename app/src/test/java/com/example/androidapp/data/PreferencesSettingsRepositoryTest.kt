@@ -36,6 +36,20 @@ class PreferencesSettingsRepositoryTest {
     private fun repository() = PreferencesSettingsRepository(context)
 
     @Test
+    fun favouriteSeries_roundTripInOrder_andClear() = runTest {
+        context.getSharedPreferences("settings", android.content.Context.MODE_PRIVATE)
+            .edit().clear().commit()
+        val repository = repository()
+        val pinned = listOf("BODY:WEIGHT", "EXERCISE:VOLUME|bench")
+
+        assertThat(repository.setFavouriteSeries(pinned) is DataResult.Success).isTrue()
+        assertThat(repository.observeFavouriteSeries().first()).containsExactlyElementsIn(pinned).inOrder()
+
+        assertThat(repository.setFavouriteSeries(emptyList()) is DataResult.Success).isTrue()
+        assertThat(repository.observeFavouriteSeries().first()).isEmpty()
+    }
+
+    @Test
     fun anUnsetStatisticsRange_isSevenDays() = runTest {
         // A preference that was never written must not make the screen blank on first open.
         context.getSharedPreferences("settings", android.content.Context.MODE_PRIVATE)

@@ -57,6 +57,9 @@ internal object EmptySettings : SettingsRepository {
 
     override suspend fun setRecentSeries(entries: List<String>): DataResult<Unit> = DataResult.Success(Unit)
 
+    override fun observeFavouriteSeries(): Flow<List<String>> = flowOf(emptyList())
+    override suspend fun setFavouriteSeries(entries: List<String>): DataResult<Unit> = DataResult.Success(Unit)
+
     override fun observeBackupSettings(): Flow<BackupSettings> = flowOf(BackupSettings())
 
     override suspend fun setBackupEnabled(enabled: Boolean): DataResult<Unit> = DataResult.Success(Unit)

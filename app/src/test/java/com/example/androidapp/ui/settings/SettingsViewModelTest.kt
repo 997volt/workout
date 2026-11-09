@@ -259,6 +259,9 @@ private class FakeSettingsRepository(
     override fun observeRecentSeries(): Flow<List<String>> = flowOf(emptyList())
     override suspend fun setRecentSeries(entries: List<String>): DataResult<Unit> = DataResult.Success(Unit)
 
+    override fun observeFavouriteSeries(): Flow<List<String>> = flowOf(emptyList())
+    override suspend fun setFavouriteSeries(entries: List<String>): DataResult<Unit> = DataResult.Success(Unit)
+
     /** N218: the switch, the period and the folder, each read back so a refused write cannot look applied. */
     private val backup = MutableStateFlow(BackupSettings())
     val backupEnabledWrites = mutableListOf<Boolean>()

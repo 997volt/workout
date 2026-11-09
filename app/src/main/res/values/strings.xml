@@ -530,6 +530,9 @@
     <!-- The disclosure's state, which its label does not say and its icon does not read out (N221). -->
     <string name="statistics_readings_collapsed">Collapsed</string>
     <string name="statistics_readings_expanded">Expanded</string>
+    <string name="statistics_favourites">Favourites</string>
+    <string name="statistics_add_favourite">Add to favourites</string>
+    <string name="statistics_remove_favourite">Remove from favourites</string>
     <string name="statistics_average">Average</string>
     <string name="statistics_trend">Trend</string>
     <string name="statistics_moving_average">Average of last</string>

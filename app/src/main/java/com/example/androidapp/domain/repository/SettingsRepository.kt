@@ -115,6 +115,16 @@ interface SettingsRepository {
     suspend fun setRecentSeries(entries: List<String>): DataResult<Unit>
 
     /**
+     * The series the lifter pinned, in their chosen order (N-favourite).
+     *
+     * Encoded like [observeRecentSeries]; an entry this build cannot offer is dropped by the reader.
+     */
+    fun observeFavouriteSeries(): Flow<List<String>>
+
+    /** Replaces the pinned series; an empty list removes the row. */
+    suspend fun setFavouriteSeries(entries: List<String>): DataResult<Unit>
+
+    /**
      * Automatic backup: the switch, the period, the folder, and where the last attempt ended (ROADMAP N218).
      *
      * One flow rather than six, because they are read as one answer: "is a backup due, and where would it

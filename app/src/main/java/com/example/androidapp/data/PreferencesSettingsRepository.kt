@@ -43,6 +43,7 @@ import javax.inject.Singleton
  * hoped-for success).
  */
 @Singleton
+@Suppress("TooManyFunctions")
 class PreferencesSettingsRepository @Inject constructor(
     @ApplicationContext context: Context,
 ) : SettingsRepository {
@@ -193,6 +194,31 @@ class PreferencesSettingsRepository @Inject constructor(
         awaitClose { preferences.unregisterOnSharedPreferenceChangeListener(listener) }
     }.conflate().distinctUntilChanged()
 
+    override fun observeFavouriteSeries(): Flow<List<String>> = callbackFlow {
+        trySend(currentFavouriteSeries())
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, changed ->
+            if (changed == null || changed == KEY_FAVOURITE_SERIES) trySend(currentFavouriteSeries())
+        }
+        preferences.registerOnSharedPreferenceChangeListener(listener)
+        awaitClose { preferences.unregisterOnSharedPreferenceChangeListener(listener) }
+    }.conflate().distinctUntilChanged()
+
+    override suspend fun setFavouriteSeries(entries: List<String>): DataResult<Unit> =
+        withContext(Dispatchers.IO) {
+            preferences.edit(commit = true) {
+                if (entries.isEmpty()) {
+                    remove(KEY_FAVOURITE_SERIES)
+                } else {
+                    putString(KEY_FAVOURITE_SERIES, entries.joinToString(SEPARATOR))
+                }
+            }
+            if (currentFavouriteSeries() == entries) {
+                DataResult.Success(Unit)
+            } else {
+                DataResult.Failure(DataError.Storage(IllegalStateException("the favourite series were not stored")))
+            }
+        }
+
     /** Committed and read back off the main thread, for the reason [writeFlag] states (B158). */
     override suspend fun setRecentSeries(entries: List<String>): DataResult<Unit> =
         withContext(Dispatchers.IO) {
@@ -221,6 +247,12 @@ class PreferencesSettingsRepository @Inject constructor(
      */
     private fun currentRecentSeries(): List<String> =
         preferences.getString(KEY_RECENT_SERIES, null)
+            ?.split(SEPARATOR)
+            ?.filter { it.isNotBlank() }
+            .orEmpty()
+
+    private fun currentFavouriteSeries(): List<String> =
+        preferences.getString(KEY_FAVOURITE_SERIES, null)
             ?.split(SEPARATOR)
             ?.filter { it.isNotBlank() }
             .orEmpty()
@@ -415,6 +447,7 @@ class PreferencesSettingsRepository @Inject constructor(
 
         /** The series the Statistics screen read last, newest first; a metric id and an optional lift (N212, B226). */
         const val KEY_RECENT_SERIES = "statistics_recent_series"
+        const val KEY_FAVOURITE_SERIES = "statistics_favourite_series"
         const val SEPARATOR = "\n"
 
         /** Automatic backup: the switch, the period, the chosen folder and where the last attempt ended (N218). */

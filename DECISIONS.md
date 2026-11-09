@@ -1279,6 +1279,9 @@ the rule; that one argues it.
 - **One Weekly Review read at a time** (B392). `init` and the first resume both wanted to load; a new call while
   a read is active is ignored, which is also the retry rule (the button is unavailable while loading). A later
   resume, after the read completes, refreshes normally.
+- **A favourite is a pinned selection, not a metric** (favourites). An Exercise series keeps its lift; pins
+  are stored in order and capped at five, while the automatic recents remain a separate, three-entry memory.
+  A favourite the library can no longer name is omitted rather than shown as a chip that selects nothing.
 - **A summary line is drawn over the readings it summarises** (N40). The moving average sits above the series
   in both line and bar charts; its job is to be read through the noise, so the noise must not paint over it.
 - **A phase is an authored week number, not a new program kind** (N292). `program_slots.phaseWeek` null keeps

@@ -105,6 +105,8 @@ data class StatisticsUiState(
      * fewer than two, because one chip repeating the picker's own label is not a shortcut.
      */
     val recentSeries: List<StatisticsSelection> = emptyList(),
+    /** The series the lifter pinned, in their chosen order (favourites). */
+    val favouriteSeries: List<StatisticsSelection> = emptyList(),
     val overview: StatisticsOverview = StatisticsOverview(),
     /**
      * The newest records, for the timeline at the foot of the page (ROADMAP N290).
@@ -226,6 +228,9 @@ class StatisticsViewModel @Inject constructor(
     /** One recents write at a time, so two quick choices cannot both read the same list (N212). */
     private val recentWrites = Mutex()
 
+    /** Serialises favourite writes for the same reason as [recentWrites]. */
+    private val favouriteWrites = Mutex()
+
     /**
      * The window a pinch is still changing (N213).
      *
@@ -259,6 +264,7 @@ class StatisticsViewModel @Inject constructor(
         val range: StatisticsRange,
         val selection: StatisticsSelection,
         val recentSeries: List<StatisticsSelection>,
+        val favouriteSeries: List<StatisticsSelection>,
         val settingsError: DataError?,
         val summaries: List<WorkoutSummary>,
         val workoutPoints: DataResult<List<TrendPoint>>,
@@ -292,9 +298,23 @@ class StatisticsViewModel @Inject constructor(
         entries.mapNotNull(::recentSelection).distinct().take(RECENT_SERIES_MAX)
     }
 
-    /** The selection, the recents and the last write's failure, so the five-flow combine keeps its five. */
-    private val chosen = combine(selection, recents, settingsError) { selection, recent, failed ->
-        Triple(selection, recent, failed)
+    /** The pinned series, newest added last; encoded like the recents and validated the same way. */
+    private val favourites: Flow<List<StatisticsSelection>> =
+        settings.observeFavouriteSeries().map { entries ->
+            entries.mapNotNull(::recentSelection).distinct().take(FAVOURITE_SERIES_MAX)
+        }
+
+    /** The selection, recents, favourites and the last write's failure, gathered before the five-flow combine. */
+    private data class Chosen(
+        val selection: StatisticsSelection,
+        val recent: List<StatisticsSelection>,
+        val favourites: List<StatisticsSelection>,
+        val error: DataError?,
+    )
+
+    private val chosen = combine(selection, recents, favourites, settingsError) {
+            selection, recent, favourites, failed ->
+        Chosen(selection, recent, favourites, failed)
     }
 
     private val sources = combine(
@@ -304,14 +324,15 @@ class StatisticsViewModel @Inject constructor(
         repositories.trends.observeTrends(NO_LIMIT),
         repositories.measurements.observeAll(),
     ) { range, chosen, library, points, body ->
-        val selection = chosen.first
+        val selection = chosen.selection
         val acceptsHead = MetricRegistry.entryFor(selection.metric).acceptsHead
         val rows = library.second
         Sources(
             range = range,
             selection = selection,
-            recentSeries = chosen.second,
-            settingsError = chosen.third,
+            recentSeries = chosen.recent,
+            favouriteSeries = chosen.favourites,
+            settingsError = chosen.error,
             summaries = library.first,
             // A head is offered only where the chosen metric **reads** one (ROADMAP N97, B98), and only where
             // it actually heads something: a category a lifter has made and not yet filed anything under is
@@ -481,6 +502,7 @@ class StatisticsViewModel @Inject constructor(
                     range = sources.range,
                     selection = sources.selection,
                     recentSeries = sources.recentSeries,
+                    favouriteSeries = sources.favouriteSeries,
                     settingsError = sources.settingsError,
                     overview = statisticsOverview(
                         range = sources.range,
@@ -629,6 +651,34 @@ class StatisticsViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Pins or unpins the current series (favourites).
+     *
+     * A favourite is a selection, not a metric: an Exercise series keeps its lift, and a metric that needs one
+     * with no lift chosen is not a series yet. A new pin goes at the end, so the row does not reshuffle as it is
+     * used; the oldest is dropped once [FAVOURITE_SERIES_MAX] would be exceeded.
+     */
+    fun onToggleFavourite() {
+        val current = selection.value
+        val entry = MetricRegistry.entryFor(current.metric)
+        if (entry.needsExercise && current.exerciseId == null) return
+        val encoded = recentEntry(current)
+        viewModelScope.launch {
+            favouriteWrites.withLock {
+                val stored = settings.observeFavouriteSeries().first()
+                val next = if (encoded in stored) {
+                    stored.filterNot { it == encoded }
+                } else {
+                    (stored + encoded).take(FAVOURITE_SERIES_MAX)
+                }
+                if (next != stored) {
+                    val result = settings.setFavouriteSeries(next)
+                    if (result is DataResult.Failure) settingsError.value = result.error
+                }
+            }
+        }
+    }
+
     /** Stored, not held: the range has to mean the same thing the next time the tab is opened. */
     fun onSelectRange(range: StatisticsRange) {
         // A chip overrules a pinch that is still settling; otherwise the pending write would land after it.
@@ -741,6 +791,9 @@ class StatisticsViewModel @Inject constructor(
     private companion object {
         /** How many series the recent row holds: enough for the habitual three, not a second menu (N212). */
         const val RECENT_SERIES_MAX = 3
+
+        /** A curated shortcut row stays shorter than the picker it shortcuts. */
+        const val FAVOURITE_SERIES_MAX = 5
 
         /** The narrowest window a pinch may leave: one day cannot show a change (N213). */
         const val MIN_PINCH_DAYS = 2

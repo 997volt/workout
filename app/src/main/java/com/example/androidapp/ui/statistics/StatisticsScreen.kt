@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material.icons.filled.EventAvailable
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -20,6 +22,8 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -33,6 +37,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
@@ -81,6 +86,8 @@ fun StatisticsRoute(
         modifier = modifier,
         onSelectExercise = viewModel::onSelectExercise,
         onSelectRecent = viewModel::onSelectRecent,
+        onSelectFavourite = viewModel::onSelectRecent,
+        onToggleFavourite = viewModel::onToggleFavourite,
         onPinch = viewModel::onPinch,
         onSetGoal = viewModel::onSetGoal,
         onOpenMeasurements = onOpenMeasurements,
@@ -127,6 +134,10 @@ fun StatisticsScreen(
      * reason measurements is one — it answers a question this tab raises, and it is not a tab.
      */
     onOpenAdherence: (() -> Unit)? = null,
+    /** Restores one pinned series, lift and all. */
+    onSelectFavourite: (StatisticsSelection) -> Unit = onSelectRecent,
+    /** Pins or unpins the current series. */
+    onToggleFavourite: () -> Unit = {},
 ) {
     var choosingDates by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -173,6 +184,8 @@ fun StatisticsScreen(
                     state = state,
                     onSelectRange = onSelectRange,
                     onSelectRecent = onSelectRecent,
+                    onSelectFavourite = onSelectFavourite,
+                    onToggleFavourite = onToggleFavourite,
                     onSelectMetric = onSelectMetric,
                     onChooseDates = { choosingDates = true },
                     onSelectExercise = onSelectExercise,
@@ -190,6 +203,8 @@ private fun StatisticsLoadedContent(
     state: StatisticsUiState,
     onSelectRange: (StatisticsRange) -> Unit,
     onSelectRecent: (StatisticsSelection) -> Unit,
+    onSelectFavourite: (StatisticsSelection) -> Unit,
+    onToggleFavourite: () -> Unit,
     onSelectMetric: (MetricKey) -> Unit,
     onChooseDates: () -> Unit,
     onSelectExercise: (String) -> Unit,
@@ -208,8 +223,22 @@ private fun StatisticsLoadedContent(
             onSelectRange = onSelectRange,
             onChooseDates = onChooseDates,
         )
+        FavouriteSeries(state = state, onSelectFavourite = onSelectFavourite)
         RecentSeries(state = state, onSelectRecent = onSelectRecent)
-        MetricPicker(selected = state.selection.metric, onSelectMetric = onSelectMetric)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(modifier = Modifier.weight(1f)) {
+                MetricPicker(selected = state.selection.metric, onSelectMetric = onSelectMetric)
+            }
+            if (!state.metricNeedsExercise || state.selection.exerciseId != null) {
+                FavouriteToggle(
+                    favourite = state.selection in state.favouriteSeries,
+                    onToggle = onToggleFavourite,
+                )
+            }
+        }
         StatisticsBody(
             state = state,
             series = state.series,
@@ -310,6 +339,59 @@ private fun SettingsErrorSnackbar(state: StatisticsUiState, host: SnackbarHostSt
         hostState = host,
         onDismiss = onDismiss,
     )
+}
+
+/** The pinned series, in the order they were pinned; stale lifts are omitted rather than drawn broken. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun FavouriteSeries(
+    state: StatisticsUiState,
+    onSelectFavourite: (StatisticsSelection) -> Unit,
+) {
+    val visible = state.favouriteSeries.filter { favourite ->
+        favourite.exerciseId == null || state.lifts.any { it.id == favourite.exerciseId }
+    }
+    if (visible.isEmpty()) return
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = stringResource(R.string.statistics_favourites),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            val weightUnit = LocalWeightUnit.current
+            visible.forEach { favourite ->
+                val entry = MetricRegistry.entryFor(favourite.metric, weightUnit)
+                val lift = state.lifts.firstOrNull { it.id == favourite.exerciseId }?.name
+                AppFilterChip(
+                    selected = favourite == state.selection,
+                    onClick = { onSelectFavourite(favourite) },
+                    label = if (lift == null) entry.label() else entry.label() + " · " + lift,
+                    testTag = TestTags.Statistics.favouriteSeries(favourite.recentTag()),
+                )
+            }
+        }
+    }
+}
+
+/** The star beside the picker: a deliberate pin, separate from the automatic recents row. */
+@Composable
+private fun FavouriteToggle(
+    favourite: Boolean,
+    onToggle: () -> Unit,
+) {
+    IconButton(
+        onClick = onToggle,
+        modifier = Modifier.testTag(TestTags.Statistics.FAVOURITE_TOGGLE),
+    ) {
+        Icon(
+            imageVector = if (favourite) Icons.Filled.Star else Icons.Outlined.StarBorder,
+            contentDescription = stringResource(
+                if (favourite) R.string.statistics_remove_favourite else R.string.statistics_add_favourite,
+            ),
+            tint = if (favourite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
 }
 
 /**

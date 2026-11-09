@@ -15,6 +15,13 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ## [Unreleased]
 
+### Added
+
+- **Favourite statistics** (no roadmap id). A star beside the metric picker pins the current series; a
+  **Favourites** row above recents restores it with its lift. A pinned Exercise series keeps the lift rather
+  than the metric alone, stale lifts are omitted, and the row is hidden when empty. Pins are stored like
+  recents, capped at five and kept in the order they were added.
+
 ### Fixed
 
 - **The moving-average line is drawn above the readings** (N40 follow-up). A noisy day's line used to paint over

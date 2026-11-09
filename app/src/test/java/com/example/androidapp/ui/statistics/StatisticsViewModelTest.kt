@@ -598,6 +598,73 @@ class StatisticsViewModelTest {
     }
 
     @Test
+    fun favouriteToggle_pinsAndUnpinsTheCurrentSeries() = runTest(dispatcher) {
+        val settings = FakeSettingsRepository(StatisticsRange(RangeKind.ALL))
+        val viewModel = viewModel(range = StatisticsRange(RangeKind.ALL), settings = settings)
+        observe(viewModel)
+        advanceUntilIdle()
+
+        val weight = MetricKey.Body(BodyMetric.WEIGHT)
+        viewModel.onSelectMetric(weight)
+        viewModel.onToggleFavourite()
+        advanceUntilIdle()
+
+        assertThat(settings.favourite.value).containsExactly(weight.id)
+        assertThat(viewModel.uiState.value.favouriteSeries)
+            .containsExactly(StatisticsSelection(weight))
+
+        viewModel.onToggleFavourite()
+        advanceUntilIdle()
+
+        assertThat(settings.favourite.value).isEmpty()
+        assertThat(viewModel.uiState.value.favouriteSeries).isEmpty()
+    }
+
+    @Test
+    fun aFavouriteLiftSeries_keepsItsLift() = runTest(dispatcher) {
+        val bench = lift(id = "bench", name = "Bench Press")
+        val settings = FakeSettingsRepository(StatisticsRange(RangeKind.ALL))
+        val viewModel = viewModel(
+            range = StatisticsRange(RangeKind.ALL),
+            lifts = listOf(bench),
+            settings = settings,
+        )
+        observe(viewModel)
+        advanceUntilIdle()
+
+        val volume = MetricKey.Exercise(ExerciseTrendMetric.VOLUME)
+        viewModel.onSelectMetric(volume)
+        viewModel.onSelectExercise("bench")
+        viewModel.onToggleFavourite()
+        advanceUntilIdle()
+
+        assertThat(settings.favourite.value).containsExactly("EXERCISE:VOLUME|bench")
+        assertThat(viewModel.uiState.value.favouriteSeries).containsExactly(
+            StatisticsSelection(volume, "bench"),
+        )
+    }
+
+    @Test
+    fun theFavouriteReader_dropsUnknownAndLiftlessEntries() = runTest(dispatcher) {
+        val settings = FakeSettingsRepository(
+            initial = StatisticsRange(RangeKind.ALL),
+            initiallyFavourite = listOf(
+                "NOPE",
+                "EXERCISE:VOLUME",
+                "BODY:WEIGHT",
+                "BODY:WEIGHT",
+            ),
+        )
+        val viewModel = viewModel(range = StatisticsRange(RangeKind.ALL), settings = settings)
+        observe(viewModel)
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.favouriteSeries).containsExactly(
+            StatisticsSelection(MetricKey.Body(BodyMetric.WEIGHT)),
+        )
+    }
+
+    @Test
     fun aLiftSeries_recordsItsLift_andTheChipRestoresIt() = runTest(dispatcher) {
         // B226: an Exercise series is the metric **and** the lift; storing the metric alone made two lifts'
         // volume one chip and brought back whichever lift happened to be selected.
@@ -897,6 +964,7 @@ class StatisticsViewModelTest {
 private class FakeSettingsRepository(
     initial: StatisticsRange = StatisticsRange(),
     initiallyRecent: List<String> = emptyList(),
+    initiallyFavourite: List<String> = emptyList(),
 ) : SettingsRepository {
     val stored = MutableStateFlow(initial)
 
@@ -932,6 +1000,14 @@ private class FakeSettingsRepository(
     override fun observeRecentSeries(): Flow<List<String>> = recent
     override suspend fun setRecentSeries(entries: List<String>): DataResult<Unit> {
         recent.value = entries
+        return DataResult.Success(Unit)
+    }
+
+    /** The favourites the screen wrote. */
+    val favourite = MutableStateFlow(initiallyFavourite)
+    override fun observeFavouriteSeries(): Flow<List<String>> = favourite
+    override suspend fun setFavouriteSeries(entries: List<String>): DataResult<Unit> {
+        favourite.value = entries
         return DataResult.Success(Unit)
     }
 

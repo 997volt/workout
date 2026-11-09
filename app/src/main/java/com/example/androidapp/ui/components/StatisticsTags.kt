@@ -165,4 +165,8 @@ internal object StatisticsTags {
 
     /** A series in the recently used row, named by its key (N212). */
     fun recentSeries(id: String) = "statistics_recent_$id"
+
+    /** The star beside the metric picker, and a pinned chip. */
+    val FAVOURITE_TOGGLE: String get() = "statistics_favourite_toggle"
+    fun favouriteSeries(id: String) = "statistics_favourite_$id"
 }

@@ -112,6 +112,8 @@ class StatisticsScreenTest {
         onSelectMetric: (MetricKey) -> Unit = {},
         onSelectExercise: (String) -> Unit = {},
         onSelectRecent: (StatisticsSelection) -> Unit = {},
+        onSelectFavourite: (StatisticsSelection) -> Unit = {},
+        onToggleFavourite: () -> Unit = {},
         onPinch: (scale: Float, focus: Float) -> Unit = { _, _ -> },
         onOpenMeasurements: (() -> Unit)? = null,
         onOpenAdherence: (() -> Unit)? = null,
@@ -126,6 +128,8 @@ class StatisticsScreenTest {
                     onSelectMetric = onSelectMetric,
                     onSelectExercise = onSelectExercise,
                     onSelectRecent = onSelectRecent,
+                    onSelectFavourite = onSelectFavourite,
+                    onToggleFavourite = onToggleFavourite,
                     onPinch = onPinch,
                     onOpenMeasurements = onOpenMeasurements,
                     onOpenAdherence = onOpenAdherence,
@@ -143,6 +147,29 @@ class StatisticsScreenTest {
         composeTestRule.onNodeWithTag(TestTags.Statistics.OVERVIEW_WORKOUTS).assertExists()
         composeTestRule.onNodeWithTag(TestTags.Statistics.OVERVIEW_VOLUME).assertExists()
         composeTestRule.onNodeWithTag(TestTags.Statistics.OVERVIEW_RECORDS).assertExists()
+    }
+
+    @Test
+    fun aFavouriteSeries_isATapAway_andTheStarTogglesIt() {
+        val weight = StatisticsSelection(MetricKey.Body(BodyMetric.WEIGHT))
+        var chosen: StatisticsSelection? = null
+        var toggled = false
+        setScreen(
+            state = StatisticsUiState(
+                isLoading = false,
+                selection = weight,
+                favouriteSeries = listOf(weight),
+                series = series,
+            ),
+            onSelectFavourite = { chosen = it },
+            onToggleFavourite = { toggled = true },
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.favouriteSeries(weight.recentTag())).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.FAVOURITE_TOGGLE).performClick()
+
+        assertThat(chosen).isEqualTo(weight)
+        assertThat(toggled).isTrue()
     }
 
     @Test

@@ -494,6 +494,9 @@ internal class FakeSettingsRepository : SettingsRepository {
 
     override suspend fun setRecentSeries(entries: List<String>): DataResult<Unit> = unused()
 
+    override fun observeFavouriteSeries(): Flow<List<String>> = unused()
+    override suspend fun setFavouriteSeries(entries: List<String>): DataResult<Unit> = unused()
+
     override fun observeBackupSettings(): Flow<BackupSettings> = unused()
 
     override suspend fun setBackupEnabled(enabled: Boolean): DataResult<Unit> = unused()

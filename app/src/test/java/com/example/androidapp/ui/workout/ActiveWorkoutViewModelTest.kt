@@ -3534,6 +3534,9 @@ private class FakeSettingsRepository(
     override fun observeRecentSeries(): Flow<List<String>> = flowOf(emptyList())
     override suspend fun setRecentSeries(entries: List<String>): DataResult<Unit> = DataResult.Success(Unit)
 
+    override fun observeFavouriteSeries(): Flow<List<String>> = flowOf(emptyList())
+    override suspend fun setFavouriteSeries(entries: List<String>): DataResult<Unit> = DataResult.Success(Unit)
+
     /** N218: this screen never touches the backup; the fake only has to satisfy the contract. */
     override fun observeBackupSettings(): Flow<BackupSettings> = flowOf(BackupSettings())
     override suspend fun setBackupEnabled(enabled: Boolean): DataResult<Unit> = DataResult.Success(Unit)
