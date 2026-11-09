@@ -842,6 +842,7 @@ class ProgramRepositoryTest {
         val program = create("Block")
         repository.setProgramStartDate(program, LocalDate.of(2026, 9, 28))
         repository.addSlot(program, createTemplate("Week 1 day"), DayOfWeek.MONDAY, phaseWeek = 1)
+        repository.addSlot(program, createTemplate("Week 2 day"), DayOfWeek.TUESDAY, phaseWeek = 2)
         repository.activateProgram(program)
 
         repository.addSlot(program, createTemplate("Saved plan"), DayOfWeek.FRIDAY)
