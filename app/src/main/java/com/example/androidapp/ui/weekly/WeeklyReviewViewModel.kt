@@ -20,6 +20,7 @@ import com.example.androidapp.domain.model.weekPlan
 import com.example.androidapp.domain.model.weekTotals
 import com.example.androidapp.domain.repository.WeeklyReviewRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -65,6 +66,9 @@ class WeeklyReviewViewModel @Inject constructor(
     private val _state = MutableStateFlow(WeeklyReviewUiState())
     val state: StateFlow<WeeklyReviewUiState> = _state.asStateFlow()
 
+    /** The one read in flight; a resume while the initial read is still running must not start a second. */
+    private var loadJob: Job? = null
+
     init {
         load()
     }
@@ -76,7 +80,8 @@ class WeeklyReviewViewModel @Inject constructor(
     // The week's reads and its six sources are one state update; the split is N285.
     @Suppress("LongMethod")
     fun load() {
-        viewModelScope.launch {
+        if (loadJob?.isActive == true) return
+        loadJob = viewModelScope.launch {
             val zone = zoneSource.zone()
             val today = timeSource.now().atZone(zone).toLocalDate()
             val weekStart = ProgramSchedule.weekStartOf(today)

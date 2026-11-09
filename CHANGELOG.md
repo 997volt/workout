@@ -17,6 +17,8 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **Weekly Review no longer loads twice on first resume** (B392). The ViewModel keeps one in-flight `loadJob`
+  and ignores a resume while the initial read is still running, so an older read cannot overwrite a newer one.
 - **Resume refreshes the zone with the day** (B391). Home, Measurements and Program Balance now hold their
   local day and zone as one `ScreenDay`; a timezone change emits even when the date is the same, and the
   daily-measurement check and writes use the new zone. A Measurements test crosses UTC to Tokyo and asserts

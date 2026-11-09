@@ -1271,6 +1271,9 @@ the rule; that one argues it.
   that owns them. `ActiveWorkoutViewModel` still owns all session actions — splitting the actions into several
   ViewModels is an architectural change the detekt note records as out of scope, not a mechanical move.
 - **The records timeline is bounded and reuses the record rule** (N290).
+- **One Weekly Review read at a time** (B392). `init` and the first resume both wanted to load; a new call while
+  a read is active is ignored, which is also the retry rule (the button is unavailable while loading). A later
+  resume, after the read completes, refreshes normally.
 - **A screen's day and zone are one value** (B391). A resume can change the zone without changing the date;
   emitting only the date would conflate that case, so `ScreenDay(date, zone)` is the flow. The daily check and
   write read the same pair the heading does.

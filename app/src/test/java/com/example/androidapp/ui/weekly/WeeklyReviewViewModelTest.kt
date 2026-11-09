@@ -59,6 +59,18 @@ class WeeklyReviewViewModelTest {
     }
 
     @Test
+    fun theFirstResume_doesNotStartASecondLoad() = runTest(dispatcher) {
+        // B392: init's load and the route's first ON_RESUME used to race; the later one won unpredictably.
+        val fake = FakeWeekly(history = emptyList(), occurrences = emptyMap())
+        val viewModel = WeeklyReviewViewModel(weekly = fake, timeSource = TimeSource { now })
+        viewModel.onResume()
+        advanceUntilIdle()
+
+        assertThat(fake.historyReads).isEqualTo(1)
+        assertThat(viewModel.state.value.isLoading).isFalse()
+    }
+
+    @Test
     fun onResume_reloadsTheWeekTheClockNowNames() = runTest(dispatcher) {
         // N286: a week boundary must not wait for the screen to be recreated.
         val viewModel = WeeklyReviewViewModel(
@@ -213,6 +225,7 @@ class WeeklyReviewViewModelTest {
         private val stall: PlanStall? = null,
         var failDate: LocalDate? = null,
         var failPrograms: Boolean = false,
+        var historyReads: Int = 0,
     ) : WeeklyReviewRepository {
         override suspend fun movementGains(
             weekStart: LocalDate,
@@ -229,8 +242,10 @@ class WeeklyReviewViewModelTest {
             ),
         )
 
-        override suspend fun history(): DataResult<List<WorkoutSummary>> =
-            DataResult.Success(history)
+        override suspend fun history(): DataResult<List<WorkoutSummary>> {
+            historyReads++
+            return DataResult.Success(history)
+        }
 
         override suspend fun occurrencesOn(
             date: LocalDate,
