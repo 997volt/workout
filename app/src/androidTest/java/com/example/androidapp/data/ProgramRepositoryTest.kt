@@ -863,7 +863,7 @@ class ProgramRepositoryTest {
 
         repository.addSlot(program, createTemplate("New day"), DayOfWeek.TUESDAY, phaseWeek = 2)
 
-        assertEquals(1, database.programDao().findSlot(old.id)?.phaseWeek)
+        assertEquals(1, database.programDao().findSlotIncludingDeleted(old.id)?.phaseWeek)
     }
 
     @Test

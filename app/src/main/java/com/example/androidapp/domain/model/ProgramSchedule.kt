@@ -327,6 +327,7 @@ object ProgramSchedule {
      * nothing scored is left out of [bySlot] — a row of zeros answers nothing — which is why the
      * rows are not simply every slot.
      */
+    @Suppress("LongParameterList")
     private fun countOccurrences(
         slots: List<ProgramSlot>,
         slotsByWeek: Map<LocalDate, List<ProgramSlot>>,

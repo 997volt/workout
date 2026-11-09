@@ -228,6 +228,10 @@ interface ProgramDao {
     @Query("SELECT * FROM program_slots WHERE id = :id AND deletedAt IS NULL")
     suspend fun findSlot(id: String): ProgramSlotEntity?
 
+    /** The row whether or not it is deleted, for the phase-backfill regression (N292). */
+    @Query("SELECT * FROM program_slots WHERE id = :id")
+    suspend fun findSlotIncludingDeleted(id: String): ProgramSlotEntity?
+
     /**
      * Names of the **other** live programs that schedule one of [templateIds] (ROADMAP N171).
      *
