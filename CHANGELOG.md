@@ -32,10 +32,6 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   holds under the existing record rule; the repository maps them to `RecordEvent` and Statistics combines the
   flow into `StatisticsUiState.records`. A ViewModel test now proves a record reaches the state, and a Room
   test proves the SQL returns both shapes newest first.
-
-
-### Fixed
-
 - **The largest files are split by responsibility** (N285). The 536 test tags now live one file per screen
   area behind a thin aggregator; program documents/imports/schedules, the template exercise block, the workout
   top bar/feedback/status, and the workout's state/snapshot/progression/seeding/weigh-in have their own files.
@@ -73,10 +69,6 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   `versionCode` that does not exceed the latest `v*` tag; `--remote` accepts the release commit recorded in
   the notes and verifies the tag points at it. The keystore password is passed to `keytool` through the
   environment rather than its argv.
-
-
-### Fixed
-
 - **The remote verifier compares the mapping's stable identity** (B388 follow-up). R8's mapping text is not
   byte-stable across build runs — obfuscated lambda names move — so the first implementation failed a valid
   release mapping. `verify-release.py --remote` now compares `pg_map_id`, the header R8 uses to identify the
