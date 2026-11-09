@@ -5,6 +5,7 @@ import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.getOrNull
 import com.example.androidapp.domain.model.DeloadWeek
 import com.example.androidapp.domain.model.PreviousPerformance
+import com.example.androidapp.domain.model.ProgramPhases
 import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.repository.DeloadRepository
 import com.example.androidapp.domain.repository.ProgramRepository
@@ -47,7 +48,10 @@ class RoomDeloadSourceLoader @Inject constructor(
     override suspend fun load(programId: String, weekStart: LocalDate): DeloadSourceSnapshot? {
         val program = programRepository.observeProgram(programId).first() ?: return null
         val appUnit = settingsRepository.observeWeightUnit().first()
-        val slots = programRepository.observeSlots(programId).first().sortedBy { it.position }
+        val allSlots = programRepository.observeSlots(programId).first()
+        // A phased weekly program's deload is built for the week it is deloading, not from a union of
+        // every authored week (N292). A block has no phases, so its whole order stays.
+        val slots = ProgramPhases.currentSlots(program, allSlots, weekStart).sortedBy { it.position }
         val hasPlan = deloadRepository.observeWeekPlans(weekStart).first()
             .firstOrNull { it.programId == programId }
             ?.days
