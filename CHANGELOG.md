@@ -13,62 +13,81 @@ repeated here.
 **1.0–1.18 live in [CHANGELOG-1.x.md](CHANGELOG-1.x.md)**, kept whole rather than deleted because the
 id a 1.x commit names is still looked up by it. This file carries the current release.
 
-## [Unreleased]
+## [2.27] — 2026-11-09 (versionCode 48)
 
-### Fixed
+### Added
 
-- **The trained side reads history only when it is showing** (B394). `ProgramBalanceViewModel` selects the
-  logged-sets flow by `BalanceView`; opening the Plan tab no longer queries the log, and a failure is still
-  reported once the trained side is selected.
-- **Program documents read exercise ancestry a level at a time** (B393). `withAncestors` now batches each
-  level through `findLiveByIds` instead of calling `findById` per row; the document's chain is unchanged.
-- **Weekly Review no longer loads twice on first resume** (B392). The ViewModel keeps one in-flight `loadJob`
-  and ignores a resume while the initial read is still running, so an older read cannot overwrite a newer one.
-- **Resume refreshes the zone with the day** (B391). Home, Measurements and Program Balance now hold their
-  local day and zone as one `ScreenDay`; a timezone change emits even when the date is the same, and the
-  daily-measurement check and writes use the new zone. A Measurements test crosses UTC to Tokyo and asserts
-  the old zone's entry is no longer today's.
-- **The records timeline reads real records** (B390). A bounded DAO query returns weighted records and timed
-  holds under the existing record rule; the repository maps them to `RecordEvent` and Statistics combines the
-  flow into `StatisticsUiState.records`. A ViewModel test now proves a record reaches the state, and a Room
-  test proves the SQL returns both shapes newest first.
+- **Lean mass is a series derived from the body the app already records** (N287). Weight minus fat mass is
+  offered beside fat and muscle mass, is null when either half is missing, and reads in the same mass unit;
+  nothing new is stored.
+
+- **History search reaches session notes and logged exercise names** (N288). The history projection carries
+  the session note and the names joined from its live exercises, so a query can answer "when did I write down
+  the shoulder tweak" without loading every set. A matched note or exercise is named in the row's supporting
+  line.
+
+- **The balance screen can show what the log actually trained** (N289). A Plan/Trained toggle reuses the
+  planned-count rule — primary 1, each secondary 0.5, warm-ups excluded — over logged working sets in a 7- or
+  28-day window. It is a factual count list, with no target band or warning.
+
+- **A recent records timeline appears in Statistics** (N290). Weighted bests and timed holds are read with the
+  existing record rule, newest first and grouped by the month they were performed, capped at a recent window.
+  The empty state says what would create a record; the section is titled *recent* rather than promising a
+  complete ledger.
+
+- **Exercise statistics follow the app weight unit** (N295). Load, volume and estimated-1RM charts, readings
+  and goals now format and parse in pounds when the app is set to pounds, while body weight, fat, muscle and lean
+  mass stay in their metric-owned kilograms. The unit resolves at the screen from `LocalWeightUnit`, so changing
+  the setting changes the chart without changing stored grams.
+
+### Changed
+
+- **The release verifier checks version monotonicity and tag binding** (N276). `--release` refuses a
+  `versionCode` that does not exceed the latest `v*` tag; `--remote` accepts the release commit recorded in
+  the notes and verifies the tag points at it. The keystore password is passed to `keytool` through the
+  environment rather than its argv.
+
+- **Program and history reads stop growing per row** (N282). Migration 20 adds the session `templateId` and
+  measurement `measuredAt` indices; a program document reads its templates, exercises and sets in three
+  queries instead of one per template, and the import checks its templates and movements in one read each.
+  A 360-degree query-plan test asserts SQLite selects both indices.
+
+- **The set, template and history editors share one write answer** (N284). `WriteOutcome<T>` names the row
+  that was written and carries a refusal's error; the workout and history set editors keep their existing
+  `SetWrite` name as an alias, and the template planned-set editor now uses the same type instead of a bare id.
+
 - **The largest files are split by responsibility** (N285). The 536 test tags now live one file per screen
   area behind a thin aggregator; program documents/imports/schedules, the template exercise block, the workout
   top bar/feedback/status, and the workout's state/snapshot/progression/seeding/weigh-in have their own files.
   `ActiveWorkoutViewModel` still owns every session action and remains the one workout logger, as its recorded
   detekt note argues.
-- **A recent records timeline appears in Statistics** (N290). Weighted bests and timed holds are read with the
-  existing record rule, newest first and grouped by the month they were performed, capped at a recent window.
-  The empty state says what would create a record; the section is titled *recent* rather than promising a
-  complete ledger.
-- **The balance screen can show what the log actually trained** (N289). A Plan/Trained toggle reuses the
-  planned-count rule — primary 1, each secondary 0.5, warm-ups excluded — over logged working sets in a 7- or
-  28-day window. It is a factual count list, with no target band or warning.
-- **Exercise statistics follow the app weight unit** (N295). Load, volume and estimated-1RM charts, readings
-  and goals now format and parse in pounds when the app is set to pounds, while body weight, fat, muscle and lean
-  mass stay in their metric-owned kilograms. The unit resolves at the screen from `LocalWeightUnit`, so changing
-  the setting changes the chart without changing stored grams.
-- **History search reaches session notes and logged exercise names** (N288). The history projection carries
-  the session note and the names joined from its live exercises, so a query can answer "when did I write down
-  the shoulder tweak" without loading every set. A matched note or exercise is named in the row's supporting
-  line.
-- **Lean mass is a series derived from the body the app already records** (N287). Weight minus fat mass is
-  offered beside fat and muscle mass, is null when either half is missing, and reads in the same mass unit;
-  nothing new is stored.
-- **The set, template and history editors share one write answer** (N284). `WriteOutcome<T>` names the row
-  that was written and carries a refusal's error; the workout and history set editors keep their existing
-  `SetWrite` name as an alias, and the template planned-set editor now uses the same type instead of a bare id.
-- **Program and history reads stop growing per row** (N282). Migration 20 adds the session `templateId` and
-  measurement `measuredAt` indices; a program document reads its templates, exercises and sets in three
-  queries instead of one per template, and the import checks its templates and movements in one read each.
-  A 360-degree query-plan test asserts SQLite selects both indices.
+
 - **Screens re-read the day on resume** (N286). Home, Measurements and the weekly review now take a
   `ZoneSource` beside `TimeSource` and refresh their screen-local day when they resume, so a screen left open
   across midnight shows the new plan and measurement row instead of yesterday's.
-- **The release verifier checks version monotonicity and tag binding** (N276). `--release` refuses a
-  `versionCode` that does not exceed the latest `v*` tag; `--remote` accepts the release commit recorded in
-  the notes and verifies the tag points at it. The keystore password is passed to `keytool` through the
-  environment rather than its argv.
+
+### Fixed
+
+- **The records timeline reads real records** (B390). A bounded DAO query returns weighted records and timed
+  holds under the existing record rule; the repository maps them to `RecordEvent` and Statistics combines the
+  flow into `StatisticsUiState.records`. A ViewModel test now proves a record reaches the state, and a Room
+  test proves the SQL returns both shapes newest first.
+
+- **Resume refreshes the zone with the day** (B391). Home, Measurements and Program Balance now hold their
+  local day and zone as one `ScreenDay`; a timezone change emits even when the date is the same, and the
+  daily-measurement check and writes use the new zone. A Measurements test crosses UTC to Tokyo and asserts
+  the old zone's entry is no longer today's.
+
+- **Weekly Review no longer loads twice on first resume** (B392). The ViewModel keeps one in-flight `loadJob`
+  and ignores a resume while the initial read is still running, so an older read cannot overwrite a newer one.
+
+- **Program documents read exercise ancestry a level at a time** (B393). `withAncestors` now batches each
+  level through `findLiveByIds` instead of calling `findById` per row; the document's chain is unchanged.
+
+- **The trained side reads history only when it is showing** (B394). `ProgramBalanceViewModel` selects the
+  logged-sets flow by `BalanceView`; opening the Plan tab no longer queries the log, and a failure is still
+  reported once the trained side is selected.
+
 - **The remote verifier compares the mapping's stable identity** (B388 follow-up). R8's mapping text is not
   byte-stable across build runs — obfuscated lambda names move — so the first implementation failed a valid
   release mapping. `verify-release.py --remote` now compares `pg_map_id`, the header R8 uses to identify the
