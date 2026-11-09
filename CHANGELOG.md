@@ -15,6 +15,12 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ## [Unreleased]
 
+### Fixed
+
+- **The moving-average line is drawn above the readings** (N40 follow-up). A noisy day's line used to paint over
+  the thick mean, hiding the summary exactly where it was meant to be read; it now draws after the data in both
+  the line and bar charts.
+
 ### Added
 
 - **Weekly programs can author multi-week phases** (N292). A program day may name an authored week; the

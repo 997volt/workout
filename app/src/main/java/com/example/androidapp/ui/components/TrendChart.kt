@@ -90,26 +90,15 @@ fun TrendChart(
             lines = ReferenceLines(
                 average = average,
                 trend = trend,
-                movingAverage = movingAverage,
                 goals = goals,
             ),
             y = ::y,
         )
 
         if (bars) {
-            // The mean first, under the readings: it summarises them, and the data is what is being read.
-            movingAverage.zipWithNext { from, to ->
-                val fromValue = from.value ?: return@zipWithNext
-                val toValue = to.value ?: return@zipWithNext
-                drawLine(
-                    color = referenceColor,
-                    start = Offset(from.x * size.width, y(fromValue)),
-                    end = Offset(to.x * size.width, y(toValue)),
-                    strokeWidth = MEAN_STROKE_PX,
-                )
-            }
-
             drawBars(points = points, y = ::y, color = dotColor)
+            // The mean is the reading's summary; on top of the bars, not behind them (N40).
+            drawMovingAverage(points = movingAverage, y = ::y, color = referenceColor)
             return@Canvas
         }
 
@@ -133,6 +122,9 @@ fun TrendChart(
                 center = Offset(x, y(value)),
             )
         }
+        // On top of the readings: the mean is what a noisy day is read through, and it must remain visible
+        // where the readings cross it (N40).
+        drawMovingAverage(points = movingAverage, y = ::y, color = referenceColor)
     }
 }
 
@@ -242,7 +234,6 @@ private const val REFERENCE_STROKE_PX = 2f
 data class ReferenceLines(
     val average: Double?,
     val trend: ChartLine?,
-    val movingAverage: List<ChartPoint>,
     val goals: List<ChartSegment>,
 )
 
@@ -343,7 +334,6 @@ private fun DrawScope.drawReferenceLines(
 ) {
     val average = lines.average
     val trend = lines.trend
-    val movingAverage = lines.movingAverage
     val goals = lines.goals
     val color = referenceColor
     // Dashed, because an average is a level rather than a measurement: it says where the series sits, and
@@ -382,7 +372,17 @@ private fun DrawScope.drawReferenceLines(
             ),
         )
     }
-    movingAverage.zipWithNext { from, to ->
+}
+
+/**
+ * The trailing mean, drawn **after** the readings (N40).
+ *
+ * It used to be part of the reference layer, under the series: a noisy day's line then crossed it and the
+ * thick mean — the line a noisy reading is read through — disappeared exactly where it mattered. The mean is
+ * the reading's summary, so it sits on top of the readings rather than behind them.
+ */
+private fun DrawScope.drawMovingAverage(points: List<ChartPoint>, y: (Double) -> Float, color: Color) {
+    points.zipWithNext { from, to ->
         val fromValue = from.value ?: return@zipWithNext
         val toValue = to.value ?: return@zipWithNext
         drawLine(

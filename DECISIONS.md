@@ -1279,6 +1279,8 @@ the rule; that one argues it.
 - **One Weekly Review read at a time** (B392). `init` and the first resume both wanted to load; a new call while
   a read is active is ignored, which is also the retry rule (the button is unavailable while loading). A later
   resume, after the read completes, refreshes normally.
+- **A summary line is drawn over the readings it summarises** (N40). The moving average sits above the series
+  in both line and bar charts; its job is to be read through the noise, so the noise must not paint over it.
 - **A phase is an authored week number, not a new program kind** (N292). `program_slots.phaseWeek` null keeps
   the old repeating week; a phased program numbers every day from one and derives the current week cyclically
   from its anchor, with gaps as rest weeks. The app never advances loads by itself. The editor remains one
