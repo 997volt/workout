@@ -1282,6 +1282,14 @@ the rule; that one argues it.
 - **A favourite is a pinned selection, not a metric** (favourites). An Exercise series keeps its lift; pins
   are stored in order and capped at five, while the automatic recents remain a separate, three-entry memory.
   A favourite the library can no longer name is omitted rather than shown as a chip that selects nothing.
+- **Adherence reads the phase of the week it is scoring** (N292). A per-week slot map, not today's
+  `currentSlots`, feeds the grid, correction dialog, streak and ratio history; the date chooses the phase.
+  Soft-deleted pre-phase days receive the same implicit week 1, because a backup still carries them.
+- **An activity's numbers die with the activity** (N293). Changing or clearing the activity clears its duration
+  and distance; the values are shown in history, and the editor accepts fractional minutes so a 45-second
+  activity is not rounded to nothing.
+- **A full favourites row drops the oldest pin** (favourites). The cap is five and the newest pin is what the
+  lifter just asked to keep.
 - **A summary line is drawn over the readings it summarises** (N40). The moving average sits above the series
   in both line and bar charts; its job is to be read through the noise, so the noise must not paint over it.
 - **A phase is an authored week number, not a new program kind** (N292). `program_slots.phaseWeek` null keeps

@@ -21,31 +21,39 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   **Favourites** row above recents restores it with its lift. A pinned Exercise series keeps the lift rather
   than the metric alone, stale lifts are omitted, and the row is hidden when empty. Pins are stored like
   recents, capped at five and kept in the order they were added.
+- **Weekly programs can author multi-week phases** (N292). A program day may name an authored week; the
+  current week is derived from the program's start (or creation) week, cycles through the highest authored
+  week, and gaps are rest weeks. Loads never auto-progress. Home, next-session, adherence, weekly review and
+  the balance Plan view read the week they are showing; the editor authors one week at a time on its existing
+  screen. Program documents move to format 8 and backups to schema 9, with old files still importing as a
+  single repeating week.
+- **Activities can carry a manual duration and distance** (N293). An activity's screen offers minutes and
+  kilometres, stores them as seconds and metres (both nullable), shows them in the history row, and clears
+  them when the activity changes. The values survive backup/restore through the session DTO.
+- **Substitute an exercise inside a workout** (N291). An exercise with no logged sets offers *Substitute exercise*
+  in its overflow; the picker replaces the movement while keeping the session row's position. The row records the
+  plan's original exercise id, so the review pairs it with the plan and says "Substituted with …" instead of
+  treating the stand-in as improvised. A row with a set already logged is not offered, because relabelling those
+  values would compare the wrong movement.
 
 ### Fixed
 
 - **The moving-average line is drawn above the readings** (N40 follow-up). A noisy day's line used to paint over
   the thick mean, hiding the summary exactly where it was meant to be read; it now draws after the data in both
   the line and bar charts.
-
-### Added
-
-- **Weekly programs can author multi-week phases** (N292). A program day may name an authored week; the
-  current week is derived from the program's start (or creation) week, cycles through the highest authored
-  week, and gaps are rest weeks. Loads never auto-progress. Home, next-session, adherence, weekly review and
-  the balance Plan view read only the current week; the editor authors one week at a time on its existing
-  screen. Program documents move to format 8 and backups to schema 9, with old files still importing as a
-  single repeating week.
-
-- **Activities can carry a manual duration and distance** (N293). An activity's screen offers minutes and
-  kilometres, stores them as seconds and metres (both nullable), and clears them on an empty save. The values
-  survive backup/restore through the session DTO.
-
-- **Substitute an exercise inside a workout** (N291). An exercise with no logged sets offers *Substitute exercise*
-  in its overflow; the picker replaces the movement while keeping the session row's position. The row records the
-  plan's original exercise id, so the review pairs it with the plan and says "Substituted with …" instead of
-  treating the stand-in as improvised. A row with a set already logged is not offered, because relabelling those
-  values would compare the wrong movement.
+- **A full favourites row keeps the newest pin** (favourites follow-up). The sixth pin used to keep the oldest
+  five and discard itself; the cap now drops the oldest instead.
+- **Adherence scores each week against its own phase** (N292 follow-up). The grid, correction dialog, streak and
+  ratio history used the phase current today for every date, so a past or next week could show another week's
+  days. The schedule now takes a per-week slot map and derives the date's phase.
+- **Deleted legacy program days are phased with the rest** (N292 follow-up). A soft-deleted pre-phase day kept
+  a null week and made a valid phased program look mixed to backup validation; assigning the implicit week now
+  includes deleted rows.
+- **An activity's numbers stay readable and do not outlive the activity** (N293 follow-up). Duration and distance
+  now appear in the history row; changing the activity or turning it back into a workout clears them; the
+  duration field keeps sub-minute precision (45 s is `0.75` minutes).
+- **A phased deload is built from the week being deloaded** (N292 follow-up), not from a union of every authored
+  week's days.
 
 ## [2.27] — 2026-11-09 (versionCode 48)
 
