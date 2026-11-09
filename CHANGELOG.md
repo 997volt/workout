@@ -17,6 +17,8 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **Program documents read exercise ancestry a level at a time** (B393). `withAncestors` now batches each
+  level through `findLiveByIds` instead of calling `findById` per row; the document's chain is unchanged.
 - **Weekly Review no longer loads twice on first resume** (B392). The ViewModel keeps one in-flight `loadJob`
   and ignores a resume while the initial read is still running, so an older read cannot overwrite a newer one.
 - **Resume refreshes the zone with the day** (B391). Home, Measurements and Program Balance now hold their

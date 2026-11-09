@@ -1271,6 +1271,8 @@ the rule; that one argues it.
   that owns them. `ActiveWorkoutViewModel` still owns all session actions — splitting the actions into several
   ViewModels is an architectural change the detekt note records as out of scope, not a mechanical move.
 - **The records timeline is bounded and reuses the record rule** (N290).
+- **A document's ancestor walk is breadth-first and batched** (B393). It reads one level per query, preserving
+  the breadth-first order and cycle handling while keeping the cost proportional to depth rather than row count.
 - **One Weekly Review read at a time** (B392). `init` and the first resume both wanted to load; a new call while
   a read is active is ignored, which is also the retry rule (the button is unavailable while loading). A later
   resume, after the read completes, refreshes normally.

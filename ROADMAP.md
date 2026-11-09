@@ -20,10 +20,6 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 The review of `v2.26..HEAD` found five concrete gaps. **B390 is a release blocker**: the records timeline is
 wired to a state field no production code fills, so it always renders empty.
 
-- **B393 — Bound the program document's ancestor walk.** `withAncestors` still calls `findById` in a loop; the
-  template/exercise/set reads are batched, but a deep library is still one query per ancestor. Fixed means one
-  batch read per level (or one batch for the whole set) with a test proving the document still carries the chain.
-
 - **B394 — Read trained counts only when the trained side is showing.** `ProgramBalanceViewModel` puts the logged
   sets query in `sources`, so opening the Plan tab also queries history. Fixed means the trained flow is selected
   by `view`, and the Plan side opens without a log read.

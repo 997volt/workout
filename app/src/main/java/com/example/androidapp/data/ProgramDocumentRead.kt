@@ -76,15 +76,17 @@ internal suspend fun buildProgramDocument(
  */
 private suspend fun withAncestors(ids: List<String>, dao: ExerciseDao): List<ExerciseEntity> {
     val found = linkedMapOf<String, ExerciseEntity>()
-    val pending = ArrayDeque(ids.distinct())
+    var pending = ids.distinct()
     while (pending.isNotEmpty()) {
-        val id = pending.removeFirst()
-        // `found[id]` first, so a cycle costs no second read and no jump out of the loop: a row already
-        // collected has a non-null value here and adds nothing.
-        val row = found[id] ?: dao.findById(id)
-        if (row != null && found.put(id, row) == null) {
-            row.parentId?.let { pending.add(it) }
+        // One read per level rather than one per row (B393): a deep library costs the depth, not its size.
+        val rows = dao.findLiveByIds(pending).associateBy { it.id }
+        val next = mutableListOf<String>()
+        for (id in pending) {
+            val row = found[id] ?: rows[id]
+            val inserted = row != null && found.put(id, row) == null
+            if (inserted && row != null) row.parentId?.let(next::add)
         }
+        pending = next.distinct()
     }
     return found.values.toList()
 }
