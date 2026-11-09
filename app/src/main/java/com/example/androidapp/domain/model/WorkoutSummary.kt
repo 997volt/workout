@@ -52,6 +52,9 @@ data class WorkoutSummary(
      * because N146's search over the list is a search over what the row says.
      */
     val activity: Activity? = null,
+    /** An activity's stated duration/distance, or null (N293). */
+    val activityDurationSeconds: Int? = null,
+    val activityDistanceMeters: Long? = null,
     /** The session note, searchable in history but not otherwise drawn (N288). */
     val notes: String? = null,
     /** The names of the exercises logged, aggregated for the history search (N288). */

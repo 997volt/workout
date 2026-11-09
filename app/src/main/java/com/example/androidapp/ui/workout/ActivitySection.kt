@@ -30,6 +30,7 @@ import com.example.androidapp.R
 import com.example.androidapp.domain.model.Activity
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.TestTags
+import kotlin.math.roundToInt
 
 private const val SECONDS_PER_MINUTE = 60
 private const val METRES_PER_KILOMETRE = 1000.0
@@ -58,7 +59,7 @@ internal fun ActivityBody(
     onClear: () -> Unit,
 ) {
     var duration by rememberSaveable(activity, durationSeconds) {
-        mutableStateOf(durationSeconds?.let { (it / SECONDS_PER_MINUTE).toString() }.orEmpty())
+        mutableStateOf(formatMinutes(durationSeconds))
     }
     var distance by rememberSaveable(activity, distanceMeters) {
         mutableStateOf(formatDistance(distanceMeters))
@@ -79,9 +80,9 @@ internal fun ActivityBody(
         )
         OutlinedTextField(
             value = duration,
-            onValueChange = { duration = it.filter(Char::isDigit) },
+            onValueChange = { duration = it.filter { char -> char.isDigit() || char == '.' } },
             label = { Text(stringResource(R.string.active_workout_activity_duration)) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             singleLine = true,
             modifier = Modifier.fillMaxWidth().testTag(TestTags.ACTIVE_WORKOUT_ACTIVITY_DURATION),
         )
@@ -95,10 +96,10 @@ internal fun ActivityBody(
         )
         FilledTonalButton(
             onClick = {
-                val minutes = duration.toIntOrNull()
+                val minutes = duration.toDoubleOrNull()
                 val km = distance.toDoubleOrNull()
                 onSaveMetrics(
-                    minutes?.let { (it * SECONDS_PER_MINUTE).takeIf { value -> value >= 0 } },
+                    minutes?.let { (it * SECONDS_PER_MINUTE).roundToInt().takeIf { value -> value >= 0 } },
                     km?.let { (it * METRES_PER_KILOMETRE).toLong().takeIf { value -> value >= 0 } },
                 )
             },
@@ -246,3 +247,7 @@ fun activityLabel(activity: Activity): Int = when (activity) {
 /** Kilometres for an activity field, without trailing zeroes: 1500 m -> "1.5", 2000 m -> "2". */
 private fun formatDistance(metres: Long?): String =
     metres?.let { (it / METRES_PER_KILOMETRE).toString().trimEnd('0').trimEnd('.') }.orEmpty()
+
+/** Minutes for the duration field, keeping sub-minute precision: 45 s -> "0.75", 1800 s -> "30". */
+private fun formatMinutes(seconds: Int?): String =
+    seconds?.let { (it / SECONDS_PER_MINUTE.toDouble()).toString().trimEnd('0').trimEnd('.') }.orEmpty()

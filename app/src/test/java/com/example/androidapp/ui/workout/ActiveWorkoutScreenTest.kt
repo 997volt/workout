@@ -595,6 +595,24 @@ class ActiveWorkoutScreenTest {
     }
 
     @Test
+    fun anActivity_durationKeepsSubMinutePrecision() {
+        var duration: Int? = null
+        setScreen(
+            state = state(
+                isFinished = false,
+                sets = emptyList(),
+                activity = Activity.SWIMMING,
+                activityDurationSeconds = 45,
+            ),
+            actions = Actions(onSetActivityMetrics = { seconds, _ -> duration = seconds }),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_ACTIVITY_SAVE).performScrollTo().performClick()
+
+        assertEquals(45, duration)
+    }
+
+    @Test
     fun substitutingAnExercise_picksTheRow_andOnlyBeforeASetExists() {
         // N291: the entry names the session row, and a row with a logged set cannot be reinterpreted.
         var substituted: String? = null

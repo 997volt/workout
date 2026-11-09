@@ -273,12 +273,20 @@ class RoomWorkoutRepository @Inject constructor(
 
     override suspend fun setSessionActivity(sessionId: String, activity: Activity?): DataResult<Unit> =
         dataResultOf {
-            val updated = dao.setSessionActivity(
-                id = sessionId,
-                activity = activity?.name,
-                at = timeSource.nowEpochMillis(),
-            )
-            if (updated == 0) throw NotFoundException("session $sessionId")
+            val current = dao.findSession(sessionId) ?: throw NotFoundException("session $sessionId")
+            val now = timeSource.nowEpochMillis()
+            database.withTransaction {
+                val updated = dao.setSessionActivity(
+                    id = sessionId,
+                    activity = activity?.name,
+                    at = now,
+                )
+                if (updated == 0) throw NotFoundException("session $sessionId")
+                // A different activity (or a workout) cannot keep the old activity's numbers (N293).
+                if (current.activity != activity?.name) {
+                    dao.setActivityMetrics(id = sessionId, durationSeconds = null, distanceMeters = null, at = now)
+                }
+            }
         }
 
     override suspend fun substituteExercise(sessionExerciseId: String, exerciseId: String): DataResult<Unit> =

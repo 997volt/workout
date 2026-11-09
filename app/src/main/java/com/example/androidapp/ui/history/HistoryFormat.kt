@@ -7,6 +7,8 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale
 
+private const val METRES_PER_KILOMETRE = 1000.0
+
 /**
  * Presentation formatting for history (ROADMAP P1.6).
  *
@@ -57,6 +59,10 @@ object HistoryFormat {
             .getDisplayName(java.time.format.TextStyle.SHORT, locale)
         return "$weekday, ${date(instant, zone, locale)}"
     }
+
+    /** An activity's distance for a history row: `2.5 km`, in the locale's decimal mark. */
+    fun distance(metres: Long, locale: Locale = Locale.getDefault()): String =
+        String.format(locale, "%.1f km", metres / METRES_PER_KILOMETRE)
 
     /** e.g. `September 2026`, in the user's language. */
     fun month(month: YearMonth, locale: Locale = Locale.getDefault()): String {

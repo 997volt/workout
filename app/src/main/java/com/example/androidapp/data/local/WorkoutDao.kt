@@ -99,6 +99,8 @@ interface WorkoutDao {
                -- What the day was, when it was not a workout (N141): the history list says *cycling*
                -- where it would otherwise say nothing, and N146's search reads it.
                ws.activity AS activity,
+               ws.activityDurationSeconds AS activityDurationSeconds,
+               ws.activityDistanceMeters AS activityDistanceMeters,
                ws.notes AS notes,
                (
                    SELECT GROUP_CONCAT(e.name, ' ')

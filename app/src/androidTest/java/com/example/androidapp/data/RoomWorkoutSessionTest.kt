@@ -179,6 +179,14 @@ class RoomWorkoutSessionTest {
         val cleared = repository.observeSession(started.id).first()!!
         assertNull(cleared.activityDurationSeconds)
         assertNull(cleared.activityDistanceMeters)
+
+        // Turning the activity back into a workout also clears the numbers, so returning to an
+        // activity later cannot resurrect a stale duration/distance.
+        repository.setActivityMetrics(started.id, 1_800, 1_500)
+        repository.setSessionActivity(started.id, null)
+        val workout = repository.observeSession(started.id).first()!!
+        assertNull(workout.activityDurationSeconds)
+        assertNull(workout.activityDistanceMeters)
     }
 
     @Test
