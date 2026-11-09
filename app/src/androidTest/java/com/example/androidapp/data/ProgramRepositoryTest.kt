@@ -837,6 +837,20 @@ class ProgramRepositoryTest {
     }
 
     @Test
+    fun authoringTheFirstPhase_givesADeletedLegacyDayItsImplicitWeek() = runTest {
+        // N292 backup follow-up: deleted rows still travel in a backup, so they must not remain the
+        // only unphased rows of an otherwise phased program.
+        val program = create("Block")
+        repository.addSlot(program, createTemplate("Old day"), DayOfWeek.MONDAY)
+        val old = database.programDao().findSlots(program).single()
+        database.programDao().softDeleteSlot(old.id, clock.now().toEpochMilli())
+
+        repository.addSlot(program, createTemplate("New day"), DayOfWeek.TUESDAY, phaseWeek = 2)
+
+        assertEquals(1, database.programDao().findSlot(old.id)?.phaseWeek)
+    }
+
+    @Test
     fun addingUntaggedDayToAPhasedProgram_joinsTheWeekItIsTrainingNow() = runTest {
         // The history screen's "schedule into a program" offer has no week in mind (N292).
         val program = create("Block")

@@ -358,14 +358,14 @@ interface ProgramDao {
      * Gives the days of a program without phases their implicit week (ROADMAP N292).
      *
      * Called once, in the transaction that authors the program's first phased day: the old days are
-     * week 1, which is exactly what they were. A program never holds both shapes, because an
-     * unphased day inside a phased program would be invisible to every reader.
+     * week 1, which is exactly what they were. **Deleted rows are included**: they still travel in a
+     * backup, and a deleted pre-phase day left null would make the file look mixed and be refused.
      */
     @Query(
         """
         UPDATE program_slots
         SET phaseWeek = 1, updatedAt = :at
-        WHERE programId = :programId AND phaseWeek IS NULL AND deletedAt IS NULL
+        WHERE programId = :programId AND phaseWeek IS NULL
         """,
     )
     suspend fun assignUnphasedToFirstWeek(programId: String, at: Long)
