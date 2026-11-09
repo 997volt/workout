@@ -40,6 +40,21 @@ import androidx.compose.ui.unit.dp
  * rather than a description of a picture it cannot see. The frame above it is where a caller puts the figure's
  * own actions, outside this cleared node (B213).
  */
+/** The layers of a trend figure, in paint order (N40). */
+internal enum class TrendLayer { GRID, MARKER, REFERENCES, READINGS, MOVING_AVERAGE }
+
+/**
+ * The order the figure paints: summaries behind the data, except the trailing mean, which is the
+ * line a noisy reading is read through and therefore paints last (N40).
+ */
+internal val TREND_DRAW_ORDER: List<TrendLayer> = listOf(
+    TrendLayer.GRID,
+    TrendLayer.MARKER,
+    TrendLayer.REFERENCES,
+    TrendLayer.READINGS,
+    TrendLayer.MOVING_AVERAGE,
+)
+
 @Composable
 fun TrendChart(
     points: List<ChartPoint>,
@@ -78,53 +93,41 @@ fun TrendChart(
 
         fun y(value: Double): Float = size.height * (1f - axis.fractionOf(value).toFloat())
 
-        drawAxisGrid(gridColor = gridColor, minValue = minValue, maxValue = maxValue, y = ::y)
-
-        // The marker under the readings: a line the eye can follow down to the axis, then the reading itself
-        // (N203). Drawn before the series so the dot is never hidden by the line it belongs to.
-        marker?.let { drawMarker(it, line = referenceColor, dot = dotColor, y = ::y) }
-
-        drawReferenceLines(
-            referenceColor = referenceColor,
-            planColor = planColor,
-            lines = ReferenceLines(
-                average = average,
-                trend = trend,
-                goals = goals,
-            ),
-            y = ::y,
-        )
-
-        if (bars) {
-            drawBars(points = points, y = ::y, color = dotColor)
-            // The mean is the reading's summary; on top of the bars, not behind them (N40).
-            drawMovingAverage(points = movingAverage, y = ::y, color = referenceColor)
-            return@Canvas
-        }
-
-        points.forEachIndexed { index, point ->
-            val value = point.value ?: return@forEachIndexed
-            val x = point.x * size.width
-            // A segment needs both ends recorded, so a gap is a break rather than a straight line through
-            // whatever nobody measured.
-            val next = points.getOrNull(index + 1)?.value
-            if (next != null) {
-                drawLine(
-                    color = lineColor,
-                    start = Offset(x, y(value)),
-                    end = Offset(points[index + 1].x * size.width, y(next)),
-                    strokeWidth = LINE_STROKE_PX,
+        TREND_DRAW_ORDER.forEach { layer ->
+            when (layer) {
+                TrendLayer.GRID -> drawAxisGrid(
+                    gridColor = gridColor,
+                    minValue = minValue,
+                    maxValue = maxValue,
+                    y = ::y,
                 )
+
+                TrendLayer.MARKER -> marker?.let {
+                    drawMarker(it, line = referenceColor, dot = dotColor, y = ::y)
+                }
+
+                TrendLayer.REFERENCES -> drawReferenceLines(
+                    referenceColor = referenceColor,
+                    planColor = planColor,
+                    lines = ReferenceLines(
+                        average = average,
+                        trend = trend,
+                        goals = goals,
+                    ),
+                    y = ::y,
+                )
+
+                TrendLayer.READINGS ->
+                    if (bars) {
+                        drawBars(points = points, y = ::y, color = dotColor)
+                    } else {
+                        drawReadings(points = points, y = ::y, lineColor = lineColor, dotColor = dotColor)
+                    }
+
+                TrendLayer.MOVING_AVERAGE ->
+                    drawMovingAverage(points = movingAverage, y = ::y, color = referenceColor)
             }
-            drawCircle(
-                color = dotColor,
-                radius = DOT_RADIUS_PX,
-                center = Offset(x, y(value)),
-            )
         }
-        // On top of the readings: the mean is what a noisy day is read through, and it must remain visible
-        // where the readings cross it (N40).
-        drawMovingAverage(points = movingAverage, y = ::y, color = referenceColor)
     }
 }
 
@@ -371,6 +374,29 @@ private fun DrawScope.drawReferenceLines(
                 if (fromPlan) floatArrayOf(DASH_ON_PX, DASH_OFF_PX) else floatArrayOf(GOAL_DOT_PX, GOAL_GAP_PX),
             ),
         )
+    }
+}
+
+/** The reading line and dots; the data layer the trailing mean must sit above (N40). */
+private fun DrawScope.drawReadings(
+    points: List<ChartPoint>,
+    y: (Double) -> Float,
+    lineColor: Color,
+    dotColor: Color,
+) {
+    points.forEachIndexed { index, point ->
+        val value = point.value ?: return@forEachIndexed
+        val x = point.x * size.width
+        val next = points.getOrNull(index + 1)?.value
+        if (next != null) {
+            drawLine(
+                color = lineColor,
+                start = Offset(x, y(value)),
+                end = Offset(points[index + 1].x * size.width, y(next)),
+                strokeWidth = LINE_STROKE_PX,
+            )
+        }
+        drawCircle(color = dotColor, radius = DOT_RADIUS_PX, center = Offset(x, y(value)))
     }
 }
 
