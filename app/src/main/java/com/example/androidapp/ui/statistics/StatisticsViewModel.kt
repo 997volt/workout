@@ -373,7 +373,7 @@ class StatisticsViewModel @Inject constructor(
     }
 
     /** How many records the window contains. Its own flow because it is a suspend read, not a stream. */
-    private val records = settings.observeStatisticsRange().mapLatest { current ->
+    private val recordCount = settings.observeStatisticsRange().mapLatest { current ->
         // The settled range, not the pinch's pending one: a gesture must not issue a database count per
         // motion event, and the overview is a summary of the window that was chosen (B236).
         // "All" has no window, and the count is still a question worth answering — it is the range where a
@@ -384,6 +384,12 @@ class StatisticsViewModel @Inject constructor(
         val to = bounds?.toExclusive ?: Instant.ofEpochMilli(Long.MAX_VALUE)
         (repositories.statistics.countRecordsIn(from, to) as? DataResult.Success)?.data
     }
+
+    /** The recent events and the window's count together; the count is a suspend read, the list a flow. */
+    private val recordFacts: Flow<Pair<Int?, List<RecordEvent>>> =
+        combine(recordCount, repositories.statistics.observeRecentRecords(RECORDS_SHOWN)) { count, events ->
+            count to events
+        }
 
     /** The goal that is open and the periods behind it, as one source (ROADMAP N135, N137). */
     private val goalHistory: Flow<Pair<Map<String, GoalPeriod>, List<GoalPeriod>>> = combine(
@@ -420,10 +426,10 @@ class StatisticsViewModel @Inject constructor(
         combine(
             sources,
             exercisePoints,
-            records,
+            recordFacts,
             goalHistory,
             planTargets,
-        ) { sources, points, records, goal, plans ->
+        ) { sources, points, recordFacts, goal, plans ->
             val (goalPeriods, periods) = goal
             val workoutPoints = sources.workoutPoints
             // The period that is **open** for this metric (N137), and the two readings the screen makes of it:
@@ -452,6 +458,7 @@ class StatisticsViewModel @Inject constructor(
                     goalPeriods = periods,
                     planTargets = plans,
                     acceptsHead = sources.acceptsHead,
+                    records = recordFacts.second,
                 )
             } else {
                 val allReadings = metricSeries(
@@ -480,7 +487,7 @@ class StatisticsViewModel @Inject constructor(
                         today = today(),
                         sessions = sources.summaries,
                         zone = currentZone(),
-                        personalRecords = records,
+                        personalRecords = recordFacts.first,
                     ),
                     series = MetricSeries(key = sources.selection.metric, readings = body),
                     lifts = sources.lifts,
@@ -496,6 +503,7 @@ class StatisticsViewModel @Inject constructor(
                     targetDate = weightGoal?.targetDateEstimate(currentWeightGrams ?: 0L, today()),
                     targetReached = weightGoal?.isTargetReached(currentWeightGrams ?: 0L) == true,
                     acceptsHead = sources.acceptsHead,
+                    records = recordFacts.second,
                 )
             }
         }.stateIn(

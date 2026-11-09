@@ -3,6 +3,7 @@ package com.example.androidapp.domain.repository
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.model.ExerciseWorkingSets
 import com.example.androidapp.domain.model.PlanTarget
+import com.example.androidapp.domain.model.RecordEvent
 import com.example.androidapp.domain.model.WorkoutSummary
 import kotlinx.coroutines.flow.Flow
 import java.time.Instant
@@ -56,6 +57,13 @@ interface StatisticsRepository {
         from: Instant,
         toExclusive: Instant,
     ): Flow<DataResult<List<ExerciseWorkingSets>>>
+
+    /**
+     * The newest record moments, bounded to [limit], for the Statistics timeline (N290).
+     *
+     * A weighted record and a hold are separate shapes; the UI decides how each is printed.
+     */
+    fun observeRecentRecords(limit: Int): Flow<List<RecordEvent>>
 
     /**
      * Records set between [from] (inclusive) and [to] (exclusive).

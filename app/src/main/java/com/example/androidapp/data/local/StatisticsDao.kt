@@ -127,6 +127,91 @@ interface StatisticsDao {
     ): Flow<List<ExerciseWorkingSetCount>>
 
     /**
+     * The newest record moments, bounded, for the Statistics timeline (ROADMAP N290).
+     *
+     * The two record shapes are unioned. A weighted record is strictly heavier than every earlier set at the
+     * same rep count; a hold is strictly longer than every earlier hold; both use the same performance order
+     * and the same recordable roles as `countRecordsIn`. A timed set is emitted as a hold only, so a carry that
+     * also has a weight cannot appear twice. `limit` is applied after ordering, so the read never loads the
+     * whole history to draw the section.
+     */
+    @Query(
+        """
+        SELECT * FROM (
+            SELECT e.name AS exerciseName,
+                   ws.startedAt AS performedAt,
+                   ws.zoneOffsetMinutes AS zoneOffsetMinutes,
+                   s.reps AS reps,
+                   s.weightGrams AS weightGrams,
+                   s.durationSeconds AS durationSeconds,
+                   e.weightUnit AS weightUnit
+            FROM set_entries s
+            JOIN session_exercises se ON se.id = s.sessionExerciseId
+            JOIN workout_sessions ws ON ws.id = se.sessionId
+            JOIN exercises e ON e.id = se.exerciseId
+            WHERE s.deletedAt IS NULL AND se.deletedAt IS NULL AND ws.deletedAt IS NULL
+              AND e.deletedAt IS NULL AND ws.finishedAt IS NOT NULL
+              AND s.setType IN (:recordableRoles)
+              AND s.weightGrams > 0 AND s.reps > 0
+              AND s.bodyweightGrams IS NULL AND s.durationSeconds IS NULL
+              AND NOT EXISTS (
+                  SELECT 1 FROM set_entries earlier
+                  JOIN session_exercises ese ON ese.id = earlier.sessionExerciseId
+                  JOIN workout_sessions ews ON ews.id = ese.sessionId
+                  WHERE ese.exerciseId = se.exerciseId
+                    AND earlier.reps = s.reps
+                    AND earlier.deletedAt IS NULL AND ese.deletedAt IS NULL AND ews.deletedAt IS NULL
+                    AND ews.finishedAt IS NOT NULL
+                    AND earlier.setType IN (:recordableRoles)
+                    AND earlier.weightGrams >= s.weightGrams
+                    AND earlier.bodyweightGrams IS NULL
+                    AND (
+                        ews.startedAt < ws.startedAt
+                        OR (ews.startedAt = ws.startedAt AND ese.position < se.position)
+                        OR (ews.startedAt = ws.startedAt AND ese.position = se.position
+                            AND earlier.setIndex < s.setIndex)
+                    )
+              )
+            UNION ALL
+            SELECT e.name AS exerciseName,
+                   ws.startedAt AS performedAt,
+                   ws.zoneOffsetMinutes AS zoneOffsetMinutes,
+                   s.reps AS reps,
+                   s.weightGrams AS weightGrams,
+                   s.durationSeconds AS durationSeconds,
+                   e.weightUnit AS weightUnit
+            FROM set_entries s
+            JOIN session_exercises se ON se.id = s.sessionExerciseId
+            JOIN workout_sessions ws ON ws.id = se.sessionId
+            JOIN exercises e ON e.id = se.exerciseId
+            WHERE s.deletedAt IS NULL AND se.deletedAt IS NULL AND ws.deletedAt IS NULL
+              AND e.deletedAt IS NULL AND ws.finishedAt IS NOT NULL
+              AND s.setType IN (:recordableRoles)
+              AND s.durationSeconds > 0
+              AND NOT EXISTS (
+                  SELECT 1 FROM set_entries earlier
+                  JOIN session_exercises ese ON ese.id = earlier.sessionExerciseId
+                  JOIN workout_sessions ews ON ews.id = ese.sessionId
+                  WHERE ese.exerciseId = se.exerciseId
+                    AND earlier.deletedAt IS NULL AND ese.deletedAt IS NULL AND ews.deletedAt IS NULL
+                    AND ews.finishedAt IS NOT NULL
+                    AND earlier.setType IN (:recordableRoles)
+                    AND earlier.durationSeconds >= s.durationSeconds
+                    AND (
+                        ews.startedAt < ws.startedAt
+                        OR (ews.startedAt = ws.startedAt AND ese.position < se.position)
+                        OR (ews.startedAt = ws.startedAt AND ese.position = se.position
+                            AND earlier.setIndex < s.setIndex)
+                    )
+              )
+        )
+        ORDER BY performedAt DESC, exerciseName ASC
+        LIMIT :limit
+        """,
+    )
+    fun observeRecentRecords(limit: Int, recordableRoles: List<String>): Flow<List<RecordEventRow>>
+
+    /**
      * What the live plans prescribe for the lifts in [exerciseIds] (ROADMAP N39, B143).
      *
      * A flat read of the three plan tables, reduced to one row per plan in `planTargets`: the aggregation is

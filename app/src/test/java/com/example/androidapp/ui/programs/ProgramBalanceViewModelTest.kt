@@ -12,6 +12,7 @@ import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.MuscleSets
 import com.example.androidapp.domain.model.PlanTarget
 import com.example.androidapp.domain.model.ProgramSlot
+import com.example.androidapp.domain.model.RecordEvent
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.TrainedWindow
@@ -308,6 +309,9 @@ private class FakeStatisticsRepository : StatisticsRepository {
 
     /** Each window requested, in order, so the toggle's effect is observable. */
     val windows = mutableListOf<Pair<Instant, Instant>>()
+
+    override fun observeRecentRecords(limit: Int): Flow<List<RecordEvent>> =
+        flowOf(emptyList())
 
     override fun observeWorkingSetsIn(
         from: Instant,

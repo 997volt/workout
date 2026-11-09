@@ -8,6 +8,7 @@ import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.dataResultOf
 import com.example.androidapp.domain.model.ExerciseWorkingSets
 import com.example.androidapp.domain.model.PlanTarget
+import com.example.androidapp.domain.model.RecordEvent
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.WorkoutSummary
 import com.example.androidapp.domain.model.loggedWorkRoles
@@ -36,6 +37,12 @@ class RoomStatisticsRepository @Inject constructor(
 
     override fun observePlanTargets(exerciseIds: List<String>): Flow<List<PlanTarget>> =
         dao.observePlanTargets(exerciseIds).map { rows -> planTargets(rows.map { it.toPlannedSetTarget() }) }
+
+    override fun observeRecentRecords(limit: Int): Flow<List<RecordEvent>> =
+        dao.observeRecentRecords(
+            limit = limit,
+            recordableRoles = SetType.entries.filter { it.recordsEffort }.map { it.name },
+        ).map { rows -> rows.mapNotNull { it.toDomain() } }
 
     override fun observeWorkingSetsIn(
         from: Instant,

@@ -20,12 +20,6 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 The review of `v2.26..HEAD` found five concrete gaps. **B390 is a release blocker**: the records timeline is
 wired to a state field no production code fills, so it always renders empty.
 
-- **B390 — Give the records timeline a real read.** `StatisticsUiState.records` is never assigned; `RecordEventRow`
-  and its mapper are dead code, and no DAO/repository method produces records. Fixed means a bounded query over
-  weighted records and timed holds using the existing `PersonalRecords` rule, a repository flow, and the
-  ViewModel combining it into state — with a test that goes through the fake repository rather than injecting
-  records into the composable.
-
 - **B391 — Refresh the zone with the day on resume.** Home, Measurements and Program Balance re-read the date
   from `zoneSource.zone()` but keep the zone captured at construction, so a flight can produce a new-zone date
   while the daily-measurement check and writes still use the old zone. Fixed means the day and zone are one

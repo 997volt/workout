@@ -1270,7 +1270,11 @@ the rule; that one argues it.
   workout top bar/feedback/status and workout state/snapshot/progression/seeding/weigh-in each moved to the file
   that owns them. `ActiveWorkoutViewModel` still owns all session actions — splitting the actions into several
   ViewModels is an architectural change the detekt note records as out of scope, not a mechanical move.
-- **The records timeline is bounded and reuses the record rule** (N290). It reads the newest records rather
+- **The records timeline is bounded and reuses the record rule** (N290).
+- **The records timeline is fed by the repository, not by a screen-filled state** (B390). The DAO emits both
+  record shapes under the same ordering and role rules as the record count; the ViewModel combines the flow,
+  so a composable test cannot make an empty timeline look correct. The read is bounded before it leaves SQL.
+ It reads the newest records rather
   than promising a complete ledger, and the DAO applies the same strictly-heavier/never-warm-up/longest-hold
   rule as [PersonalRecords]; the UI only groups and formats. A timed hold is its own row shape, because a hold
   and a load do not share a number.

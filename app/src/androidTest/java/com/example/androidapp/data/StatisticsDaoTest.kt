@@ -238,6 +238,7 @@ class StatisticsDaoTest {
         reps: Int,
         weight: Long,
         type: SetType = SetType.NORMAL,
+        durationSeconds: Int? = null,
     ) = SetEntryEntity(
         // Replaced with the session's row id when the session is seeded.
         sessionExerciseId = "",
@@ -247,12 +248,32 @@ class StatisticsDaoTest {
         weightGrams = weight,
         assistanceGrams = 0L,
         setType = type,
+        durationSeconds = durationSeconds,
         rpeHalves = null,
         note = null,
         createdAt = 0L,
         updatedAt = 0L,
         deletedAt = null,
     )
+
+    @Test
+    fun theRecentRecordsRead_returnsWeightedAndTimedRecordsNewestFirst() = runTest {
+        // B390: the timeline's read must produce both record shapes, bounded, in performed order.
+        database.exerciseDao().insertAll(listOf(exercise("farmer-carry")))
+        session("s1", at = 0L, "back-squat" to listOf(set("s1-0", reps = 5, weight = 100_000L)))
+        session(
+            "s2",
+            at = day,
+            "farmer-carry" to listOf(
+                set("s2-0", reps = 0, weight = 0L, durationSeconds = 45),
+            ),
+        )
+
+        val rows = dao.observeRecentRecords(limit = 50, recordableRoles = recordable).first()
+
+        assertEquals(listOf("farmer-carry", "back-squat"), rows.map { it.exerciseName })
+        assertEquals(45, rows.first().durationSeconds)
+    }
 
     @Test
     fun onlyTheLivePlansPrescribeATarget() = runTest {

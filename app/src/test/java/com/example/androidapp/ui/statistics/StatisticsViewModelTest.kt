@@ -22,6 +22,7 @@ import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.PlanTarget
 import com.example.androidapp.domain.model.ProgressionMode
 import com.example.androidapp.domain.model.RangeKind
+import com.example.androidapp.domain.model.RecordEvent
 import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.Side
 import com.example.androidapp.domain.model.StatisticsRange
@@ -858,6 +859,29 @@ class StatisticsViewModelTest {
     }
 
     @Test
+    fun theRecentRecordsFlow_reachesTheTimelineState() = runTest(dispatcher) {
+        // N290/B390: the timeline is fed by the repository, not by a state field a screen has to fill.
+        val event = RecordEvent.Load(
+            exerciseName = "Back squat",
+            performedAt = Instant.parse("2026-10-04T10:00:00Z"),
+            zoneOffsetMinutes = 0,
+            weightUnit = null,
+            weightGrams = 100_000L,
+            reps = 5,
+        )
+        val statistics = FakeStatisticsRepository(
+            sessions = emptyList(),
+            records = 1,
+            recentRecords = listOf(event),
+        )
+        val viewModel = viewModel(range = StatisticsRange(RangeKind.ALL), statistics = statistics)
+        observe(viewModel)
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.records).containsExactly(event)
+    }
+
+    @Test
     fun aWindowedRange_countsRecordsToo() = runTest(dispatcher) {
         // The ordinary case, kept honest beside the new one.
         val statistics = FakeStatisticsRepository(sessions = emptyList(), records = 3)
@@ -930,6 +954,8 @@ private class FakeStatisticsRepository(
     private val records: Int?,
     /** What the plans prescribe, when a test is about that (ROADMAP N39). */
     private val planTargets: List<PlanTarget> = emptyList(),
+    /** The record moments the timeline reads (N290). */
+    private val recentRecords: List<RecordEvent> = emptyList(),
 ) : StatisticsRepository {
     /** Whether the count was asked for at all — the distinction the "All" range used to lose. */
     var asked = false
@@ -947,7 +973,8 @@ private class FakeStatisticsRepository(
         return flowOf(planTargets)
     }
 
-    /** The trained balance's read (N289), which this screen never asks for; empty rather than an error. */
+    override fun observeRecentRecords(limit: Int): Flow<List<RecordEvent>> = flowOf(recentRecords)
+
     override fun observeWorkingSetsIn(
         from: Instant,
         toExclusive: Instant,
