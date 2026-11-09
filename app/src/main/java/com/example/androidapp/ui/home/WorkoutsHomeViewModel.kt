@@ -9,6 +9,7 @@ import com.example.androidapp.domain.model.DeloadWeek
 import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.model.ProgramSchedule
 import com.example.androidapp.domain.model.ProgramSlot
+import com.example.androidapp.domain.model.ScreenDay
 import com.example.androidapp.domain.model.SequenceSchedule
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.WorkoutSession
@@ -321,15 +322,19 @@ class WorkoutsHomeViewModel @Inject constructor(
      * shows the day it was opened on until it is rebuilt, which is the same accepted staleness the
      * plan's own heading already carries.
      */
-    /** The screen-local day, re-read on resume (N286). */
-    private val todayDate = MutableStateFlow(timeSource.now().atZone(zoneSource.zone()).toLocalDate())
-    private val zone: ZoneId = zoneSource.zone()
+    /** The screen-local day and zone, re-read together on resume (N286/B391). */
+    private val screenDay = MutableStateFlow(
+        ScreenDay(
+            date = timeSource.now().atZone(zoneSource.zone()).toLocalDate(),
+            zone = zoneSource.zone(),
+        ),
+    )
 
-    /** The weekday of [todayDate], for the "Today" heading and the plan it selects. */
-    private val today: DayOfWeek get() = todayDate.value.dayOfWeek
+    /** The weekday of the current day, for the "Today" heading and the plan it selects. */
+    private val today: DayOfWeek get() = screenDay.value.date.dayOfWeek
 
-    /** The Monday of [todayDate]'s week, which is the key a deload plan is stored under (ROADMAP N147). */
-    private val weekStart: LocalDate get() = ProgramSchedule.weekStartOf(todayDate.value)
+    /** The Monday of the current day's week, which is the key a deload plan is stored under (N147). */
+    private val weekStart: LocalDate get() = ProgramSchedule.weekStartOf(screenDay.value.date)
 
     /**
      * Every program home follows, in the authored order (ROADMAP P3.12).
@@ -369,12 +374,12 @@ class WorkoutsHomeViewModel @Inject constructor(
      * prescribe what they always did.
      */
     private val deloadWeeks: Flow<List<DeloadWeek>> =
-        combine(activePrograms, todayDate) { programs, day -> programs to day }
-            .flatMapLatest { (programs, day) ->
+        combine(activePrograms, screenDay) { programs, screen -> programs to screen }
+            .flatMapLatest { (programs, screen) ->
                 if (programs.isEmpty()) {
                     flowOf(emptyList())
                 } else {
-                    deloadRepository.observeWeekPlans(ProgramSchedule.weekStartOf(day))
+                    deloadRepository.observeWeekPlans(ProgramSchedule.weekStartOf(screen.date))
                 }
             }
 
@@ -416,8 +421,8 @@ class WorkoutsHomeViewModel @Inject constructor(
             activePrograms,
             activeProgramSlots,
             deloadWeeks,
-            combine(activePrograms, sequenceSchedules, todayDate) { programs, schedules, day ->
-                sequenceTodayPlans(programs, schedules, day) to schedules
+            combine(activePrograms, sequenceSchedules, screenDay) { programs, schedules, screen ->
+                sequenceTodayPlans(programs, schedules, screen.date) to schedules
             },
         ) { programs, slots, deloads, sequences ->
             ProgramsPart(
@@ -437,15 +442,15 @@ class WorkoutsHomeViewModel @Inject constructor(
         templateRepository.observeTemplates(includeHidden = true),
         programsPart,
         measurementRepository.observeAll(),
-        todayDate,
-    ) { workout, templates, programs, measurements, day ->
-        val weekday = day.dayOfWeek
+        screenDay,
+    ) { workout, templates, programs, measurements, screen ->
+        val weekday = screen.date.dayOfWeek
         WorkoutsHomeUiState(
             isLoading = false,
             activeWorkout = workout,
             today = weekday,
             // N114: the day the row is about is this screen's own captured one, not a live reading.
-            todayIsMeasured = measurements.any { it.isDailyOn(day, zone) },
+            todayIsMeasured = measurements.any { it.isDailyOn(screen.date, screen.zone) },
             todaysPlan = todaysPlanFor(
                 programs = programs.programs,
                 slots = programs.slots,
@@ -453,7 +458,7 @@ class WorkoutsHomeViewModel @Inject constructor(
                 day = weekday,
             ) + programs.sequencePlans,
             nextSession = earlierOf(
-                nextWeeklySession(programs.programs, programs.slots, day, programs.deloadWeeks),
+                nextWeeklySession(programs.programs, programs.slots, screen.date, programs.deloadWeeks),
                 nextSequenceSession(programs.programs, programs.schedules),
             ),
             // N126: what makes an empty day a rest day rather than a day with nothing to say.
@@ -491,7 +496,7 @@ class WorkoutsHomeViewModel @Inject constructor(
     /**
      * Records that one occurrence is trained with a different workout, or clears it (ROADMAP P3.11).
      *
-     * The week is the one [todayDate] falls in — the day the tapped row was drawn for — so the
+     * The week is the one [screenDay] falls in — the day the tapped row was drawn for — so the
      * write is keyed to the occurrence on screen rather than to whatever day the clock has reached
      * since. [templateId] null restores the slot's own workout.
      */
@@ -503,11 +508,14 @@ class WorkoutsHomeViewModel @Inject constructor(
      */
     /** Re-reads the device day after a resume; a no-op until the date actually changes. */
     fun onResume() {
-        todayDate.update { timeSource.now().atZone(zoneSource.zone()).toLocalDate() }
+        screenDay.update {
+            val zone = zoneSource.zone()
+            ScreenDay(timeSource.now().atZone(zone).toLocalDate(), zone)
+        }
     }
 
     suspend fun skipBlockSession(slotId: String): DataResult<Unit> =
-        programRepository.skipBlockSession(slotId, todayDate.value)
+        programRepository.skipBlockSession(slotId, screenDay.value.date)
 
     suspend fun setSubstitution(slotId: String, templateId: String?): DataResult<Unit> =
         programRepository.setSubstitution(

@@ -10,6 +10,7 @@ import com.example.androidapp.domain.ZoneSource
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.ExerciseWorkingSets
 import com.example.androidapp.domain.model.MuscleSets
+import com.example.androidapp.domain.model.ScreenDay
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TrainedWindow
 import com.example.androidapp.domain.model.muscleBalance
@@ -31,7 +32,6 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
-import java.time.ZoneId
 import javax.inject.Inject
 
 /** Which answer the balance screen is showing: the plan, or what the log actually trained (ROADMAP N289). */
@@ -124,8 +124,12 @@ class ProgramBalanceViewModel @Inject constructor(
         }
 
     /** The device's own day, re-read on resume so a screen open across midnight shows the new window (N286). */
-    private val todayDate = MutableStateFlow(timeSource.now().atZone(zoneSource.zone()).toLocalDate())
-    private val zone: ZoneId = zoneSource.zone()
+    private val screenDay = MutableStateFlow(
+        ScreenDay(
+            date = timeSource.now().atZone(zoneSource.zone()).toLocalDate(),
+            zone = zoneSource.zone(),
+        ),
+    )
 
     private val view = MutableStateFlow(BalanceView.PLAN)
     private val window = MutableStateFlow(TrainedWindow.LAST_7_DAYS)
@@ -137,9 +141,9 @@ class ProgramBalanceViewModel @Inject constructor(
      * screen's own day, which is why the day is part of the read rather than a constant inside it.
      */
     private val trainedCounts: Flow<DataResult<List<ExerciseWorkingSets>>> =
-        combine(window, todayDate) { selected, today -> selected to today }
-            .flatMapLatest { (selected, today) ->
-                val bounds = selected.window(today, zone)
+        combine(window, screenDay) { selected, screen -> selected to screen }
+            .flatMapLatest { (selected, screen) ->
+                val bounds = selected.window(screen.date, screen.zone)
                 statisticsRepository.observeWorkingSetsIn(bounds.from, bounds.toExclusive)
             }
 
@@ -202,7 +206,10 @@ class ProgramBalanceViewModel @Inject constructor(
 
     /** Re-reads the device day after a resume; a no-op until the date actually changes. */
     fun onResume() {
-        todayDate.update { timeSource.now().atZone(zoneSource.zone()).toLocalDate() }
+        screenDay.update {
+            val zone = zoneSource.zone()
+            ScreenDay(timeSource.now().atZone(zone).toLocalDate(), zone)
+        }
     }
 
     private companion object {

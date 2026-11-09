@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **Resume refreshes the zone with the day** (B391). Home, Measurements and Program Balance now hold their
+  local day and zone as one `ScreenDay`; a timezone change emits even when the date is the same, and the
+  daily-measurement check and writes use the new zone. A Measurements test crosses UTC to Tokyo and asserts
+  the old zone's entry is no longer today's.
 - **The records timeline reads real records** (B390). A bounded DAO query returns weighted records and timed
   holds under the existing record rule; the repository maps them to `RecordEvent` and Statistics combines the
   flow into `StatisticsUiState.records`. A ViewModel test now proves a record reaches the state, and a Room

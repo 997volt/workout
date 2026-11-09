@@ -87,6 +87,37 @@ class MeasurementsViewModelTest {
     }
 
     @Test
+    fun aResumeThatCrossesAZone_reReadsTheZoneAlongWithTheDay() = runTest(dispatcher) {
+        // B391: the date must not move to a new zone while the daily-entry check and writes stay in the old one.
+        var now = Instant.parse("2026-10-21T23:30:00Z")
+        var zone = ZoneId.of("UTC")
+        entries.value = listOf(
+            BodyMeasurement(
+                id = "old-zone",
+                measuredAt = Instant.parse("2026-10-21T00:30:00Z"),
+                kind = MeasurementKind.DAILY,
+                weightGrams = 82_000L,
+            ),
+        )
+        val viewModel = MeasurementsViewModel(
+            repository = FakeMeasurementRepository(entries),
+            goals = FakeGoalRepository(),
+            timeSource = TimeSource { now },
+            zoneSource = ZoneSource { zone },
+        )
+        backgroundScope.launch(dispatcher) { viewModel.uiState.collect {} }
+        advanceUntilIdle()
+        assertEquals("old-zone", viewModel.uiState.value.todayEntry?.id)
+
+        zone = ZoneId.of("Asia/Tokyo")
+        viewModel.onResume()
+        advanceUntilIdle()
+
+        assertEquals(LocalDate.of(2026, 10, 22), viewModel.uiState.value.today)
+        assertEquals("the entry belongs to the old zone's day, not Tokyo's", null, viewModel.uiState.value.todayEntry)
+    }
+
+    @Test
     fun settingADirectionGoal_opensAPeriodWithTheKind_andNoWeight() = runTest(dispatcher) {
         // N135's write, moved here with the row: the goal is set where the body is recorded.
         val goals = FakeGoalRepository()

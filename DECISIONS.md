@@ -1271,6 +1271,9 @@ the rule; that one argues it.
   that owns them. `ActiveWorkoutViewModel` still owns all session actions — splitting the actions into several
   ViewModels is an architectural change the detekt note records as out of scope, not a mechanical move.
 - **The records timeline is bounded and reuses the record rule** (N290).
+- **A screen's day and zone are one value** (B391). A resume can change the zone without changing the date;
+  emitting only the date would conflate that case, so `ScreenDay(date, zone)` is the flow. The daily check and
+  write read the same pair the heading does.
 - **The records timeline is fed by the repository, not by a screen-filled state** (B390). The DAO emits both
   record shapes under the same ordering and role rules as the record count; the ViewModel combines the flow,
   so a composable test cannot make an empty timeline look correct. The read is bounded before it leaves SQL.

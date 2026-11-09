@@ -20,11 +20,6 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 The review of `v2.26..HEAD` found five concrete gaps. **B390 is a release blocker**: the records timeline is
 wired to a state field no production code fills, so it always renders empty.
 
-- **B391 — Refresh the zone with the day on resume.** Home, Measurements and Program Balance re-read the date
-  from `zoneSource.zone()` but keep the zone captured at construction, so a flight can produce a new-zone date
-  while the daily-measurement check and writes still use the old zone. Fixed means the day and zone are one
-  state, and a test moves the zone as well as the clock.
-
 - **B392 — Do not launch two Weekly Review loads on first resume.** `init { load() }` and the route's first
   `ON_RESUME` both start independent reads; an older load can overwrite the newer one. Fixed means the resume
   hook refreshes only when it is not already loading, or cancels the in-flight load.

@@ -8,6 +8,7 @@ import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.ZoneSource
 import com.example.androidapp.domain.model.BodyMeasurement
 import com.example.androidapp.domain.model.MeasurementKind
+import com.example.androidapp.domain.model.ScreenDay
 import com.example.androidapp.domain.model.WeightGoal
 import com.example.androidapp.domain.model.isDailyOn
 import com.example.androidapp.domain.model.statedWeightGrams
@@ -100,8 +101,12 @@ class MeasurementsViewModel @Inject constructor(
      * Captured for the reason home captures its own (N114): the row and the write have to agree about which
      * day "today" is, and a screen left open across midnight keeps the day it opened on.
      */
-    private val todayDate = MutableStateFlow(timeSource.now().atZone(zoneSource.zone()).toLocalDate())
-    private val zone: ZoneId = zoneSource.zone()
+    private val screenDay = MutableStateFlow(
+        ScreenDay(
+            date = timeSource.now().atZone(zoneSource.zone()).toLocalDate(),
+            zone = zoneSource.zone(),
+        ),
+    )
 
     private val lastError = MutableStateFlow<DataError?>(null)
 
@@ -109,8 +114,8 @@ class MeasurementsViewModel @Inject constructor(
         repository.observeAll(),
         goals.observeCurrent(),
         goals.observePeriods(WEIGHT_METRIC_ID),
-        todayDate,
-    ) { entries, current, periods, day ->
+        screenDay,
+    ) { entries, current, periods, screen ->
         // The readings the goal is read against: every recorded weight, oldest first, whatever the list shows
         // (B141's whole-series rule, which the goal history shares). A stored zero is no weight (B336), so it is
         // not a reading the goal is judged on.
@@ -122,10 +127,10 @@ class MeasurementsViewModel @Inject constructor(
         MeasurementsUiState(
             isLoading = false,
             entries = entries,
-            todayEntry = entries.firstOrNull { it.isDailyOn(day, zone) },
+            todayEntry = entries.firstOrNull { it.isDailyOn(screen.date, screen.zone) },
             weightGoal = current[WEIGHT_METRIC_ID]?.weightGoal,
             goalHistory = goalOutcomes(periods, readings),
-            today = day,
+            today = screen.date,
         )
     }
         .stateIn(
@@ -136,7 +141,10 @@ class MeasurementsViewModel @Inject constructor(
 
     /** Re-reads the device day on resume (N286). */
     fun onResume() {
-        todayDate.update { timeSource.now().atZone(zoneSource.zone()).toLocalDate() }
+        screenDay.update {
+            val zone = zoneSource.zone()
+            ScreenDay(timeSource.now().atZone(zone).toLocalDate(), zone)
+        }
     }
 
     val error: StateFlow<DataError?> = lastError.asStateFlow()
