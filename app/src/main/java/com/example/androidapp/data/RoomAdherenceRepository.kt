@@ -111,8 +111,10 @@ class RoomAdherenceRepository @Inject constructor(
             )
         }
 
-        // The union of every active program's current phase week (P3.12, N292), in the authored order.
-        val slots = activeSlots(active, today, zone)
+        // Every authored slot, plus the week-by-week slice each one is scheduled in (P3.12, N292).
+        val slots = allActiveSlots(active)
+        val weeks = weeksBetween(firstWeek, lastWeek)
+        val slotsByWeek = slotsByWeek(active, weeks, zone)
         val skips = skipDao.findSkipsBetween(firstWeek.toEpochDay(), lastWeek.toEpochDay()).map {
             RecordedSkip(slotId = it.slotId, weekStart = LocalDate.ofEpochDay(it.weekStart))
         }
@@ -157,6 +159,7 @@ class RoomAdherenceRepository @Inject constructor(
                 exerciseParents = exerciseParents,
                 month = month,
                 today = today,
+                slotsByWeek = slotsByWeek,
             ),
             programs = active.map { it.toDomain() },
             // Only the active programs' weeks: a program no longer followed has nothing to toggle.
@@ -186,7 +189,7 @@ class RoomAdherenceRepository @Inject constructor(
         ProgramSchedule.occurrencesOn(
             // The same current phase week the month scores (N292), so the dialog and the grid behind
             // it cannot disagree about which days a phased program schedules.
-            slots = activeSlots(active, today, zone),
+            slots = activeSlots(active, date, zone),
             sessions = sessions,
             skips = skips,
             date = date,
@@ -213,8 +216,10 @@ class RoomAdherenceRepository @Inject constructor(
         val from = since.minusDays(SLACK_DAYS).atStartOfDay(zone).toInstant().toEpochMilli()
         val to = today.plusDays(DAYS_IN_WEEK + SLACK_DAYS).atStartOfDay(zone).toInstant().toEpochMilli()
 
+        val slots = allActiveSlots(active)
+        val slotsByWeek = slotsByWeek(active, weeksBetween(since, lastWeek), zone)
         ProgramSchedule.streak(
-            slots = activeSlots(active, today, zone),
+            slots = slots,
             sessions = programDao.finishedSessionsBetween(from, to).map { it.toAdherenceSession(zone) },
             skips = skipDao.findSkipsBetween(since.toEpochDay(), lastWeek.toEpochDay()).map {
                 RecordedSkip(slotId = it.slotId, weekStart = LocalDate.ofEpochDay(it.weekStart))
@@ -223,6 +228,7 @@ class RoomAdherenceRepository @Inject constructor(
             today = today,
             deloads = deloadsBetween(since, lastWeek),
             substitutions = substitutionsBetween(since, lastWeek),
+            slotsByWeek = slotsByWeek,
         )
     }
 
@@ -245,9 +251,15 @@ class RoomAdherenceRepository @Inject constructor(
         val sessions = programDao.finishedSessionsBetween(from, to).map { it.toAdherenceSession(zone) }
 
         val active = programDao.findActivePrograms()
+        val slots = if (active.isEmpty()) emptyList() else allActiveSlots(active)
+        val slotsByWeek = if (active.isEmpty()) {
+            emptyMap()
+        } else {
+            slotsByWeek(active, weeksBetween(firstWeek, lastWeek), zone)
+        }
         ProgramSchedule.monthlyRatios(
             // No active program means no ratio at all, so every point is a gap, for P3.5's reason.
-            slots = if (active.isEmpty()) emptyList() else activeSlots(active, today, zone),
+            slots = slots,
             sessions = sessions,
             skips = skipDao.findSkipsBetween(firstWeek.toEpochDay(), lastWeek.toEpochDay()).map {
                 RecordedSkip(slotId = it.slotId, weekStart = LocalDate.ofEpochDay(it.weekStart))
@@ -256,6 +268,7 @@ class RoomAdherenceRepository @Inject constructor(
             today = today,
             deloads = deloadsBetween(firstWeek, lastWeek),
             substitutions = substitutionsBetween(firstWeek, lastWeek),
+            slotsByWeek = slotsByWeek,
         )
     }
 
@@ -359,16 +372,34 @@ class RoomAdherenceRepository @Inject constructor(
      */
     private suspend fun activeSlots(
         programs: List<ProgramSummaryRow>,
-        today: LocalDate,
+        day: LocalDate,
         zone: ZoneId,
-    ): List<ProgramSlot> {
-        val slots = mutableListOf<ProgramSlot>()
-        programs.filter { it.kind != ProgramKind.SEQUENCE }.forEach { program ->
+    ): List<ProgramSlot> = programs
+        .filter { it.kind != ProgramKind.SEQUENCE }
+        .flatMap { program ->
             val rows = programDao.findSlotDetails(program.id).map { it.toDomain() }
-            slots += ProgramPhases.currentSlots(program.toDomain(), rows, today, zone)
+            ProgramPhases.currentSlots(program.toDomain(), rows, day, zone)
         }
-        return slots
+
+    /** Every slot a reader may need across a range, before the week-by-week phase slice (N292). */
+    private suspend fun allActiveSlots(programs: List<ProgramSummaryRow>): List<ProgramSlot> =
+        programs.filter { it.kind != ProgramKind.SEQUENCE }.flatMap { program ->
+            programDao.findSlotDetails(program.id).map { it.toDomain() }
+        }
+
+    /** The slots each week actually scheduled, with the phase that week fell in (N292). */
+    private suspend fun slotsByWeek(
+        programs: List<ProgramSummaryRow>,
+        weeks: List<LocalDate>,
+        zone: ZoneId,
+    ): Map<LocalDate, List<ProgramSlot>> = weeks.associateWith { week ->
+        activeSlots(programs, week, zone)
     }
+
+    private fun weeksBetween(first: LocalDate, last: LocalDate): List<LocalDate> =
+        generateSequence(first) { it.plusWeeks(1) }
+            .takeWhile { !it.isAfter(last) }
+            .toList()
 
     /** Which weeks each active program marked, by program id (P3.10, B161). */
     private fun deloadWeeksByProgram(

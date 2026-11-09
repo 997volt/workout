@@ -837,6 +837,22 @@ class ProgramRepositoryTest {
     }
 
     @Test
+    fun occurrencesOn_readsThePhaseOfThatDate_notThePhaseOfToday() = runTest {
+        // N292 follow-up: the correction dialog for a date in another phase must list that phase's
+        // occurrence. Today is 2026-10-07 (week 2); 2026-10-12 is week 3, which cycles back to week 1.
+        val program = create("Block")
+        repository.setProgramStartDate(program, LocalDate.of(2026, 9, 28))
+        repository.addSlot(program, createTemplate("Week 1 day"), DayOfWeek.MONDAY, phaseWeek = 1)
+        repository.addSlot(program, createTemplate("Week 2 day"), DayOfWeek.MONDAY, phaseWeek = 2)
+        repository.activateProgram(program)
+
+        val occurrences = (adherence
+            .occurrencesOn(date = LocalDate.of(2026, 10, 12), today = today, zone = utc) as DataResult.Success).data
+
+        assertEquals(listOf("Week 1 day"), occurrences.map { it.templateName })
+    }
+
+    @Test
     fun authoringTheFirstPhase_givesADeletedLegacyDayItsImplicitWeek() = runTest {
         // N292 backup follow-up: deleted rows still travel in a backup, so they must not remain the
         // only unphased rows of an otherwise phased program.

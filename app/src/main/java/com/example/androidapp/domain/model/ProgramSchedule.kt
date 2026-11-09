@@ -112,8 +112,10 @@ object ProgramSchedule {
         slots: List<ProgramSlot>,
         sessions: List<ProgramSession>,
         substitutions: List<RecordedSubstitution> = emptyList(),
+        /** The slots that were scheduled in each week; absent falls back to [slots] (N292). */
+        slotsByWeek: Map<LocalDate, List<ProgramSlot>> = emptyMap(),
     ): Set<SlotOccurrence> =
-        sessionAssignments(slots, sessions, substitutions).mapTo(mutableSetOf()) { it.second }
+        sessionAssignments(slots, sessions, substitutions, slotsByWeek).mapTo(mutableSetOf()) { it.second }
 
     /**
      * Each session paired with the occurrence it settled, oldest session first (P3.3, P3.8).
@@ -130,13 +132,16 @@ object ProgramSchedule {
         slots: List<ProgramSlot>,
         sessions: List<ProgramSession>,
         substitutions: List<RecordedSubstitution> = emptyList(),
+        slotsByWeek: Map<LocalDate, List<ProgramSlot>> = emptyMap(),
     ): List<Pair<ProgramSession, SlotOccurrence>> {
-        val dated = slots.filter { it.weekday != null }.sortedBy { it.position }
         val resolved = mutableSetOf<SlotOccurrence>()
         val assignments = mutableListOf<Pair<ProgramSession, SlotOccurrence>>()
 
         sessions.sortedBy { it.startedAt }.forEach { session ->
             val weekStart = weekStartOf(session.date)
+            val dated = (slotsByWeek[weekStart] ?: slots)
+                .filter { it.weekday != null }
+                .sortedBy { it.position }
             val unresolved = dated.filter { slot ->
                 val standsIn = RecordedSubstitution(slot.id, weekStart, session.templateId) in substitutions
                 val namesTheSession = slot.templateId == session.templateId || standsIn
@@ -263,6 +268,8 @@ object ProgramSchedule {
         exerciseParents: Map<String, String?> = emptyMap(),
         month: YearMonth,
         today: LocalDate,
+        /** The slots scheduled in each week; absent falls back to [slots] (N292). */
+        slotsByWeek: Map<LocalDate, List<ProgramSlot>> = emptyMap(),
     ): MonthAdherence {
         val first = month.atDay(1)
         val last = month.atEndOfMonth()
@@ -287,12 +294,13 @@ object ProgramSchedule {
                 )
             }
         }
-        val resolved = resolvedOccurrences(slots, finished, substitutions)
+        val resolved = resolvedOccurrences(slots, finished, substitutions, slotsByWeek)
         val skipped = skips.toSet()
         val deloaded = deloads.toSet()
 
         val counted = countOccurrences(
             slots = slots,
+            slotsByWeek = slotsByWeek,
             recorded = Recorded(resolved = resolved, skipped = skipped, deloaded = deloaded),
             deloadWeeks = deloadWeeks,
             month = month,
@@ -321,6 +329,7 @@ object ProgramSchedule {
      */
     private fun countOccurrences(
         slots: List<ProgramSlot>,
+        slotsByWeek: Map<LocalDate, List<ProgramSlot>>,
         recorded: Recorded,
         deloadWeeks: List<DeloadWeek>,
         month: YearMonth,
@@ -343,7 +352,7 @@ object ProgramSchedule {
             val plan = planWeek(deloadWeeks, week, first, last)
             scheduledDays += plan.days
 
-            slots.forEach { slot ->
+            (slotsByWeek[week] ?: slots).forEach { slot ->
                 val weekday = slot.weekday ?: return@forEach
                 val date = occurrenceDate(week, weekday)
                 if (date !in first..last) return@forEach
@@ -477,6 +486,8 @@ object ProgramSchedule {
         deloads: List<RecordedDeload> = emptyList(),
         /** The occurrences trained with another workout, or none (P3.11). */
         substitutions: List<RecordedSubstitution> = emptyList(),
+        /** The slots scheduled in each week; absent falls back to [slots] (N292). */
+        slotsByWeek: Map<LocalDate, List<ProgramSlot>> = emptyMap(),
     ): Streak? {
         if (slots.none { it.weekday != null }) return null
 
@@ -490,14 +501,14 @@ object ProgramSchedule {
                 )
             }
         }
-        val resolved = resolvedOccurrences(slots, finished, substitutions)
+        val resolved = resolvedOccurrences(slots, finished, substitutions, slotsByWeek)
         val skipped = skips.toSet()
         val deloaded = deloads.toSet()
 
         val recorded = Recorded(resolved = resolved, skipped = skipped, deloaded = deloaded)
         var count = 0
         var startedOn: LocalDate? = null
-        for ((date, week, slot) in streakOccurrences(slots, since, today).asReversed()) {
+        for ((date, week, slot) in streakOccurrences(slots, since, today, slotsByWeek).asReversed()) {
             when (streakStep(date, week, slot, recorded, today)) {
                 StreakStep.DONE -> {
                     count++
@@ -522,12 +533,13 @@ object ProgramSchedule {
         slots: List<ProgramSlot>,
         since: LocalDate,
         today: LocalDate,
+        slotsByWeek: Map<LocalDate, List<ProgramSlot>> = emptyMap(),
     ): List<Triple<LocalDate, LocalDate, ProgramSlot>> {
         val occurrences = mutableListOf<Triple<LocalDate, LocalDate, ProgramSlot>>()
         generateSequence(weekStartOf(since)) { it.plusWeeks(1) }
             .takeWhile { !it.isAfter(weekStartOf(today)) }
             .forEach { week ->
-                slots.forEach { slot ->
+                (slotsByWeek[week] ?: slots).forEach { slot ->
                     val weekday = slot.weekday ?: return@forEach
                     val date = occurrenceDate(week, weekday)
                     if (date.isAfter(today)) return@forEach
@@ -586,6 +598,8 @@ object ProgramSchedule {
         deloads: List<RecordedDeload> = emptyList(),
         /** The occurrences trained with another workout across the window, or none (P3.11). */
         substitutions: List<RecordedSubstitution> = emptyList(),
+        /** The slots scheduled in each week; absent falls back to [slots] (N292). */
+        slotsByWeek: Map<LocalDate, List<ProgramSlot>> = emptyMap(),
     ): List<MonthlyRatio> = months.map { month ->
         MonthlyRatio(
             month = month,
@@ -597,6 +611,7 @@ object ProgramSchedule {
                 substitutions = substitutions,
                 month = month,
                 today = today,
+                slotsByWeek = slotsByWeek,
             ).ratio,
         )
     }
