@@ -15,6 +15,34 @@ work was planned, so they do not always run in order — and an id this file doe
 shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 [CHANGELOG-1.x.md](CHANGELOG-1.x.md) for the 1.x releases.
 
+## Next — the 2.27 review fixes
+
+The review of `v2.26..HEAD` found five concrete gaps. **B390 is a release blocker**: the records timeline is
+wired to a state field no production code fills, so it always renders empty.
+
+- **B390 — Give the records timeline a real read.** `StatisticsUiState.records` is never assigned; `RecordEventRow`
+  and its mapper are dead code, and no DAO/repository method produces records. Fixed means a bounded query over
+  weighted records and timed holds using the existing `PersonalRecords` rule, a repository flow, and the
+  ViewModel combining it into state — with a test that goes through the fake repository rather than injecting
+  records into the composable.
+
+- **B391 — Refresh the zone with the day on resume.** Home, Measurements and Program Balance re-read the date
+  from `zoneSource.zone()` but keep the zone captured at construction, so a flight can produce a new-zone date
+  while the daily-measurement check and writes still use the old zone. Fixed means the day and zone are one
+  state, and a test moves the zone as well as the clock.
+
+- **B392 — Do not launch two Weekly Review loads on first resume.** `init { load() }` and the route's first
+  `ON_RESUME` both start independent reads; an older load can overwrite the newer one. Fixed means the resume
+  hook refreshes only when it is not already loading, or cancels the in-flight load.
+
+- **B393 — Bound the program document's ancestor walk.** `withAncestors` still calls `findById` in a loop; the
+  template/exercise/set reads are batched, but a deep library is still one query per ancestor. Fixed means one
+  batch read per level (or one batch for the whole set) with a test proving the document still carries the chain.
+
+- **B394 — Read trained counts only when the trained side is showing.** `ProgramBalanceViewModel` puts the logged
+  sets query in `sources`, so opening the Plan tab also queries history. Fixed means the trained flow is selected
+  by `view`, and the Plan side opens without a log read.
+
 ## Later — the rest of the 2.22 review
 
 The rows below are real and specified, but none is in flight: a defect here is low-frequency or a polish item,
