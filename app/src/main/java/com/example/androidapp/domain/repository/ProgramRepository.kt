@@ -96,6 +96,12 @@ interface ProgramRepository {
     /**
      * Appends a slot for [templateId], on [weekday] or order-only when it is null.
      *
+     * [phaseWeek] is the authored week it belongs to, or null for a program without phases
+     * (ROADMAP N292). The first phased day gives the program's existing days their implicit week 1,
+     * and a null [phaseWeek] on a program that already has phases joins the week it is training
+     * today — a program never holds both shapes, because an unphased day in a phased program would
+     * never be read.
+     *
      * The template must be a live one: a slot pointing at nothing would be invisible on
      * every screen the moment it was written.
      */
@@ -103,7 +109,17 @@ interface ProgramRepository {
         programId: String,
         templateId: String,
         weekday: DayOfWeek? = null,
+        phaseWeek: Int? = null,
     ): DataResult<Unit>
+
+    /**
+     * Removes one authored week's days and closes the gap in the weeks after it (ROADMAP N292).
+     *
+     * Soft, like a single day's removal: the templates the days named stay in the library and the
+     * history that referenced them stays readable. Removing the last remaining week leaves a program
+     * with no days, which is the state its editor already has a message for.
+     */
+    suspend fun removePhaseWeek(programId: String, week: Int): DataResult<Unit>
 
     /** Pins a slot to a weekday, or makes it order-only with null (P3.3). */
     suspend fun setSlotWeekday(slotId: String, weekday: DayOfWeek?): DataResult<Unit>

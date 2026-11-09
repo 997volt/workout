@@ -1279,6 +1279,11 @@ the rule; that one argues it.
 - **One Weekly Review read at a time** (B392). `init` and the first resume both wanted to load; a new call while
   a read is active is ignored, which is also the retry rule (the button is unavailable while loading). A later
   resume, after the read completes, refreshes normally.
+- **A phase is an authored week number, not a new program kind** (N292). `program_slots.phaseWeek` null keeps
+  the old repeating week; a phased program numbers every day from one and derives the current week cyclically
+  from its anchor, with gaps as rest weeks. The app never advances loads by itself. The editor remains one
+  destination, and document/backup versions move because a v7 document would otherwise read every authored
+  week as one.
 - **An activity's numbers are optional and exact** (N293). Duration is stored in seconds and distance in metres,
   nullable like every other "not stated" value; the screen types minutes and kilometres and converts once. A
   workout refuses them, because these are the numbers an activity carries instead of sets.

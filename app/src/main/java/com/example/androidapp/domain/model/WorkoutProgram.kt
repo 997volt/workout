@@ -27,8 +27,22 @@ data class WorkoutProgram(
     val position: Int = 0,
     /** A week that repeats (the default), or an order that ends (ROADMAP N174). */
     val kind: ProgramKind = ProgramKind.WEEKLY,
-    /** The day a block begins, or null for the day it was created. Only a sequence reads it (N174). */
+    /**
+     * The day a block begins, or null for the day it was created (N174).
+     *
+     * A sequence reads it as the day its first session is due. A weekly program with phases reads it
+     * as the anchor its rotation is measured from (N292), and falls back to [createdAtMillis].
+     */
     val startDate: LocalDate? = null,
+    /**
+     * When the row was written, as epoch milliseconds (ROADMAP N292).
+     *
+     * Carried for one question: a phased weekly program with no authored start measures its rotation
+     * from the week it was created, the same fallback a sequence applies (N175). It is not display
+     * data. A caller that builds a program by hand leaves it at zero; the fallback is then the epoch,
+     * which only matters for a program that also authors phases and no start.
+     */
+    val createdAtMillis: Long = 0L,
 )
 
 /**
@@ -43,6 +57,15 @@ data class ProgramSlot(
     val templateId: String,
     val position: Int,
     val weekday: DayOfWeek? = null,
+    /**
+     * The authored phase week this day belongs to, or null for a program with no phases (ROADMAP N292).
+     *
+     * Null is the old shape and keeps its old meaning: the program is one week that repeats. A
+     * program that authors phases names a week on **every** slot, numbered from one; the editor and
+     * the document validator both refuse the mixed shape, because an unphased day in a phased
+     * program is never read.
+     */
+    val phaseWeek: Int? = null,
     /** The template's name, carried by the slot's read so a list needs one subscription. */
     val templateName: String = "",
     val exerciseCount: Int = 0,

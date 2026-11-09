@@ -91,6 +91,11 @@ private fun validateExercises(document: ProgramDocument, refuse: Refusal) {
  */
 private fun validateSlots(document: ProgramDocument, refuse: Refusal) {
     val templateIds = document.templates.map { it.id }.toSet()
+    // A program authors phases for all of its days or for none (N292). The two shapes do not mix:
+    // an unphased day inside a phased program is never read, so accepting it would drop a day in
+    // silence rather than refusing the file.
+    val phased = document.slots.count { it.phaseWeek != null }
+    if (phased in 1 until document.slots.size) refuse(ProblemCode.INVALID_PHASE, "slots")
     document.slots.forEachIndexed { index, slot ->
         if (slot.programId != document.program.id) {
             refuse(ProblemCode.MALFORMED, "slots[$index].programId", slot.programId)
@@ -99,9 +104,16 @@ private fun validateSlots(document: ProgramDocument, refuse: Refusal) {
             refuse(ProblemCode.DANGLING_SLOT_TEMPLATE, "slots[$index].templateId", slot.templateId)
         }
         if (slot.position < 0) refuse(ProblemCode.INVALID_POSITION, "slots[$index].position")
+        slot.phaseWeek?.let { week ->
+            if (week < 1) refuse(ProblemCode.INVALID_PHASE, "slots[$index].phaseWeek", week.toString())
+        }
     }
-    duplicates(document.slots.map { it.position }).forEach {
-        refuse(ProblemCode.INVALID_POSITION, "slots", it)
+    // A slot's position is its place **within its week**: two days of one week cannot share it, while
+    // the same place in week 1 and week 2 is the ordinary case (N292).
+    document.slots.groupBy { it.phaseWeek }.forEach { (week, rows) ->
+        duplicates(rows.map { it.position }).forEach {
+            refuse(ProblemCode.INVALID_POSITION, "slots", "${week ?: "weekly"}/$it")
+        }
     }
 }
 

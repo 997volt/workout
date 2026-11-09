@@ -117,6 +117,25 @@ class ProgramDocumentTest {
     }
 
     @Test
+    fun aPhasedProgram_keepsItsAuthoredWeeksThroughTheDocument() = runTest {
+        // ROADMAP N292: what travels is the program's definition, and a phased program's definition
+        // includes which week each day belongs to. Without it the receiver would schedule every week's
+        // days at once.
+        val programId = seedProgram()
+        val templateId = templates.observeTemplates().first().single().id
+        programs.addSlot(programId, templateId, DayOfWeek.WEDNESDAY, phaseWeek = 2)
+        val file = exportOf(programId)
+
+        wipe()
+        importOf(file)
+
+        val imported = programs.observePrograms().first().single()
+        val slots = programs.observeSlots(imported.id).first()
+        assertEquals(listOf(1, 2), slots.map { it.phaseWeek })
+        assertEquals(listOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY), slots.map { it.weekday })
+    }
+
+    @Test
     fun aDeletedProgram_comesBackWhenItsDocumentIsLoadedAgain() = runTest {
         // B177: deleting a program soft-deletes it, and an insert-only merge would ignore every row of
         // a document that names it — the example card answered "already here" to a program that was

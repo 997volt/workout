@@ -78,7 +78,9 @@ import androidx.room.TypeConverters
  * [MIGRATION_18_19]. **20 adds the session template and measurement date indices** for the program and
  * history reads (B282/N282); see [MIGRATION_19_20]. **21 records the exercise a substituted session row
  * stood in for** (N291); see [MIGRATION_20_21]. **22 adds the optional activity duration/distance** (N293);
- * see [MIGRATION_21_22].
+ * see [MIGRATION_21_22]. **23 adds a program day's authored phase week** (N292): null on every row
+ * already on disk, which is the single repeating week it was, and numbered from one once a program
+ * authors more than one week; see [MIGRATION_22_23].
  *
  * There is deliberately **no** `fallbackToDestructiveMigration()`: it would turn
  * a forgotten migration into silent, total data loss for a user's training
@@ -107,7 +109,7 @@ import androidx.room.TypeConverters
         MetricGoalEntity::class,
         RetiredMovementEntity::class,
     ],
-    version = 22,
+    version = 23,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)

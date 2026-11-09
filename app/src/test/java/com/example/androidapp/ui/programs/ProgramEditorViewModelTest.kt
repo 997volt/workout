@@ -143,6 +143,43 @@ class ProgramEditorViewModelTest {
             .hasSize(1)
     }
 
+    @Test
+    fun addingADay_carriesTheAuthoredWeekTheLifterIsLookingAt() = runTest(dispatcher) {
+        // ROADMAP N292: the editor shows one week at a time, so the week travels with the tap rather
+        // than being inferred from the schedule's current week.
+        val viewModel = viewModel()
+        backgroundScope.launch { viewModel.uiState.collect {} }
+        advanceUntilIdle()
+
+        viewModel.onAddSlot(templateId = "t2", phaseWeek = 2)
+        advanceUntilIdle()
+
+        assertThat(repository.addedSlots)
+            .containsExactly(Triple(PROGRAM_ID, "t2", 2))
+    }
+
+    @Test
+    fun removingAPhaseWeek_isOneWrite_andItsFailureIsReported() = runTest(dispatcher) {
+        val viewModel = viewModel()
+        backgroundScope.launch { viewModel.uiState.collect {} }
+        advanceUntilIdle()
+
+        repository.writeResult = DataResult.Failure(DataError.Storage(IOException("locked")))
+        viewModel.onRemovePhaseWeek(2)
+        advanceUntilIdle()
+
+        assertThat(repository.removedWeeks).containsExactly(PROGRAM_ID to 2)
+        assertThat(viewModel.uiState.value.error).isInstanceOf(DataError.Storage::class.java)
+
+        repository.writeResult = DataResult.Success(Unit)
+        viewModel.onRemovePhaseWeek(2)
+        advanceUntilIdle()
+
+        assertWithMessage("a successful write clears the old message")
+            .that(viewModel.uiState.value.error)
+            .isNull()
+    }
+
     private companion object {
         const val PROGRAM_ID = "p1"
     }

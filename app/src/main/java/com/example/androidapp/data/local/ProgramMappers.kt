@@ -25,6 +25,7 @@ internal fun ProgramSummaryRow.toDomain(): WorkoutProgram = WorkoutProgram(
     position = position,
     kind = kind,
     startDate = startDate?.let(LocalDate::ofEpochDay),
+    createdAtMillis = createdAt,
 )
 
 internal fun ProgramSlotDetail.toDomain(): ProgramSlot = ProgramSlot(
@@ -33,6 +34,7 @@ internal fun ProgramSlotDetail.toDomain(): ProgramSlot = ProgramSlot(
     templateId = templateId,
     position = position,
     weekday = weekday,
+    phaseWeek = phaseWeek,
     templateName = templateName,
     exerciseCount = exerciseCount,
 )

@@ -521,10 +521,14 @@ private class FakeProgramRepository : ProgramRepository {
         programId: String,
         templateId: String,
         weekday: DayOfWeek?,
+        phaseWeek: Int?,
     ): DataResult<Unit> {
         added += Triple(programId, templateId, weekday)
         return DataResult.Success(Unit)
     }
+
+    override suspend fun removePhaseWeek(programId: String, week: Int): DataResult<Unit> =
+        error("the history screen does not remove a week")
 
     override suspend fun setSubstitution(
         slotId: String,

@@ -602,6 +602,14 @@ data class ProgramSlotDto(
     val templateId: String,
     val position: Int,
     val weekday: DayOfWeek? = null,
+    /**
+     * The authored phase week this day belongs to, or null for a program with no phases (ROADMAP N292).
+     *
+     * Defaulted so a file written before phases existed reads as the single repeating week it was.
+     * The **backup's** schema version moved with it, because a build that did not know the field
+     * would read every authored week as that one week and schedule days it should not.
+     */
+    val phaseWeek: Int? = null,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,

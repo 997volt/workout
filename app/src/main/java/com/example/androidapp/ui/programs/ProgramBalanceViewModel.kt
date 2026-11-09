@@ -10,6 +10,7 @@ import com.example.androidapp.domain.ZoneSource
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.ExerciseWorkingSets
 import com.example.androidapp.domain.model.MuscleSets
+import com.example.androidapp.domain.model.ProgramPhases
 import com.example.androidapp.domain.model.ScreenDay
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TrainedWindow
@@ -106,23 +107,6 @@ class ProgramBalanceViewModel @Inject constructor(
 
     private val programId: String = savedStateHandle.toRoute<ProgramBalance>().programId
 
-    /**
-     * Every planned row the program's slots name, flattened.
-     *
-     * A slot points at a template, and a template's planned sets are what the balance counts, so this is a
-     * read per slot rather than one query — the shape the editor's preview already has, widened from one slot
-     * to all of them. `flatMapLatest` because editing the schedule must replace the read rather than add to it.
-     */
-    private val planned: Flow<List<TemplateExercise>> =
-        programRepository.observeSlots(programId).flatMapLatest { slots ->
-            val perTemplate = slots.map { templateRepository.observeExercises(it.templateId) }
-            if (perTemplate.isEmpty()) {
-                flowOf(emptyList())
-            } else {
-                combine(perTemplate) { groups -> groups.toList().flatten() }
-            }
-        }
-
     /** The device's own day, re-read on resume so a screen open across midnight shows the new window (N286). */
     private val screenDay = MutableStateFlow(
         ScreenDay(
@@ -130,6 +114,35 @@ class ProgramBalanceViewModel @Inject constructor(
             zone = zoneSource.zone(),
         ),
     )
+
+    /**
+     * Every planned row the program's **current** week names, flattened (ROADMAP N119, N292).
+     *
+     * A slot points at a template, and a template's planned sets are what the balance counts, so this is a
+     * read per slot rather than one query — the shape the editor's preview already has, widened from one slot
+     * to all of them. A phased program contributes the week it is training now, so the plan side describes
+     * this week rather than the sum of a whole cycle; a program without phases contributes every slot, exactly
+     * as before. `flatMapLatest` because editing the schedule must replace the read rather than add to it.
+     */
+    private val planned: Flow<List<TemplateExercise>> =
+        combine(
+            programRepository.observeProgram(programId),
+            programRepository.observeSlots(programId),
+            screenDay,
+        ) { program, slots, screen -> Triple(program, slots, screen) }
+            .flatMapLatest { (program, slots, screen) ->
+                val current = if (program == null) {
+                    emptyList()
+                } else {
+                    ProgramPhases.currentSlots(program, slots, screen.date, screen.zone)
+                }
+                val perTemplate = current.map { templateRepository.observeExercises(it.templateId) }
+                if (perTemplate.isEmpty()) {
+                    flowOf(emptyList())
+                } else {
+                    combine(perTemplate) { groups -> groups.toList().flatten() }
+                }
+            }
 
     private val view = MutableStateFlow(BalanceView.PLAN)
     private val window = MutableStateFlow(TrainedWindow.LAST_7_DAYS)

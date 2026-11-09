@@ -3612,7 +3612,11 @@ private class FakeProgramRepository : ProgramRepository {
         programId: String,
         templateId: String,
         weekday: DayOfWeek?,
+        phaseWeek: Int?,
     ): DataResult<Unit> = error("the workout screen does not add a slot")
+
+    override suspend fun removePhaseWeek(programId: String, week: Int): DataResult<Unit> =
+        error("the workout screen does not remove a week")
 
     override suspend fun setSlotWeekday(slotId: String, weekday: DayOfWeek?): DataResult<Unit> =
         error("the workout screen does not schedule a slot")

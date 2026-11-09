@@ -15,16 +15,6 @@ work was planned, so they do not always run in order — and an id this file doe
 shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 [CHANGELOG-1.x.md](CHANGELOG-1.x.md) for the 1.x releases.
 
-## Next — the post-2.27 feature batch
-
-The remaining large product row after N291 and N293. **N292** follows when its schema and editor design is settled.
-
-- **N292 — Multi-week program phases.** A weekly program repeats forever and a sequence block happens once;
-  there is no authored multi-week block (week 1/2/3 prescriptions). This is a real programming capability and
-  the largest item on this list: new schema and program-document fields, a format-version bump, and an editor
-  for the phases. Each week is authored by the lifter; the app does not auto-progress loads, which keeps N22's
-  "no percentage/coach rule" decision intact.
-
 ## Later — the rest of the 2.22 review
 
 The rows below are real and specified, but none is in flight: a defect here is low-frequency or a polish item,

@@ -129,6 +129,22 @@ class NextSessionTest {
     }
 
     @Test
+    fun aPhasedProgram_namesTheNextDayOfTheWeekItsCandidateDateFallsIn() {
+        // ROADMAP N292: the candidate day is asked about the phase *it* falls in, not today's. Today
+        // is in week 1 with nothing left; the next scheduled day is week 2's Wednesday.
+        val phased = program("weekly").copy(startDate = LocalDate.of(2026, 10, 5))
+        val slots = listOf(
+            slot("a0", DayOfWeek.MONDAY, name = "Week 1 push").copy(phaseWeek = 1),
+            slot("b2", DayOfWeek.WEDNESDAY, name = "Week 2 pull").copy(phaseWeek = 2),
+        )
+
+        val next = nextWeeklySession(listOf(phased), slots, today)!!
+
+        assertThat(next.date).isEqualTo(LocalDate.of(2026, 10, 14))
+        assertThat(next.name).isEqualTo("Week 2 pull")
+    }
+
+    @Test
     fun aBlock_sWeekdayIsNotAWeeklyOccurrence() {
         // A sequence's Monday slot is one session, not "every Monday": the weekly derivation must
         // not read it, or the rest line would promise a block session in a week it is not due (N176).

@@ -794,6 +794,62 @@ class ProgramRepositoryTest {
         }
     }
 
+    @Test
+    fun authoringASecondWeek_givesTheOldDaysTheirImplicitWeekOne() = runTest {
+        // ROADMAP N292: a program either authors phases for every day or for none. The first phased
+        // day turns the old rows into week 1 in the same write, and positions restart per week.
+        val program = create("Block")
+        repository.addSlot(program, createTemplate("Week 1 day"), DayOfWeek.MONDAY)
+        repository.addSlot(program, createTemplate("Week 2 day"), DayOfWeek.MONDAY, phaseWeek = 2)
+
+        val slots = repository.observeSlots(program).first()
+
+        assertEquals(listOf(1, 2), slots.map { it.phaseWeek })
+        assertEquals(listOf(0, 0), slots.map { it.position })
+    }
+
+    @Test
+    fun removingAPhaseWeek_takesItsDaysAndClosesTheGap() = runTest {
+        val program = create("Block")
+        repository.addSlot(program, createTemplate("Week 1 day"), DayOfWeek.MONDAY, phaseWeek = 1)
+        repository.addSlot(program, createTemplate("Week 2 day"), DayOfWeek.WEDNESDAY, phaseWeek = 2)
+
+        repository.removePhaseWeek(program, 1)
+
+        val slot = slot(program)
+        assertEquals("Week 2 day", slot.templateName)
+        assertEquals("the week after the removed one becomes week 1", 1, slot.phaseWeek)
+    }
+
+    @Test
+    fun theMissedDayQuestion_readsOnlyTheCurrentPhaseWeek() = runTest {
+        // Today is Wednesday 2026-10-07. The program started a week earlier, so it is in week 2:
+        // week 1's elapsed Monday is not this week's schedule, and week 2's elapsed Monday is.
+        val program = create("Block")
+        repository.setProgramStartDate(program, LocalDate.of(2026, 9, 28))
+        repository.addSlot(program, createTemplate("Week 1 day"), DayOfWeek.MONDAY, phaseWeek = 1)
+        repository.addSlot(program, createTemplate("Week 2 day"), DayOfWeek.MONDAY, phaseWeek = 2)
+        repository.activateProgram(program)
+
+        val pending = repository.pendingOccurrences(today, utc).getOrNull().orEmpty()
+
+        assertEquals(listOf("Week 2 day"), pending.map { it.templateName })
+    }
+
+    @Test
+    fun addingUntaggedDayToAPhasedProgram_joinsTheWeekItIsTrainingNow() = runTest {
+        // The history screen's "schedule into a program" offer has no week in mind (N292).
+        val program = create("Block")
+        repository.setProgramStartDate(program, LocalDate.of(2026, 9, 28))
+        repository.addSlot(program, createTemplate("Week 1 day"), DayOfWeek.MONDAY, phaseWeek = 1)
+        repository.activateProgram(program)
+
+        repository.addSlot(program, createTemplate("Saved plan"), DayOfWeek.FRIDAY)
+
+        val saved = repository.observeSlots(program).first().first { it.templateName == "Saved plan" }
+        assertEquals(2, saved.phaseWeek)
+    }
+
     /** A session row, finished or abandoned, started from [templateId] or by hand. */
     private suspend fun insertSession(
         id: String,

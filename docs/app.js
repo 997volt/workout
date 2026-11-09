@@ -7075,7 +7075,7 @@
       deletedAt: null
     };
     working.templates.push(template);
-    working.slots.push({
+    var slot = {
       id: editorNewId('slot'),
       programId: working.program.id,
       templateId: template.id,
@@ -7084,7 +7084,20 @@
       createdAt: now,
       updatedAt: now,
       deletedAt: null
+    };
+    // A phased program authors every day in a week (N292). This editor does not author phases, so a
+    // new day joins the first week the document already has: leaving it unphased would mix the two
+    // shapes, which the shared validator refuses — and a document this page cannot write is worse
+    // than one whose new day lands in week 1.
+    var phased = (working.slots || []).filter(function (row) {
+      return row && row.phaseWeek != null;
     });
+    if (phased.length) {
+      slot.phaseWeek = phased.reduce(function (lowest, row) {
+        return row.phaseWeek < lowest ? row.phaseWeek : lowest;
+      }, phased[0].phaseWeek);
+    }
+    working.slots.push(slot);
   }
 
   function editorAddExercise(working, templateId, exerciseId) {
@@ -7579,6 +7592,10 @@
     // recurrence (N174): "Day 4 of 9" and a control labelled Due say what the day means here (B203).
     if (isSequence) {
       title = 'Day ' + (orderedSlots.indexOf(slot) + 1) + ' of ' + orderedSlots.length + ' · ' + title;
+    } else if (slot.phaseWeek != null) {
+      // A phased program's day names its authored week (N292). This editor does not author phases,
+      // but it must not hide which week a day it shows belongs to.
+      title = 'Week ' + slot.phaseWeek + ' · ' + title;
     }
     var planned = (working.templateExercises || []).filter(function (row) {
       return row && !row.deletedAt && row.templateId === slot.templateId;

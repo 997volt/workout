@@ -46,6 +46,9 @@ enum class ProblemCode {
     /** A slot names a template the document does not carry. */
     DANGLING_SLOT_TEMPLATE,
 
+    /** A phase week is below one, or a document mixes phased days with a single repeating week (N292). */
+    INVALID_PHASE,
+
     /** A template exercise names a template the document does not carry. */
     DANGLING_TEMPLATE_EXERCISE,
 
@@ -141,7 +144,8 @@ object ProgramDocumentCodec {
      * **Not the ceiling's number** (N185). A v4 document is a weekly program and means exactly what it
      * says, so this build reads it; the ceiling is what stops an older build reading a *sequence* it
      * cannot represent. Moving the floor with the ceiling would refuse every saved export and the
-     * three bundled starter programs for no safety at all.
+     * three bundled starter programs for no safety at all. The same holds for a v7 document: it has
+     * no phase weeks and reads as the single repeating week it described (N292).
      */
     const val MINIMUM_FORMAT_VERSION: Int = 4
 

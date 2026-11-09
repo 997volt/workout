@@ -308,7 +308,7 @@ private fun latestWrite(document: ProgramDocument): Long {
 
 private fun sameSlot(a: ProgramSlotDto, b: ProgramSlotDto): Boolean =
     a.programId == b.programId && a.templateId == b.templateId &&
-        a.position == b.position && a.weekday == b.weekday
+        a.position == b.position && a.weekday == b.weekday && a.phaseWeek == b.phaseWeek
 
 private fun sameTemplate(a: TemplateDto, b: TemplateDto): Boolean =
     a.name == b.name && a.versionOf == b.versionOf

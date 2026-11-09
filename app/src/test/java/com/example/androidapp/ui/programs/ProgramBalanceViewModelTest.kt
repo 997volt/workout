@@ -118,6 +118,36 @@ class ProgramBalanceViewModelTest {
     }
 
     @Test
+    fun aPhasedProgramsPlanView_readsOnlyTheWeekItIsTrainingNow() = runTest(dispatcher) {
+        // ROADMAP N292: the plan side describes this week, not the sum of a whole cycle. Today is
+        // Friday 2026-10-02, and a program anchored a week earlier is in week 2.
+        programs.program.value = WorkoutProgram(
+            id = PROGRAM_ID,
+            name = "Block",
+            startDate = LocalDate.of(2026, 9, 21),
+        )
+        programs.slots.value = listOf(
+            slot("s1", "t1", position = 0).copy(phaseWeek = 1),
+            slot("s2", "t2", position = 0).copy(phaseWeek = 2),
+        )
+        templates.exercises.value = mapOf(
+            "t1" to listOf(planned("e1", workingSets = 2)),
+            "t2" to listOf(planned("e2", workingSets = 3)),
+        )
+        exercises.library.value = DataResult.Success(
+            listOf(Exercise(id = "e2", name = "Bench", primaryMuscle = MuscleGroup.CHEST)),
+        )
+
+        val viewModel = viewModel()
+        backgroundScope.launch { viewModel.uiState.collect {} }
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.plannedSets).isEqualTo(3)
+        assertThat(viewModel.uiState.value.balance)
+            .containsExactly(MuscleSets(MuscleGroup.CHEST, 6))
+    }
+
+    @Test
     fun addingASlot_replacesTheRead_ratherThanKeepingTheFirstTemplatesWork() = runTest(dispatcher) {
         programs.slots.value = listOf(slot("s1", "t1", position = 0))
         templates.exercises.value = mapOf("t1" to listOf(planned("e1", workingSets = 1)))

@@ -285,6 +285,15 @@
       t.eq(JSON.parse(shared.validateJson(JSON.stringify(document))).problems.length, 0);
     });
 
+    check('a day added to a phased program joins a week it already authors (N292)', function () {
+      var document = baseDocument();
+      document.slots[0].phaseWeek = 1;
+      H.editorAddDay(document);
+      t.eq(document.slots.length, 2);
+      t.eq(document.slots[1].phaseWeek, 1, 'an unphased day would be a document the validator refuses');
+      t.eq(JSON.parse(shared.validateJson(JSON.stringify(document))).problems.length, 0);
+    });
+
     check('an exercise and its sets extend a workout and stay valid', function () {
       var document = baseDocument();
       H.editorAddDay(document);

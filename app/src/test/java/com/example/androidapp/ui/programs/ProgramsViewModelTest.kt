@@ -302,7 +302,11 @@ class ProgramsViewModelTest {
             programId: String,
             templateId: String,
             weekday: DayOfWeek?,
+            phaseWeek: Int?,
         ): DataResult<Unit> = error("these tests do not add a slot")
+
+        override suspend fun removePhaseWeek(programId: String, week: Int): DataResult<Unit> =
+            error("these tests do not remove a week")
 
         override suspend fun setSlotWeekday(slotId: String, weekday: DayOfWeek?): DataResult<Unit> =
             error("these tests do not schedule a slot")

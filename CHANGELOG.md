@@ -17,6 +17,13 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Added
 
+- **Weekly programs can author multi-week phases** (N292). A program day may name an authored week; the
+  current week is derived from the program's start (or creation) week, cycles through the highest authored
+  week, and gaps are rest weeks. Loads never auto-progress. Home, next-session, adherence, weekly review and
+  the balance Plan view read only the current week; the editor authors one week at a time on its existing
+  screen. Program documents move to format 8 and backups to schema 9, with old files still importing as a
+  single repeating week.
+
 - **Activities can carry a manual duration and distance** (N293). An activity's screen offers minutes and
   kilometres, stores them as seconds and metres (both nullable), and clears them on an empty save. The values
   survive backup/restore through the session DTO.

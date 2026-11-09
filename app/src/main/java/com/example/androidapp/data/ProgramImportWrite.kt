@@ -151,7 +151,7 @@ internal suspend fun mergeProgramDocument(
 internal suspend fun heldWork(database: WorkoutDatabase, programId: String): PlannedWork {
     val slots = database.programDao().findSlots(programId)
     return PlannedWork(
-        days = slots.map { PlannedDay(it.templateId, it.weekday, it.position) }.counted(),
+        days = slots.map { PlannedDay(it.templateId, it.weekday, it.position, it.phaseWeek) }.counted(),
         movements = slots.map { it.templateId }.distinct()
             .flatMap { database.templateDao().findTemplateExercises(it) }
             .map { PlannedMovement(it.templateId, it.exerciseId, it.position) }

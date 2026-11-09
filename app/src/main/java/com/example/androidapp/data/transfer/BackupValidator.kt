@@ -358,6 +358,20 @@ internal object BackupValidator {
             row.programId.required(out, where)
             row.templateId.required(out, where)
             if (row.position < 0) out += BackupProblem(where, "A position cannot be negative.")
+            // A phase week is numbered from one (N292); zero or a negative number would name a week
+            // no reader asks for, so the row would silently leave every screen.
+            row.phaseWeek?.let { week ->
+                if (week < 1) out += BackupProblem(where, "A program week is numbered from 1.")
+            }
+        }
+        // A program authors a week for every day or for none (N292). The mixed shape is refused
+        // because an unphased day in a phased program is never read, so restoring one would drop a
+        // day in silence. No file written before phases existed can be mixed.
+        file.programSlots.groupBy { it.programId }.forEach { (programId, rows) ->
+            val phased = rows.count { it.phaseWeek != null }
+            if (phased in 1 until rows.size) {
+                out += BackupProblem("Program $programId", "Its days must all name a week, or none of them.")
+            }
         }
         file.programSkips.forEachIndexed { index, row ->
             validateWeek(row.weekStart, "Program skip ${index + 1}", out)

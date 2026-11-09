@@ -217,6 +217,12 @@ internal class FakeProgramRepository : ProgramRepository {
     /** Every skipped block session and the day the ViewModel dated it. */
     val blockSkips = mutableListOf<Pair<String, LocalDate>>()
 
+    /** Every day added, as the template and the week it was authored in (ROADMAP N292). */
+    val addedSlots = mutableListOf<Triple<String, String, Int?>>()
+
+    /** Every removed phase week as the program and the week (ROADMAP N292). */
+    val removedWeeks = mutableListOf<Pair<String, Int>>()
+
     override fun observePrograms(): Flow<List<WorkoutProgram>> = unused()
 
     override fun observeProgram(programId: String): Flow<WorkoutProgram?> = program
@@ -267,7 +273,16 @@ internal class FakeProgramRepository : ProgramRepository {
         programId: String,
         templateId: String,
         weekday: DayOfWeek?,
-    ): DataResult<Unit> = unused()
+        phaseWeek: Int?,
+    ): DataResult<Unit> {
+        addedSlots += Triple(programId, templateId, phaseWeek)
+        return writeResult
+    }
+
+    override suspend fun removePhaseWeek(programId: String, week: Int): DataResult<Unit> {
+        removedWeeks += programId to week
+        return writeResult
+    }
 
     override suspend fun setSlotWeekday(slotId: String, weekday: DayOfWeek?): DataResult<Unit> = unused()
 

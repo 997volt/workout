@@ -65,8 +65,14 @@ object BackupCodec {
      * the file, drop it and read the hold as a counted set with no reps — the same wrong meaning, one
      * level up. The floor does not move: a v7 file has no plan hold, so this build reads every older backup.
      * The helper's own writer stays at the floor (B288): its backups are meant for every supported build.
+     *
+     * **N292 moves it to 9 and leaves the floor at 5.** A program's days can now name a phase week, and a
+     * v8 build would accept the file, drop the field and read every authored week as one repeating week —
+     * scheduling days it should not, which is the same wrong meaning as N174's kind. The floor does not
+     * move: a v8 file has no phase weeks, so this build reads every older backup and every helper-written
+     * file exactly as before.
      */
-    const val CURRENT_SCHEMA_VERSION = 8
+    const val CURRENT_SCHEMA_VERSION = 9
 
     /** The oldest file this build reads: a shape whose meaning is still this one (ROADMAP N104, N185). */
     const val MINIMUM_SCHEMA_VERSION = 5

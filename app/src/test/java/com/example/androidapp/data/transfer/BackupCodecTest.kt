@@ -264,17 +264,40 @@ class BackupCodecTest {
     }
 
     @Test
-    fun theCeilingIsEight_forAPlanHold_andAV7FileStillReads() {
-        // B326: a plan's hold is a prescription a v7 build cannot represent, so the ceiling moved the way
-        // B253 moved it for performed holds. The fixed value makes the next move deliberate; a v7 file has no
-        // plan hold and reads exactly as it did.
-        assertEquals(8, BackupCodec.CURRENT_SCHEMA_VERSION)
+    fun theCeilingIsNine_forAProgramsPhaseWeek_andAV8FileStillReads() {
+        // B326 moved the ceiling to 8 for a plan's hold; N292 moves it to 9 because a program's day can
+        // name a phase week, which a v8 build would read as one repeating week. The fixed value makes the
+        // next move deliberate; a v8 file has no phase weeks and reads exactly as it did.
+        assertEquals(9, BackupCodec.CURRENT_SCHEMA_VERSION)
 
-        val fromBeforeThePlanHold = sample.copy(schemaVersion = 7)
+        val fromBeforeThePhaseWeek = sample.copy(schemaVersion = 8)
 
-        val decoded = BackupCodec.decode(BackupCodec.encode(fromBeforeThePlanHold))
+        val decoded = BackupCodec.decode(BackupCodec.encode(fromBeforeThePhaseWeek))
 
-        assertEquals(7, decoded.schemaVersion)
+        assertEquals(8, decoded.schemaVersion)
+    }
+
+    @Test
+    fun aProgramDay_keepsItsPhaseWeekThroughTheFile() {
+        // N292: the backup carries the column whole, like every other row, so a phased program restores
+        // as the program it was rather than as three weeks of days all scheduled at once.
+        val phased = sample.copy(
+            programSlots = listOf(1, 2).map { week ->
+                ProgramSlotDto(
+                    id = "slot-$week",
+                    programId = "program-1",
+                    templateId = "template-1",
+                    position = 0,
+                    phaseWeek = week,
+                    createdAt = 1L,
+                    updatedAt = 1L,
+                )
+            },
+        )
+
+        val decoded = BackupCodec.decode(BackupCodec.encode(phased))
+
+        assertEquals(listOf(1, 2), decoded.programSlots.map { it.phaseWeek })
     }
 
     @Test

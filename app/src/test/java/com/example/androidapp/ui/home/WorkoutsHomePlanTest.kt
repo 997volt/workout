@@ -22,6 +22,10 @@ class WorkoutsHomePlanTest {
     private val program = WorkoutProgram(id = "p1", name = "Upper/Lower", isActive = true, position = 0)
     private val second = WorkoutProgram(id = "p2", name = "Conditioning", isActive = true, position = 1)
 
+    // 2026-10-05 is a Monday, so each named weekday has a date the phase derivation can read (N292).
+    private val monday = LocalDate.of(2026, 10, 5)
+    private val friday = LocalDate.of(2026, 10, 9)
+
     private fun slot(
         id: String,
         weekday: DayOfWeek?,
@@ -46,7 +50,7 @@ class WorkoutsHomePlanTest {
             slot("s3", DayOfWeek.MONDAY, position = 2, templateId = "t3"),
         )
 
-        val plan = todaysPlanFor(listOf(program), slots, day = DayOfWeek.FRIDAY)
+        val plan = todaysPlanFor(listOf(program), slots, date = friday)
 
         assertThat(plan.map { it.id }).containsExactly("s1", "s2").inOrder()
         assertThat(plan.map { it.templateId }).containsExactly("t1", "t2").inOrder()
@@ -61,7 +65,7 @@ class WorkoutsHomePlanTest {
             slot("s2", DayOfWeek.FRIDAY, position = 0, templateId = "t2", programId = "p2"),
         )
 
-        val plan = todaysPlanFor(listOf(program, second), slots, day = DayOfWeek.FRIDAY)
+        val plan = todaysPlanFor(listOf(program, second), slots, date = friday)
 
         assertThat(plan.map { it.programName })
             .containsExactly("Upper/Lower", "Conditioning")
@@ -91,6 +95,47 @@ class WorkoutsHomePlanTest {
     }
 
     @Test
+    fun aPhasedWeeklyProgram_plansOnlyTheWeekTheDateFallsIn() {
+        // ROADMAP N292: the same weekday in two authored weeks is two different prescriptions, and
+        // home draws the one the rotation is in — not both, and not the first one forever.
+        val phased = program.copy(startDate = monday)
+        val slots = listOf(
+            slot("w1", DayOfWeek.FRIDAY, position = 0, templateId = "t1").copy(phaseWeek = 1),
+            slot("w2", DayOfWeek.FRIDAY, position = 0, templateId = "t2").copy(phaseWeek = 2),
+        )
+
+        val firstWeek = todaysPlanFor(listOf(phased), slots, friday)
+        val secondWeek = todaysPlanFor(listOf(phased), slots, friday.plusWeeks(1))
+
+        assertThat(firstWeek.map { it.id }).containsExactly("w1")
+        assertThat(secondWeek.map { it.id }).containsExactly("w2")
+    }
+
+    @Test
+    fun aPhasedWeeklyProgram_isRestOnItsOtherWeeksDays() {
+        val phased = program.copy(startDate = monday)
+        val slots = listOf(
+            slot("w1", DayOfWeek.MONDAY, position = 0, templateId = "t1").copy(phaseWeek = 1),
+            slot("w2", DayOfWeek.WEDNESDAY, position = 0, templateId = "t2").copy(phaseWeek = 2),
+        )
+
+        // Week 1's Monday is not scheduled in week 2, even though the program has a Monday day.
+        assertThat(todaysPlanFor(listOf(phased), slots, monday.plusWeeks(1))).isEmpty()
+        assertThat(todaysPlanFor(listOf(phased), slots, monday.plusWeeks(1).plusDays(2)).map { it.id })
+            .containsExactly("w2")
+    }
+
+    @Test
+    fun aProgramWithoutPhases_stillPlansEveryWeek() {
+        // The old shape is untouched: a null week means the one week that repeats (N292).
+        val slots = listOf(slot("s1", DayOfWeek.FRIDAY, position = 0, templateId = "t1"))
+
+        assertThat(todaysPlanFor(listOf(program), slots, friday).map { it.id }).containsExactly("s1")
+        assertThat(todaysPlanFor(listOf(program), slots, friday.plusWeeks(3)).map { it.id })
+            .containsExactly("s1")
+    }
+
+    @Test
     fun aProgramsRowIsKeyedByItsSlot_notByItsTemplate() {
         // The same template twice in a program is legal, and a list keyed by template would
         // collide the moment it happened.
@@ -99,7 +144,7 @@ class WorkoutsHomePlanTest {
             slot("s2", DayOfWeek.FRIDAY, position = 1, templateId = "t1"),
         )
 
-        val plan = todaysPlanFor(listOf(program), slots, DayOfWeek.FRIDAY)
+        val plan = todaysPlanFor(listOf(program), slots, friday)
 
         assertThat(plan.map { it.id }).containsExactly("s1", "s2")
         assertThat(plan.map { it.templateId }).containsExactly("t1", "t1")
@@ -115,7 +160,7 @@ class WorkoutsHomePlanTest {
             slot("a0", DayOfWeek.FRIDAY, position = 0, templateId = "ta0", programId = "p1"),
         )
 
-        val plan = todaysPlanFor(listOf(program, second), slots, DayOfWeek.FRIDAY)
+        val plan = todaysPlanFor(listOf(program, second), slots, friday)
 
         assertThat(plan.map { it.id }).containsExactly("a0", "a1", "b1").inOrder()
     }
@@ -147,7 +192,7 @@ class WorkoutsHomePlanTest {
         val block = program.copy(id = "p3", name = "Peak", kind = ProgramKind.SEQUENCE)
         val slots = listOf(slot("s1", DayOfWeek.FRIDAY, position = 0, templateId = "t1", programId = "p3"))
 
-        val plan = todaysPlanFor(listOf(block), slots, DayOfWeek.FRIDAY)
+        val plan = todaysPlanFor(listOf(block), slots, friday)
 
         assertThat(plan).isEmpty()
     }
@@ -158,7 +203,7 @@ class WorkoutsHomePlanTest {
         // says so rather than reaching for a template's old pin.
         val slots = listOf(slot("s1", DayOfWeek.MONDAY, position = 0, templateId = "t1"))
 
-        val plan = todaysPlanFor(listOf(program), slots, DayOfWeek.FRIDAY)
+        val plan = todaysPlanFor(listOf(program), slots, friday)
 
         assertThat(plan).isEmpty()
     }
@@ -197,8 +242,8 @@ class WorkoutsHomePlanTest {
             ),
         )
 
-        val monday = todaysPlanFor(listOf(program), slots, DayOfWeek.MONDAY, listOf(plan))
-        val friday = todaysPlanFor(listOf(program), slots, DayOfWeek.FRIDAY, listOf(plan))
+        val monday = todaysPlanFor(listOf(program), slots, monday, listOf(plan))
+        val friday = todaysPlanFor(listOf(program), slots, friday, listOf(plan))
 
         assertThat(monday.map { it.id }).containsExactly("d1")
         assertThat(monday.single().templateId).isEqualTo("dt1")
@@ -216,7 +261,7 @@ class WorkoutsHomePlanTest {
         val slots = listOf(slot("s1", DayOfWeek.MONDAY, position = 0, templateId = "t1"))
         val emptyPlan = DeloadWeek(programId = "p1", weekStart = LocalDate.of(2026, 10, 5))
 
-        val plan = todaysPlanFor(listOf(program), slots, DayOfWeek.MONDAY, listOf(emptyPlan))
+        val plan = todaysPlanFor(listOf(program), slots, monday, listOf(emptyPlan))
 
         assertThat(plan.map { it.id }).containsExactly("s1")
         assertThat(plan.single().isDeload).isFalse()
@@ -243,7 +288,7 @@ class WorkoutsHomePlanTest {
             ),
         )
 
-        val today = todaysPlanFor(listOf(program, second), slots, DayOfWeek.MONDAY, listOf(plan))
+        val today = todaysPlanFor(listOf(program, second), slots, monday, listOf(plan))
 
         assertThat(today.map { it.id }).containsExactly("d1", "s2").inOrder()
         assertThat(today.map { it.isDeload }).containsExactly(true, false).inOrder()
@@ -254,7 +299,7 @@ class WorkoutsHomePlanTest {
         // The rule N56 states: a day is a scheduling fact, and scheduling is what a program is for.
         val slots = listOf(slot("s1", DayOfWeek.FRIDAY, position = 0, templateId = "t1"))
 
-        val plan = todaysPlanFor(programs = emptyList(), slots = slots, day = DayOfWeek.FRIDAY)
+        val plan = todaysPlanFor(programs = emptyList(), slots = slots, date = friday)
 
         assertThat(plan).isEmpty()
     }

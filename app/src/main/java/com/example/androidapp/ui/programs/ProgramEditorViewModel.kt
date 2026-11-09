@@ -267,7 +267,18 @@ class ProgramEditorViewModel @Inject constructor(
         if (active) repository.activateProgram(programId) else repository.deactivateProgram(programId)
     }
 
-    fun onAddSlot(templateId: String) = write { repository.addSlot(programId, templateId) }
+    /**
+     * Adds a day to the program, in [phaseWeek] or in the single repeating week when it is null
+     * (ROADMAP N292).
+     *
+     * The week travels with the tap: the editor shows one week at a time, so the day belongs to the
+     * week the lifter is looking at rather than to whichever week the schedule happens to be in.
+     */
+    fun onAddSlot(templateId: String, phaseWeek: Int?) =
+        write { repository.addSlot(programId, templateId, phaseWeek = phaseWeek) }
+
+    /** Removes one authored week's days; the workouts they named stay in the library (N292). */
+    fun onRemovePhaseWeek(week: Int) = write { repository.removePhaseWeek(programId, week) }
 
     private val _templateToEdit = MutableStateFlow<String?>(null)
 
@@ -286,10 +297,12 @@ class ProgramEditorViewModel @Inject constructor(
      * failure of either surfaces. The slot is added only after the template exists, so a slot never points
      * at nothing.
      */
-    fun onAddNewSlot(name: String) {
+    fun onAddNewSlot(name: String, phaseWeek: Int?) {
         viewModelScope.launch {
             when (val created = templateRepository.createTemplate(name)) {
-                is DataResult.Success -> when (val slot = repository.addSlot(programId, created.data)) {
+                is DataResult.Success -> when (
+                    val slot = repository.addSlot(programId, created.data, phaseWeek = phaseWeek)
+                ) {
                     is DataResult.Success -> {
                         error.value = null
                         _templateToEdit.value = created.data

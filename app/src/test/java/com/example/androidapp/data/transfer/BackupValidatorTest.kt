@@ -102,6 +102,52 @@ class BackupValidatorTest {
         assertThat(BackupValidator.problems(legacy)).isEmpty()
     }
 
+    @Test
+    fun aPhasedProgramDay_isAnOrdinaryRow() {
+        // N292: the backup carries the authored week like any other field, so an ordinary phased file
+        // has nothing to say about it.
+        val phased = valid().copy(
+            programSlots = listOf(programSlot(week = 2)),
+        )
+
+        assertThat(BackupValidator.problems(phased)).isEmpty()
+    }
+
+    @Test
+    fun aProgramDay_cannotNameWeekZero() {
+        val zero = valid().copy(
+            programSlots = listOf(programSlot(week = 0)),
+        )
+
+        assertThat(BackupValidator.problems(zero).messages())
+            .contains("A program week is numbered from 1.")
+    }
+
+    @Test
+    fun aProgram_thatMixesPhasedAndUnphasedDays_isRefused() {
+        // N292: an unphased day in a phased program is never read, so a backup carrying the mixed
+        // shape would restore a day the lifter could not see.
+        val mixed = valid().copy(
+            programSlots = listOf(
+                programSlot(week = 1),
+                programSlot(week = 1).copy(id = "slot-2", phaseWeek = null, position = 1),
+            ),
+        )
+
+        assertThat(BackupValidator.problems(mixed).messages())
+            .contains("Its days must all name a week, or none of them.")
+    }
+
+    private fun programSlot(week: Int) = ProgramSlotDto(
+        id = "slot-1",
+        programId = "program-1",
+        templateId = "template-1",
+        position = 0,
+        phaseWeek = week,
+        createdAt = 0L,
+        updatedAt = 0L,
+    )
+
     private fun List<BackupProblem>.messages(): List<String> = map { it.message }
 
     private fun valid(): BackupFile = BackupFile(

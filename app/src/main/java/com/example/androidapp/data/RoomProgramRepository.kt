@@ -28,6 +28,7 @@ import com.example.androidapp.domain.dataResultOf
 import com.example.androidapp.domain.model.PendingOccurrence
 import com.example.androidapp.domain.model.PreviousPerformance
 import com.example.androidapp.domain.model.ProgramKind
+import com.example.androidapp.domain.model.ProgramPhases
 import com.example.androidapp.domain.model.ProgramRun
 import com.example.androidapp.domain.model.ProgramSchedule
 import com.example.androidapp.domain.model.ProgramSlot
@@ -194,27 +195,75 @@ class RoomProgramRepository @Inject constructor(
         programId: String,
         templateId: String,
         weekday: DayOfWeek?,
+        phaseWeek: Int?,
     ): DataResult<Unit> = dataResultOf {
         if (dao.findProgram(programId) == null) {
             throw NotFoundException("program $programId")
         }
+        if (phaseWeek != null && phaseWeek < ProgramPhases.FIRST_WEEK) {
+            throw InvalidInputException("A program week is numbered from 1.")
+        }
         val template = database.templateDao().findById(templateId)
             ?: throw NotFoundException("template $templateId")
         val now = timeSource.nowEpochMillis()
-        dao.insertSlot(
-            ProgramSlotEntity(
-                id = UUID.randomUUID().toString(),
-                programId = programId,
-                templateId = template.id,
-                // Appended, so a program is built in the order it is trained.
-                position = dao.maxSlotPosition(programId) + 1,
-                weekday = weekday,
-                createdAt = now,
-                updatedAt = now,
-                deletedAt = null,
-            ),
-        )
+        database.withTransaction {
+            val alreadyPhased = dao.countPhasedSlots(programId) > 0
+            // A caller with no week in mind — the history screen's "schedule into a program" offer —
+            // joins the week the program is training now, so the day is not filed into an older week
+            // the schedule has already passed (N292).
+            val week = when {
+                phaseWeek != null -> phaseWeek
+                alreadyPhased -> currentPhaseWeek(programId)
+                else -> null
+            }
+            // A program authors phases for every day or for none (N292). The first phased day gives the
+            // old days their implicit week 1 in the same write, so no reader sees the mixed shape.
+            if (week != null && !alreadyPhased) {
+                dao.assignUnphasedToFirstWeek(programId, now)
+            }
+            dao.insertSlot(
+                ProgramSlotEntity(
+                    id = UUID.randomUUID().toString(),
+                    programId = programId,
+                    templateId = template.id,
+                    // Appended within its week, so a week is built in the order it is trained.
+                    position = dao.maxSlotPosition(programId, week) + 1,
+                    weekday = weekday,
+                    phaseWeek = week,
+                    createdAt = now,
+                    updatedAt = now,
+                    deletedAt = null,
+                ),
+            )
+        }
     }
+
+    /** The authored week a program is training today, or null when it has no phases (N292). */
+    private suspend fun currentPhaseWeek(programId: String): Int? {
+        val program = dao.findPrograms().firstOrNull { it.id == programId } ?: return null
+        val slots = dao.findSlotDetails(programId).map { it.toDomain() }
+        val zone = ZoneId.systemDefault()
+        val today = timeSource.now().atZone(zone).toLocalDate()
+        return ProgramPhases.currentWeek(program.toDomain(), slots, today, zone)
+    }
+
+    override suspend fun removePhaseWeek(programId: String, week: Int): DataResult<Unit> =
+        dataResultOf {
+            if (week < ProgramPhases.FIRST_WEEK) {
+                throw InvalidInputException("A program week is numbered from 1.")
+            }
+            if (dao.findProgram(programId) == null) {
+                throw NotFoundException("program $programId")
+            }
+            val now = timeSource.nowEpochMillis()
+            database.withTransaction {
+                // The days leave the schedule; the workouts they named stay in the library, the same
+                // rule a single day's removal follows (N72). The weeks after it close the gap, so an
+                // authored program stays weeks 1..n rather than accumulating empty middles (N292).
+                dao.softDeletePhaseWeek(programId, week, now)
+                dao.shiftPhaseWeeksAfter(programId, week, now)
+            }
+        }
 
     override suspend fun setSlotWeekday(slotId: String, weekday: DayOfWeek?): DataResult<Unit> =
         dataResultOf {
@@ -228,7 +277,9 @@ class RoomProgramRepository @Inject constructor(
 
     override suspend fun moveSlot(slotId: String, delta: Int): DataResult<Unit> = dataResultOf {
         val row = dao.findSlot(slotId) ?: throw NotFoundException("program slot $slotId")
-        val ordered = dao.findSlotDetails(row.programId)
+        // A position is a day's place within its own week (N292), so a move stops at the week's edge
+        // rather than swapping with a day in a week the lifter is not looking at.
+        val ordered = dao.findSlotDetails(row.programId).filter { it.phaseWeek == row.phaseWeek }
         val index = ordered.indexOfFirst { it.id == slotId }
         val neighbour = ordered.getOrNull(index + delta)
         // At the top or the bottom: nothing to do, and not an error.
@@ -279,7 +330,17 @@ class RoomProgramRepository @Inject constructor(
             dao.observeSlotDetails(programId),
         ) { program, rows -> program to rows }
             .flatMapLatest { (program, rows) ->
-                val slots = rows.map { it.toDomain() }
+                val allSlots = rows.map { it.toDomain() }
+                // Only the current phase week is the run's order (N292): the days of a week the
+                // rotation has left behind are not what "next" means today. The zone is read for the
+                // day; the session rows below read their own zone when they arrive (B45).
+                val phaseZone = ZoneId.systemDefault()
+                val slots = if (program != null && program.kind == ProgramKind.WEEKLY) {
+                    val today = timeSource.now().atZone(phaseZone).toLocalDate()
+                    ProgramPhases.currentSlots(program.toDomain(), allSlots, today, phaseZone)
+                } else {
+                    allSlots
+                }
                 if (program == null || slots.isEmpty()) {
                     flowOf(null)
                 } else {
@@ -395,8 +456,11 @@ class RoomProgramRepository @Inject constructor(
             // skip that settled a session weeks before it was due (B195).
             if (program.kind == ProgramKind.SEQUENCE) return@forEach
             if (program.id in builtWeeks) return@forEach
+            val slots = dao.findSlotDetails(program.id).map { it.toDomain() }
             pending += ProgramSchedule.pendingOccurrences(
-                slots = dao.findSlotDetails(program.id).map { it.toDomain() },
+                // A phased program is asked about the week it is training now (N292); a program with
+                // no phases answers with every slot, exactly as before.
+                slots = ProgramPhases.currentSlots(program.toDomain(), slots, today, zone),
                 sessions = sessions,
                 skips = skips,
                 today = today,

@@ -167,7 +167,7 @@ interface ProgramDao {
         """
         SELECT * FROM program_slots
         WHERE programId = :programId AND deletedAt IS NULL
-        ORDER BY position ASC
+        ORDER BY phaseWeek ASC, position ASC
         """,
     )
     suspend fun findSlots(programId: String): List<ProgramSlotEntity>
@@ -185,6 +185,7 @@ interface ProgramDao {
                ps.templateId AS templateId,
                ps.position AS position,
                ps.weekday AS weekday,
+               ps.phaseWeek AS phaseWeek,
                t.name AS templateName,
                (
                    SELECT COUNT(*) FROM template_exercises te
@@ -195,7 +196,7 @@ interface ProgramDao {
         WHERE ps.programId = :programId
           AND ps.deletedAt IS NULL
           AND t.deletedAt IS NULL
-        ORDER BY ps.position ASC
+        ORDER BY ps.phaseWeek ASC, ps.position ASC
         """,
     )
     fun observeSlotDetails(programId: String): Flow<List<ProgramSlotDetail>>
@@ -208,6 +209,7 @@ interface ProgramDao {
                ps.templateId AS templateId,
                ps.position AS position,
                ps.weekday AS weekday,
+               ps.phaseWeek AS phaseWeek,
                t.name AS templateName,
                (
                    SELECT COUNT(*) FROM template_exercises te
@@ -218,7 +220,7 @@ interface ProgramDao {
         WHERE ps.programId = :programId
           AND ps.deletedAt IS NULL
           AND t.deletedAt IS NULL
-        ORDER BY ps.position ASC
+        ORDER BY ps.phaseWeek ASC, ps.position ASC
         """,
     )
     suspend fun findSlotDetails(programId: String): List<ProgramSlotDetail>
@@ -328,9 +330,65 @@ interface ProgramDao {
         order.forEach { (id, position) -> setProgramPosition(id = id, position = position, at = at) }
     }
 
-    /** Next free slot position; -1 on an empty program, so callers add 1. */
-    @Query("SELECT COALESCE(MAX(position), -1) FROM program_slots WHERE programId = :programId")
-    suspend fun maxSlotPosition(programId: String): Int
+    /**
+     * Next free slot position **within one phase week**; -1 when that week has no days.
+     *
+     * A position is a day's place inside its week (ROADMAP N292), so week 1 and week 2 each start at
+     * zero. `IS` rather than `=` because the week is nullable: a program with no phases keeps its
+     * single, unnumbered week.
+     */
+    @Query(
+        """
+        SELECT COALESCE(MAX(position), -1) FROM program_slots
+        WHERE programId = :programId AND phaseWeek IS :phaseWeek
+        """,
+    )
+    suspend fun maxSlotPosition(programId: String, phaseWeek: Int?): Int
+
+    /** How many of a program's live days name a phase week (ROADMAP N292). */
+    @Query(
+        """
+        SELECT COUNT(*) FROM program_slots
+        WHERE programId = :programId AND phaseWeek IS NOT NULL AND deletedAt IS NULL
+        """,
+    )
+    suspend fun countPhasedSlots(programId: String): Int
+
+    /**
+     * Gives the days of a program without phases their implicit week (ROADMAP N292).
+     *
+     * Called once, in the transaction that authors the program's first phased day: the old days are
+     * week 1, which is exactly what they were. A program never holds both shapes, because an
+     * unphased day inside a phased program would be invisible to every reader.
+     */
+    @Query(
+        """
+        UPDATE program_slots
+        SET phaseWeek = 1, updatedAt = :at
+        WHERE programId = :programId AND phaseWeek IS NULL AND deletedAt IS NULL
+        """,
+    )
+    suspend fun assignUnphasedToFirstWeek(programId: String, at: Long)
+
+    /** Removes one authored week's days; the templates they name stay in the library (N292). */
+    @Query(
+        """
+        UPDATE program_slots
+        SET deletedAt = :at, updatedAt = :at
+        WHERE programId = :programId AND phaseWeek = :phaseWeek AND deletedAt IS NULL
+        """,
+    )
+    suspend fun softDeletePhaseWeek(programId: String, phaseWeek: Int, at: Long)
+
+    /** Renumbers the weeks after a removed one, so authored weeks stay contiguous (N292). */
+    @Query(
+        """
+        UPDATE program_slots
+        SET phaseWeek = phaseWeek - 1, updatedAt = :at
+        WHERE programId = :programId AND phaseWeek > :afterWeek AND deletedAt IS NULL
+        """,
+    )
+    suspend fun shiftPhaseWeeksAfter(programId: String, afterWeek: Int, at: Long)
 
     /** Pins a slot to a weekday, or makes it order-only (P3.3). */
     @Query(

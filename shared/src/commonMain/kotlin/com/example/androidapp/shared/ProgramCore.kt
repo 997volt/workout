@@ -15,5 +15,11 @@ package com.example.androidapp.shared
  * with the same leniency, so the hold would arrive as a counted set with no reps — the same wrong
  * meaning, for the same reason (B322). A v6 document still means exactly what it says, so the floor
  * does not move.
+ *
+ * **8 is N292's phase week.** A weekly program can now author several numbered weeks, and a slot says
+ * which one it belongs to. A v7 build decodes with the same leniency and would read every week's days
+ * as one repeating week — a wrong schedule rather than a dropped field, which is exactly what this
+ * ceiling exists to refuse. A v7 document still means a single week that repeats, so the floor stays
+ * at 4.
  */
-const val PROGRAM_FORMAT_VERSION: Int = 7
+const val PROGRAM_FORMAT_VERSION: Int = 8

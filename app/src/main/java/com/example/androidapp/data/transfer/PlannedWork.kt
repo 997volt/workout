@@ -12,6 +12,8 @@ internal data class PlannedDay(
     val templateId: String,
     val weekday: DayOfWeek?,
     val position: Int,
+    /** The authored phase week, or null for a program with no phases (ROADMAP N292). */
+    val phaseWeek: Int? = null,
 )
 
 /** One planned movement: the day it belongs to, what it is, and where it sits in that day (B267). */
@@ -34,7 +36,12 @@ internal data class PlannedWork(
 /** This document's days and movements, in the shape [PlannedWork] compares (B267). */
 internal fun ProgramDocument.plannedWork(): PlannedWork = PlannedWork(
     days = slots.groupingBy {
-        PlannedDay(templateId = it.templateId, weekday = it.weekday, position = it.position)
+        PlannedDay(
+            templateId = it.templateId,
+            weekday = it.weekday,
+            position = it.position,
+            phaseWeek = it.phaseWeek,
+        )
     }.eachCount(),
     movements = templateExercises.groupingBy {
         PlannedMovement(templateId = it.templateId, exerciseId = it.exerciseId, position = it.position)

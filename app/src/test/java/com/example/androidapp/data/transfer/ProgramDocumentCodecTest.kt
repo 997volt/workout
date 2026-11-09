@@ -5,12 +5,13 @@ import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.shared.ProblemCode
 import com.google.common.truth.Truth.assertThat
-import java.time.DayOfWeek
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.DayOfWeek
 
 /**
  * The program document's format (ROADMAP N47).
@@ -69,7 +70,10 @@ class ProgramDocumentCodecTest {
 
     @Test
     fun aDocumentFromANewerApp_isRefusedWithItsOwnVersion() {
-        val fromTheFuture = Json { encodeDefaults = true; prettyPrint = true }.encodeToString(
+        val fromTheFuture = Json {
+            encodeDefaults = true
+            prettyPrint = true
+        }.encodeToString(
             document().copy(formatVersion = ProgramDocumentCodec.CURRENT_FORMAT_VERSION + 1),
         )
 
@@ -115,6 +119,84 @@ class ProgramDocumentCodecTest {
         }
 
         assertThat(thrown.message).isEqualTo("That does not look like a program file.")
+    }
+
+    @Test
+    fun aPhasedSlot_roundTripsWithItsAuthoredWeek() {
+        // ROADMAP N292: the week is part of the day, so a document that carried the day without it
+        // would arrive as one repeating week — the wrong schedule the format version exists to refuse.
+        val phased = document().copy(
+            slots = listOf(document().slots.single().copy(phaseWeek = 2)),
+        )
+
+        val decoded = ProgramDocumentCodec.decode(ProgramDocumentCodec.encode(phased))
+
+        assertThat(decoded.slots.single().phaseWeek).isEqualTo(2)
+    }
+
+    @Test
+    fun aDocumentFromBeforePhaseWeeks_readsAsTheSingleWeekItDescribed() {
+        // The field is defaulted, so a v7 document is the old program rather than a refusal: every
+        // slot is unphased, which means the week repeats (N292).
+        val fromBefore = ProgramDocumentCodec.encode(document())
+            .replace(Regex("\"formatVersion\"\\s*:\\s*\\d+"), "\"formatVersion\": 7")
+            .replace(Regex("\"phaseWeek\"\\s*:\\s*null,?\\s*"), "")
+
+        val decoded = ProgramDocumentCodec.decode(fromBefore)
+
+        assertThat(decoded.slots.single().phaseWeek).isNull()
+        assertThat(ProgramDocumentCodec.problems(decoded)).isEmpty()
+    }
+
+    @Test
+    fun aProgramThatMixesAuthoredWeeksAndASingleWeek_isRefused() {
+        // An unphased day inside a phased program is never read, so accepting it would drop a day in
+        // silence; the validator refuses the shape instead (N292).
+        val slot = document().slots.single()
+        val mixed = document().copy(
+            slots = listOf(slot.copy(phaseWeek = 1), slot.copy(id = "slot-2", position = 1)),
+        )
+
+        assertThat(ProgramDocumentCodec.problems(mixed).map { it.code })
+            .contains(ProblemCode.INVALID_PHASE)
+    }
+
+    @Test
+    fun theSamePositionInTwoAuthoredWeeks_isNotADuplicate() {
+        // A position is a day's place *within its week*: week 1 and week 2 both start at zero.
+        val slot = document().slots.single()
+        val phased = document().copy(
+            slots = listOf(
+                slot.copy(id = "slot-1", phaseWeek = 1),
+                slot.copy(id = "slot-2", phaseWeek = 2),
+            ),
+        )
+
+        assertThat(ProgramDocumentCodec.problems(phased)).isEmpty()
+    }
+
+    @Test
+    fun twoDaysOfOneWeekSharingAPosition_areStillRefused() {
+        val slot = document().slots.single()
+        val duplicate = document().copy(
+            slots = listOf(
+                slot.copy(id = "slot-1", phaseWeek = 1),
+                slot.copy(id = "slot-2", phaseWeek = 1),
+            ),
+        )
+
+        assertThat(ProgramDocumentCodec.problems(duplicate).map { it.code })
+            .contains(ProblemCode.INVALID_POSITION)
+    }
+
+    @Test
+    fun aWeekBelowOne_isRefused() {
+        val slot = document().slots.single()
+
+        val zero = document().copy(slots = listOf(slot.copy(phaseWeek = 0)))
+
+        assertThat(ProgramDocumentCodec.problems(zero).map { it.code })
+            .contains(ProblemCode.INVALID_PHASE)
     }
 
     /** A small but complete document: one program, one template, one planned movement. */

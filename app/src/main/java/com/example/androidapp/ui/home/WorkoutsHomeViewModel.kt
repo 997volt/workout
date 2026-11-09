@@ -7,6 +7,7 @@ import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.ZoneSource
 import com.example.androidapp.domain.model.DeloadWeek
 import com.example.androidapp.domain.model.ProgramKind
+import com.example.androidapp.domain.model.ProgramPhases
 import com.example.androidapp.domain.model.ProgramSchedule
 import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.ScreenDay
@@ -141,15 +142,27 @@ data class NextSession(
  * to name. Each candidate day's plan is asked for — not the raw slots — because a built deload week
  * replaces the week's days: naming a slot the plan dropped would promise a session that is not
  * coming, and miss the deload day that is.
+ *
+ * **The search covers one whole phase cycle** (ROADMAP N292). A single repeating week's next day is
+ * at most seven days away, but an authored week that schedules nothing after today can be followed by
+ * another that also schedules nothing, and a fixed seven days would then miss the day that is
+ * actually coming. One cycle is enough because the weeks repeat.
  */
 internal fun nextWeeklySession(
     programs: List<WorkoutProgram>,
     slots: List<ProgramSlot>,
     today: LocalDate,
     deloadWeeks: List<DeloadWeek> = emptyList(),
+    zone: ZoneId = ZoneId.systemDefault(),
 ): NextSession? {
-    for (offset in 1..DAYS_IN_WEEK) {
-        val date = today.plusDays(offset.toLong())
+    // The longest authored cycle among the followed weekly programs; one week when none has phases.
+    // A year is the ceiling: a hand-written document can name week 4000, and a rest line is not a
+    // reason to walk it.
+    val cycleWeeks = programs.filter { it.kind == ProgramKind.WEEKLY }.maxOfOrNull { program ->
+        ProgramPhases.weeks(slots.filter { it.programId == program.id }).lastOrNull() ?: 1
+    }?.coerceAtMost(MAX_PHASE_CYCLE_WEEKS) ?: 1
+    for (offset in 1..(DAYS_IN_WEEK * cycleWeeks)) {
+        val date = today.plusDays(offset)
         // A built deload week belongs to the week it was made for (B282): the list read here is *this*
         // week's, so a candidate day in the next one asks the slots — otherwise the last day of a deload
         // week names the deload it is leaving.
@@ -158,7 +171,10 @@ internal fun nextWeeklySession(
         } else {
             emptyList()
         }
-        val plan = todaysPlanFor(programs, slots, date.dayOfWeek, plans).firstOrNull() ?: continue
+        // Each candidate day asks the phase its own date falls in (N292): the line can name next
+        // week's first day when this week has nothing left, which a weekly program with authored
+        // phases makes an ordinary answer rather than a rest week.
+        val plan = todaysPlanFor(programs, slots, date, plans, zone).firstOrNull() ?: continue
         return NextSession(date = date, weekday = date.dayOfWeek, name = plan.name)
     }
     return null
@@ -180,6 +196,9 @@ internal fun earlierOf(weekly: NextSession?, sequence: NextSession?): NextSessio
     listOfNotNull(weekly, sequence).minByOrNull { it.date }
 
 private const val DAYS_IN_WEEK = 7L
+
+/** The longest phase cycle the rest line will walk: a year of authored weeks (ROADMAP N292). */
+private const val MAX_PHASE_CYCLE_WEEKS = 52
 
 data class WorkoutsHomeUiState(
     val isLoading: Boolean = true,
@@ -455,10 +474,17 @@ class WorkoutsHomeViewModel @Inject constructor(
                 programs = programs.programs,
                 slots = programs.slots,
                 deloadWeeks = programs.deloadWeeks,
-                day = weekday,
+                date = screen.date,
+                zone = screen.zone,
             ) + programs.sequencePlans,
             nextSession = earlierOf(
-                nextWeeklySession(programs.programs, programs.slots, screen.date, programs.deloadWeeks),
+                nextWeeklySession(
+                    programs.programs,
+                    programs.slots,
+                    screen.date,
+                    programs.deloadWeeks,
+                    screen.zone,
+                ),
                 nextSequenceSession(programs.programs, programs.schedules),
             ),
             // N126: what makes an empty day a rest day rather than a day with nothing to say.
@@ -579,7 +605,7 @@ internal fun sequenceTodayPlans(
 }
 
 /**
- * What is scheduled for [day] (ROADMAP P3.3, unioned by P3.12).
+ * What is scheduled for [date] (ROADMAP P3.3, unioned by P3.12).
  *
  * The union of the active programs' slots, even on a day they schedule nothing — an empty day is
  * rest, not a fallback. The N16 weekday pins were the other branch of this and went with the column
@@ -589,13 +615,18 @@ internal fun sequenceTodayPlans(
  * **Only a weekly program's slots are a day's plan** (B194): a block's weekday places one session
  * rather than scheduling a recurring one, and its card is [sequenceTodayPlans]' own.
  *
+ * **A phased weekly program contributes the week [date] falls in** (N292), through the same
+ * derivation adherence and the run read, so no screen can disagree about which authored week is
+ * current. A program without phases contributes every slot, exactly as before.
+ *
  * File-level and pure so the union can be tested without a database or a ViewModel.
  */
 internal fun todaysPlanFor(
     programs: List<WorkoutProgram>,
     slots: List<ProgramSlot>,
-    day: DayOfWeek,
+    date: LocalDate,
     deloadWeeks: List<DeloadWeek> = emptyList(),
+    zone: ZoneId = ZoneId.systemDefault(),
 ): List<TodayPlan> =
     // No active program, no dated plan (ROADMAP N56). An orphaned slot — a program that was
     // deactivated after its slots were written — is not a schedule either: the slots belong to the
@@ -610,7 +641,7 @@ internal fun todaysPlanFor(
             // with no plan has no entry, which is P3.10's shape and keeps the slots.
             val plan = plans[program.id]?.takeIf { it.days.isNotEmpty() }
             if (plan != null) {
-                plan.days.filter { it.weekday == day }.sortedBy { it.position }.map { day ->
+                plan.days.filter { it.weekday == date.dayOfWeek }.sortedBy { it.position }.map { day ->
                     TodayPlan(
                         id = day.id,
                         templateId = day.templateId,
@@ -622,7 +653,9 @@ internal fun todaysPlanFor(
                     )
                 }
             } else {
-                slots.filter { it.programId == program.id && it.weekday == day }
+                // The current phase week's slots (N292), then this day's among them.
+                ProgramPhases.currentSlots(program, slots, date, zone)
+                    .filter { it.programId == program.id && it.weekday == date.dayOfWeek }
                     .sortedBy { it.position }
                     .map { slot ->
                         TodayPlan(

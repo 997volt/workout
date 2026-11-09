@@ -41,7 +41,7 @@ var EXPECTED_FIXTURE_CASES = 6;
  * checks executed, not of cases handed in, so a block of `check` calls behind an early return is a
  * failure here rather than a number that quietly fell.
  */
-var EXPECTED_CHECKS = 51;  // +2 for B279's list signature and validator cases, +5 for N264's grouping
+var EXPECTED_CHECKS = 52;  // +2 for B279's list signature and validator cases, +5 for N264's grouping, +1 for N292's phase
 if (!Array.isArray(globalThis.PROGRAM_EDIT_CASES)) {
   console.error('the edit fixture did not load: PROGRAM_EDIT_CASES is not an array');
   process.exit(1);

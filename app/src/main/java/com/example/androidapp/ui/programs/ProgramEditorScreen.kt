@@ -63,6 +63,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.model.ProgramKind
+import com.example.androidapp.domain.model.ProgramPhases
 import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.WorkoutTemplate
@@ -137,6 +138,7 @@ fun ProgramEditorRoute(
         onSetStartDate = viewModel::onSetStartDate,
         onAddSlot = viewModel::onAddSlot,
         onAddNewSlot = viewModel::onAddNewSlot,
+        onRemovePhaseWeek = viewModel::onRemovePhaseWeek,
         onSetSlotWeekday = viewModel::onSetSlotWeekday,
         onMoveSlot = viewModel::onMoveSlot,
         onRemoveSlot = viewModel::onRemoveSlot,
@@ -163,7 +165,7 @@ fun ProgramEditorScreen(
     onSetActive: (Boolean) -> Unit,
     onSetKind: (ProgramKind) -> Unit,
     onSetStartDate: (LocalDate?) -> Unit,
-    onAddSlot: (String) -> Unit,
+    onAddSlot: (String, Int?) -> Unit,
     onSetSlotWeekday: (String, DayOfWeek?) -> Unit,
     onMoveSlot: (String, Int) -> Unit,
     onRemoveSlot: (String) -> Unit,
@@ -177,7 +179,9 @@ fun ProgramEditorScreen(
     /** Required rather than defaulted, so a route that forgets it fails the build (B49, B52). */
     onExportProgram: () -> Unit,
     /** Creates a workout and adds it as a slot, then opens it (P3.18). */
-    onAddNewSlot: (String) -> Unit,
+    onAddNewSlot: (String, Int?) -> Unit,
+    /** Removes one authored week's days (ROADMAP N292). */
+    onRemovePhaseWeek: (Int) -> Unit,
     onDismissMessage: () -> Unit,
     onDismissTransferMessage: () -> Unit,
     modifier: Modifier = Modifier,
@@ -186,10 +190,10 @@ fun ProgramEditorScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var confirmingDelete by rememberSaveable { mutableStateOf(false) }
     var pickingTemplate by rememberSaveable { mutableStateOf(false) }
+    val isSequence = state.program?.kind == ProgramKind.SEQUENCE
+    val phases = rememberPhaseWeekSelection(state.program?.id, state.slots, isSequence, onRemovePhaseWeek)
 
-    // One line, because this screen is at the length this project allows and the call is short.
-    EditorErrorMessage(error = state.error, snackbarHostState = snackbarHostState, onDismiss = onDismissMessage)
-    MessageSnackbar(transferMessage, snackbarHostState, onDismissTransferMessage)
+    EditorMessages(state.error, transferMessage, snackbarHostState, onDismissMessage, onDismissTransferMessage)
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -197,7 +201,7 @@ fun ProgramEditorScreen(
         topBar = {
             ProgramEditorTopBar(
                 name = state.program?.name,
-                isSequence = state.program?.kind == ProgramKind.SEQUENCE,
+                isSequence = isSequence,
                 onBack = onBack,
                 onOpenBalance = onOpenBalance,
                 onOpenDeload = onOpenDeload,
@@ -211,6 +215,7 @@ fun ProgramEditorScreen(
     ) { innerPadding ->
         ProgramEditorBody(
             state = state,
+            phases = phases,
             onRename = onRename,
             onSetActive = onSetActive,
             onSetKind = onSetKind,
@@ -231,9 +236,9 @@ fun ProgramEditorScreen(
         confirmingDelete = confirmingDelete,
         onPick = {
             pickingTemplate = false
-            onAddSlot(it)
+            onAddSlot(it, phases.newDayWeek)
         },
-        onAddNewSlot = onAddNewSlot,
+        onAddNewSlot = { name -> onAddNewSlot(name, phases.newDayWeek) },
         onDismissPicker = { pickingTemplate = false },
         onDismissDelete = { confirmingDelete = false },
         onConfirmDelete = {
@@ -242,6 +247,24 @@ fun ProgramEditorScreen(
         },
         onClosePreview = onClosePreview,
     )
+}
+
+/**
+ * The editor's two messages: a failed write and a finished export.
+ *
+ * One call because the snackbar shows one at a time and both are the same surface; kept here so the
+ * screen around them stays inside the length this project allows.
+ */
+@Composable
+private fun EditorMessages(
+    error: DataError?,
+    transferMessage: String?,
+    snackbarHostState: SnackbarHostState,
+    onDismissError: () -> Unit,
+    onDismissTransfer: () -> Unit,
+) {
+    EditorErrorMessage(error = error, snackbarHostState = snackbarHostState, onDismiss = onDismissError)
+    MessageSnackbar(transferMessage, snackbarHostState, onDismissTransfer)
 }
 
 /**
@@ -420,6 +443,8 @@ private fun ProgramEditorMenu(
 @Composable
 private fun ProgramEditorBody(
     state: ProgramEditorUiState,
+    /** Which authored week is shown, and how it changes (ROADMAP N292). */
+    phases: PhaseWeekSelection,
     onRename: (String) -> Unit,
     onSetActive: (Boolean) -> Unit,
     onSetKind: (ProgramKind) -> Unit,
@@ -452,17 +477,34 @@ private fun ProgramEditorBody(
             ProgramKindSection(
                 program = program,
                 isComplete = state.blockComplete,
+                hasPhases = phases.weeks.isNotEmpty(),
                 onSetKind = onSetKind,
                 onSetStartDate = onSetStartDate,
             )
         }
         HorizontalDivider()
 
+        // A block's weekday places one session in an order, so it has no weeks to author (N174).
+        val isSequence = state.program?.kind == ProgramKind.SEQUENCE
+        if (!isSequence) {
+            PhaseWeekSection(
+                weeks = phases.weeks,
+                selectedWeek = phases.selected,
+                onSelect = phases.onSelect,
+                onAddWeek = phases.onAdd,
+                onRemoveWeek = phases.onRemove,
+            )
+            HorizontalDivider()
+        }
+
         // A prescription that stopped moving, said where the program is read (N237). Nothing is written: the
         // deload is a decision about a week of training, and this is the question.
         state.stall?.let { stall -> PlanStallCard(stall = stall, onOpenDeload = onOpenDeload) }
 
-        if (state.slots.isEmpty()) {
+        // A sequence shows its whole order; a weekly program shows the selected authored week, and
+        // week 1 is every day of a program that never authored a second one (N292).
+        val shownSlots = if (isSequence) state.slots else ProgramPhases.slotsOf(state.slots, phases.selected)
+        if (shownSlots.isEmpty()) {
             CenteredMessage(
                 text = stringResource(R.string.program_no_slots),
                 hint = stringResource(R.string.program_no_slots_hint),
@@ -470,7 +512,9 @@ private fun ProgramEditorBody(
             )
         } else {
             ProgramSlotList(
-                state = state,
+                slots = shownSlots,
+                runSlotId = state.runSlotId,
+                isSequence = isSequence,
                 onSetSlotWeekday = onSetSlotWeekday,
                 onMoveSlot = onMoveSlot,
                 onRemoveSlot = onRemoveSlot,
@@ -1032,7 +1076,7 @@ private fun ProgramEditorScreenPreview() {
             onSetActive = {},
             onSetKind = {},
             onSetStartDate = {},
-            onAddSlot = {},
+            onAddSlot = { _, _ -> },
             onSetSlotWeekday = { _, _ -> },
             onMoveSlot = { _, _ -> },
             onRemoveSlot = {},
@@ -1044,7 +1088,8 @@ private fun ProgramEditorScreenPreview() {
             onDeleteProgram = {},
             onBack = {},
             onExportProgram = {},
-            onAddNewSlot = { _ -> },
+            onAddNewSlot = { _, _ -> },
+            onRemovePhaseWeek = {},
             onDismissMessage = {},
             onDismissTransferMessage = {},
         )

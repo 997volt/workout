@@ -25,6 +25,13 @@ internal object ProgramsTags {
     /** A finished block says so, rather than marking its last day as next (B197). */
     const val BLOCK_COMPLETE = "program_block_complete"
 
+    /** The authored phase weeks: one chip each, plus add and remove (ROADMAP N292). */
+    const val PHASE_ADD = "program_phase_add"
+    const val PHASE_REMOVE = "program_phase_remove"
+    const val PHASE_REMOVE_CONFIRM = "program_phase_remove_confirm"
+
+    fun phaseWeek(week: Int) = "program_phase_week_$week"
+
     /**
      * The active program at the foot of the list (ROADMAP N92).
      *

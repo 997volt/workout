@@ -75,6 +75,18 @@ data class ProgramSlotDto(
     val templateId: String,
     val position: Int,
     val weekday: Weekday? = null,
+    /**
+     * The authored phase week this day belongs to, or null for a program that has no phases (N292).
+     *
+     * Phases are numbered from 1 and a program either authors them for every slot or for none; a
+     * document that mixes the two is refused, because a null slot in a phased program would never be
+     * read and would silently disappear from the schedule.
+     *
+     * Defaulted, so a document written before programs could have phases reads as the single week
+     * that repeats, which is what it described. The format moved with it, because a build that did
+     * not know the field would read every authored week as that one repeating week.
+     */
+    val phaseWeek: Int? = null,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,

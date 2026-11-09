@@ -51,8 +51,9 @@ class ProgramEditorScreenTest {
         onSetActive: (Boolean) -> Unit = {},
         onSetKind: (ProgramKind) -> Unit = {},
         onSetStartDate: (LocalDate?) -> Unit = {},
-        onAddSlot: (String) -> Unit = {},
-        onAddNewSlot: (String) -> Unit = {},
+        onAddSlot: (String, Int?) -> Unit = { _, _ -> },
+        onAddNewSlot: (String, Int?) -> Unit = { _, _ -> },
+        onRemovePhaseWeek: (Int) -> Unit = {},
         onSetSlotWeekday: (String, DayOfWeek?) -> Unit = { _, _ -> },
         onMoveSlot: (String, Int) -> Unit = { _, _ -> },
         onRemoveSlot: (String) -> Unit = {},
@@ -73,6 +74,7 @@ class ProgramEditorScreenTest {
                 onSetStartDate = onSetStartDate,
                 onAddSlot = onAddSlot,
                 onAddNewSlot = onAddNewSlot,
+                onRemovePhaseWeek = onRemovePhaseWeek,
                 onSetSlotWeekday = onSetSlotWeekday,
                 onMoveSlot = onMoveSlot,
                 onRemoveSlot = onRemoveSlot,
@@ -128,7 +130,7 @@ class ProgramEditorScreenTest {
         // P3.18: a program is the screen the lifter is on, so a workout it needs should be creatable here
         // rather than in Templates and then found again.
         var name: String? = null
-        setScreen(onAddNewSlot = { name = it })
+        setScreen(onAddNewSlot = { templateName, _ -> name = templateName })
 
         composeTestRule.onNodeWithTag(TestTags.Programs.ADD_SLOT).performClick()
         composeTestRule.onNodeWithTag(TestTags.Programs.PICKER_NEW).performClick()
@@ -380,7 +382,7 @@ class ProgramEditorScreenTest {
     @Test
     fun addingAWorkout_offersTheTemplates_andPickingOneAddsIt() {
         var added: String? = null
-        setScreen(onAddSlot = { added = it })
+        setScreen(onAddSlot = { templateId, _ -> added = templateId })
 
         composeTestRule.onNodeWithTag(TestTags.Programs.ADD_SLOT).performClick()
         composeTestRule.onNodeWithTag(TestTags.Programs.PICKER).assertIsDisplayed()
@@ -575,6 +577,97 @@ class ProgramEditorScreenTest {
 
         assertThat(deleted).isTrue()
     }
+
+    @Test
+    fun aPhasedProgram_authorsOneWeekAtATime() {
+        // ROADMAP N292: each week has its own days, and selecting a week is how the lifter moves
+        // between prescriptions. Week 1's day is not shown while week 2 is being authored.
+        val phased = twoSlots.copy(
+            program = phasedProgram(),
+            slots = listOf(
+                twoSlots.slots[0].copy(phaseWeek = 1),
+                twoSlots.slots[1].copy(phaseWeek = 2),
+            ),
+        )
+        setScreen(phased)
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.phaseWeek(1)).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Programs.phaseWeek(2)).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Programs.slot("s1")).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.Programs.slot("s2")).assertDoesNotExist()
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.phaseWeek(2)).performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.slot("s2")).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.Programs.slot("s1")).assertDoesNotExist()
+    }
+
+    @Test
+    fun addingAWeek_opensAnEmptyWeek_whereTheNextDayIsAuthored() {
+        val added = mutableListOf<Pair<String, Int?>>()
+        setScreen(onAddSlot = { templateId, week -> added += templateId to week })
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.PHASE_ADD).performClick()
+
+        // The newly added week is selected and empty: week 1's days are not shown under it.
+        composeTestRule.onNodeWithTag(TestTags.Programs.phaseWeek(2)).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Programs.NO_SLOTS).assertIsDisplayed()
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.ADD_SLOT).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Programs.pickTemplate("t2")).performClick()
+
+        assertThat(added).containsExactly("t2" to 2)
+    }
+
+    @Test
+    fun removingAWeek_asksFirst_andNamesTheWeek() {
+        val removed = mutableListOf<Int>()
+        val phased = twoSlots.copy(
+            program = phasedProgram(),
+            slots = listOf(
+                twoSlots.slots[0].copy(phaseWeek = 1),
+                twoSlots.slots[1].copy(phaseWeek = 2),
+            ),
+        )
+        setScreen(phased, onRemovePhaseWeek = { removed += it })
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.phaseWeek(2)).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Programs.PHASE_REMOVE).performClick()
+
+        // The days leave the schedule, so the question comes first.
+        assertThat(removed).isEmpty()
+        composeTestRule.onNodeWithTag(TestTags.Programs.PHASE_REMOVE_CONFIRM).performClick()
+
+        assertThat(removed).containsExactly(2)
+    }
+
+    @Test
+    fun aPhasedProgram_showsTheDayItsWeeksRotateFrom() {
+        // The start date is the anchor the phase is derived from, so it is editable here (N292).
+        setScreen(
+            twoSlots.copy(
+                program = phasedProgram(),
+                slots = listOf(twoSlots.slots[0].copy(phaseWeek = 1)),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.START_DATE).assertExists()
+    }
+
+    @Test
+    fun aBlock_hasNoPhaseWeeks() {
+        // A block's weekday places one session in an order, so there are no weeks to author (N174).
+        setScreen(
+            twoSlots.copy(program = twoSlots.program?.copy(kind = ProgramKind.SEQUENCE)),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.PHASE_ADD).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.Programs.phaseWeek(1)).assertDoesNotExist()
+    }
+
+    private fun phasedProgram() = twoSlots.program!!.copy(
+        startDate = LocalDate.of(2026, 10, 5),
+    )
 
     private companion object {
         val twoSlots = ProgramEditorUiState(

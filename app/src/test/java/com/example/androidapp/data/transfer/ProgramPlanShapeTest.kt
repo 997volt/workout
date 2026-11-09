@@ -2,8 +2,8 @@ package com.example.androidapp.data.transfer
 
 import com.example.androidapp.domain.model.SetType
 import com.google.common.truth.Truth.assertThat
-import java.time.DayOfWeek
 import org.junit.Test
+import java.time.DayOfWeek
 
 /**
  * Whether a document is the work the device holds under its id (B267).
@@ -15,8 +15,12 @@ import org.junit.Test
  */
 class ProgramPlanShapeTest {
 
-    private fun day(templateId: String, weekday: DayOfWeek? = null, position: Int = 0) =
-        PlannedDay(templateId = templateId, weekday = weekday, position = position)
+    private fun day(
+        templateId: String,
+        weekday: DayOfWeek? = null,
+        position: Int = 0,
+        phaseWeek: Int? = null,
+    ) = PlannedDay(templateId = templateId, weekday = weekday, position = position, phaseWeek = phaseWeek)
 
     private fun movement(templateId: String, exerciseId: String, position: Int = 0) =
         PlannedMovement(templateId = templateId, exerciseId = exerciseId, position = position)
@@ -42,6 +46,7 @@ class ProgramPlanShapeTest {
                 templateId = slot.templateId,
                 position = slot.position,
                 weekday = slot.weekday,
+                phaseWeek = slot.phaseWeek,
                 createdAt = 1,
                 updatedAt = 1,
             )
@@ -109,6 +114,28 @@ class ProgramPlanShapeTest {
         )
 
         assertThat(document.plansTheSameWorkAs(stored)).isFalse()
+    }
+
+    @Test
+    fun theSameDayInAnotherPhaseWeek_isNotTheSameWork() {
+        // N292: Friday of week 1 and Friday of week 2 are two prescriptions, so a document that moved
+        // one between weeks is not the plan the device already holds.
+        val stored = held(listOf(day("tpl_push", DayOfWeek.FRIDAY, phaseWeek = 1)), emptyList())
+
+        val document = document(
+            listOf(day("tpl_push", DayOfWeek.FRIDAY, phaseWeek = 2)),
+            emptyList(),
+        )
+
+        assertThat(document.plansTheSameWorkAs(stored)).isFalse()
+    }
+
+    @Test
+    fun theSameDayInTheSamePhaseWeek_isTheSameWork() {
+        val days = listOf(day("tpl_push", DayOfWeek.FRIDAY, phaseWeek = 2))
+        val movements = listOf(movement("tpl_push", "bench-press"))
+
+        assertThat(document(days, movements).plansTheSameWorkAs(held(days, movements))).isTrue()
     }
 
     @Test

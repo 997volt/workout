@@ -1,11 +1,10 @@
 package com.example.androidapp.data.local
 
-import java.time.DayOfWeek
-
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import java.time.DayOfWeek
 
 /**
  * One slot of a program: a template, and the weekday it is done on (ROADMAP P3.3).
@@ -42,6 +41,14 @@ data class ProgramSlotEntity(
     val templateId: String,
     val position: Int,
     val weekday: DayOfWeek? = null,
+    /**
+     * The authored phase week this day belongs to, or null for a single week that repeats (ROADMAP N292).
+     *
+     * [position] is the day's place **within its week**, so two weeks may both have a day at zero.
+     * Null is every row written before phases existed, and means exactly what it did: the program is
+     * one week and this day is in it.
+     */
+    val phaseWeek: Int? = null,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long?,

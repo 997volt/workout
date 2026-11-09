@@ -20,7 +20,10 @@ data class ProgramSummaryRow(
     val kind: ProgramKind,
     /** The day a block begins, as an epoch day, or null (N174). */
     val startDate: Long?,
-    /** When the row was written: the start a sequence that names none falls back to (N175). */
+    /**
+     * When the row was written: the start a sequence that names none falls back to (N175), and the
+     * anchor a phased weekly program that names none measures its rotation from (N292).
+     */
     val createdAt: Long,
 )
 
@@ -36,6 +39,8 @@ data class ProgramSlotDetail(
     val templateId: String,
     val position: Int,
     val weekday: DayOfWeek?,
+    /** The authored phase week, or null for a program with no phases (ROADMAP N292). */
+    val phaseWeek: Int?,
     val templateName: String,
     val exerciseCount: Int,
 )

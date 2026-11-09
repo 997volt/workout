@@ -1294,6 +1294,16 @@
     <string name="program_kind_weekly">Every week</string>
     <string name="program_kind_sequence">One block</string>
     <string name="program_kind_sequence_hint">Done once, in order: each session is due once and the block ends.</string>
+    <string name="program_phases">Weeks</string>
+    <string name="program_phase_week">Week %1$d</string>
+    <string name="program_phase_add">Add week</string>
+    <string name="program_phase_remove">Remove week</string>
+    <string name="program_phase_hint">Each week has its own days. The weeks repeat in order from the start day; the app never changes a load by itself.</string>
+    <string name="program_phase_single_hint">These days repeat every week. Add a week to author a different week 2.</string>
+    <string name="program_phase_anchor_hint">The weeks rotate from this day.</string>
+    <string name="program_phase_remove_title">Remove week %1$d?</string>
+    <string name="program_phase_remove_text">Its days leave the schedule and the weeks after it close the gap. The workouts they name stay in your library.</string>
+    <string name="program_phase_remove_confirm">Remove week</string>
     <string name="program_due">Due</string>
     <string name="program_sequence_day">Day %1$d of %2$d</string>
     <string name="program_starts_on">Starts on %1$s</string>

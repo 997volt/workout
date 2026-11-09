@@ -25,6 +25,8 @@ internal fun WorkoutSessionEntity.toDomain(soreMuscles: List<SessionSoreMuscleEn
         restEndsAt = restEndsAt?.let(Instant::ofEpochMilli),
         readinessNote = readinessNote,
         activity = Activity.named(this.activity),
+        activityDurationSeconds = activityDurationSeconds,
+        activityDistanceMeters = activityDistanceMeters,
         soreMuscles = soreMuscles.map { it.toDomain() },
         zoneOffsetMinutes = zoneOffsetMinutes,
         notes = notes,
