@@ -19,6 +19,8 @@ data class SessionExerciseDetail(
     val id: String,
     val sessionId: String,
     val exerciseId: String,
+    /** The planned exercise this row stands in for, or null (N291). */
+    val substitutedFromExerciseId: String?,
     val position: Int,
     val exerciseName: String,
     /**
@@ -74,6 +76,7 @@ internal fun SessionExerciseDetail.toDomain(
     id = id,
     sessionId = sessionId,
     exerciseId = exerciseId,
+    substitutedFromExerciseId = substitutedFromExerciseId,
     position = position,
     exerciseName = exerciseName,
     primaryMuscle = primaryMuscle,

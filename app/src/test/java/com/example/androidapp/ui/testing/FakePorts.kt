@@ -109,6 +109,9 @@ internal class FakeWorkoutRepository : WorkoutRepository {
         activity: com.example.androidapp.domain.model.Activity?,
     ): DataResult<Unit> = unused()
 
+    override suspend fun substituteExercise(sessionExerciseId: String, exerciseId: String): DataResult<Unit> =
+        DataResult.Success(Unit)
+
     override suspend fun reopenExercise(sessionExerciseId: String): DataResult<Unit> = unused()
 
     override suspend fun declineProgression(

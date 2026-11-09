@@ -119,6 +119,7 @@ interface WorkoutDao {
         SELECT se.id AS id,
                se.sessionId AS sessionId,
                se.exerciseId AS exerciseId,
+               se.substitutedFromExerciseId AS substitutedFromExerciseId,
                se.position AS position,
                e.name AS exerciseName,
                -- The muscle **the exercise effectively trains** (ROADMAP B103, N103): its own when it

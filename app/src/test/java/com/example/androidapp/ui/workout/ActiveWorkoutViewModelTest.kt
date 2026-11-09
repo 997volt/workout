@@ -2395,6 +2395,9 @@ class ActiveWorkoutViewModelTest {
             return DataResult.Success(Unit)
         }
 
+        override suspend fun substituteExercise(sessionExerciseId: String, exerciseId: String): DataResult<Unit> =
+            DataResult.Success(Unit)
+
         override suspend fun reopenExercise(sessionExerciseId: String): DataResult<Unit> {
             if (failWrites) return DataResult.Failure(DataError.Storage(IOException("disk full")))
             exercises.value = exercises.value.map {

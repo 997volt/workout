@@ -138,6 +138,8 @@ data class SessionExercise(
     val id: String,
     val sessionId: String,
     val exerciseId: String,
+    /** The planned exercise this row stands in for, or null (N291). */
+    val substitutedFromExerciseId: String? = null,
     val position: Int,
     /**
      * Which superset or circuit this exercise is performed in, or null (ROADMAP N24).

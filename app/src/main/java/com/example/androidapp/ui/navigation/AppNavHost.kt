@@ -212,6 +212,7 @@ private fun NavGraphBuilder.workoutDestinations(navController: NavHostController
     composable<ActiveWorkout> {
         ActiveWorkoutRoute(
             onAddExercise = { navController.navigate(ExercisePicker()) },
+            onSubstituteExercise = { rowId -> navController.navigate(ExercisePicker(substituteFor = rowId)) },
             onDone = { navController.popBackStack() },
             onBack = { navController.popBackStack() },
             // A **push**, so the session, its rest timer and the draft in the next set's fields are all

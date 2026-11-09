@@ -346,6 +346,28 @@ class PlanComparisonTest {
     }
 
     @Test
+    fun aSubstitutedExercise_pairsWithThePlan_andSaysWhatStoodIn() {
+        // N291: the performed row keeps the plan's id as its origin, so it is answered rather than reported
+        // as an improvised row, and the verdict names the substitute.
+        val comparison = comparePlanToActual(
+            planned = listOf(planned("Back Squat", working(100_000L, 5))),
+            performed = listOf(
+                ExerciseActual(
+                    exerciseId = "front-squat",
+                    name = "Front Squat",
+                    sets = listOf(did(80_000L, 5)),
+                    substitutedFromExerciseId = "back-squat",
+                ),
+            ),
+        ).single()
+
+        assertEquals("Back Squat", comparison.name)
+        assertEquals("Front Squat", comparison.substitutedWith)
+        assertEquals(1, comparison.performedSets)
+        assertEquals(1, comparison.prescribedSets)
+    }
+
+    @Test
     fun theCounts_excludeWarmUps_asTheRepsDo() {
         // ROADMAP B21: "prescribed 2×3" meant two sets, one a warm-up, totalling three reps.
         val comparison = comparePlanToActual(

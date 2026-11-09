@@ -1279,6 +1279,10 @@ the rule; that one argues it.
 - **One Weekly Review read at a time** (B392). `init` and the first resume both wanted to load; a new call while
   a read is active is ignored, which is also the retry rule (the button is unavailable while loading). A later
   resume, after the read completes, refreshes normally.
+- **A mid-session substitution keeps the plan row, not the movement** (N291). The session row's `exerciseId` is
+  the movement actually used; `substitutedFromExerciseId` is the plan's original and survives a second
+  substitution. The review pairs by the origin and marks the verdict with the stand-in; the write is refused
+  once a set exists because those values describe the replaced movement.
 - **A screen's day and zone are one value** (B391). A resume can change the zone without changing the date;
   emitting only the date would conflate that case, so `ScreenDay(date, zone)` is the flow. The daily check and
   write read the same pair the heading does.

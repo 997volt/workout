@@ -89,6 +89,9 @@ class ExercisePickerViewModel @Inject constructor(
     /** Null when picking for the open session, set when picking for a template. */
     private val templateId: String? = savedStateHandle.toRoute<ExercisePicker>().templateId
 
+    /** The session row being replaced, or null when appending (N291). */
+    private val substituteFor: String? = savedStateHandle.toRoute<ExercisePicker>().substituteFor
+
     private val query = MutableStateFlow(savedStateHandle[QUERY_KEY] ?: "")
 
     /** Emits true once the exercise is stored, so the screen can pop itself. */
@@ -290,9 +293,14 @@ class ExercisePickerViewModel @Inject constructor(
         // is better than writing a session exercise that belongs to nothing.
         val sessionId = workoutRepository.observeActiveSession().first()?.id
             ?: return AddOutcome.NotAdded(DataError.NotFound)
-        return when (val appended = workoutRepository.addExercise(sessionId, exerciseId)) {
+        val result = if (substituteFor != null) {
+            workoutRepository.substituteExercise(substituteFor, exerciseId)
+        } else {
+            workoutRepository.addExercise(sessionId, exerciseId)
+        }
+        return when (result) {
             is DataResult.Success -> AddOutcome.Added
-            is DataResult.Failure -> AddOutcome.NotAdded(appended.error)
+            is DataResult.Failure -> AddOutcome.NotAdded(result.error)
         }
     }
 

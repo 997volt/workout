@@ -61,6 +61,7 @@ import com.example.androidapp.ui.components.SetEntryValues
 import com.example.androidapp.ui.components.SetNumber
 import com.example.androidapp.ui.components.SetRoleSelector
 import com.example.androidapp.ui.components.SetRpeField
+import com.example.androidapp.ui.components.SubstituteAction
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.label
 import com.example.androidapp.ui.components.restLabel
@@ -152,6 +153,8 @@ internal fun ExerciseList(
     empty: (@Composable () -> Unit)? = null,
     /** Below the rows, inside the scroll: the workout's one action (N82). */
     footer: (@Composable () -> Unit)? = null,
+    /** One row's *Substitute exercise* action; no-op where the screen has no picker (N291). */
+    onSubstituteExercise: (String) -> Unit = {},
 ) {
     LazyColumn(
         modifier = modifier.fillMaxSize().testTag(TestTags.EXERCISE_LIST),
@@ -178,6 +181,7 @@ internal fun ExerciseList(
                     onRateExercise = onRateExercise,
                     onReopenExercise = { onReopenExercise(row.id) },
                     onOpenExercise = { onOpenExercise(row.exerciseId) },
+                    onSubstituteExercise = { onSubstituteExercise(row.id) },
                     // Row 0 has nothing above it to pair with: with no previous exercise the group
                     // comes out null and the write would rewrite every ungrouped row, churning
                     // `updatedAt` for no change (ROADMAP B28).
@@ -217,6 +221,7 @@ private fun ExerciseSection(
     onRateExercise: (String, Int?, List<JointPain>) -> Unit,
     onReopenExercise: () -> Unit,
     onOpenExercise: () -> Unit,
+    onSubstituteExercise: () -> Unit,
     modifier: Modifier = Modifier,
     onToggleSuperset: (() -> Unit)? = null,
     restTimerEnabled: Boolean = true,
@@ -246,6 +251,7 @@ private fun ExerciseSection(
                 onMove = onMoveExercise,
                 onRemove = onRemoveExercise,
                 onOpenExercise = { onOpenExercise() },
+                onSubstitute = onSubstituteExercise,
             )
         }
 
@@ -315,6 +321,7 @@ private fun WorkoutExerciseActions(
     onRemove: () -> Unit,
     /** Opens the exercise's own screen, which **pushes** so the session stays exactly as it is (N234). */
     onOpenExercise: (String) -> Unit,
+    onSubstitute: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     ExerciseActionsMenu(
@@ -335,6 +342,17 @@ private fun WorkoutExerciseActions(
             tag = TestTags.exerciseOpenExercise(row.id),
             onClick = { onOpenExercise(row.exerciseId) },
         ),
+        // A substitution replaces the movement before any set exists; once one is logged the values
+        // describe the old movement, so the entry is not offered (N291).
+        substitute = if (!row.isFinished && row.sets.isEmpty()) {
+            SubstituteAction(
+                label = stringResource(R.string.active_workout_substitute),
+                tag = TestTags.exerciseSubstitute(row.id),
+                onClick = onSubstitute,
+            )
+        } else {
+            null
+        },
         tags = ExerciseMenuTags(
             menu = TestTags.exerciseMenu(row.id),
             moveUp = TestTags.exerciseMove(row.id, up = true),

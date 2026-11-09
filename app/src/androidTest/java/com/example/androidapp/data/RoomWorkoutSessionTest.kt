@@ -147,6 +147,24 @@ class RoomWorkoutSessionTest {
     }
 
     @Test
+    fun substitutingAnExercise_keepsItsPosition_andRecordsThePlanRow() = runTest {
+        // N291: a substituted row is still the plan's row, just performed with a different movement.
+        seedTemplate("t1", listOf("back-squat", "bench-press"))
+        val started = start("t1")
+        val row = repository.observeSessionExercises(started.id).first().first()
+
+        val result = repository.substituteExercise(row.id, "bench-press")
+
+        assertTrue(result is DataResult.Success)
+        val rows = repository.observeSessionExercises(started.id).first()
+        assertEquals("bench-press", rows.first().exerciseId)
+        assertEquals("back-squat", rows.first().substitutedFromExerciseId)
+        assertEquals(0, rows.first().position)
+        assertEquals("the other row is untouched", "bench-press", rows.last().exerciseId)
+        assertNull(rows.last().substitutedFromExerciseId)
+    }
+
+    @Test
     fun startingFromATemplate_opensTheWorkoutWithItsExercisesInOrder() = runTest {
         seedTemplate("t1", listOf("back-squat", "bench-press"))
 

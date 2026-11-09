@@ -78,6 +78,7 @@ class ActiveWorkoutScreenTest {
         val onReopenExercise: (String) -> Unit = {},
         /** The running session's way into one exercise's own screen (ROADMAP N234). */
         val onOpenExercise: (String) -> Unit = {},
+        val onSubstituteExercise: (String) -> Unit = {},
         val onRemoveExercise: (String) -> Unit = {},
         val onRateExercise: (String, Int?, List<JointPain>) -> Unit = { _, _, _ -> },
         val onFinish: (String?) -> Unit = {},
@@ -132,6 +133,7 @@ class ActiveWorkoutScreenTest {
                 onFinishExercise = actions.onFinishExercise,
                 onReopenExercise = actions.onReopenExercise,
                 onOpenExercise = actions.onOpenExercise,
+                onSubstituteExercise = actions.onSubstituteExercise,
                 onDeleteSet = {},
                 onUndoDelete = {},
                 onDismissUndo = {},
@@ -559,6 +561,29 @@ class ActiveWorkoutScreenTest {
         composeTestRule.onNodeWithTag(TestTags.exerciseOpenExercise("se1")).performClick()
 
         assertEquals("the movement's own id, not the session exercise's", "back-squat", opened)
+    }
+
+    @Test
+    fun substitutingAnExercise_picksTheRow_andOnlyBeforeASetExists() {
+        // N291: the entry names the session row, and a row with a logged set cannot be reinterpreted.
+        var substituted: String? = null
+        setScreen(
+            state = state(isFinished = false, sets = emptyList()),
+            actions = Actions(onSubstituteExercise = { substituted = it }),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.exerciseMenu("se1")).performClick()
+        composeTestRule.onNodeWithTag(TestTags.exerciseSubstitute("se1")).performClick()
+
+        assertEquals("se1", substituted)
+    }
+
+    @Test
+    fun aRowWithALoggedSet_hasNoSubstituteEntry() {
+        setScreen(state(isFinished = false))
+
+        composeTestRule.onNodeWithTag(TestTags.exerciseMenu("se1")).performClick()
+        composeTestRule.onNodeWithTag(TestTags.exerciseSubstitute("se1")).assertDoesNotExist()
     }
 
     @Test

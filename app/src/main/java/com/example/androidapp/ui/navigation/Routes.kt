@@ -131,7 +131,11 @@ data class ActiveWorkout(
  * than a second near-identical picker.
  */
 @Serializable
-data class ExercisePicker(val templateId: String? = null)
+data class ExercisePicker(
+    val templateId: String? = null,
+    /** The session row this pick substitutes for, or null to append a movement (N291). */
+    val substituteFor: String? = null,
+)
 
 /** The template list (ROADMAP N3). */
 @Serializable

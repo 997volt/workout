@@ -117,6 +117,34 @@ interface SessionExerciseDao {
     )
     suspend fun setDeclinedDirections(id: String, directions: String?, at: Long): Int
 
+    /** The live sets already logged on one row, so substitution can refuse to reinterpret them (N291). */
+    @Query("SELECT COUNT(*) FROM set_entries WHERE sessionExerciseId = :id AND deletedAt IS NULL")
+    suspend fun countLiveSets(id: String): Int
+
+    /**
+     * Replaces the movement on one session row, keeping its position and its original plan id (N291).
+     *
+     * `substitutedFromExerciseId` is filled from the current exercise only when it is still null, so a chain
+     * of substitutions keeps pointing at the plan. Passing the original id back clears both columns.
+     */
+    @Query(
+        """
+        UPDATE session_exercises
+        SET exerciseId = :exerciseId,
+            substitutedFromExerciseId = :substitutedFrom,
+            restSeconds = NULL,
+            techniqueNote = NULL,
+            updatedAt = :at
+        WHERE id = :id AND deletedAt IS NULL
+        """,
+    )
+    suspend fun substituteExercise(
+        id: String,
+        exerciseId: String,
+        substitutedFrom: String?,
+        at: Long,
+    ): Int
+
     /** The session's live exercises in their stored order (ROADMAP N54). */
     @Query(
         """

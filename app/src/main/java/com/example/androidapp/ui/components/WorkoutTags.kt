@@ -152,6 +152,9 @@ internal interface WorkoutTags {
      */
     fun exerciseMenu(id: String) = "exercise_menu_$id"
 
+    /** The substitute-exercise entry on a session row (N291). */
+    fun exerciseSubstitute(id: String) = "exercise_substitute_$id"
+
     /**
      * Moving one exercise in the session's own order (ROADMAP N54).
      *

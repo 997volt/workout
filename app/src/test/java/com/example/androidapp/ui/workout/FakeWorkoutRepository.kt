@@ -60,6 +60,9 @@ internal class FakeWorkoutRepository : WorkoutRepository {
     override suspend fun removeExercise(sessionExerciseId: String): DataResult<Unit> = unused()
     override suspend fun moveExercise(sessionExerciseId: String, delta: Int): DataResult<Unit> = unused()
     override suspend fun finishExercise(sessionExerciseId: String): DataResult<Unit> = unused()
+    override suspend fun substituteExercise(sessionExerciseId: String, exerciseId: String): DataResult<Unit> =
+        DataResult.Success(Unit)
+
     override suspend fun reopenExercise(sessionExerciseId: String): DataResult<Unit> = unused()
 
     override suspend fun declineProgression(

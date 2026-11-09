@@ -13,6 +13,16 @@ repeated here.
 **1.0–1.18 live in [CHANGELOG-1.x.md](CHANGELOG-1.x.md)**, kept whole rather than deleted because the
 id a 1.x commit names is still looked up by it. This file carries the current release.
 
+## [Unreleased]
+
+### Added
+
+- **Substitute an exercise inside a workout** (N291). An exercise with no logged sets offers *Substitute exercise*
+  in its overflow; the picker replaces the movement while keeping the session row's position. The row records the
+  plan's original exercise id, so the review pairs it with the plan and says "Substituted with …" instead of
+  treating the stand-in as improvised. A row with a set already logged is not offered, because relabelling those
+  values would compare the wrong movement.
+
 ## [2.27] — 2026-11-09 (versionCode 48)
 
 ### Added

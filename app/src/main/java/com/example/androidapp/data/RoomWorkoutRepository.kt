@@ -59,6 +59,7 @@ import javax.inject.Singleton
  * caller as a [DataResult.Failure] instead of an exception that could disappear
  * inside a coroutine.
  */
+@Suppress("TooManyFunctions")
 @Singleton
 class RoomWorkoutRepository @Inject constructor(
     private val database: WorkoutDatabase,
@@ -280,6 +281,32 @@ class RoomWorkoutRepository @Inject constructor(
             if (updated == 0) throw NotFoundException("session $sessionId")
         }
 
+    override suspend fun substituteExercise(sessionExerciseId: String, exerciseId: String): DataResult<Unit> =
+        dataResultOf {
+            database.withTransaction {
+                val row = sessionExerciseDao.findSessionExercise(sessionExerciseId)
+                    ?: throw NotFoundException("session exercise $sessionExerciseId")
+                if (row.exerciseId == exerciseId) return@withTransaction
+                if (sessionExerciseDao.countLiveSets(sessionExerciseId) > 0) {
+                    throw InvalidInputException(
+                        "a substituted exercise cannot keep sets logged for the movement it replaces",
+                    )
+                }
+                val original = row.substitutedFromExerciseId ?: row.exerciseId
+                val target = if (exerciseId == original) original else exerciseId
+                val substituteOf = if (exerciseId == original) null else original
+                if (sessionExerciseDao.substituteExercise(
+                        id = sessionExerciseId,
+                        exerciseId = target,
+                        substitutedFrom = substituteOf,
+                        at = timeSource.nowEpochMillis(),
+                    ) == 0
+                ) {
+                    throw NotFoundException("session exercise $sessionExerciseId")
+                }
+            }
+        }
+
     override suspend fun reopenExercise(sessionExerciseId: String): DataResult<Unit> = dataResultOf {
         val updated = dao.setSessionExerciseFinished(
             id = sessionExerciseId,
@@ -468,7 +495,6 @@ class RoomWorkoutRepository @Inject constructor(
             .filter { it.sessionExerciseId == sessionExerciseId }
         return rungRefusal(rows, setIndex, role)
     }
-
 
     override suspend fun logSet(
         sessionExerciseId: String,

@@ -362,6 +362,8 @@ data class SessionExerciseDto(
     val id: String,
     val sessionId: String,
     val exerciseId: String,
+    /** The planned exercise this row stood in for, or null (N291). */
+    val substitutedFromExerciseId: String? = null,
     val position: Int,
     /** Defaulted for the same reason as [ExerciseDto.restSeconds] (ROADMAP N7, N8). */
     val finishedAt: Long? = null,

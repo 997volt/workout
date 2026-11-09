@@ -141,6 +141,15 @@ interface WorkoutRepository {
      */
     suspend fun setSessionActivity(sessionId: String, activity: Activity?): DataResult<Unit>
 
+    /**
+     * Replaces the movement on one session row with [exerciseId], keeping its position (N291).
+     *
+     * Refused once a set is logged: the existing values describe the old movement, and silently relabelling
+     * them would make the review compare the wrong lift. Null clears a substitution by returning to the plan's
+     * original exercise.
+     */
+    suspend fun substituteExercise(sessionExerciseId: String, exerciseId: String): DataResult<Unit>
+
     /** Reopens a done exercise (ROADMAP N7), restoring logging and editing. */
     suspend fun reopenExercise(sessionExerciseId: String): DataResult<Unit>
 

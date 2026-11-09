@@ -19,6 +19,7 @@ import com.example.androidapp.domain.model.loadGrams
 /** One performed exercise as the comparison reads it. */
 private fun SessionExerciseRow.toActual(): ExerciseActual = ExerciseActual(
     exerciseId = exerciseId,
+    substitutedFromExerciseId = substitutedFromExerciseId,
     name = name,
     // The row already carries its exercise's effective unit (N64).
     weightUnit = weightUnit,

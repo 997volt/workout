@@ -46,9 +46,11 @@ import com.example.androidapp.ui.components.WriteOutcome
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.theme.AndroidAppTheme
 
+@Suppress("LongMethod")
 @Composable
 fun ActiveWorkoutRoute(
     onAddExercise: () -> Unit,
+    onSubstituteExercise: (String) -> Unit,
     onDone: () -> Unit,
     onBack: () -> Unit,
     onOpenExercise: (String) -> Unit,
@@ -77,6 +79,7 @@ fun ActiveWorkoutRoute(
         state = state,
         clock = clock,
         onAddExercise = onAddExercise,
+        onSubstituteExercise = onSubstituteExercise,
         onSetActivity = viewModel::onSetActivity,
         onLogSet = viewModel::onLogSet,
         onToggleSuperset = viewModel::onToggleSuperset,
@@ -124,6 +127,7 @@ fun ActiveWorkoutRoute(
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
+@Suppress("LongMethod")
 @Composable
 fun ActiveWorkoutScreen(
     state: ActiveWorkoutUiState,
@@ -192,6 +196,8 @@ fun ActiveWorkoutScreen(
      * neither the setting (N66) nor "there is no plan" (N50) is re-decided here.
      */
     pendingProgression: PendingProgression? = null,
+    /** Opens the picker to replace an exercise that has no logged sets (N291). */
+    onSubstituteExercise: (String) -> Unit = {},
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -237,6 +243,7 @@ fun ActiveWorkoutScreen(
             onReopenExercise = onReopenExercise,
             onOpenExercise = onOpenExercise,
             onAddExercise = onAddExercise,
+            onSubstituteExercise = onSubstituteExercise,
             onSetActivity = onSetActivity,
             onAddActivity = { choosingActivity = true },
             personalRecord = personalRecord,
@@ -363,6 +370,7 @@ private fun WorkoutBody(
     /** Pushes the exercise's own screen from inside a running session (ROADMAP N234). */
     onOpenExercise: (String) -> Unit,
     onAddExercise: () -> Unit,
+    onSubstituteExercise: (String) -> Unit,
     onSetActivity: (Activity?) -> Unit,
     onAddActivity: () -> Unit,
     onToggleSuperset: (String) -> Unit,
@@ -422,6 +430,7 @@ private fun WorkoutBody(
                     onRateExercise = onRateExercise,
                     onReopenExercise = onReopenExercise,
                     onOpenExercise = onOpenExercise,
+                    onSubstituteExercise = onSubstituteExercise,
                     onToggleSuperset = onToggleSuperset,
                     restTimerEnabled = restTimerEnabled,
                     defaultRestSeconds = defaultRestSeconds,

@@ -71,6 +71,8 @@ data class PendingBodyweight(
 data class SessionExerciseRow(
     val id: String,
     val exerciseId: String,
+    /** The planned exercise this row substitutes, or null (N291). */
+    val substitutedFromExerciseId: String? = null,
     val name: String,
     /** `Quads · Barbell`, or null while a custom exercise's taxonomy is unset. */
     val subtitle: String?,

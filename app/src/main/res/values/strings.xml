@@ -296,6 +296,7 @@
     <!-- Removing an exercise takes its sets with it and has no undo (ROADMAP B2),
          so the dialog says both things rather than asking a bare question. The sentence is the
          screen's — a workout loses sets, a template loses planned ones — the label is shared. -->
+    <string name="active_workout_substitute">Substitute exercise</string>
     <string name="active_workout_remove_confirm_title">Remove this exercise?</string>
     <string name="active_workout_remove_confirm_text">%1$s and its sets leave this workout. This cannot be undone.</string>
     <string name="exercise_remove_confirm">Remove</string>
@@ -1015,6 +1016,7 @@
     <string name="summary_effort_under">RPE %1$s under plan</string>
     <string name="summary_no_rpe">no RPE recorded</string>
     <string name="summary_not_planned">not in the plan</string>
+    <string name="summary_substituted">Substituted with %1$s</string>
     <string name="summary_skipped">skipped — the plan asked for it</string>
     <string name="summary_no_weight_to_compare">no planned weight to compare</string>
     <string name="summary_matched">as planned</string>

@@ -192,6 +192,7 @@ private fun SessionExercise.toRow(
     return SessionExerciseRow(
         id = id,
         exerciseId = exerciseId,
+        substitutedFromExerciseId = substitutedFromExerciseId,
         name = exerciseName,
         subtitle = taxonomySubtitle(primaryMuscle, equipment),
         techniqueNote = techniqueNote,

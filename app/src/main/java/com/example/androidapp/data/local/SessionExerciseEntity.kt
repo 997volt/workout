@@ -38,6 +38,13 @@ data class SessionExerciseEntity(
     @PrimaryKey val id: String,
     val sessionId: String,
     val exerciseId: String,
+    /**
+     * The exercise this row was planned as, when the lifter substituted a different movement (N291).
+     *
+     * Null for an ordinary row. Kept through a second substitution, so the review always pairs the performed
+     * row with the plan it answered rather than with the previous stand-in.
+     */
+    val substitutedFromExerciseId: String? = null,
     val position: Int,
     /**
      * A rest this session's plan prescribed, or null to use the library's (N14).

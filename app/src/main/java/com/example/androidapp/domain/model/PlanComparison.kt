@@ -81,6 +81,8 @@ data class ExerciseActual(
      * "there was a step here and you passed" is the fact the log cannot otherwise state.
      */
     val declinedDirections: Set<ProgressionDirection> = emptySet(),
+    /** The planned exercise this row substituted, or null (N291). */
+    val substitutedFromExerciseId: String? = null,
 )
 
 /**
@@ -140,6 +142,8 @@ data class PlanComparison(
     val rpeDeltaHalves: Int? = null,
     /** The directions of a step that was offered and not taken, or empty (ROADMAP N236). */
     val declinedDirections: Set<ProgressionDirection> = emptySet(),
+    /** The movement used in place of the plan's, or null when the plan's own exercise was performed (N291). */
+    val substitutedWith: String? = null,
 ) {
     /** True when the plan had nothing to compare — an exercise added mid-workout. */
     val wasPlanned: Boolean get() = prescribedSets > 0
@@ -166,7 +170,7 @@ fun comparePlanToActual(
     // review while the totals still count them. That is the loss B20 fixed for the *name* key; the id key
     // had the same hole. One planned row consumes one performed row, in the order they were done.
     val remaining = performed.indices
-        .groupBy { performed[it].exerciseId }
+        .groupBy { performed[it].substitutedFromExerciseId ?: performed[it].exerciseId }
         .mapValues { (_, indices) -> indices.toMutableList() }
     val consumed = BooleanArray(performed.size)
 
@@ -186,6 +190,7 @@ fun comparePlanToActual(
             performed = actual,
             weightUnit = plan.weightUnit,
             targetRpeHalves = plan.targetRpeHalves,
+            substitutedWith = if (actual?.substitutedFromExerciseId != null) actual.name else null,
         )
     }
     val improvised = performed
@@ -211,6 +216,7 @@ private fun comparisonOf(
     performed: ExerciseActual?,
     weightUnit: WeightUnit?,
     targetRpeHalves: Int?,
+    substitutedWith: String? = null,
 ): PlanComparison {
     val working = { role: SetType -> role != SetType.WARMUP }
     val plannedWork = plannedSets.filter { working(it.role) }
@@ -269,6 +275,7 @@ private fun comparisonOf(
         },
         // A step offered and not taken, carried rather than computed (N236).
         declinedDirections = performed?.declinedDirections.orEmpty(),
+        substitutedWith = substitutedWith,
     )
 }
 

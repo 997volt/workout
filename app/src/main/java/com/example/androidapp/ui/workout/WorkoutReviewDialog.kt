@@ -306,6 +306,11 @@ private fun String.withRpe(halves: Int?): String =
 /** The line the whole screen exists for: how the top set landed. */
 @Composable
 private fun verdictText(comparison: PlanComparison): String = when {
+    comparison.substitutedWith != null -> stringResource(
+        R.string.summary_substituted,
+        comparison.substitutedWith,
+    )
+
     !comparison.wasPlanned -> stringResource(R.string.summary_not_planned)
     comparison.performedSets == 0 -> stringResource(R.string.summary_skipped)
     comparison.topSetDeltaGrams == null -> stringResource(R.string.summary_no_weight_to_compare)

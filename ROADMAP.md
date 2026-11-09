@@ -17,14 +17,8 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next — the post-2.27 feature batch
 
-The three remaining product rows, in the order agreed after 2.27. **N291** is the next training-flow gap;
-**N293** is the small companion; **N292** is the large one and follows only when the first two are settled.
-
-- **N291 — Substitute an exercise inside a workout.** Weekly programs can substitute a workout for an
-  occurrence, but mid-session the only options are remove and add, which loses the plan context. A session
-  exercise's menu could offer "Substitute exercise", keeping its position and marking the stand-in so plan
-  comparison says "substituted" rather than "missed". Medium; the plan-comparison rule is the open design
-  question, and the app still suggests rather than writes.
+The remaining product rows, in the order agreed after 2.27. **N293** is the next, small companion; **N292** is the
+large one and follows when it is settled.
 
 - **N293 — Manual duration and distance for activities.** An activity is currently a marker with no numbers, so
   a swim or a ride records only "the day was trained". Manual duration/distance fields would extend the

@@ -57,6 +57,13 @@ data class WarmUpAction(
     val onClick: () -> Unit,
 )
 
+/** The optional *Substitute exercise* entry (N291): label, tag and what it opens. */
+data class SubstituteAction(
+    val label: String,
+    val tag: String,
+    val onClick: () -> Unit,
+)
+
 /**
  * The optional *Open exercise* entry one screen's ⋮ may carry (ROADMAP N121): the tag it answers to, and
  * where it goes.
@@ -116,6 +123,8 @@ fun ExerciseActionsMenu(
     addWarmUps: WarmUpAction? = null,
     /** The *Open exercise* entry, or null where this screen offers none — which is the workout's own (N121). */
     openExercise: OpenExerciseAction? = null,
+    /** The *Substitute exercise* entry, or null when the row cannot be substituted (N291). */
+    substitute: SubstituteAction? = null,
 ) {
     // `rememberSaveable`, like the program slot's own menu (N72): the activity declares no
     // `configChanges`, so rotation rebuilds it, and a confirmation the lifter had open would
@@ -138,6 +147,7 @@ fun ExerciseActionsMenu(
             supersetGrouped = supersetGrouped,
             addWarmUps = addWarmUps,
             openExercise = openExercise,
+            substitute = substitute,
             onToggleSuperset = onToggleSuperset,
             onMove = onMove,
             onRemove = { confirmingRemoval = true },
@@ -165,6 +175,9 @@ fun ExerciseActionsMenu(
  * the dialog are three things, and one function holding all three is how it reached the length this
  * project allows.
  */
+// The menu's entries are a flat list of one-line items; the substitute entry is one more item, not a
+// reason to split the dropdown into a component per action (N291).
+@Suppress("LongMethod")
 @Composable
 private fun ExerciseMenuEntries(
     expanded: Boolean,
@@ -174,12 +187,20 @@ private fun ExerciseMenuEntries(
     supersetGrouped: Boolean?,
     addWarmUps: WarmUpAction?,
     openExercise: OpenExerciseAction?,
+    substitute: SubstituteAction?,
     onToggleSuperset: () -> Unit,
     onMove: (Int) -> Unit,
     onRemove: () -> Unit,
     tags: ExerciseMenuTags,
 ) {
     DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
+        substitute?.let { action ->
+            DropdownMenuItem(
+                text = { Text(action.label) },
+                onClick = menuClick(onDismiss) { action.onClick() },
+                modifier = Modifier.testTag(action.tag),
+            )
+        }
         if (canMoveUp) {
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.exercise_menu_move_up)) },
