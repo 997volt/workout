@@ -621,6 +621,28 @@ class StatisticsViewModelTest {
     }
 
     @Test
+    fun theSixthFavourite_dropsTheOldestRatherThanTheNewPin() = runTest(dispatcher) {
+        val settings = FakeSettingsRepository(StatisticsRange(RangeKind.ALL))
+        val viewModel = viewModel(range = StatisticsRange(RangeKind.ALL), settings = settings)
+        observe(viewModel)
+        advanceUntilIdle()
+
+        val weights = BodyMetric.entries.take(6)
+        weights.forEach { metric ->
+            viewModel.onSelectMetric(MetricKey.Body(metric))
+            viewModel.onToggleFavourite()
+            advanceUntilIdle()
+        }
+
+        assertThat(settings.favourite.value).containsExactly(
+            *weights.drop(1).map { MetricKey.Body(it).id }.toTypedArray(),
+        ).inOrder()
+        assertThat(viewModel.uiState.value.favouriteSeries).containsExactly(
+            *weights.drop(1).map { StatisticsSelection(MetricKey.Body(it)) }.toTypedArray(),
+        ).inOrder()
+    }
+
+    @Test
     fun aFavouriteLiftSeries_keepsItsLift() = runTest(dispatcher) {
         val bench = lift(id = "bench", name = "Bench Press")
         val settings = FakeSettingsRepository(StatisticsRange(RangeKind.ALL))

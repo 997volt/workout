@@ -669,7 +669,7 @@ class StatisticsViewModel @Inject constructor(
                 val next = if (encoded in stored) {
                     stored.filterNot { it == encoded }
                 } else {
-                    (stored + encoded).take(FAVOURITE_SERIES_MAX)
+                    (stored + encoded).takeLast(FAVOURITE_SERIES_MAX)
                 }
                 if (next != stored) {
                     val result = settings.setFavouriteSeries(next)
