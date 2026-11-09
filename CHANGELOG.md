@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Added
 
+- **Activities can carry a manual duration and distance** (N293). An activity's screen offers minutes and
+  kilometres, stores them as seconds and metres (both nullable), and clears them on an empty save. The values
+  survive backup/restore through the session DTO.
+
 - **Substitute an exercise inside a workout** (N291). An exercise with no logged sets offers *Substitute exercise*
   in its overflow; the picker replaces the movement while keeping the session row's position. The row records the
   plan's original exercise id, so the review pairs it with the plan and says "Substituted with …" instead of

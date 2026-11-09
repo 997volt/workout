@@ -17,13 +17,7 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next — the post-2.27 feature batch
 
-The remaining product rows, in the order agreed after 2.27. **N293** is the next, small companion; **N292** is the
-large one and follows when it is settled.
-
-- **N293 — Manual duration and distance for activities.** An activity is currently a marker with no numbers, so
-  a swim or a ride records only "the day was trained". Manual duration/distance fields would extend the
-  notebook without adding GPS or a new permission. Medium–large: schema, backup and helper format, and a
-  decision about whether the values live on the session or a record of their own.
+The remaining large product row after N291 and N293. **N292** follows when its schema and editor design is settled.
 
 - **N292 — Multi-week program phases.** A weekly program repeats forever and a sequence block happens once;
   there is no authored multi-week block (week 1/2/3 prescriptions). This is a real programming capability and

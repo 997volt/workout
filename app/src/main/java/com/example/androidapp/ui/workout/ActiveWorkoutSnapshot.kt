@@ -74,6 +74,8 @@ internal fun Snapshot.toUiState(
         pendingFinishedExerciseId = pendingFinishedExerciseId,
         readinessNote = session?.readinessNote,
         activity = session?.activity,
+        activityDurationSeconds = session?.activityDurationSeconds,
+        activityDistanceMeters = session?.activityDistanceMeters,
         error = error,
     )
 }

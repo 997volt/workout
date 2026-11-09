@@ -87,6 +87,10 @@ data class WorkoutSession(
      * why it can be a session at all rather than a record type of its own.
      */
     val activity: Activity? = null,
+    /** An activity's manually stated duration, in seconds, or null (N293). */
+    val activityDurationSeconds: Int? = null,
+    /** An activity's manually stated distance, in metres, or null (N293). */
+    val activityDistanceMeters: Long? = null,
     /**
      * The muscles today's readiness note reported sore, each with its own score (ROADMAP N62).
      *

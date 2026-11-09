@@ -165,6 +165,23 @@ class RoomWorkoutSessionTest {
     }
 
     @Test
+    fun anActivity_storesAndClearsItsOptionalNumbers() = runTest {
+        // N293: duration and distance are the activity's own facts, not a workout's.
+        val started = start()
+        repository.setSessionActivity(started.id, com.example.androidapp.domain.model.Activity.SWIMMING)
+        assertTrue(repository.setActivityMetrics(started.id, 1_800, 1_500) is DataResult.Success)
+
+        val saved = repository.observeSession(started.id).first()!!
+        assertEquals(1_800, saved.activityDurationSeconds)
+        assertEquals(1_500L, saved.activityDistanceMeters)
+
+        assertTrue(repository.setActivityMetrics(started.id, null, null) is DataResult.Success)
+        val cleared = repository.observeSession(started.id).first()!!
+        assertNull(cleared.activityDurationSeconds)
+        assertNull(cleared.activityDistanceMeters)
+    }
+
+    @Test
     fun startingFromATemplate_opensTheWorkoutWithItsExercisesInOrder() = runTest {
         seedTemplate("t1", listOf("back-squat", "bench-press"))
 

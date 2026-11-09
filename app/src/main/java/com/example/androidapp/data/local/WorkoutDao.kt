@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.Flow
  */
 data class SessionStart(val session: WorkoutSessionEntity, val created: Boolean)
 
+@Suppress("TooManyFunctions")
 @Dao
 interface WorkoutDao {
 
@@ -336,6 +337,23 @@ interface WorkoutDao {
         """,
     )
     suspend fun setSessionActivity(id: String, activity: String?, at: Long): Int
+
+    /** Stores an activity's optional duration/distance, or clears both (N293). */
+    @Query(
+        """
+        UPDATE workout_sessions
+        SET activityDurationSeconds = :durationSeconds,
+            activityDistanceMeters = :distanceMeters,
+            updatedAt = :at
+        WHERE id = :id AND deletedAt IS NULL
+        """,
+    )
+    suspend fun setActivityMetrics(
+        id: String,
+        durationSeconds: Int?,
+        distanceMeters: Long?,
+        at: Long,
+    ): Int
 
     /**
      * Sets or clears a session exercise's done timestamp (ROADMAP N7). A null

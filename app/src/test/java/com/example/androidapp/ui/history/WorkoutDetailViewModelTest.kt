@@ -369,6 +369,12 @@ class WorkoutDetailViewModelTest {
             unused()
 
         /** An activity is a write like any other; this fake only has to accept it (N141). */
+        override suspend fun setActivityMetrics(
+            sessionId: String,
+            durationSeconds: Int?,
+            distanceMeters: Long?,
+        ): DataResult<Unit> = DataResult.Success(Unit)
+
         override suspend fun setSessionActivity(sessionId: String, activity: Activity?): DataResult<Unit> =
             DataResult.Success(Unit)
 

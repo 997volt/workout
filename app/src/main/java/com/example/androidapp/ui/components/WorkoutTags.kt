@@ -135,6 +135,9 @@ internal interface WorkoutTags {
     val ACTIVE_WORKOUT_ACTIVITY: String get() = "active_workout_activity"
 
     val ACTIVE_WORKOUT_ACTIVITY_CLEAR: String get() = "active_workout_activity_clear"
+    val ACTIVE_WORKOUT_ACTIVITY_DURATION: String get() = "active_workout_activity_duration"
+    val ACTIVE_WORKOUT_ACTIVITY_DISTANCE: String get() = "active_workout_activity_distance"
+    val ACTIVE_WORKOUT_ACTIVITY_SAVE: String get() = "active_workout_activity_save"
 
     fun activity(activity: Activity) = "activity_${activity.name.lowercase()}"
 

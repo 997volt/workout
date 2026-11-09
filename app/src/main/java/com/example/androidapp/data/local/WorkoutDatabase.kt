@@ -77,7 +77,8 @@ import androidx.room.TypeConverters
  * set is removed, so the row above the block is what a later undo follows back to its place (B364). See
  * [MIGRATION_18_19]. **20 adds the session template and measurement date indices** for the program and
  * history reads (B282/N282); see [MIGRATION_19_20]. **21 records the exercise a substituted session row
- * stood in for** (N291); see [MIGRATION_20_21].
+ * stood in for** (N291); see [MIGRATION_20_21]. **22 adds the optional activity duration/distance** (N293);
+ * see [MIGRATION_21_22].
  *
  * There is deliberately **no** `fallbackToDestructiveMigration()`: it would turn
  * a forgotten migration into silent, total data loss for a user's training
@@ -106,7 +107,7 @@ import androidx.room.TypeConverters
         MetricGoalEntity::class,
         RetiredMovementEntity::class,
     ],
-    version = 21,
+    version = 22,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)

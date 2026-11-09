@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.AlertDialog
@@ -12,17 +13,26 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
 import com.example.androidapp.domain.model.Activity
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.TestTags
+
+private const val SECONDS_PER_MINUTE = 60
+private const val METRES_PER_KILOMETRE = 1000.0
 
 /**
  * A session that is an **activity** rather than a workout (ROADMAP N141).
@@ -40,10 +50,23 @@ import com.example.androidapp.ui.components.TestTags
  * that cannot be made a workout again.
  */
 @Composable
-internal fun ActivityBody(activity: Activity, onClear: () -> Unit) {
+internal fun ActivityBody(
+    activity: Activity,
+    durationSeconds: Int?,
+    distanceMeters: Long?,
+    onSaveMetrics: (Int?, Long?) -> Unit,
+    onClear: () -> Unit,
+) {
+    var duration by rememberSaveable(activity, durationSeconds) {
+        mutableStateOf(durationSeconds?.let { (it / SECONDS_PER_MINUTE).toString() }.orEmpty())
+    }
+    var distance by rememberSaveable(activity, distanceMeters) {
+        mutableStateOf(formatDistance(distanceMeters))
+    }
     Column(
         modifier = Modifier.fillMaxWidth().testTag(TestTags.ACTIVE_WORKOUT_ACTIVITY),
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(
             text = stringResource(activityLabel(activity)),
@@ -54,6 +77,35 @@ internal fun ActivityBody(activity: Activity, onClear: () -> Unit) {
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        OutlinedTextField(
+            value = duration,
+            onValueChange = { duration = it.filter(Char::isDigit) },
+            label = { Text(stringResource(R.string.active_workout_activity_duration)) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth().testTag(TestTags.ACTIVE_WORKOUT_ACTIVITY_DURATION),
+        )
+        OutlinedTextField(
+            value = distance,
+            onValueChange = { distance = it.filter { char -> char.isDigit() || char == '.' } },
+            label = { Text(stringResource(R.string.active_workout_activity_distance)) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth().testTag(TestTags.ACTIVE_WORKOUT_ACTIVITY_DISTANCE),
+        )
+        FilledTonalButton(
+            onClick = {
+                val minutes = duration.toIntOrNull()
+                val km = distance.toDoubleOrNull()
+                onSaveMetrics(
+                    minutes?.let { (it * SECONDS_PER_MINUTE).takeIf { value -> value >= 0 } },
+                    km?.let { (it * METRES_PER_KILOMETRE).toLong().takeIf { value -> value >= 0 } },
+                )
+            },
+            modifier = Modifier.testTag(TestTags.ACTIVE_WORKOUT_ACTIVITY_SAVE),
+        ) {
+            Text(stringResource(R.string.active_workout_activity_save))
+        }
         AppTextButton(
             onClick = onClear,
             modifier = Modifier.testTag(TestTags.ACTIVE_WORKOUT_ACTIVITY_CLEAR),
@@ -70,9 +122,22 @@ internal fun ActivityBody(activity: Activity, onClear: () -> Unit) {
 @Composable
 internal fun ActivityBodyOrEmpty(
     activity: Activity?,
+    durationSeconds: Int?,
+    distanceMeters: Long?,
+    onSaveMetrics: (Int?, Long?) -> Unit,
     onClearActivity: () -> Unit,
 ) {
-    if (activity != null) ActivityBody(activity = activity, onClear = onClearActivity) else EmptyWorkout()
+    if (activity != null) {
+        ActivityBody(
+            activity = activity,
+            durationSeconds = durationSeconds,
+            distanceMeters = distanceMeters,
+            onSaveMetrics = onSaveMetrics,
+            onClear = onClearActivity,
+        )
+    } else {
+        EmptyWorkout()
+    }
 }
 
 /**
@@ -177,3 +242,7 @@ fun activityLabel(activity: Activity): Int = when (activity) {
     Activity.ROCK_CLIMBING -> R.string.activity_rock_climbing
     Activity.VOLLEYBALL -> R.string.activity_volleyball
 }
+
+/** Kilometres for an activity field, without trailing zeroes: 1500 m -> "1.5", 2000 m -> "2". */
+private fun formatDistance(metres: Long?): String =
+    metres?.let { (it / METRES_PER_KILOMETRE).toString().trimEnd('0').trimEnd('.') }.orEmpty()

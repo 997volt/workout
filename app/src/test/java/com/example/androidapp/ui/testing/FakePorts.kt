@@ -104,6 +104,16 @@ internal class FakeWorkoutRepository : WorkoutRepository {
 
     override suspend fun setWorkoutNotes(sessionId: String, note: String?): DataResult<Unit> = unused()
 
+    override suspend fun setActivityMetrics(
+
+        sessionId: String,
+
+        durationSeconds: Int?,
+
+        distanceMeters: Long?,
+
+    ): DataResult<Unit> = DataResult.Success(Unit)
+
     override suspend fun setSessionActivity(
         sessionId: String,
         activity: com.example.androidapp.domain.model.Activity?,

@@ -1086,6 +1086,17 @@ class ActiveWorkoutViewModel @Inject constructor(
         }
     }
 
+    /** Stores an activity's optional duration/distance, or clears them (N293). */
+    fun onSetActivityMetrics(durationSeconds: Int?, distanceMeters: Long?) {
+        val sessionId = uiState.value.sessionId ?: return
+        viewModelScope.launch {
+            when (val result = workoutRepository.setActivityMetrics(sessionId, durationSeconds, distanceMeters)) {
+                is DataResult.Success -> lastError.value = null
+                is DataResult.Failure -> lastError.value = result.error
+            }
+        }
+    }
+
     /** Dismisses the review, which is what actually closes the screen (ROADMAP N20). */
     fun onDismissSummary() {
         _summary.value = null

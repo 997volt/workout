@@ -1279,6 +1279,9 @@ the rule; that one argues it.
 - **One Weekly Review read at a time** (B392). `init` and the first resume both wanted to load; a new call while
   a read is active is ignored, which is also the retry rule (the button is unavailable while loading). A later
   resume, after the read completes, refreshes normally.
+- **An activity's numbers are optional and exact** (N293). Duration is stored in seconds and distance in metres,
+  nullable like every other "not stated" value; the screen types minutes and kilometres and converts once. A
+  workout refuses them, because these are the numbers an activity carries instead of sets.
 - **A mid-session substitution keeps the plan row, not the movement** (N291). The session row's `exerciseId` is
   the movement actually used; `substitutedFromExerciseId` is the plan's original and survives a second
   substitution. The review pairs by the origin and marks the verdict with the stand-in; the write is refused

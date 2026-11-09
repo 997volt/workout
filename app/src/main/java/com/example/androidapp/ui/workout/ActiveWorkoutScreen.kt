@@ -81,6 +81,7 @@ fun ActiveWorkoutRoute(
         onAddExercise = onAddExercise,
         onSubstituteExercise = onSubstituteExercise,
         onSetActivity = viewModel::onSetActivity,
+        onSetActivityMetrics = viewModel::onSetActivityMetrics,
         onLogSet = viewModel::onLogSet,
         onToggleSuperset = viewModel::onToggleSuperset,
         summary = summary,
@@ -198,6 +199,8 @@ fun ActiveWorkoutScreen(
     pendingProgression: PendingProgression? = null,
     /** Opens the picker to replace an exercise that has no logged sets (N291). */
     onSubstituteExercise: (String) -> Unit = {},
+    /** Stores an activity's optional numbers (N293). */
+    onSetActivityMetrics: (Int?, Long?) -> Unit = { _, _ -> },
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -245,6 +248,7 @@ fun ActiveWorkoutScreen(
             onAddExercise = onAddExercise,
             onSubstituteExercise = onSubstituteExercise,
             onSetActivity = onSetActivity,
+            onSetActivityMetrics = onSetActivityMetrics,
             onAddActivity = { choosingActivity = true },
             personalRecord = personalRecord,
             onToggleSuperset = onToggleSuperset,
@@ -352,6 +356,7 @@ internal fun SetEditorSection(
     )
 }
 
+@Suppress("LongMethod")
 @Composable
 private fun WorkoutBody(
     state: ActiveWorkoutUiState,
@@ -372,6 +377,7 @@ private fun WorkoutBody(
     onAddExercise: () -> Unit,
     onSubstituteExercise: (String) -> Unit,
     onSetActivity: (Activity?) -> Unit,
+    onSetActivityMetrics: (Int?, Long?) -> Unit,
     onAddActivity: () -> Unit,
     onToggleSuperset: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -435,7 +441,15 @@ private fun WorkoutBody(
                     restTimerEnabled = restTimerEnabled,
                     defaultRestSeconds = defaultRestSeconds,
                     header = { ReadinessSection(note = state.readinessNote, onSave = onSaveReadinessNote) },
-                    empty = { ActivityBodyOrEmpty(state.activity, onClearActivity = { onSetActivity(null) }) },
+                    empty = {
+                        ActivityBodyOrEmpty(
+                            activity = state.activity,
+                            durationSeconds = state.activityDurationSeconds,
+                            distanceMeters = state.activityDistanceMeters,
+                            onSaveMetrics = onSetActivityMetrics,
+                            onClearActivity = { onSetActivity(null) },
+                        )
+                    },
                     // Below the last exercise rather than over it (N82) — and drawn for an empty session
                     // too, which is drawn *instead of* the rows and had no other way to add a movement.
                     footer = {

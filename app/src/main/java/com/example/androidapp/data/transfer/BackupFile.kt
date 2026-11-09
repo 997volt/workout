@@ -352,6 +352,9 @@ data class SessionDto(
      * decodes, and its sessions are workouts.
      */
     val activity: String? = null,
+    /** An activity's optional duration/distance, defaulted for old files (N293). */
+    val activityDurationSeconds: Int? = null,
+    val activityDistanceMeters: Long? = null,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,

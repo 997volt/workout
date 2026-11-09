@@ -201,6 +201,10 @@ data class ActiveWorkoutUiState(
      * record: the readiness note and the comment asked for at the end.
      */
     val activity: Activity? = null,
+    /** The activity's manually stated duration in seconds, or null (N293). */
+    val activityDurationSeconds: Int? = null,
+    /** The activity's manually stated distance in metres, or null (N293). */
+    val activityDistanceMeters: Long? = null,
     /** Set when a write failed, so the screen can say so instead of lying. */
     val error: DataError? = null,
 ) {

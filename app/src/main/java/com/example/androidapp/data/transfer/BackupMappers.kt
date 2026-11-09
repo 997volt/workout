@@ -167,6 +167,8 @@ internal fun WorkoutSessionEntity.toDto() = SessionDto(
     notes = notes,
     readinessNote = readinessNote,
     activity = activity,
+    activityDurationSeconds = activityDurationSeconds,
+    activityDistanceMeters = activityDistanceMeters,
     // Carried: where a session happened is a fact about the training,
     // not about the device it was written on (ROADMAP N25).
     zoneOffsetMinutes = zoneOffsetMinutes,
@@ -203,6 +205,8 @@ internal fun SessionDto.toEntity() = WorkoutSessionEntity(
     zoneOffsetMinutes = zoneOffsetMinutes,
     // An activity survives the restore for the same reason it is stored: the day it answers for.
     activity = activity,
+    activityDurationSeconds = activityDurationSeconds,
+    activityDistanceMeters = activityDistanceMeters,
     createdAt = createdAt,
     updatedAt = updatedAt,
     deletedAt = deletedAt,

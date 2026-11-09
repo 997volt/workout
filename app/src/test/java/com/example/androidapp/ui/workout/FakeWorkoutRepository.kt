@@ -101,6 +101,16 @@ internal class FakeWorkoutRepository : WorkoutRepository {
     /** What the session was made into, so a test can read the write back (ROADMAP N141). */
     var lastActivity: Activity? = null
 
+    override suspend fun setActivityMetrics(
+
+        sessionId: String,
+
+        durationSeconds: Int?,
+
+        distanceMeters: Long?,
+
+    ): DataResult<Unit> = DataResult.Success(Unit)
+
     override suspend fun setSessionActivity(sessionId: String, activity: Activity?): DataResult<Unit> {
         lastActivity = activity
         return DataResult.Success(Unit)

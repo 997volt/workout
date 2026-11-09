@@ -87,6 +87,7 @@ class ActiveWorkoutScreenTest {
         val onDiscard: () -> Unit = {},
         val onAddExercise: () -> Unit = {},
         val onSetActivity: (Activity?) -> Unit = {},
+        val onSetActivityMetrics: (Int?, Long?) -> Unit = { _, _ -> },
         val onDismissSummary: () -> Unit = {},
         val onEnterBodyweight: (Long) -> Unit = {},
         val onDismissBodyweight: () -> Unit = {},
@@ -122,6 +123,7 @@ class ActiveWorkoutScreenTest {
                 clock = remember { mutableStateOf(WorkoutClock()) },
                 onAddExercise = actions.onAddExercise,
                 onSetActivity = actions.onSetActivity,
+                onSetActivityMetrics = actions.onSetActivityMetrics,
                 onLogSet = actions.onLogSet,
                 onToggleSuperset = onToggleSuperset,
                 personalRecord = personalRecord,
@@ -564,6 +566,35 @@ class ActiveWorkoutScreenTest {
     }
 
     @Test
+    fun anActivity_statesAndSavesItsDurationAndDistance() {
+        // N293: the activity is a marker unless the lifter gives it numbers, and the numbers are optional.
+        var duration: Int? = null
+        var distance: Long? = null
+        setScreen(
+            state = state(
+                isFinished = false,
+                sets = emptyList(),
+                activity = Activity.SWIMMING,
+                activityDurationSeconds = 30 * 60,
+                activityDistanceMeters = 1_500,
+            ),
+            actions = Actions(onSetActivityMetrics = { minutes, metres ->
+                duration = minutes
+                distance = metres
+            }),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_ACTIVITY_DURATION).performTextClearance()
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_ACTIVITY_DURATION).performTextInput("45")
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_ACTIVITY_DISTANCE).performTextClearance()
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_ACTIVITY_DISTANCE).performTextInput("2.5")
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_ACTIVITY_SAVE).performScrollTo().performClick()
+
+        assertEquals(45 * 60, duration)
+        assertEquals(2_500L, distance)
+    }
+
+    @Test
     fun substitutingAnExercise_picksTheRow_andOnlyBeforeASetExists() {
         // N291: the entry names the session row, and a row with a logged set cannot be reinterpreted.
         var substituted: String? = null
@@ -917,7 +948,7 @@ class ActiveWorkoutScreenTest {
             actions = Actions(onSetActivity = { cleared = it }),
         )
 
-        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_ACTIVITY_CLEAR).performClick()
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_ACTIVITY_CLEAR).performScrollTo().performClick()
 
         assertNull(cleared)
     }
@@ -1014,26 +1045,36 @@ class ActiveWorkoutScreenTest {
         stepGrams: Long? = null,
         /** A held movement, so the next-set fields state a duration instead of reps (N220). */
         isTimed: Boolean = false,
+        activity: Activity? = null,
+        activityDurationSeconds: Int? = null,
+        activityDistanceMeters: Long? = null,
     ) = ActiveWorkoutUiState(
         isLoading = false,
         sessionId = "s1",
         startedAt = "07:42",
-        exercises = listOf(
-            SessionExerciseRow(
-                id = "se1",
-                exerciseId = "back-squat",
-                name = "Back Squat",
-                subtitle = "Quads · Barbell",
-                techniqueNote = "Brace, sit back",
-                isFinished = isFinished,
-                sets = sets,
-                suggestion = suggestion,
-                progression = progression,
-                weightUnit = weightUnit,
-                stepGrams = stepGrams,
-                isTimed = isTimed,
-            ),
-        ),
+        activity = activity,
+        activityDurationSeconds = activityDurationSeconds,
+        activityDistanceMeters = activityDistanceMeters,
+        exercises = if (activity != null) {
+            emptyList()
+        } else {
+            listOf(
+                SessionExerciseRow(
+                    id = "se1",
+                    exerciseId = "back-squat",
+                    name = "Back Squat",
+                    subtitle = "Quads · Barbell",
+                    techniqueNote = "Brace, sit back",
+                    isFinished = isFinished,
+                    sets = sets,
+                    suggestion = suggestion,
+                    progression = progression,
+                    weightUnit = weightUnit,
+                    stepGrams = stepGrams,
+                    isTimed = isTimed,
+                ),
+            )
+        },
     )
 
     /**

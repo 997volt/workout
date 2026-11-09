@@ -63,6 +63,10 @@ data class WorkoutSessionEntity(
      * of them. Nullable, so every row already on disk is a workout — which is what it is.
      */
     val activity: String? = null,
+    /** An activity's manually stated duration, in seconds, or null (N293). */
+    val activityDurationSeconds: Int? = null,
+    /** An activity's manually stated distance, in metres, or null (N293). */
+    val activityDistanceMeters: Long? = null,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long?,

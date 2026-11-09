@@ -142,6 +142,17 @@ interface WorkoutRepository {
     suspend fun setSessionActivity(sessionId: String, activity: Activity?): DataResult<Unit>
 
     /**
+     * Stores an activity's optional duration and distance, or clears them with null (N293).
+     *
+     * Refused on a workout: these are the numbers an activity carries instead of sets.
+     */
+    suspend fun setActivityMetrics(
+        sessionId: String,
+        durationSeconds: Int?,
+        distanceMeters: Long?,
+    ): DataResult<Unit>
+
+    /**
      * Replaces the movement on one session row with [exerciseId], keeping its position (N291).
      *
      * Refused once a set is logged: the existing values describe the old movement, and silently relabelling

@@ -251,6 +251,9 @@
     <!-- N141: a session that is an activity rather than a workout. A short closed list, and what an
          activity holds instead of sets. -->
     <string name="active_workout_add_activity">Add activity</string>
+    <string name="active_workout_activity_duration">Duration (minutes)</string>
+    <string name="active_workout_activity_distance">Distance (km)</string>
+    <string name="active_workout_activity_save">Save activity numbers</string>
     <string name="active_workout_activity_note">An activity holds no sets — the day is what it records.</string>
     <string name="active_workout_activity_clear">Not an activity</string>
     <string name="activity_picker_title">What did you do?</string>

@@ -307,6 +307,30 @@ class RoomWorkoutRepository @Inject constructor(
             }
         }
 
+    override suspend fun setActivityMetrics(
+        sessionId: String,
+        durationSeconds: Int?,
+        distanceMeters: Long?,
+    ): DataResult<Unit> = dataResultOf {
+        val session = dao.findSession(sessionId) ?: throw NotFoundException("session $sessionId")
+        if (session.activity == null) throw InvalidInputException("this session is a workout, not an activity")
+        if (durationSeconds != null && durationSeconds < 0) {
+            throw InvalidInputException("an activity duration cannot be negative")
+        }
+        if (distanceMeters != null && distanceMeters < 0) {
+            throw InvalidInputException("an activity distance cannot be negative")
+        }
+        if (dao.setActivityMetrics(
+                id = sessionId,
+                durationSeconds = durationSeconds,
+                distanceMeters = distanceMeters,
+                at = timeSource.nowEpochMillis(),
+            ) == 0
+        ) {
+            throw NotFoundException("session $sessionId")
+        }
+    }
+
     override suspend fun reopenExercise(sessionExerciseId: String): DataResult<Unit> = dataResultOf {
         val updated = dao.setSessionExerciseFinished(
             id = sessionExerciseId,
