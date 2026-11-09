@@ -66,6 +66,25 @@ class WorkoutHistoryScreenTest {
     }
 
     @Test
+    fun anActivityRow_showsItsStatedDurationAndDistance() {
+        show(
+            stateWith(
+                summary(
+                    "session-1",
+                    repeatable = 0,
+                    activity = Activity.SWIMMING,
+                    setCount = 0,
+                    durationSeconds = 1_800,
+                    distanceMeters = 2_500,
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithText("30:00", substring = true).assertIsDisplayed()
+        composeTestRule.onNodeWithText("2.5 km", substring = true).assertIsDisplayed()
+    }
+
+    @Test
     fun theSearchField_reportsWhatWasTyped() {
         // N146. The field is the screen's, the query is the ViewModel's — so what is asserted here is the wire
         // between them rather than the filtering, which `HistorySearchTest` covers as a rule.
@@ -171,6 +190,8 @@ class WorkoutHistoryScreenTest {
         repeatable: Int,
         activity: Activity? = null,
         setCount: Int = 12,
+        durationSeconds: Int? = null,
+        distanceMeters: Long? = null,
     ) = WorkoutSummary(
         id = id,
         startedAt = Instant.parse("2026-09-29T08:00:00Z"),
@@ -180,5 +201,7 @@ class WorkoutHistoryScreenTest {
         volumeGrams = if (activity == null) 1_000_000L else 0L,
         repeatableExerciseCount = repeatable,
         activity = activity,
+        activityDurationSeconds = durationSeconds,
+        activityDistanceMeters = distanceMeters,
     )
 }
