@@ -204,6 +204,10 @@ internal class FakeProgramRepository : ProgramRepository {
     val sequenceSchedule = MutableStateFlow<SequenceSchedule?>(null)
 
     var exportResult: DataResult<String> = DataResult.Success("{}")
+
+    /** The slot's own history the creator's read asks for (B397); a test sets what it should find. */
+    var slotPrevious: PreviousPerformance = PreviousPerformance(emptyList())
+    val slotPreviousCalls = mutableListOf<Pair<String, String>>()
     var renameResult: DataResult<Unit> = DataResult.Success(Unit)
     var deleteResult: DataResult<Unit> = DataResult.Success(Unit)
     var writeResult: DataResult<Unit> = DataResult.Success(Unit)
@@ -296,7 +300,10 @@ internal class FakeProgramRepository : ProgramRepository {
         exerciseId: String,
         currentSessionId: String,
         zone: ZoneId,
-    ): DataResult<PreviousPerformance> = unused()
+    ): DataResult<PreviousPerformance> {
+        slotPreviousCalls += slotId to exerciseId
+        return DataResult.Success(slotPrevious)
+    }
 
     override suspend fun pendingOccurrences(
         today: LocalDate,
@@ -452,6 +459,7 @@ internal class FakeMeasurementRepository : MeasurementRepository {
 internal class FakeDeloadRepository : DeloadRepository {
 
     val weeks = MutableStateFlow<List<DeloadWeek>>(emptyList())
+    var lastPlan: DeloadWeek? = null
 
     override fun observeWeekPlans(weekStart: LocalDate): Flow<List<DeloadWeek>> = weeks
 
@@ -461,7 +469,7 @@ internal class FakeDeloadRepository : DeloadRepository {
         days: List<DeloadDayInput>,
     ): DataResult<DeloadCreation> = unused()
 
-    override suspend fun findLastPlan(programId: String, beforeWeek: LocalDate): DeloadWeek? = unused()
+    override suspend fun findLastPlan(programId: String, beforeWeek: LocalDate): DeloadWeek? = lastPlan
 }
 
 /** The settings port, holding the weight unit the shell follows. */

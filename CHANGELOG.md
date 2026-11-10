@@ -32,6 +32,9 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A second deload is no longer drafted from the first** (B397). The creator reads the source slot's own
+  last normal session, not the exercise-wide last performance, so the previous deload's already-light
+  numbers cannot feed the next draft. A deload names no slot, so it is not that history.
 - **A timed movement is drafted as a hold in a deload week** (B396). The draft reads the plan's seconds
   instead of turning a hold's absent reps into a five-rep counted set; the reduced set count is the week's
   reduction, and the writer keeps the hold's duration with no reps.

@@ -11,10 +11,10 @@ import com.example.androidapp.domain.repository.DeloadRepository
 import com.example.androidapp.domain.repository.ProgramRepository
 import com.example.androidapp.domain.repository.SettingsRepository
 import com.example.androidapp.domain.repository.TemplateRepository
-import com.example.androidapp.domain.repository.WorkoutRepository
 import kotlinx.coroutines.flow.first
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.ZoneId
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -23,8 +23,7 @@ import javax.inject.Singleton
  *
  * A snapshot rather than a flow: the screen is a draft, the program cannot be edited underneath it on a
  * phone, and every control re-derives from this one read. It is extracted from the ViewModel so the
- * constructor stays the four dependencies the screen has rather than the five repositories this read
- * happens to touch.
+ * constructor stays the dependencies the screen has rather than every repository this read touches.
  */
 interface DeloadSourceReader {
     /**
@@ -40,7 +39,6 @@ interface DeloadSourceReader {
 class RoomDeloadSourceLoader @Inject constructor(
     private val programRepository: ProgramRepository,
     private val templateRepository: TemplateRepository,
-    private val workoutRepository: WorkoutRepository,
     private val deloadRepository: DeloadRepository,
     private val settingsRepository: SettingsRepository,
 ) : DeloadSourceReader {
@@ -79,10 +77,17 @@ class RoomDeloadSourceLoader @Inject constructor(
                         sets = exercise.sets,
                         weightUnit = unit,
                         stepGrams = Weight.stepGramsFor(exercise.stepGrams, unit),
-                        // No session is current when a plan is being built; the read is the last
-                        // finished one for the exercise, exactly as the workout's own prefill is.
-                        previous = workoutRepository
-                            .previousPerformance(exercise.exerciseId, currentSessionId = NO_CURRENT_SESSION)
+                        // The **slot's** own last normal session, not the exercise's (B397): a previous
+                        // deload is a finished session of the same movement, and reading it would feed
+                        // the already-light numbers into the next draft. A deload names no slot, so it
+                        // is not this slot's history.
+                        previous = programRepository
+                            .slotPreviousPerformance(
+                                slotId = slot.id,
+                                exerciseId = exercise.exerciseId,
+                                currentSessionId = NO_CURRENT_SESSION,
+                                zone = ZoneId.systemDefault(),
+                            )
                             .getOrNull()
                             ?: PreviousPerformance(emptyList()),
                     )

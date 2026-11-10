@@ -83,14 +83,6 @@ to say that in the names and give each action its own way in.
   returns to the normal schedule and can read as missed, because the deload sessions used templates
   that settle no slot. Say both, and keep the templates.
 
-### B397 — A previous deload can feed the next draft's load fallback
-
-When the plan states no load, the draft falls back to the exercise's last finished session. A built
-deload is an ordinary finished session of that movement, so the next draft can derive 60% of an
-already-deloaded load and compound the reduction. Read the source **slot's** own last performance — a
-deload session names no slot — or exclude the templates the deload days own, and test a second deload
-after a first.
-
 ### N301 — A program with no end suggests when a deload may be due
 
 The stall card is reactive. A program that runs forever has no moment that says "you have been at this
