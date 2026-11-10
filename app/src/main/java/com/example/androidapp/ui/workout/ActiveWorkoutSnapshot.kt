@@ -161,6 +161,12 @@ private val PlanContext.plannedSetCount: Int?
  * row the plan has nothing for — added by hand, or the extra row of a movement the plan names once —
  * is simply absent, which is what leaves an improvised workout with no plan at all.
  *
+ * **A substituted row consumes its origin's occurrence and gets no plan** (B395). Its numbers belong
+ * to the replacement movement, so pairing it with a plan would prefill and progress a prescription
+ * nobody performed; counting it under its current movement would let it steal a later entry of that
+ * movement and leave the real row with nothing. The origin is `substitutedFromExerciseId`, so the
+ * stand-in holds the place it replaced and the real row keeps its own entry.
+ *
  * File-level and pure, so the pairing can be tested without a database or a ViewModel: the shape
  * `todaysPlanFor` already uses.
  */
@@ -173,9 +179,12 @@ internal fun planEntriesFor(
     val taken = mutableMapOf<String, Int>()
     return buildMap {
         exercises.forEach { exercise ->
-            val occurrence = taken.getOrDefault(exercise.exerciseId, 0)
-            taken[exercise.exerciseId] = occurrence + 1
-            byMovement[exercise.exerciseId]?.getOrNull(occurrence)?.let { put(exercise.id, it) }
+            val origin = exercise.substitutedFromExerciseId ?: exercise.exerciseId
+            val occurrence = taken.getOrDefault(origin, 0)
+            taken[origin] = occurrence + 1
+            // A stand-in is not the movement the plan prescribed, so it earns no entry of its own.
+            if (exercise.substitutedFromExerciseId != null) return@forEach
+            byMovement[origin]?.getOrNull(occurrence)?.let { put(exercise.id, it) }
         }
     }
 }

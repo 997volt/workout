@@ -62,10 +62,73 @@ class PlanEntriesTest {
         assertThat(planEntriesFor(listOf(row("row-0", "back-squat", 0)), emptyList())).isEmpty()
     }
 
-    private fun row(id: String, exerciseId: String, position: Int) = SessionExercise(
+    @Test
+    fun aSubstituteNeverTakesAnotherMovementsEntry() {
+        // Bench was swapped for Incline, and Incline is also planned later: the stand-in must not
+        // borrow the Incline entry, and the real Incline row keeps it (B395).
+        val session = listOf(
+            row("row-sub", "incline-bench", 0, substitutedFrom = "bench-press"),
+            row("row-incline", "incline-bench", 1),
+        )
+        val plan = listOf(
+            entry("te-bench", "bench-press", 0),
+            entry("te-incline", "incline-bench", 1),
+        )
+
+        val entries = planEntriesFor(session, plan)
+
+        assertThat(entries).doesNotContainKey("row-sub")
+        assertThat(entries["row-incline"]?.id).isEqualTo("te-incline")
+    }
+
+    @Test
+    fun aSubstituteConsumesItsOriginsOccurrence() {
+        // The first of two planned Bench rows was swapped; the remaining Bench row is the second
+        // occurrence and must get the second entry, not the first (B395).
+        val session = listOf(
+            row("row-sub", "incline-bench", 0, substitutedFrom = "bench-press"),
+            row("row-bench", "bench-press", 1),
+        )
+        val plan = listOf(
+            entry("te-bench-1", "bench-press", 0),
+            entry("te-bench-2", "bench-press", 1),
+        )
+
+        val entries = planEntriesFor(session, plan)
+
+        assertThat(entries).doesNotContainKey("row-sub")
+        assertThat(entries["row-bench"]?.id).isEqualTo("te-bench-2")
+    }
+
+    @Test
+    fun substitutingBackRestoresThePlan() {
+        // Passing the original movement back clears substitutedFrom; the row is the plan's again.
+        val session = listOf(row("row-0", "bench-press", 0))
+        val plan = listOf(entry("te-bench", "bench-press", 0))
+
+        assertThat(planEntriesFor(session, plan)["row-0"]?.id).isEqualTo("te-bench")
+    }
+
+    @Test
+    fun anUnplannedSubstitute_hasNoEntry() {
+        val session = listOf(
+            row("row-sub", "incline-bench", 0, substitutedFrom = "bench-press"),
+        )
+        val plan = listOf(entry("te-squat", "back-squat", 0))
+
+        assertThat(planEntriesFor(session, plan)).isEmpty()
+    }
+
+    private fun row(
+        id: String,
+        exerciseId: String,
+        position: Int,
+        substitutedFrom: String? = null,
+    ) = SessionExercise(
         id = id,
         sessionId = "s1",
         exerciseId = exerciseId,
+        substitutedFromExerciseId = substitutedFrom,
         position = position,
         exerciseName = exerciseId,
         primaryMuscle = MuscleGroup.QUADS,
