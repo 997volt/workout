@@ -7,7 +7,6 @@ import com.example.androidapp.data.PreferencesSettingsRepository
 import com.example.androidapp.data.RoomDeloadRepository
 import com.example.androidapp.data.RoomProgramRepository
 import com.example.androidapp.data.RoomTemplateRepository
-import com.example.androidapp.data.RoomWorkoutRepository
 import com.example.androidapp.data.local.ExerciseEntity
 import com.example.androidapp.data.local.SessionExerciseEntity
 import com.example.androidapp.data.local.SetEntryEntity
@@ -16,7 +15,6 @@ import com.example.androidapp.data.local.WorkoutSessionEntity
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.WeightUnit
-import com.example.androidapp.domain.ZoneOffsetSource
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
@@ -76,7 +74,6 @@ class DeloadSourceLoaderTest {
         loader = RoomDeloadSourceLoader(
             programRepository = programs,
             templateRepository = templates,
-            workoutRepository = RoomWorkoutRepository(database, clock, ZoneOffsetSource { 0 }),
             deloadRepository = deloads,
             settingsRepository = settings,
         )
@@ -98,7 +95,7 @@ class DeloadSourceLoaderTest {
 
     @Test
     fun theDays_areTheSlotsThatPlanSomething_withTheirSetsAndWeekday() = runTest {
-        insertSessionWithSet("done", "2026-10-06T09:00:00Z")
+        insertSessionWithSet("done", "2026-10-05T09:00:00Z")
 
         val snapshot = loader.load(program, monday)
             ?: error("the program exists")
