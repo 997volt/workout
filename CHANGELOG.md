@@ -13,6 +13,30 @@ repeated here.
 **1.0–1.18 live in [CHANGELOG-1.x.md](CHANGELOG-1.x.md)**, kept whole rather than deleted because the
 id a 1.x commit names is still looked up by it. This file carries the current release.
 
+## [Unreleased]
+
+### Added
+
+- **A followed program can adjust its own targets** (N299). A program's editor gains *Auto progression*:
+  when it is on, *Done* applies every step the existing per-set N74 rule earned — a rep below the range's
+  ceiling, the movement's load step at it — and finishes the exercise without a dialog. There is no
+  down-adjustment: a miss holds the target, and a stall is still the deload card's to answer. The switch is
+  resolved through the session's template, so a start from home, the templates list or a repeat all count
+  and the movement's own answer still wins (N235). Each write is stored with the whole target before and
+  after; a banner reads it back with undo, and enabling captures the program's starting targets for a reset.
+  A preflight lists what will move, what needs a target effort or reps, and which movements answer for
+  themselves. The switch, its log and the baseline travel in the backup, not the program document, so importing a
+  program never starts writing on another device; an older backup restores with auto off. A built deload
+  week is outside the program and writes nothing, while a marked week with no plan built still trains the
+  program and does not suppress auto.
+
+### Fixed
+
+- **A substituted exercise no longer takes another plan's entry** (B395). The live workout pairs a session
+  row to its plan by the row's origin and never pairs a stand-in, so the substitute cannot borrow a later
+  entry of the movement it now performs, the real row keeps its own targets, and progression writes nothing
+  for the movement that was replaced.
+
 ## [2.28] — 2026-11-10 (versionCode 49)
 
 ### Added

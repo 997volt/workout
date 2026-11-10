@@ -369,8 +369,11 @@ the rule; that one argues it.
   missed sessions, and assisted work inverts the direction. The offer that exists is earned from the
   plan's own target RPE and asked at *Done* (below).
   ([evidence](DECISIONS-EVIDENCE.md#n22))
-- **The app suggests; it never writes.** A silently applied suggestion is a programme
-  decision taken without the person training, and this app is a log, not a coach.
+- **The app suggests; it never writes, except inside a program the lifter switched to auto** (N299).
+  A silently applied suggestion is a programme decision taken without the person training, and this
+  app is a log, not a coach — so the default is unchanged. Auto progression is one program's switch,
+  the same N74 step the lifter is already offered, and every write is a row that can be read back
+  and undone. The exception is the lifter's, not the app's.
 - **Warm-ups are excluded from progression too** (N17, N20, N22) — a warm-up is not the
   work a target is measured against.
 - **The progression is asked at *Done*, and the plan's own target RPE is what earns it** (N50). A plan's
@@ -416,6 +419,23 @@ the rule; that one argues it.
   before it read loads, which also leaves bodyweight and load-less plans, holds, warm-ups and rungs where
   they were. ([evidence](DECISIONS-EVIDENCE.md#b258))
 
+- **Auto progression is the same step, written by the program the lifter switched on, and every write is
+  a row** (N299). A program carries a boolean; with it on, *Done* applies every step the N74 rule earned —
+  per set, no down-adjustment, holds/bodyweight/assisted unchanged — and finishes the exercise without a
+  dialog. Resolution is movement → program → device: the movement's own answer (N235) still wins, then the
+  program whose **template** the session names, then the device's Ask/Apply/Off. Resolving through the
+  template is what lets a start from home, the template list or a repeat count, and what survives a resume;
+  a shared workout is one plan, so the step moves for every program that names it. **No down-adjustment is
+  deliberate**: a miss holds, and a stall is still N237's card to answer; a back-off would be a separate
+  rule. **The switch, the log and the baseline are device state in the backup, not the program document**, because
+  importing a program must not start writing on the recipient's device. Enabling captures every scheduled
+  set's current target as the baseline; reset restores it; each write keeps the whole target before and
+  after, and undo is refused once the plan no longer holds that after. Enabling also shows a preflight from
+  [ProgressionRule.kt](app/src/main/java/com/example/androidapp/domain/model/ProgressionRule.kt): what will
+  move, what needs a target effort or reps, and which movements answer for themselves. **A built deload
+  week is outside the program** — separate templates, no target RPE — and writes nothing; an exempt week is
+  still the program's own training, so it does not suppress auto; the lifter's performance does. A
+  substituted row is never paired with a plan (B395), so a stand-in writes nothing.
 - **A superset is a group of exercises performed in rounds** (N24). The model is a
   nullable `supersetGroup: Int?` ordinal on `session_exercises` and `template_exercises`; a
   separate `superset_groups` table would need its own ordering and a join on every read and
@@ -1294,9 +1314,10 @@ the rule; that one argues it.
   in both line and bar charts; its job is to be read through the noise, so the noise must not paint over it.
 - **A phase is an authored week number, not a new program kind** (N292). `program_slots.phaseWeek` null keeps
   the old repeating week; a phased program numbers every day from one and derives the current week cyclically
-  from its anchor, with gaps as rest weeks. The app never advances loads by itself. The editor remains one
-  destination, and document/backup versions move because a v7 document would otherwise read every authored
-  week as one.
+  from its anchor, with gaps as rest weeks. The app never advances loads by itself **unless the lifter has
+  switched that program to auto** (N299); the rotation still chooses the week and never changes a target.
+  The editor remains one destination, and document/backup versions move because a v7 document would
+  otherwise read every authored week as one.
 - **An activity's numbers are optional and exact** (N293). Duration is stored in seconds and distance in metres,
   nullable like every other "not stated" value; the screen types minutes and kilometres and converts once. A
   workout refuses them, because these are the numbers an activity carries instead of sets.
@@ -1459,6 +1480,11 @@ the rule; that one argues it.
   about a day already trained, and adherence scores it against the slot — the day was scheduled and
   it was done, whatever it was done with. Clearing is always allowed, because a mis-pick would
   otherwise be permanent and the record is the lifter's statement rather than the app's.
+- **A substituted row consumes its plan's occurrence and is never paired with a plan** (B395). The live
+  workout pairs by the row's **origin** — `substitutedFromExerciseId` when set — and skips the stand-in,
+  so it cannot borrow a later entry of the movement it now performs, and the real row keeps that entry.
+  The stand-in therefore prefills from its own history and progression writes nothing for the movement it
+  replaced; the review still pairs it with the plan it stood in for (N291).
 - **A program's known limits are inherited, not new** (P3.3): an occurrence resolves only when
   the workout was started from that template, a second session from the same template in a week
   is unmatched, and editing a template changes every week that references it — N16's
@@ -1787,9 +1813,9 @@ the rule; that one argues it.
 - **A block's progression is its own session's, and that is why RPE still earns steps** (N174, P3.21).
   Progression is per prescribed set of a template, and in a sequence every session is its own template —
   so a step accepted on session 3 rewrites session 3 and nothing else, and a block's prescribed numbers
-  never drift. No per-program progression mode is needed for that, and none exists: the global switch is
-  still the lifter's, and a block that wants none is a block where *Off* is chosen rather than a second
-  setting.
+  never drift. That needs no per-program progression mode: the per-set rule cannot carry a step across
+  sessions. N299 later gave a program a switch, but it decides whether that same step is applied, not
+  which session a step belongs to; a block that wants none still chooses *Off*.
 
 ## Adherence
 
