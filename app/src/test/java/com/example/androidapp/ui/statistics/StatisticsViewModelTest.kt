@@ -1005,6 +1005,8 @@ private class FakeSettingsRepository(
     override fun observeWeightUnit(): Flow<WeightUnit> = flowOf(WeightUnit.KILOGRAMS)
 
     override suspend fun setWeightUnit(unit: WeightUnit): DataResult<Unit> = DataResult.Success(Unit)
+    override fun observeDeloadSuggestionWeeks(): Flow<Int> = flowOf(0)
+    override suspend fun setDeloadSuggestionWeeks(weeks: Int): DataResult<Unit> = DataResult.Success(Unit)
     override fun observeProgressionMode(): Flow<ProgressionMode> = flowOf(ProgressionMode.SUGGEST)
     override suspend fun setProgressionMode(mode: ProgressionMode): DataResult<Unit> =
         DataResult.Success(Unit)

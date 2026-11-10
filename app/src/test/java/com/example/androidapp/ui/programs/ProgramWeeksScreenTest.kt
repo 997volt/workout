@@ -8,6 +8,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.androidapp.domain.model.DeloadSuggestion
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.theme.AndroidAppTheme
 import com.google.common.truth.Truth.assertThat
@@ -90,6 +91,28 @@ class ProgramWeeksScreenTest {
     }
 
     @Test
+    fun aDueCadence_isASuggestion_withTheBuilderOneTapAway() {
+        // N301: the app counts weeks it can see; it never writes the week on its own.
+        var built = false
+        setScreen(
+            state = state(
+                suggestion = DeloadSuggestion(
+                    weeksSince = 6,
+                    sinceLastDeload = true,
+                    due = true,
+                ),
+            ),
+            onBuild = { built = true },
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.WEEKS_SUGGESTION).assertExists()
+        composeTestRule.onNodeWithText("It has been 6 weeks since your last recovery week.").assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Programs.WEEKS_SUGGESTION_BUILD).performClick()
+
+        assertThat(built).isTrue()
+    }
+
+    @Test
     fun theBuilder_isTheOtherAction() {
         var built = false
         setScreen(onBuild = { built = true })
@@ -112,6 +135,7 @@ class ProgramWeeksScreenTest {
     private fun state(
         thisExempt: Boolean = false,
         thisHasPlan: Boolean = false,
+        suggestion: DeloadSuggestion? = null,
     ) = ProgramWeeksUiState(
         isLoading = false,
         programName = "Upper/Lower",
@@ -119,6 +143,7 @@ class ProgramWeeksScreenTest {
         nextWeek = nextWeek,
         thisWeekExempt = thisExempt,
         thisWeekHasPlan = thisHasPlan,
+        suggestion = suggestion,
     )
 
     private fun setScreen(

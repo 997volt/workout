@@ -29,11 +29,13 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
+import com.example.androidapp.domain.model.DeloadSuggestion
 import com.example.androidapp.ui.components.AppCard
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.CenteredMessage
@@ -178,6 +180,9 @@ private fun RecoveryWeekChoices(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        state.suggestion?.takeIf { it.due }?.let { due ->
+            DeloadSuggestionCard(suggestion = due, onBuild = onBuild)
+        }
         state.thisWeek?.let { week ->
             WeekCard(
                 title = stringResource(R.string.program_weeks_this_week),
@@ -205,6 +210,40 @@ private fun RecoveryWeekChoices(
             )
         }
         BuildDeloadCard(onBuild = onBuild)
+    }
+}
+
+/** The cadence's sentence: a suggestion, with the creator one tap away (ROADMAP N301). */
+@Composable
+private fun DeloadSuggestionCard(suggestion: DeloadSuggestion, onBuild: () -> Unit) {
+    AppCard(modifier = Modifier.testTag(TestTags.Programs.WEEKS_SUGGESTION)) {
+        Text(
+            text = stringResource(R.string.program_weeks_suggestion_title),
+            style = MaterialTheme.typography.titleSmall,
+        )
+        Text(
+            text = if (suggestion.sinceLastDeload) {
+                pluralStringResource(
+                    R.plurals.program_weeks_suggestion_since_last,
+                    suggestion.weeksSince,
+                    suggestion.weeksSince,
+                )
+            } else {
+                pluralStringResource(
+                    R.plurals.program_weeks_suggestion_since_start,
+                    suggestion.weeksSince,
+                    suggestion.weeksSince,
+                )
+            },
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        AppTextButton(
+            onClick = onBuild,
+            modifier = Modifier.testTag(TestTags.Programs.WEEKS_SUGGESTION_BUILD),
+        ) {
+            Text(stringResource(R.string.program_weeks_build))
+        }
     }
 }
 

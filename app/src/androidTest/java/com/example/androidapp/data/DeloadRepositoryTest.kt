@@ -100,6 +100,7 @@ class DeloadRepositoryTest {
         // prescribes (N147).
         assertEquals(1, database.programDeloadDao().countDeload(program, monday.toEpochDay()))
         val plan = deloads.observeWeekPlans(monday).first().single { it.programId == program }
+        assertEquals(monday, deloads.findLastMark(program, monday.plusWeeks(1)))
         assertEquals(1, plan.days.size)
         assertEquals("Heavy lower — deload", plan.days.single().templateName)
         assertEquals(DayOfWeek.MONDAY, plan.days.single().weekday)

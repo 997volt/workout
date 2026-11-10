@@ -3599,6 +3599,10 @@ private class FakeSettingsRepository(
         return DataResult.Success(Unit)
     }
 
+    override fun observeDeloadSuggestionWeeks(): Flow<Int> = flowOf(0)
+
+    override suspend fun setDeloadSuggestionWeeks(weeks: Int): DataResult<Unit> = DataResult.Success(Unit)
+
     /** N64: the app-wide unit the display follows. Kilograms unless a test says otherwise. */
     private val unit = MutableStateFlow(WeightUnit.KILOGRAMS)
 

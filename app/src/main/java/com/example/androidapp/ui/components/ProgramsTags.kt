@@ -108,6 +108,8 @@ internal object ProgramsTags {
     const val WEEKS_THIS = "program_weeks_this"
     const val WEEKS_NEXT = "program_weeks_next"
     const val WEEKS_BUILD = "program_weeks_build"
+    const val WEEKS_SUGGESTION = "program_weeks_suggestion"
+    const val WEEKS_SUGGESTION_BUILD = "program_weeks_suggestion_build"
     const val WEEKS_UNMARK_DIALOG = "program_weeks_unmark_dialog"
     const val WEEKS_UNMARK_CONFIRM = "program_weeks_unmark_confirm"
 

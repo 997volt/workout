@@ -8,18 +8,23 @@ import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.ZoneSource
+import com.example.androidapp.domain.model.DeloadSuggestion
 import com.example.androidapp.domain.model.ProgramSchedule
+import com.example.androidapp.domain.model.deloadSuggestion
 import com.example.androidapp.domain.repository.AdherenceRepository
 import com.example.androidapp.domain.repository.DeloadRepository
 import com.example.androidapp.domain.repository.ProgramRepository
+import com.example.androidapp.domain.repository.SettingsRepository
 import com.example.androidapp.ui.navigation.ProgramWeeks
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import javax.inject.Inject
@@ -37,6 +42,8 @@ data class ProgramWeeksUiState(
     val nextWeekHasPlan: Boolean = false,
     val writing: Boolean = false,
     val error: DataError? = null,
+    /** The cadence suggestion for this program, or null until the read lands (N301). */
+    val suggestion: DeloadSuggestion? = null,
 )
 
 /**
@@ -51,6 +58,7 @@ class ProgramWeeksViewModel @Inject constructor(
     private val programs: ProgramRepository,
     private val adherence: AdherenceRepository,
     private val deloads: DeloadRepository,
+    private val settings: SettingsRepository,
     savedStateHandle: SavedStateHandle,
     timeSource: TimeSource,
     zoneSource: ZoneSource = ZoneSource { ZoneId.systemDefault() },
@@ -58,13 +66,19 @@ class ProgramWeeksViewModel @Inject constructor(
 
     private val programId: String = savedStateHandle.toRoute<ProgramWeeks>().programId
 
+    private val zone = zoneSource.zone()
     private val thisWeek: LocalDate = ProgramSchedule.weekStartOf(
-        timeSource.now().atZone(zoneSource.zone()).toLocalDate(),
+        timeSource.now().atZone(zone).toLocalDate(),
     )
     private val nextWeek: LocalDate = thisWeek.plusWeeks(1)
 
     private val writing = MutableStateFlow(false)
     private val error = MutableStateFlow<DataError?>(null)
+    private val suggestion = MutableStateFlow<DeloadSuggestion?>(null)
+
+    init {
+        viewModelScope.launch { refreshSuggestion() }
+    }
 
     private val marks: kotlinx.coroutines.flow.Flow<Weeks> = combine(
         deloads.observeMarkedPrograms(thisWeek),
@@ -85,7 +99,8 @@ class ProgramWeeksViewModel @Inject constructor(
         marks,
         writing,
         error,
-    ) { program, weeks, isWriting, failure ->
+        suggestion,
+    ) { program, weeks, isWriting, failure, due ->
         ProgramWeeksUiState(
             isLoading = false,
             programName = program?.name.orEmpty(),
@@ -98,6 +113,7 @@ class ProgramWeeksViewModel @Inject constructor(
             nextWeekHasPlan = weeks.nextPlan,
             writing = isWriting,
             error = failure,
+            suggestion = due,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -112,7 +128,7 @@ class ProgramWeeksViewModel @Inject constructor(
             writing.value = true
             when (val result = adherence.setDeloadWeek(programId, weekStart, exempt)) {
                 is DataResult.Failure -> error.value = result.error
-                is DataResult.Success -> Unit
+                is DataResult.Success -> refreshSuggestion()
             }
             writing.value = false
         }
@@ -120,6 +136,28 @@ class ProgramWeeksViewModel @Inject constructor(
 
     fun onErrorShown() {
         error.value = null
+    }
+
+    /**
+     * The cadence suggestion: whole weeks since the last mark, or since the program started (N301).
+     *
+     * One read per open/write rather than a live flow: the screen is short-lived, and the suggestion
+     * only changes when the cadence or a mark does — the latter through [onSetExempt].
+     */
+    private suspend fun refreshSuggestion() {
+        val cadence = settings.observeDeloadSuggestionWeeks().first()
+        val program = programs.observeProgram(programId).first() ?: return
+        val started = program.startDate
+            ?: program.createdAtMillis.takeIf { it > 0L }
+                ?.let { Instant.ofEpochMilli(it).atZone(zone).toLocalDate() }
+            ?: thisWeek
+        val last = deloads.findLastMark(programId, thisWeek.plusWeeks(2))
+        suggestion.value = deloadSuggestion(
+            cadenceWeeks = cadence,
+            lastDeloadWeek = last,
+            programStartedWeek = ProgramSchedule.weekStartOf(started),
+            thisWeek = thisWeek,
+        )
     }
 
     private data class Weeks(

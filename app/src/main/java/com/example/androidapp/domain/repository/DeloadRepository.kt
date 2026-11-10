@@ -61,6 +61,14 @@ interface DeloadRepository {
      * template, so editing one changes what a later reuse sees as the last choices (N155).
      */
     suspend fun findLastPlan(programId: String, beforeWeek: LocalDate): DeloadWeek?
+
+    /**
+     * The most recent week carrying any mark for [programId] before [beforeWeek] (ROADMAP N301).
+     *
+     * A mark, not a plan: an exempt week is a recovery week even when no lighter plan was built, and a
+     * suggestion that only counted built plans would nag a lifter who exempted.
+     */
+    suspend fun findLastMark(programId: String, beforeWeek: LocalDate): LocalDate?
 }
 
 /**

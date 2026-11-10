@@ -45,6 +45,7 @@ class SettingsScreenTest {
     private val restTimerWrites = mutableListOf<Boolean>()
     private val progressionWrites = mutableListOf<ProgressionMode>()
     private val unitWrites = mutableListOf<WeightUnit>()
+    private val deloadWrites = mutableListOf<Int>()
     private val backupEnabledWrites = mutableListOf<Boolean>()
     private val backupScheduleWrites = mutableListOf<BackupSchedule>()
     private var folderPicks = 0
@@ -57,6 +58,7 @@ class SettingsScreenTest {
                 onSetDefaultRest = { chosen += it },
                 onSetRestTimer = { restTimerWrites += it },
                 onSetWeightUnit = { unitWrites += it },
+                onSetDeloadSuggestion = { deloadWrites += it },
                 onSetProgressionMode = { progressionWrites += it },
                 onEnableBackup = { backupEnabledWrites += it },
                 onSetBackupSchedule = { backupScheduleWrites += it },
@@ -315,5 +317,14 @@ class SettingsScreenTest {
 
         composeTestRule.onNodeWithText("Choose a folder — until then a backup has nowhere to go.")
             .assertExists()
+    }
+
+    @Test
+    fun theRecoveryCadence_isOfferedAsOneTapChoices() {
+        show(SettingsUiState(deloadSuggestionWeeks = 6))
+        composeTestRule.onNodeWithTag(TestTags.settingsDeloadSuggestion(8))
+            .performScrollTo()
+            .performClick()
+        assertEquals(listOf(8), deloadWrites)
     }
 }

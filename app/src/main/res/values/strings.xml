@@ -1057,6 +1057,13 @@
          always grams, so switching this changes nothing on disk. -->
     <string name="settings_weight_unit">Weight unit</string>
     <string name="settings_weight_unit_hint">Used wherever a weight is shown or typed. An exercise can set its own.</string>
+    <string name="settings_deload_suggestion">Recovery week suggestion</string>
+    <string name="settings_deload_suggestion_hint">When a program reaches this many weeks since its last recovery week, its recovery screen says a lighter week may be due. A suggestion only: nothing is written.</string>
+    <string name="settings_deload_off">Off</string>
+    <plurals name="settings_deload_every_weeks">
+        <item quantity="one">Every %1$d week</item>
+        <item quantity="other">Every %1$d weeks</item>
+    </plurals>
     <string name="settings_progression_hint">What Done does with the next step a plan earned: ask you, have every step already picked for one Done, or finish without asking.</string>
     <string name="settings_rest_title">Default rest</string>
     <string name="settings_rest_current">Now: %1$s</string>
@@ -1245,6 +1252,15 @@
     <string name="program_weeks_exempt_hint">Not scored. Your program’s workouts stay as they are.</string>
     <string name="program_weeks_exempted">This week is exempt from scoring.</string>
     <string name="program_weeks_has_plan">A deload plan is built for this week.</string>
+    <string name="program_weeks_suggestion_title">A recovery week may be due</string>
+    <plurals name="program_weeks_suggestion_since_last">
+        <item quantity="one">It has been %1$d week since your last recovery week.</item>
+        <item quantity="other">It has been %1$d weeks since your last recovery week.</item>
+    </plurals>
+    <plurals name="program_weeks_suggestion_since_start">
+        <item quantity="one">This program has run %1$d week without a recovery week.</item>
+        <item quantity="other">This program has run %1$d weeks without a recovery week.</item>
+    </plurals>
     <string name="program_weeks_build">Build a deload week</string>
     <string name="program_weeks_build_hint">Writes a lighter plan for next week, from this program’s own workouts.</string>
     <string name="program_weeks_unmark_title">Remove this exemption?</string>

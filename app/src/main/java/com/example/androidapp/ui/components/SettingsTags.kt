@@ -42,6 +42,9 @@ internal interface SettingsTags {
     /** One chip of the progression mode, by enum name (P3.17). */
     fun settingsProgressionMode(mode: String) = "settings_progression_$mode"
 
+    /** One cadence chip for the recovery-week suggestion (ROADMAP N301). */
+    fun settingsDeloadSuggestion(weeks: Int) = "settings_deload_suggestion_$weeks"
+
     /** The two unit chips on Settings (ROADMAP N64). */
     val SETTINGS_WEIGHT_UNIT_KG: String get() = "setting_weight_unit_kg"
 

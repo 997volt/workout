@@ -32,26 +32,6 @@ agreed to ship.
   version, Android Keystore/AES (no new dependency), and plaintext import kept for existing files. Only worth
   doing when a backup actually leaves the device.
 
-## Later — the deload seam
-
-An exempt week and a deload week are two named actions now (N300). What remains is the cadence: N301 is
-the follow-on for a program with no end, and a suggestion rather than a computed deload. It is not in
-flight.
-
-### N301 — A program with no end suggests when a deload may be due
-
-The stall card is reactive. A program that runs forever has no moment that says "you have been at this
-for six weeks". A card after a user-chosen number of weeks since the last deload — or since the
-program started — says a recovery week may be due and opens the creator. It is a **suggestion**, not a
-computed deload: the cadence is the lifter's, the app only counts weeks it can see, and there is no
-recovery model and no notification (P4.7 stays a non-goal). Later than N300, and only if a cadence is
-actually wanted.
-
-**Not planned in this seam.** An automatic deload (a scheduled write is a coach, and nothing the app
-records measures recovery), a percentage of a one-rep max (the app estimates rather than measures one),
-a current or partial week (the plan is whole-week), a second deload entity (ordinary templates plus
-the week-keyed mark are the right shape), and a change to the 60% rule without a new argument.
-
 ## Parked — deliberately not planned
 
 Each row is a product in its own right, contradicts "local-only", or both. Parking is a

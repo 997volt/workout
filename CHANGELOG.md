@@ -37,6 +37,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   prompt. Home says the week is not scored without relabelling the workouts. The creator now writes a 6.0 effort and
   names each workout with its week, and unmarking a built week asks and says both what changes and what stays.
 
+- **A program with no end suggests when a recovery week may be due** (N301). Settings offers a cadence — off
+  by default, or every 4, 6 or 8 weeks — and the recovery screen shows a suggestion once a program has gone that
+  many weeks since its last recovery week (or since it started) and opens the creator. It counts only: nothing
+  is written, no notification is scheduled, and the cadence is the lifter's rather than a recovery model.
+
 ### Fixed
 
 - **The shell owns the bottom system inset once** (B358). The tab bar already includes the navigation bar,

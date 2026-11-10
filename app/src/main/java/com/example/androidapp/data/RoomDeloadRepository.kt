@@ -84,6 +84,10 @@ class RoomDeloadRepository @Inject constructor(
             }
     }
 
+    override suspend fun findLastMark(programId: String, beforeWeek: LocalDate): LocalDate? =
+        deloadDao.findLatestDeloadBefore(programId, beforeWeek.toEpochDay())
+            ?.let { LocalDate.ofEpochDay(it.weekStart) }
+
     override suspend fun createDeload(
         programId: String,
         weekStart: LocalDate,

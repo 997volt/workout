@@ -1483,6 +1483,14 @@ the rule; that one argues it.
   deload, and a calendar exemption is offered only for a weekly program — a block's days are its own weeks (B398). The
   creator writes the 6.0 effort, names each workout with its week, and a built week's unmarking asks first and says
   both consequences: the week returns to the normal schedule and can read as missed, and the templates stay.
+- **A program with no end suggests a recovery week; it never schedules one** (N301). Settings offers a cadence
+  — off (the default), every 4, 6 or 8 weeks — and the recovery screen says a lighter week may be due once the
+  program has gone that many whole weeks since its last recovery week, or since it started when there has not
+  been one. The mark's date is the count's base, so marking or building this week or next resets it; both are
+  included because a recovery week already planned is not one that is due. It counts what the app can see and
+  opens the creator; it writes nothing, notifies nothing and has no recovery model. An automatic deload, a
+  percentage of an estimated one-rep max, a current or partial week, a second deload entity and a change to the
+  60% rule are all still out of scope for the reason N300 states.
 - **A substitute is an event keyed by slot and week, and it stands in for matching** (P3.11). The
   pick is made at the point of starting, like the missed-day question, and recorded for that slot
   and week before the session opens; editing the program instead would change every week that

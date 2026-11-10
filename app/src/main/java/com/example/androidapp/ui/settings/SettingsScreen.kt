@@ -121,6 +121,7 @@ fun SettingsRoute(
         onSetRestTimer = viewModel::onSetRestTimer,
         onSetProgressionMode = viewModel::onSetProgressionMode,
         onSetWeightUnit = viewModel::onSetWeightUnit,
+        onSetDeloadSuggestion = viewModel::onSetDeloadSuggestion,
         onEnableBackup = viewModel::onEnableBackup,
         onSetBackupSchedule = viewModel::onSetBackupSchedule,
         onChooseBackupFolder = chooseBackupFolder,
@@ -153,6 +154,7 @@ fun SettingsScreen(
     onSetRestTimer: (Boolean) -> Unit,
     onSetProgressionMode: (ProgressionMode) -> Unit,
     onSetWeightUnit: (WeightUnit) -> Unit,
+    onSetDeloadSuggestion: (Int) -> Unit,
     onEnableBackup: (Boolean) -> Unit,
     onSetBackupSchedule: (BackupSchedule) -> Unit,
     onChooseBackupFolder: () -> Unit,
@@ -204,6 +206,7 @@ fun SettingsScreen(
             onSetRestTimer = onSetRestTimer,
             onSetProgressionMode = onSetProgressionMode,
             onSetWeightUnit = onSetWeightUnit,
+            onSetDeloadSuggestion = onSetDeloadSuggestion,
             onEnableBackup = onEnableBackup,
             onSetBackupSchedule = onSetBackupSchedule,
             onChooseBackupFolder = onChooseBackupFolder,
@@ -232,6 +235,7 @@ private fun SettingsBody(
     onSetRestTimer: (Boolean) -> Unit,
     onSetProgressionMode: (ProgressionMode) -> Unit,
     onSetWeightUnit: (WeightUnit) -> Unit,
+    onSetDeloadSuggestion: (Int) -> Unit,
     onEnableBackup: (Boolean) -> Unit,
     onSetBackupSchedule: (BackupSchedule) -> Unit,
     onChooseBackupFolder: () -> Unit,
@@ -264,6 +268,10 @@ private fun SettingsBody(
             onSetKeepScreenOn = onSetKeepScreenOn,
             onSetRestTimer = onSetRestTimer,
             onSetProgressionMode = onSetProgressionMode,
+        )
+        DeloadSuggestionSection(
+            state = state,
+            onSetDeloadSuggestion = onSetDeloadSuggestion,
         )
         // Backup sits with the data it copies, above the one action that can cost the user something: the
         // export below is still the hand-made copy, and this is the one that happens on its own (ROADMAP N218).

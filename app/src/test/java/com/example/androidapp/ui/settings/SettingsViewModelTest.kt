@@ -158,6 +158,19 @@ class SettingsViewModelTest {
 
         assertEquals(1, runner.nowCalls)
     }
+
+    @Test
+    fun theRecoveryCadence_isStored_andReadBack() = runTest(dispatcher) {
+        val repository = FakeSettingsRepository(stored = 90)
+        val viewModel = viewModel(repository)
+        advanceUntilIdle()
+
+        viewModel.onSetDeloadSuggestion(6)
+        advanceUntilIdle()
+
+        assertEquals(listOf(6), repository.deloadWrites)
+        assertEquals(6, viewModel.uiState.value.deloadSuggestionWeeks)
+    }
 }
 
 private class FakeBackupRunner : BackupRunner {
@@ -181,6 +194,9 @@ private class FakeSettingsRepository(
     private val rest = MutableStateFlow(stored)
     val writes = mutableListOf<Int>()
 
+    private val deloadSuggestion = MutableStateFlow(0)
+    val deloadWrites = mutableListOf<Int>()
+
     override fun observeDefaultRestSeconds(): Flow<Int> = rest.asStateFlow()
 
     override suspend fun setDefaultRestSeconds(seconds: Int): DataResult<Unit> {
@@ -189,6 +205,18 @@ private class FakeSettingsRepository(
             DataResult.Failure(DataError.Invalid("refused"))
         } else {
             rest.value = seconds
+            DataResult.Success(Unit)
+        }
+    }
+
+    override fun observeDeloadSuggestionWeeks(): Flow<Int> = deloadSuggestion
+
+    override suspend fun setDeloadSuggestionWeeks(weeks: Int): DataResult<Unit> {
+        deloadWrites += weeks
+        return if (refuseWrites) {
+            DataResult.Failure(DataError.Invalid("refused"))
+        } else {
+            deloadSuggestion.value = weeks
             DataResult.Success(Unit)
         }
     }

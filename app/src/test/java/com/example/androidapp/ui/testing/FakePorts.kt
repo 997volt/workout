@@ -461,6 +461,7 @@ internal class FakeDeloadRepository : DeloadRepository {
     val weeks = MutableStateFlow<List<DeloadWeek>>(emptyList())
     val markedPrograms = MutableStateFlow<Set<String>>(emptySet())
     var lastPlan: DeloadWeek? = null
+    var lastMark: LocalDate? = null
 
     override fun observeWeekPlans(weekStart: LocalDate): Flow<List<DeloadWeek>> = weeks
 
@@ -473,12 +474,15 @@ internal class FakeDeloadRepository : DeloadRepository {
     ): DataResult<DeloadCreation> = unused()
 
     override suspend fun findLastPlan(programId: String, beforeWeek: LocalDate): DeloadWeek? = lastPlan
+
+    override suspend fun findLastMark(programId: String, beforeWeek: LocalDate): LocalDate? = lastMark
 }
 
 /** The settings port, holding the weight unit the shell follows. */
 internal class FakeSettingsRepository : SettingsRepository {
 
     val weightUnit = MutableStateFlow(WeightUnit.KILOGRAMS)
+    val deloadSuggestion = MutableStateFlow(0)
 
     override fun observeWeightUnit(): Flow<WeightUnit> = weightUnit
 
@@ -501,6 +505,13 @@ internal class FakeSettingsRepository : SettingsRepository {
     override fun observeProgressionMode(): Flow<ProgressionMode> = unused()
 
     override suspend fun setProgressionMode(mode: ProgressionMode): DataResult<Unit> = unused()
+
+    override fun observeDeloadSuggestionWeeks(): Flow<Int> = deloadSuggestion
+
+    override suspend fun setDeloadSuggestionWeeks(weeks: Int): DataResult<Unit> {
+        deloadSuggestion.value = weeks
+        return DataResult.Success(Unit)
+    }
 
     override suspend fun setWeightUnit(unit: WeightUnit): DataResult<Unit> = unused()
 

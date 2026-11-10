@@ -114,6 +114,36 @@ class PreferencesSettingsRepository @Inject constructor(
         }
     }
 
+    override fun observeDeloadSuggestionWeeks(): Flow<Int> = callbackFlow {
+        trySend(currentDeloadSuggestionWeeks())
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, changed ->
+            if (changed == KEY_DELOAD_SUGGESTION_WEEKS) trySend(currentDeloadSuggestionWeeks())
+        }
+        preferences.registerOnSharedPreferenceChangeListener(listener)
+        awaitClose { preferences.unregisterOnSharedPreferenceChangeListener(listener) }
+    }.conflate().distinctUntilChanged()
+
+    override suspend fun setDeloadSuggestionWeeks(weeks: Int): DataResult<Unit> {
+        if (weeks !in SettingsRepository.DELOAD_SUGGESTION_WEEKS) {
+            return DataResult.Failure(
+                DataError.Invalid("A deload suggestion is 0, 4, 6 or 8 weeks."),
+            )
+        }
+        return withContext(Dispatchers.IO) {
+            preferences.edit(commit = true) { putInt(KEY_DELOAD_SUGGESTION_WEEKS, weeks) }
+            if (currentDeloadSuggestionWeeks() == weeks) {
+                DataResult.Success(Unit)
+            } else {
+                DataResult.Failure(DataError.Storage(IllegalStateException("the setting was not stored")))
+            }
+        }
+    }
+
+    private fun currentDeloadSuggestionWeeks(): Int =
+        preferences.getInt(KEY_DELOAD_SUGGESTION_WEEKS, 0)
+            .takeIf { it in SettingsRepository.DELOAD_SUGGESTION_WEEKS }
+            ?: 0
+
     override fun observeWeightUnit(): Flow<WeightUnit> = callbackFlow {
         trySend(currentWeightUnit())
         val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, changed ->
@@ -437,6 +467,7 @@ class PreferencesSettingsRepository @Inject constructor(
         const val KEY_KEEP_SCREEN_ON = "keep_screen_on"
         const val KEY_REST_TIMER_ENABLED = "rest_timer_enabled"
         const val KEY_PROGRESSION_MODE = "progression_mode"
+        const val KEY_DELOAD_SUGGESTION_WEEKS = "deload_suggestion_weeks"
 
         /** The switch P3.17 replaced; read only, so an upgrade keeps the answer it held. */
         const val KEY_PROGRESSION_PROMPT_ENABLED = "progression_prompt_enabled"

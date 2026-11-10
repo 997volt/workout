@@ -314,6 +314,8 @@ class ProgramDeloadViewModelTest {
 
         override suspend fun findLastPlan(programId: String, beforeWeek: LocalDate): DeloadWeek? = null
 
+        override suspend fun findLastMark(programId: String, beforeWeek: LocalDate): LocalDate? = null
+
         override suspend fun createDeload(
             programId: String,
             weekStart: LocalDate,

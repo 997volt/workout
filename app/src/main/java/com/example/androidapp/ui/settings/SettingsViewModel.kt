@@ -67,6 +67,11 @@ class SettingsViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
+            settingsRepository.observeDeloadSuggestionWeeks().collect { weeks ->
+                _uiState.update { it.copy(deloadSuggestionWeeks = weeks) }
+            }
+        }
+        viewModelScope.launch {
             settingsRepository.observeBackupSettings().collect { backup ->
                 _uiState.update { it.copy(backup = backup) }
             }
@@ -91,6 +96,10 @@ class SettingsViewModel @Inject constructor(
 
     fun onSetWeightUnit(unit: WeightUnit) {
         write { settingsRepository.setWeightUnit(unit) }
+    }
+
+    fun onSetDeloadSuggestion(weeks: Int) {
+        write { settingsRepository.setDeloadSuggestionWeeks(weeks) }
     }
 
     fun onEnableBackup(enabled: Boolean) {
@@ -162,6 +171,8 @@ data class SettingsUiState(
     val progressionMode: ProgressionMode = ProgressionMode.SUGGEST,
     /** The unit every weight is read in unless an exercise names its own (ROADMAP N64). */
     val weightUnit: WeightUnit = WeightUnit.KILOGRAMS,
+    /** How often the recovery screen suggests a deload; 0 is off (ROADMAP N301). */
+    val deloadSuggestionWeeks: Int = 0,
     /** The backup that writes itself: switch, period, folder and where the last attempt ended (N218). */
     val backup: BackupSettings = BackupSettings(),
     /** True while a manual copy is in flight, so repeated taps cannot queue copies (B380). */

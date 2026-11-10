@@ -76,6 +76,18 @@ interface SettingsRepository {
     suspend fun setProgressionMode(mode: ProgressionMode): DataResult<Unit>
 
     /**
+     * The cadence at which a program's recovery screen suggests a deload, in weeks; 0 is off (ROADMAP N301).
+     *
+     * A suggestion, not a schedule: the app never writes a recovery week on its own. Stored app-wide
+     * rather than per program because it is the lifter's own rhythm, and a program that runs forever has
+     * the same body behind it.
+     */
+    fun observeDeloadSuggestionWeeks(): Flow<Int>
+
+    /** Stores a cadence from [DELOAD_SUGGESTION_WEEKS]; 0 turns the suggestion off. */
+    suspend fun setDeloadSuggestionWeeks(weeks: Int): DataResult<Unit>
+
+    /**
      * The unit weights are shown and typed in, app-wide (ROADMAP N64).
      *
      * A preference rather than a per-screen choice, and **presentation only**: every weight is stored
@@ -153,6 +165,9 @@ interface SettingsRepository {
     suspend fun recordBackupResult(at: Instant?, attemptAt: Instant, failed: Boolean): DataResult<Unit>
 
     companion object {
+        /** The cadences the settings screen offers; 0 is off. */
+        val DELOAD_SUGGESTION_WEEKS = setOf(0, 4, 6, 8)
+
         /**
          * What the setting accepts, in seconds.
          *
