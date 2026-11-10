@@ -46,6 +46,15 @@ data class ProgramEntity(
      * (N174). Only a sequence reads it: a weekly program's weeks are the calendar's.
      */
     val startDate: Long? = null,
+    /**
+     * Whether this program's plans adjust themselves from what was done (ROADMAP N299).
+     *
+     * False on every row that existed before the switch, which is the manual app it was. The column
+     * default is declared here as well as in the migration, for B193's reason: a Kotlin default reaches
+     * Room's inserts but not the raw table.
+     */
+    @ColumnInfo(defaultValue = "0")
+    val autoProgression: Boolean = false,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long?,

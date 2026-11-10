@@ -25,6 +25,7 @@ internal fun ProgramSummaryRow.toDomain(): WorkoutProgram = WorkoutProgram(
     position = position,
     kind = kind,
     startDate = startDate?.let(LocalDate::ofEpochDay),
+    autoProgression = autoProgression,
     createdAtMillis = createdAt,
 )
 

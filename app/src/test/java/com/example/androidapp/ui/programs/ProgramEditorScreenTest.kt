@@ -60,6 +60,7 @@ class ProgramEditorScreenTest {
         onOpenTemplate: (String) -> Unit = {},
         onOpenBalance: () -> Unit = {},
         onOpenDeload: () -> Unit = {},
+        onOpenProgression: () -> Unit = {},
         onPreviewSlot: (String, String) -> Unit = { _, _ -> },
         onClosePreview: () -> Unit = {},
         onDeleteProgram: () -> Unit = {},
@@ -81,6 +82,7 @@ class ProgramEditorScreenTest {
                 onOpenTemplate = onOpenTemplate,
                 onOpenBalance = onOpenBalance,
                 onOpenDeload = onOpenDeload,
+                onOpenProgression = onOpenProgression,
                 onPreviewSlot = onPreviewSlot,
                 onClosePreview = onClosePreview,
                 onDeleteProgram = onDeleteProgram,
@@ -697,5 +699,16 @@ class ProgramEditorScreenTest {
                 WorkoutTemplate(id = "t2", name = "Push", exerciseCount = 5),
             ),
         )
+    }
+
+    @Test
+    fun theOverflowMenuOpensAutoProgression() {
+        var opened = false
+        setScreen(onOpenProgression = { opened = true })
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.MENU).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Programs.AUTO_PROGRESSION).performClick()
+
+        assertThat(opened).isTrue()
     }
 }

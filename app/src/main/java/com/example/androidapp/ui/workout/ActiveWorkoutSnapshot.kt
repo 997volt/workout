@@ -54,6 +54,7 @@ internal fun Snapshot.toUiState(
     return ActiveWorkoutUiState(
         isLoading = false,
         sessionId = session?.id,
+        sessionTemplateId = session?.templateId,
         startedAt = session?.let {
             WorkoutFormat.clockTime(it.startedAt, zone = it.zoneIdOrNull() ?: ZoneId.systemDefault())
         }.orEmpty(),

@@ -45,6 +45,7 @@ import com.example.androidapp.domain.repository.MeasurementRepository
 import com.example.androidapp.domain.repository.ProgramDocumentPreview
 import com.example.androidapp.domain.repository.ProgramImportSummary
 import com.example.androidapp.domain.repository.ProgramRepository
+import com.example.androidapp.domain.repository.ProgressionSetWrite
 import com.example.androidapp.domain.repository.SettingsRepository
 import com.example.androidapp.domain.repository.StartedSession
 import com.example.androidapp.domain.repository.TemplateRepository
@@ -53,6 +54,7 @@ import com.example.androidapp.domain.repository.WorkoutRepository
 import com.example.androidapp.ui.components.DEFAULT_RPE_HALVES
 import com.example.androidapp.ui.components.SetEdit
 import com.example.androidapp.ui.components.WriteOutcome
+import com.example.androidapp.ui.testing.FakeProgressionRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -151,6 +153,7 @@ class ActiveWorkoutViewModelTest {
         settings: FakeSettingsRepository = FakeSettingsRepository(),
         repeatSessionId: String? = null,
         programs: FakeProgramRepository = FakeProgramRepository(),
+        progression: FakeProgressionRepository = FakeProgressionRepository(),
         slotId: String? = null,
         measurements: FakeBodyMeasurements = FakeBodyMeasurements(),
     ) = ActiveWorkoutViewModel(
@@ -158,6 +161,7 @@ class ActiveWorkoutViewModelTest {
         clock,
         templates,
         programs,
+        progression,
         activeWorkoutRoute(templateId, repeatSessionId, slotId),
         settings,
         measurements,
@@ -598,6 +602,7 @@ class ActiveWorkoutViewModelTest {
         templates.failUpdates = true
 
         viewModel.onFinishExercise(id)
+        settle()
         viewModel.onSelectProgression(setId = null, direction = ProgressionDirection.LOAD)
         viewModel.onConfirmProgression()
         settle()
@@ -787,6 +792,67 @@ class ActiveWorkoutViewModelTest {
         settle()
 
         assertNull(viewModel.pendingProgression.value)
+    }
+
+    @Test
+    fun aProgramThatSaysAuto_writesTheStepWithoutAQuestion() = runTest(dispatcher) {
+        // ROADMAP N299: the program's switch applies the step at *Done*, with no dialog, and keeps a
+        // write the banner can undo.
+        val repository = FakeWorkoutRepository()
+        val templates = answeredPlan()
+        val progression = FakeProgressionRepository().apply { autoPrograms["t1"] = "p1" }
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = templates,
+            progression = progression,
+        )
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        val id = viewModel.uiState.value.exercises.single().id
+        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
+
+        viewModel.onFinishExercise(id)
+        settle()
+
+        assertNull("no question was opened", viewModel.pendingProgression.value)
+        assertTrue("the exercise still finishes", viewModel.uiState.value.exercises.single().isFinished)
+        assertEquals("the earned step was written", 1, templates.progressionWrites.size)
+        val moment = viewModel.autoStep.value
+        assertNotNull("the write is read back", moment)
+        assertEquals("and its id is what undo addresses", 1, moment!!.steps.size)
+    }
+
+    @Test
+    fun aMovementThatSaysOff_isNotAdjustedByTheProgramsAutoProgression() = runTest(dispatcher) {
+        // N235 still wins: the program's switch is below the movement's own answer, so a movement set
+        // to Off is finished without a write and without a question.
+        val repository = FakeWorkoutRepository().apply {
+            progressionModeForNextExercise = ProgressionMode.OFF
+        }
+        val templates = answeredPlan()
+        val progression = FakeProgressionRepository().apply { autoPrograms["t1"] = "p1" }
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = templates,
+            progression = progression,
+        )
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        val id = viewModel.uiState.value.exercises.single().id
+        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
+
+        viewModel.onFinishExercise(id)
+        settle()
+
+        assertNull(viewModel.autoStep.value)
+        assertEquals(emptyList<String>(), templates.progressionWrites)
+        assertTrue(viewModel.uiState.value.exercises.single().isFinished)
     }
 
     @Test
@@ -1025,6 +1091,7 @@ class ActiveWorkoutViewModelTest {
         logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
 
         viewModel.onFinishExercise(id)
+        settle()
         assertNotNull("Done opens the question instead of closing the exercise", viewModel.pendingProgression.value)
         viewModel.onSelectProgression(setId = "ts-0", direction = ProgressionDirection.LOAD)
         settle()
@@ -1057,6 +1124,7 @@ class ActiveWorkoutViewModelTest {
         logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
 
         viewModel.onFinishExercise(id)
+        settle()
         assertNotNull("Done opens the question first", viewModel.pendingProgression.value)
         assertFalse("and opening it finishes nothing", viewModel.uiState.value.exercises.single().isFinished)
 
@@ -2141,6 +2209,7 @@ class ActiveWorkoutViewModelTest {
             tickingClock,
             FakeTemplateRepository(),
             FakeProgramRepository(),
+            FakeProgressionRepository(),
             activeWorkoutRoute(),
             FakeSettingsRepository(),
             FakeBodyMeasurements(),
@@ -2748,6 +2817,9 @@ class ActiveWorkoutViewModelTest {
         /** Every planned set the ViewModel rewrote, as the id and the edit it sent. */
         val updates = mutableListOf<Pair<String, TemplateSetEdit>>()
 
+        /** Every step auto progression wrote, as the set it moved (N299). */
+        val progressionWrites = mutableListOf<String>()
+
         /** Set to refuse the next write, so a dropped step can be asserted (N50). */
         var failUpdates = false
         override suspend fun setSupersetGroup(
@@ -2804,6 +2876,17 @@ class ActiveWorkoutViewModelTest {
             if (failUpdates) return DataResult.Failure(DataError.Storage(IOException("disk full")))
             updates += templateSetId to edit
             return DataResult.Success(Unit)
+        }
+
+        override suspend fun applyProgression(
+            templateSetId: String,
+            edit: TemplateSetEdit,
+            write: ProgressionSetWrite,
+        ): DataResult<String> {
+            if (failUpdates) return DataResult.Failure(DataError.Storage(IOException("disk full")))
+            updates += templateSetId to edit
+            progressionWrites += templateSetId
+            return DataResult.Success("w-${progressionWrites.size}")
         }
 
         override suspend fun removeSet(templateSetId: String): DataResult<Unit> = notUsed()

@@ -103,6 +103,8 @@ fun ProgramEditorRoute(
     onOpenBalance: () -> Unit,
     /** Opens the deload creator for this program (ROADMAP N147), beside balance in the bar's ⋮. */
     onOpenDeload: () -> Unit,
+    /** Opens this program's auto progression switch and preflight (ROADMAP N299). */
+    onOpenProgression: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ProgramEditorViewModel = hiltViewModel(),
 ) {
@@ -145,6 +147,7 @@ fun ProgramEditorRoute(
         onOpenTemplate = onOpenTemplate,
         onOpenBalance = onOpenBalance,
         onOpenDeload = onOpenDeload,
+        onOpenProgression = onOpenProgression,
         onPreviewSlot = viewModel::onPreviewSlot,
         onClosePreview = viewModel::onClosePreview,
         onDeleteProgram = viewModel::onDeleteProgram,
@@ -158,6 +161,9 @@ fun ProgramEditorRoute(
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
+// The body is the scaffold's wiring — one named callback per action, with no decision of its own —
+// and the auto progression entry (N299) is the line that put it at the ceiling.
+@Suppress("LongMethod")
 @Composable
 fun ProgramEditorScreen(
     state: ProgramEditorUiState,
@@ -172,6 +178,7 @@ fun ProgramEditorScreen(
     onOpenTemplate: (String) -> Unit,
     onOpenBalance: () -> Unit,
     onOpenDeload: () -> Unit,
+    onOpenProgression: () -> Unit,
     onPreviewSlot: (String, String) -> Unit,
     onClosePreview: () -> Unit,
     onDeleteProgram: () -> Unit,
@@ -205,6 +212,7 @@ fun ProgramEditorScreen(
                 onBack = onBack,
                 onOpenBalance = onOpenBalance,
                 onOpenDeload = onOpenDeload,
+                onOpenProgression = onOpenProgression,
                 onDelete = { confirmingDelete = true },
                 onExport = onExportProgram,
             )
@@ -336,6 +344,7 @@ private fun ProgramEditorTopBar(
     onBack: () -> Unit,
     onOpenBalance: () -> Unit,
     onOpenDeload: () -> Unit,
+    onOpenProgression: () -> Unit,
     onDelete: () -> Unit,
     onExport: () -> Unit,
 ) {
@@ -371,6 +380,7 @@ private fun ProgramEditorTopBar(
                     onDismiss = { open = false },
                     onOpenBalance = onOpenBalance,
                     onOpenDeload = onOpenDeload,
+                    onOpenProgression = onOpenProgression,
                     onExport = onExport,
                     onDelete = onDelete,
                 )
@@ -392,10 +402,19 @@ private fun ProgramEditorMenu(
     onDismiss: () -> Unit,
     onOpenBalance: () -> Unit,
     onOpenDeload: () -> Unit,
+    onOpenProgression: () -> Unit,
     onExport: () -> Unit,
     onDelete: () -> Unit,
 ) {
     DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.program_progression)) },
+            onClick = {
+                onDismiss()
+                onOpenProgression()
+            },
+            modifier = Modifier.testTag(TestTags.Programs.AUTO_PROGRESSION),
+        )
         // A deload is a week the lifter marks (P3.10), and a sequence has no weeks (N176): the
         // creator is not offered for one rather than offered and refused.
         if (!isSequence) {
@@ -1083,6 +1102,7 @@ private fun ProgramEditorScreenPreview() {
             onOpenTemplate = {},
             onOpenBalance = {},
             onOpenDeload = {},
+            onOpenProgression = {},
             onPreviewSlot = { _, _ -> },
             onClosePreview = {},
             onDeleteProgram = {},

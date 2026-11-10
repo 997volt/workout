@@ -573,6 +573,12 @@ class TemplateEditorViewModelTest {
             edit: TemplateSetEdit,
         ): DataResult<Unit> = DataResult.Success(Unit)
 
+        override suspend fun applyProgression(
+            templateSetId: String,
+            edit: TemplateSetEdit,
+            write: com.example.androidapp.domain.repository.ProgressionSetWrite,
+        ): DataResult<String> = DataResult.Success("write")
+
         override suspend fun removeSet(templateSetId: String): DataResult<Unit> {
             if (failWrites) return failure()
             removedSets += templateSetId

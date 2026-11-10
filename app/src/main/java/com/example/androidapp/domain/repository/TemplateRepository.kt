@@ -1,6 +1,8 @@
 package com.example.androidapp.domain.repository
 
 import com.example.androidapp.domain.DataResult
+import com.example.androidapp.domain.model.ProgressionDirection
+import com.example.androidapp.domain.model.ProgressionTargets
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSet
@@ -178,6 +180,20 @@ interface TemplateRepository {
     /** Overwrites a planned set's targets. */
     suspend fun updateSet(templateSetId: String, edit: TemplateSetEdit): DataResult<Unit>
 
+    /**
+     * Writes one auto-applied progression step, and its log row, in one transaction (ROADMAP N299).
+     *
+     * The update is the same write [updateSet] makes, so the plan is validated by the same rules and
+     * a step can never author a shape the editor would refuse. The record is the undo's other half:
+     * it carries the whole target before and after, because a load step also resets the range's
+     * place. Returns the new write's id.
+     */
+    suspend fun applyProgression(
+        templateSetId: String,
+        edit: TemplateSetEdit,
+        write: ProgressionSetWrite,
+    ): DataResult<String>
+
     suspend fun removeSet(templateSetId: String): DataResult<Unit>
 
     /**
@@ -242,4 +258,20 @@ data class TemplateSetEdit(
     /** The hold this set prescribes, in seconds, or null for a counted set (ROADMAP N242). */
     val targetDurationSeconds: Int? = null,
     val note: String? = null,
+)
+
+/**
+ * The log half of one auto-applied step (ROADMAP N299).
+ *
+ * [before] and [after] are the whole target, not only the field [direction] names: a load step also
+ * resets the reps to the range's floor, and an undo that restored the load alone would leave that
+ * reset behind. [programId] may be null only where the program was deleted in the meantime; the
+ * write itself still happened.
+ */
+data class ProgressionSetWrite(
+    val programId: String?,
+    val sessionExerciseId: String,
+    val direction: ProgressionDirection,
+    val before: ProgressionTargets,
+    val after: ProgressionTargets,
 )

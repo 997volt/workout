@@ -1,20 +1,18 @@
 package com.example.androidapp.ui.templates
 
-import kotlinx.coroutines.flow.flowOf
-import java.time.Instant
-import com.example.androidapp.domain.repository.TemplateSetEdit
-import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.model.TemplateExercise
+import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.WorkoutTemplate
-import com.example.androidapp.ui.workout.FakeWorkoutRepository
 import com.example.androidapp.domain.repository.TemplateRepository
-import java.io.IOException
+import com.example.androidapp.domain.repository.TemplateSetEdit
+import com.example.androidapp.ui.workout.FakeWorkoutRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -31,6 +29,8 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.io.IOException
+import java.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class TemplatesViewModelTest {
@@ -339,6 +339,7 @@ class TemplatesViewModelTest {
 
         override fun observeExercises(templateId: String): Flow<List<TemplateExercise>> = exercises
         override fun observeSets(templateId: String): Flow<List<TemplateSet>> = flowOf(emptyList())
+
         /** Recorded as one call, since writing the ramp in front is a single write (B34). */
         val prependedSets = mutableListOf<Pair<String, List<TemplateSetEdit>>>()
 
@@ -361,6 +362,14 @@ class TemplatesViewModelTest {
             templateSetId: String,
             edit: TemplateSetEdit,
         ): DataResult<Unit> {
+            error("these tests do not write a plan")
+        }
+
+        override suspend fun applyProgression(
+            templateSetId: String,
+            edit: TemplateSetEdit,
+            write: com.example.androidapp.domain.repository.ProgressionSetWrite,
+        ): DataResult<String> {
             error("these tests do not write a plan")
         }
 
@@ -448,5 +457,4 @@ class TemplatesViewModelTest {
             DataResult.Success(Unit)
         }
     }
-
 }

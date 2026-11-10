@@ -211,6 +211,15 @@ internal interface WorkoutTags {
     /** The record just set (ROADMAP N23). */
     val PERSONAL_RECORD: String get() = "personal_record"
 
+    /** The banner auto progression shows after adjusting an exercise (ROADMAP N299). */
+    val AUTO_PROGRESSION: String get() = "auto_progression"
+
+    /** Takes back the auto steps the banner names (ROADMAP N299). */
+    val AUTO_PROGRESSION_UNDO: String get() = "auto_progression_undo"
+
+    /** Hides the banner without undoing the step (ROADMAP N299). */
+    val AUTO_PROGRESSION_DISMISS: String get() = "auto_progression_dismiss"
+
     /** The prompt a bodyweight set raises when no weight is on record (ROADMAP N219). */
     val BODYWEIGHT_FIELD: String get() = "bodyweight_field"
 

@@ -37,6 +37,14 @@ interface ProgramBackupDao {
     @Query("SELECT * FROM program_substitutions")
     suspend fun allProgramSubstitutions(): List<ProgramSubstitutionEntity>
 
+    /** The auto progression write log (ROADMAP N299); there is no hidden state to restore. */
+    @Query("SELECT * FROM progression_writes")
+    suspend fun allProgressionWrites(): List<ProgressionWriteEntity>
+
+    /** The program baselines auto progression resets to (ROADMAP N299). */
+    @Query("SELECT * FROM progression_baselines")
+    suspend fun allProgressionBaselines(): List<ProgressionBaselineEntity>
+
     @Query("SELECT id FROM programs WHERE deletedAt IS NOT NULL")
     suspend fun softDeletedProgramIds(): List<String>
 
@@ -107,4 +115,10 @@ interface ProgramBackupDao {
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertProgramSubstitutions(rows: List<ProgramSubstitutionEntity>): List<Long>
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertProgressionWrites(rows: List<ProgressionWriteEntity>): List<Long>
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertProgressionBaselines(rows: List<ProgressionBaselineEntity>): List<Long>
 }

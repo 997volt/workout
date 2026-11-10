@@ -167,6 +167,15 @@ data class ProgramEditor(val programId: String)
 @Serializable
 data class ProgramDeload(val programId: String)
 
+/**
+ * One program's auto progression switch and preflight (ROADMAP N299).
+ *
+ * Pushed from the program editor's overflow: the switch belongs to the program, and the preflight
+ * reads the plans that program schedules, so the editor is where it is understood.
+ */
+@Serializable
+data class ProgramProgression(val programId: String)
+
 /** The history list (ROADMAP P1.6). */
 @Serializable
 data object WorkoutHistory

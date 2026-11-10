@@ -6,6 +6,8 @@ import com.example.androidapp.data.local.ProgramEntity
 import com.example.androidapp.data.local.ProgramSkipEntity
 import com.example.androidapp.data.local.ProgramSlotEntity
 import com.example.androidapp.data.local.ProgramSubstitutionEntity
+import com.example.androidapp.data.local.ProgressionBaselineEntity
+import com.example.androidapp.data.local.ProgressionWriteEntity
 import com.example.androidapp.data.local.RetiredMovementEntity
 
 /** The merge memory the backup carries (B347): one retired id and its survivor. */
@@ -29,6 +31,7 @@ internal fun ProgramEntity.toDto() = ProgramDto(
     position = position,
     kind = kind,
     startDate = startDate,
+    autoProgression = autoProgression,
     createdAt = createdAt,
     updatedAt = updatedAt,
     deletedAt = deletedAt,
@@ -41,6 +44,7 @@ internal fun ProgramDto.toEntity() = ProgramEntity(
     position = position,
     kind = kind,
     startDate = startDate,
+    autoProgression = autoProgression,
     createdAt = createdAt,
     updatedAt = updatedAt,
     deletedAt = deletedAt,
@@ -146,4 +150,54 @@ internal fun ProgramSubstitutionDto.toEntity() = ProgramSubstitutionEntity(
     createdAt = createdAt,
     updatedAt = updatedAt,
     deletedAt = deletedAt,
+)
+
+internal fun ProgressionWriteEntity.toDto() = ProgressionWriteDto(
+    id = id,
+    programId = programId,
+    templateSetId = templateSetId,
+    sessionExerciseId = sessionExerciseId,
+    direction = direction,
+    beforeWeightGrams = beforeWeightGrams,
+    beforeRepsCurrent = beforeRepsCurrent,
+    beforeDurationSeconds = beforeDurationSeconds,
+    afterWeightGrams = afterWeightGrams,
+    afterRepsCurrent = afterRepsCurrent,
+    afterDurationSeconds = afterDurationSeconds,
+    appliedAt = appliedAt,
+    revertedAt = revertedAt,
+)
+
+internal fun ProgressionWriteDto.toEntity() = ProgressionWriteEntity(
+    id = id,
+    programId = programId,
+    templateSetId = templateSetId,
+    sessionExerciseId = sessionExerciseId,
+    direction = direction,
+    beforeWeightGrams = beforeWeightGrams,
+    beforeRepsCurrent = beforeRepsCurrent,
+    beforeDurationSeconds = beforeDurationSeconds,
+    afterWeightGrams = afterWeightGrams,
+    afterRepsCurrent = afterRepsCurrent,
+    afterDurationSeconds = afterDurationSeconds,
+    appliedAt = appliedAt,
+    revertedAt = revertedAt,
+)
+
+internal fun ProgressionBaselineEntity.toDto() = ProgressionBaselineDto(
+    programId = programId,
+    templateSetId = templateSetId,
+    weightGrams = weightGrams,
+    repsCurrent = repsCurrent,
+    durationSeconds = durationSeconds,
+    capturedAt = capturedAt,
+)
+
+internal fun ProgressionBaselineDto.toEntity() = ProgressionBaselineEntity(
+    programId = programId,
+    templateSetId = templateSetId,
+    weightGrams = weightGrams,
+    repsCurrent = repsCurrent,
+    durationSeconds = durationSeconds,
+    capturedAt = capturedAt,
 )

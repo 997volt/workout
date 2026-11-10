@@ -9,6 +9,7 @@ import com.example.androidapp.domain.model.PlanComparison
 import com.example.androidapp.domain.model.ProgressionDirection
 import com.example.androidapp.domain.model.ProgressionMode
 import com.example.androidapp.domain.model.ProgressionPrompt
+import com.example.androidapp.domain.model.ProgressionTargets
 import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.ui.components.SetEdit
@@ -65,6 +66,32 @@ data class PendingBodyweight(
      * no weight at all (B251). The dialog says which question it is asking.
      */
     val staleDays: Long? = null,
+)
+
+/**
+ * One step auto progression wrote while finishing an exercise (ROADMAP N299).
+ *
+ * The log's id is what undo addresses; the two targets are the whole set's target, not only the
+ * field [direction] names, because a load step also resets the range's place.
+ */
+data class AutoProgressionStep(
+    val writeId: String,
+    val direction: ProgressionDirection,
+    val before: ProgressionTargets,
+    val after: ProgressionTargets,
+)
+
+/**
+ * What the workout says after auto progression adjusted an exercise (ROADMAP N299).
+ *
+ * Non-null is what draws the banner. It holds every step of the one *Done*, because one press can
+ * move several sets and an undo that took back only the last would leave the rest of the exercise
+ * adjusted with nothing on screen saying so.
+ */
+data class AutoProgressionMoment(
+    val exerciseName: String,
+    val unit: WeightUnit,
+    val steps: List<AutoProgressionStep>,
 )
 
 /** One exercise in the workout, with its sets and what the next set will prefill. */
@@ -182,6 +209,14 @@ data class WorkoutClock(
 data class ActiveWorkoutUiState(
     val isLoading: Boolean = true,
     val sessionId: String? = null,
+    /**
+     * The plan the session was started from, or null for an empty workout (ROADMAP N299).
+     *
+     * Carried here rather than read from the start route, because a resumed session has no route
+     * arguments and the session's own row is the truth. Auto progression resolves the program through
+     * this template.
+     */
+    val sessionTemplateId: String? = null,
     /** Fixed for the life of the session, so it does not belong on the clock. */
     val startedAt: String = "",
     val exercises: List<SessionExerciseRow> = emptyList(),

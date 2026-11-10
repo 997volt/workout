@@ -35,6 +35,14 @@ data class WorkoutProgram(
      */
     val startDate: LocalDate? = null,
     /**
+     * True when this program's plans adjust themselves from what was done (ROADMAP N299).
+     *
+     * A property of the program rather than the global progression mode: the lifter switches it on
+     * for one program, and the movement's own answer still wins over it (N235). The app writes only
+     * inside a mode this flag turns on, and every write is recorded and can be undone.
+     */
+    val autoProgression: Boolean = false,
+    /**
      * When the row was written, as epoch milliseconds (ROADMAP N292).
      *
      * Carried for one question: a phased weekly program with no authored start measures its rotation

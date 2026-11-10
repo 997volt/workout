@@ -9,6 +9,7 @@ import com.example.androidapp.data.RoomExerciseRepository
 import com.example.androidapp.data.RoomGoalRepository
 import com.example.androidapp.data.RoomMeasurementRepository
 import com.example.androidapp.data.RoomProgramRepository
+import com.example.androidapp.data.RoomProgressionRepository
 import com.example.androidapp.data.RoomStatisticsRepository
 import com.example.androidapp.data.RoomTemplateRepository
 import com.example.androidapp.data.RoomTrendsRepository
@@ -21,6 +22,7 @@ import com.example.androidapp.domain.repository.ExerciseRepository
 import com.example.androidapp.domain.repository.GoalRepository
 import com.example.androidapp.domain.repository.MeasurementRepository
 import com.example.androidapp.domain.repository.ProgramRepository
+import com.example.androidapp.domain.repository.ProgressionRepository
 import com.example.androidapp.domain.repository.StatisticsRepository
 import com.example.androidapp.domain.repository.TemplateRepository
 import com.example.androidapp.domain.repository.TrendsRepository
@@ -85,6 +87,11 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindProgramRepository(impl: RoomProgramRepository): ProgramRepository
+
+    /** The baseline and undo that sit beside an auto-adjusting program (N299). */
+    @Binds
+    @Singleton
+    abstract fun bindProgressionRepository(impl: RoomProgressionRepository): ProgressionRepository
 
     /** How often the plan happened, and the corrections to it (P3.5, P3.13). */
     @Binds

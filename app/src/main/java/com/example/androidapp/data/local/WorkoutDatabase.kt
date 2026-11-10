@@ -82,6 +82,11 @@ import androidx.room.TypeConverters
  * already on disk, which is the single repeating week it was, and numbered from one once a program
  * authors more than one week; see [MIGRATION_22_23].
  *
+ * **Schema 24 is N299**, one column and two tables: a program can adjust its own plans, each step the
+ * app applied keeps the whole target before and after so it can be undone, and the target a set held
+ * when the switch went on is what a reset restores. Every program already on disk is manual.
+ * See [MIGRATION_23_24].
+ *
  * There is deliberately **no** `fallbackToDestructiveMigration()`: it would turn
  * a forgotten migration into silent, total data loss for a user's training
  * history. A missing migration must fail loudly in development instead — which is exactly why 2.0
@@ -103,13 +108,15 @@ import androidx.room.TypeConverters
         ProgramDeloadEntity::class,
         ProgramDeloadDayEntity::class,
         ProgramSubstitutionEntity::class,
+        ProgressionWriteEntity::class,
+        ProgressionBaselineEntity::class,
         SessionSoreMuscleEntity::class,
         SessionExerciseJointEntity::class,
         MeasurementSoreMuscleEntity::class,
         MetricGoalEntity::class,
         RetiredMovementEntity::class,
     ],
-    version = 23,
+    version = 24,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -139,6 +146,9 @@ abstract class WorkoutDatabase : RoomDatabase() {
 
     /** Programs and their slots (ROADMAP P3.3). */
     abstract fun programDao(): ProgramDao
+
+    /** The write log and baselines auto progression keeps (ROADMAP N299). */
+    abstract fun progressionDao(): ProgressionDao
 
     /** The writes a duplicate merge makes, and the ids it retired (ROADMAP N238). */
     abstract fun movementMergeDao(): MovementMergeDao

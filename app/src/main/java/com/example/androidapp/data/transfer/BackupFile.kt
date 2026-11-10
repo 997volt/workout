@@ -115,6 +115,20 @@ data class BackupFile(
      */
     val programSubstitutions: List<ProgramSubstitutionDto> = emptyList(),
     /**
+     * The steps auto progression applied (ROADMAP N299).
+     *
+     * Training state: each row keeps the whole target before and after, so a restore can still undo a
+     * later step. Defaulted and unbumped — a build without the table reads the plan's current
+     * targets, which are the truth, and simply has no log to undo them from.
+     */
+    val progressionWrites: List<ProgressionWriteDto> = emptyList(),
+    /**
+     * The targets each set held when a program's auto switch went on (ROADMAP N299).
+     *
+     * The reset's memory. Defaulted and unbumped for [progressionWrites]' reason.
+     */
+    val progressionBaselines: List<ProgressionBaselineDto> = emptyList(),
+    /**
      * Movement ids a merge retired and the survivor each became (B347).
      *
      * The table exists so a program document exported before a merge resolves to the survivor rather than
@@ -589,9 +603,51 @@ data class ProgramDto(
     val kind: ProgramKind = ProgramKind.WEEKLY,
     /** The day a block begins, as `LocalDate.toEpochDay()`, or null (ROADMAP N174). */
     val startDate: Long? = null,
+    /**
+     * True when this program's plans adjust themselves (ROADMAP N299).
+     *
+     * Defaulted and unbumped: a build that predates the switch reads the program as the manual one it
+     * was, and the plan's current targets are the truth either way. The log and baseline travel in
+     * their own collections for the same reason.
+     */
+    val autoProgression: Boolean = false,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,
+)
+
+/**
+ * One auto-applied progression step, in the backup's storage shape (ROADMAP N299).
+ *
+ * [direction] is a name, nullable for a build this app cannot read; the undo needs only the two
+ * targets. [revertedAt] keeps an undone step as the record of what the app did.
+ */
+@Serializable
+data class ProgressionWriteDto(
+    val id: String,
+    val programId: String? = null,
+    val templateSetId: String,
+    val sessionExerciseId: String,
+    val direction: String? = null,
+    val beforeWeightGrams: Long? = null,
+    val beforeRepsCurrent: Int? = null,
+    val beforeDurationSeconds: Int? = null,
+    val afterWeightGrams: Long? = null,
+    val afterRepsCurrent: Int? = null,
+    val afterDurationSeconds: Int? = null,
+    val appliedAt: Long,
+    val revertedAt: Long? = null,
+)
+
+/** The target one planned set held when auto progression was switched on (ROADMAP N299). */
+@Serializable
+data class ProgressionBaselineDto(
+    val programId: String,
+    val templateSetId: String,
+    val weightGrams: Long? = null,
+    val repsCurrent: Int? = null,
+    val durationSeconds: Int? = null,
+    val capturedAt: Long,
 )
 
 /** One slot of a program: a template, a place in the order, and a weekday (ROADMAP P3.3). */

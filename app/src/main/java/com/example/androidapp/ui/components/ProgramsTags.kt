@@ -97,6 +97,16 @@ internal object ProgramsTags {
     /** The bar's ⋮ entry that opens the deload creator (ROADMAP N147). */
     const val DELOAD = "program_deload_open"
 
+    /** The bar's ⋮ entry that opens auto progression (ROADMAP N299). */
+    const val AUTO_PROGRESSION = "program_auto_progression_open"
+
+    /** The auto progression screen and its controls (ROADMAP N299). */
+    const val AUTO_PROGRESSION_SCREEN = "program_auto_progression"
+    const val AUTO_SWITCH = "program_auto_switch"
+    const val AUTO_ENABLE = "program_auto_enable"
+    const val AUTO_RESET = "program_auto_reset"
+    const val AUTO_RESET_CONFIRM = "program_auto_reset_confirm"
+
     /** The read-only view of what a slot's template prescribes (ROADMAP N72). */
     const val PREVIEW = "program_preview"
     const val PREVIEW_EMPTY = "program_preview_empty"

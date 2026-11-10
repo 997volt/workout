@@ -7,8 +7,10 @@ import com.example.androidapp.domain.model.PreviousPerformance
 import com.example.androidapp.domain.model.ProgressionChoice
 import com.example.androidapp.domain.model.ProgressionPerformance
 import com.example.androidapp.domain.model.ProgressionPlanSet
+import com.example.androidapp.domain.model.ProgressionTargets
 import com.example.androidapp.domain.model.SessionExercise
 import com.example.androidapp.domain.model.progressionSets
+import com.example.androidapp.domain.repository.ProgressionSetWrite
 import com.example.androidapp.domain.repository.TemplateRepository
 import com.example.androidapp.domain.repository.TemplateSetEdit
 
@@ -58,6 +60,52 @@ internal suspend fun writeProgressionSteps(
     }
     return null
 }
+
+/**
+ * Writes every step auto progression took, and records each one as it lands (ROADMAP N299).
+ *
+ * The manual path above writes only the plan. This one writes the plan **and** its log row through
+ * [TemplateRepository.applyProgression], so the two are one transaction; [onWritten] receives the id
+ * the undo will address, alongside what moved, so the workout can say what happened without reading
+ * the row back.
+ */
+internal suspend fun writeAutoProgressionSteps(
+    chosen: List<ProgressionChoice>,
+    sessionExerciseId: String,
+    programId: String?,
+    repository: TemplateRepository,
+    onWritten: (AutoProgressionStep) -> Unit,
+): DataError? {
+    for (choice in chosen) {
+        val accepted = choice.offer.accepted(choice.direction) ?: continue
+        val write = ProgressionSetWrite(
+            programId = programId,
+            sessionExerciseId = sessionExerciseId,
+            direction = choice.direction,
+            before = choice.offer.set.targets(),
+            after = accepted.targets(),
+        )
+        when (val written = repository.applyProgression(accepted.setId, accepted.toTemplateEdit(), write)) {
+            is DataResult.Failure -> return written.error
+            is DataResult.Success -> onWritten(
+                AutoProgressionStep(
+                    writeId = written.data,
+                    direction = choice.direction,
+                    before = write.before,
+                    after = write.after,
+                ),
+            )
+        }
+    }
+    return null
+}
+
+/** The three targets a step can move. */
+private fun ProgressionPlanSet.targets(): ProgressionTargets = ProgressionTargets(
+    weightGrams = targetWeightGrams,
+    repsCurrent = targetRepsCurrent,
+    durationSeconds = targetDurationSeconds,
+)
 
 /**
  * The accepted set as the template write takes it (N14).

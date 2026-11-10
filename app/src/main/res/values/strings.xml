@@ -959,6 +959,19 @@
     <string name="set_deleted">Set deleted</string>
     <string name="set_delete">Delete set</string>
     <string name="set_undo">Undo</string>
+    <string name="auto_progression_label">Auto progression</string>
+    <string name="auto_progression_next_load">%1$s · next time %2$s</string>
+    <plurals name="auto_progression_next_reps">
+        <item quantity="one">%1$s · next time %2$d rep</item>
+        <item quantity="other">%1$s · next time %2$d reps</item>
+    </plurals>
+    <string name="auto_progression_next_seconds">%1$s · next time %2$d s</string>
+    <string name="auto_progression_undo">Undo</string>
+    <string name="auto_progression_dismiss">Dismiss</string>
+    <plurals name="auto_progression_steps">
+        <item quantity="one">%1$s · %2$d target adjusted</item>
+        <item quantity="other">%1$s · %2$d targets adjusted</item>
+    </plurals>
 
     <!-- Rest timer (P1.4) -->
     <string name="rest_remaining">Rest %1$s</string>
@@ -1219,6 +1232,39 @@
          lifter should hit is a claim this app has no evidence for. -->
     <string name="program_balance">Muscle balance</string>
     <string name="program_deload">Deload week</string>
+    <string name="program_progression">Auto progression</string>
+    <string name="program_progression_title">Auto progression</string>
+    <string name="program_progression_intro">When this is on, the app raises this program\'s planned targets from what you log. It never lowers them, and every change is recorded.</string>
+    <string name="program_progression_toggle">Adjust this program\'s targets</string>
+    <string name="program_progression_toggle_hint">A movement\'s own answer still decides for that movement.</string>
+    <string name="program_progression_enable_title">Turn on auto progression?</string>
+    <string name="program_progression_enable_text">The app will write the next step into your plan after you complete the work. Every write is recorded and can be undone. Nothing is written until you finish an exercise.</string>
+    <string name="program_progression_enable_confirm">Turn on</string>
+    <string name="program_progression_will">Will adjust</string>
+    <string name="program_progression_wont">Can\'t adjust yet</string>
+    <string name="program_progression_overridden">Answers for themselves</string>
+    <string name="program_progression_baseline">Started from the targets on %1$s</string>
+    <string name="program_progression_reset">Reset to starting targets</string>
+    <string name="program_progression_reset_title">Reset to the starting targets?</string>
+    <string name="program_progression_reset_text">Every planned set in this program goes back to the target it held when auto progression was turned on. Sets you have deleted stay deleted.</string>
+    <string name="program_progression_reset_confirm">Reset</string>
+    <string name="program_progression_empty">This program has no planned exercises, so there is nothing to adjust.</string>
+    <string name="program_progression_none_will">Nothing in this program can progress yet. Fix the plans below.</string>
+    <string name="program_progression_blocked_no_rpe">Set a target effort on this exercise.</string>
+    <string name="program_progression_blocked_no_reps">Give this exercise reps or a hold.</string>
+    <string name="program_progression_blocked_nothing">Add a load or a rep range to this exercise.</string>
+    <string name="program_progression_rule_reps_then_load">Reps, then load</string>
+    <string name="program_progression_rule_reps_only">Reps only</string>
+    <string name="program_progression_rule_load_only">Load only</string>
+    <string name="program_progression_rule_hold">Hold seconds</string>
+    <string name="program_progression_rule_no_target_rpe">No target effort</string>
+    <string name="program_progression_rule_no_reps">No reps</string>
+    <string name="program_progression_rule_nothing">Nothing to move</string>
+    <string name="program_progression_missing">That program is gone.</string>
+    <plurals name="program_progression_restored">
+        <item quantity="one">%1$d set restored.</item>
+        <item quantity="other">%1$d sets restored.</item>
+    </plurals>
     <!-- The bar's ⋮, named so a screen reader says whose actions these are. -->
     <string name="program_menu">%1$s actions</string>
     <string name="program_balance_empty">This program plans no working sets yet.</string>

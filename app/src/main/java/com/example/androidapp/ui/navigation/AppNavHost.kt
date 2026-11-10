@@ -31,6 +31,7 @@ import com.example.androidapp.ui.measurements.MeasurementsRoute
 import com.example.androidapp.ui.programs.ProgramBalanceRoute
 import com.example.androidapp.ui.programs.ProgramDeloadRoute
 import com.example.androidapp.ui.programs.ProgramEditorRoute
+import com.example.androidapp.ui.programs.ProgramProgressionRoute
 import com.example.androidapp.ui.programs.ProgramsRoute
 import com.example.androidapp.ui.settings.DiagnosticsRoute
 import com.example.androidapp.ui.settings.SettingsRoute
@@ -283,6 +284,10 @@ private fun NavGraphBuilder.programDestinations(navController: NavHostController
         )
     }
 
+    composable<ProgramProgression> {
+        ProgramProgressionRoute(onBack = { navController.popBackStack() })
+    }
+
     composable<ProgramEditor> { entry ->
         val programId = entry.toRoute<ProgramEditor>().programId
         ProgramEditorRoute(
@@ -291,6 +296,7 @@ private fun NavGraphBuilder.programDestinations(navController: NavHostController
             onOpenBalance = { navController.navigate(ProgramBalance(programId)) },
             // The same program's deload week, built from its own workouts (N147).
             onOpenDeload = { navController.navigate(ProgramDeload(programId)) },
+            onOpenProgression = { navController.navigate(ProgramProgression(programId)) },
             // The way across a program's own schedule: a slot names a workout, and this reaches the workout
             // itself (N120). Templates is where that editor otherwise lives.
             onOpenTemplate = { templateId -> navController.navigate(TemplateEditor(templateId)) },

@@ -39,6 +39,7 @@ import com.example.androidapp.domain.repository.MergeSummary
 import com.example.androidapp.domain.repository.ProgramDocumentPreview
 import com.example.androidapp.domain.repository.ProgramImportSummary
 import com.example.androidapp.domain.repository.ProgramRepository
+import com.example.androidapp.domain.repository.ProgressionRepository
 import com.example.androidapp.domain.repository.SettingsRepository
 import com.example.androidapp.domain.repository.StartedSession
 import com.example.androidapp.domain.repository.TemplateRepository
@@ -384,6 +385,12 @@ internal class FakeTemplateRepository : TemplateRepository {
     override suspend fun updateSet(templateSetId: String, edit: TemplateSetEdit): DataResult<Unit> =
         unused()
 
+    override suspend fun applyProgression(
+        templateSetId: String,
+        edit: TemplateSetEdit,
+        write: com.example.androidapp.domain.repository.ProgressionSetWrite,
+    ): DataResult<String> = unused()
+
     override suspend fun removeSet(templateSetId: String): DataResult<Unit> = unused()
 
     override suspend fun restoreSet(templateSetId: String): DataResult<Unit> = unused()
@@ -546,3 +553,43 @@ internal class FakeDocumentIo : DocumentIo {
 
 /** A method the test never sets up is a bug in the test rather than a plausible empty answer. */
 private fun unused(): Nothing = error("this port is not used by the orchestration under test")
+
+/** The auto progression port: the workout's read and the switch screen's writes (N299). */
+internal class FakeProgressionRepository : ProgressionRepository {
+
+    /** The program each template resolves to, or absent for a template no auto program names. */
+    val autoPrograms = mutableMapOf<String, String>()
+
+    /** Set to drive a failed read, rather than the map above. */
+    var autoReadResult: DataResult<String?>? = null
+
+    var setAutoResult: DataResult<Unit> = DataResult.Success(Unit)
+    var baseline: Long? = null
+    var resetResult: DataResult<Int> = DataResult.Success(0)
+    var undoResult: DataResult<Unit> = DataResult.Success(Unit)
+
+    val toggles = mutableListOf<Pair<String, Boolean>>()
+    val undone = mutableListOf<String>()
+    var resets = 0
+
+    override suspend fun setAutoProgression(programId: String, enabled: Boolean): DataResult<Unit> {
+        toggles += programId to enabled
+        return setAutoResult
+    }
+
+    override suspend fun autoProgramForTemplate(templateId: String): DataResult<String?> =
+        autoReadResult ?: DataResult.Success(autoPrograms[templateId])
+
+    override suspend fun baselineCapturedAt(programId: String): DataResult<Long?> =
+        DataResult.Success(baseline)
+
+    override suspend fun resetToBaseline(programId: String): DataResult<Int> {
+        resets++
+        return resetResult
+    }
+
+    override suspend fun undo(writeId: String): DataResult<Unit> {
+        undone += writeId
+        return undoResult
+    }
+}

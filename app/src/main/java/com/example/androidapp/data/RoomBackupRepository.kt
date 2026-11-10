@@ -124,6 +124,11 @@ class RoomBackupRepository @Inject constructor(
                     // The workouts that stood in for a slot's own (ROADMAP P3.11): without them a
                     // restored week reads as missed even though it was trained, with something else.
                     programSubstitutions = programBackup.allProgramSubstitutions().map { it.toDto() },
+                    // The steps auto progression applied and the baselines a reset restores (N299): the
+                    // plan's current targets are the truth, but the log is what can undo a step and the
+                    // baseline is where the program started.
+                    progressionWrites = programBackup.allProgressionWrites().map { it.toDto() },
+                    progressionBaselines = programBackup.allProgressionBaselines().map { it.toDto() },
                     // The ids a merge retired, so a document exported before it resolves to the survivor (B347).
                     retiredMovements = database.movementMergeDao().retiredMovements().map { it.toDto() },
                     measurements = measurements.allForExport().map { it.toDto() },
@@ -736,7 +741,13 @@ class RoomBackupRepository @Inject constructor(
             programBackup.insertProgramDeloadDays(file.programDeloadDays.map { it.toEntity() })
                 .countLive(file.programDeloadDays) { it.deletedAt == null } +
             programBackup.insertProgramSubstitutions(file.programSubstitutions.map { it.toEntity() })
-                .countLive(file.programSubstitutions) { it.deletedAt == null }
+                .countLive(file.programSubstitutions) { it.deletedAt == null } +
+            // No hidden state: a write log or a baseline is never soft-deleted, so an insert that
+            // returns -1 is a row this device already held and the file's copy does not replace it.
+            programBackup.insertProgressionWrites(file.progressionWrites.map { it.toEntity() })
+                .count { it != SKIPPED } +
+            programBackup.insertProgressionBaselines(file.progressionBaselines.map { it.toEntity() })
+                .count { it != SKIPPED }
 
         return Imported(added = added, restored = restored)
     }

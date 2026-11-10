@@ -10,6 +10,8 @@ import com.example.androidapp.data.local.ProgramEntity
 import com.example.androidapp.data.local.ProgramSkipEntity
 import com.example.androidapp.data.local.ProgramSlotEntity
 import com.example.androidapp.data.local.ProgramSubstitutionEntity
+import com.example.androidapp.data.local.ProgressionBaselineEntity
+import com.example.androidapp.data.local.ProgressionWriteEntity
 import com.example.androidapp.data.local.SessionExerciseEntity
 import com.example.androidapp.data.local.SessionExerciseJointEntity
 import com.example.androidapp.data.local.SessionSoreMuscleEntity
@@ -299,9 +301,50 @@ class BackupCodecRoundTripTest {
             // The column P3.12 added: an authored order must survive a restore, or the union
             // comes back in a different order than the user put it in.
             position = 3,
+            // The auto switch (N299) is a training decision, so a restore that lost it would
+            // silently turn a program the lifter chose to adjust back into a manual one.
+            autoProgression = true,
             createdAt = 1_600_000_000_000L,
             updatedAt = 1_600_000_000_001L,
             deletedAt = null,
+        )
+
+        assertThat(entity.toDto().toEntity()).isEqualTo(entity)
+    }
+
+    @Test
+    fun aProgressionWrite_survivesTheCodec() {
+        // The whole target before and after is the undo, so a dropped field would make the undo
+        // restore a different plan (N299).
+        val entity = ProgressionWriteEntity(
+            id = "w1",
+            programId = "p1",
+            templateSetId = "ts1",
+            sessionExerciseId = "se1",
+            direction = "LOAD",
+            beforeWeightGrams = 100_000L,
+            beforeRepsCurrent = 8,
+            beforeDurationSeconds = null,
+            afterWeightGrams = 102_500L,
+            afterRepsCurrent = 5,
+            afterDurationSeconds = null,
+            appliedAt = 1_700_000_000_000L,
+            revertedAt = 1_700_000_000_001L,
+        )
+
+        assertThat(entity.toDto().toEntity()).isEqualTo(entity)
+    }
+
+    @Test
+    fun aProgressionBaseline_survivesTheCodec() {
+        // The reset's memory: a baseline that lost a target would restore part of the plan.
+        val entity = ProgressionBaselineEntity(
+            programId = "p1",
+            templateSetId = "ts1",
+            weightGrams = 100_000L,
+            repsCurrent = 7,
+            durationSeconds = 45,
+            capturedAt = 1_700_000_000_000L,
         )
 
         assertThat(entity.toDto().toEntity()).isEqualTo(entity)

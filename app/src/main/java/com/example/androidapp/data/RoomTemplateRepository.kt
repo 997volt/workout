@@ -1,6 +1,7 @@
 package com.example.androidapp.data
 
 import androidx.room.withTransaction
+import com.example.androidapp.data.local.ProgressionWriteEntity
 import com.example.androidapp.data.local.SessionExerciseEntity
 import com.example.androidapp.data.local.SetEntryEntity
 import com.example.androidapp.data.local.TemplateDao
@@ -27,6 +28,7 @@ import com.example.androidapp.domain.model.WorkoutTemplate
 import com.example.androidapp.domain.model.runAt
 import com.example.androidapp.domain.model.rungLoad
 import com.example.androidapp.domain.nowEpochMillis
+import com.example.androidapp.domain.repository.ProgressionSetWrite
 import com.example.androidapp.domain.repository.TemplateRepository
 import com.example.androidapp.domain.repository.TemplateSetEdit
 import kotlinx.coroutines.flow.Flow
@@ -52,6 +54,7 @@ class RoomTemplateRepository @Inject constructor(
 
     private val dao = database.templateDao()
     private val setDao = database.templateSetDao()
+    private val progressionDao = database.progressionDao()
 
     /**
      * Every live template, or only the ones a picker may offer (ROADMAP N214).
@@ -354,34 +357,78 @@ class RoomTemplateRepository @Inject constructor(
     }
 
     override suspend fun updateSet(templateSetId: String, edit: TemplateSetEdit): DataResult<Unit> =
-        dataResultOf {
-            validate(edit)
-            val stored = setDao.findTemplateSet(templateSetId)
-                ?: throw NotFoundException("template set $templateSetId")
-            val edited = stored.copy(
-                role = edit.role,
-                targetWeightGrams = edit.targetWeightGrams,
-                targetAssistanceGrams = edit.targetAssistanceGrams,
-                targetRepsMin = edit.targetRepsMin,
-                targetRepsMax = edit.targetRepsMax,
-                targetRepsCurrent = edit.targetRepsCurrent,
-                dropValueGrams = edit.dropValueGrams,
-                // `stored.copy` keeps what it is not told, so leaving this out would silently put back the
-                // old prescription while the screen showed the new one (B240, N242).
-                targetDurationSeconds = edit.targetDurationSeconds,
-                note = edit.note?.trim()?.ifEmpty { null },
-                updatedAt = timeSource.nowEpochMillis(),
+        dataResultOf { updateSetRow(templateSetId, edit) }
+
+    /**
+     * Writes an auto step and its log row together (ROADMAP N299).
+     *
+     * The update is [updateSetRow], so the plan's own rules validate it exactly as an editor write.
+     * The log is inserted in the same transaction: a crash cannot leave a moved target with no row
+     * to undo it, and a rejected update cannot leave a log of a write that never landed.
+     */
+    override suspend fun applyProgression(
+        templateSetId: String,
+        edit: TemplateSetEdit,
+        write: ProgressionSetWrite,
+    ): DataResult<String> = dataResultOf {
+        requireWriteMatches(write, edit)
+        val now = timeSource.nowEpochMillis()
+        database.withTransaction {
+            updateSetRow(templateSetId, edit)
+            val id = UUID.randomUUID().toString()
+            progressionDao.insertWrite(
+                ProgressionWriteEntity(
+                    id = id,
+                    programId = write.programId,
+                    templateSetId = templateSetId,
+                    sessionExerciseId = write.sessionExerciseId,
+                    direction = write.direction.name,
+                    beforeWeightGrams = write.before.weightGrams,
+                    beforeRepsCurrent = write.before.repsCurrent,
+                    beforeDurationSeconds = write.before.durationSeconds,
+                    afterWeightGrams = write.after.weightGrams,
+                    afterRepsCurrent = write.after.repsCurrent,
+                    afterDurationSeconds = write.after.durationSeconds,
+                    appliedAt = now,
+                    revertedAt = null,
+                ),
             )
-            val exercise = dao.findTemplateExercise(stored.templateExerciseId)
-                ?: throw NotFoundException("template exercise ${stored.templateExerciseId}")
-            val sets = plannedSetsOf(exercise)
-            validateRun(
-                stored = sets,
-                after = sets.map { if (it.id == templateSetId) edited.toDomain() else it },
-            )
-            val updated = setDao.updateTemplateSet(edited)
-            if (updated == 0) throw NotFoundException("template set $templateSetId")
+            id
         }
+    }
+
+    /** The one update both a manual edit and an auto step make. Throws, so its caller owns the result. */
+    // Three refusals are the contract: the set is gone, its exercise is gone, or the update wrote
+    // no row. Each is a different NotFound for the screen, and flattening them would lose which.
+    @Suppress("ThrowsCount")
+    private suspend fun updateSetRow(templateSetId: String, edit: TemplateSetEdit) {
+        validate(edit)
+        val stored = setDao.findTemplateSet(templateSetId)
+            ?: throw NotFoundException("template set $templateSetId")
+        val edited = stored.copy(
+            role = edit.role,
+            targetWeightGrams = edit.targetWeightGrams,
+            targetAssistanceGrams = edit.targetAssistanceGrams,
+            targetRepsMin = edit.targetRepsMin,
+            targetRepsMax = edit.targetRepsMax,
+            targetRepsCurrent = edit.targetRepsCurrent,
+            dropValueGrams = edit.dropValueGrams,
+            // `stored.copy` keeps what it is not told, so leaving this out would silently put back the
+            // old prescription while the screen showed the new one (B240, N242).
+            targetDurationSeconds = edit.targetDurationSeconds,
+            note = edit.note?.trim()?.ifEmpty { null },
+            updatedAt = timeSource.nowEpochMillis(),
+        )
+        val exercise = dao.findTemplateExercise(stored.templateExerciseId)
+            ?: throw NotFoundException("template exercise ${stored.templateExerciseId}")
+        val sets = plannedSetsOf(exercise)
+        validateRun(
+            stored = sets,
+            after = sets.map { if (it.id == templateSetId) edited.toDomain() else it },
+        )
+        val updated = setDao.updateTemplateSet(edited)
+        if (updated == 0) throw NotFoundException("template set $templateSetId")
+    }
 
     /**
      * Removes a planned set, and the run that hangs off it (ROADMAP N79, B60, B72).
@@ -641,18 +688,6 @@ class RoomTemplateRepository @Inject constructor(
         set.dropValueGrams <= 0L -> "A drop value must be more than zero."
         else -> null
     }
-
-    /**
-     * Whether the run leaves a rung with a load (ROADMAP N79).
-     *
-     * False for an anchor with no added weight to take the value off, and false once the ladder has run
-     * down to nothing — a negative weight being assistance in this app rather than a small weight (N15).
-     */
-    private fun hasSomethingToTakeOff(sets: List<TemplateSet>, run: RungRun): Boolean {
-        val anchor = sets[run.anchorIndex]
-        val load = Load(anchor.targetWeightGrams ?: 0L, anchor.targetAssistanceGrams ?: 0L)
-        return rungLoad(load, SetType.DROP, run) != null
-    }
 }
 
 /**
@@ -809,4 +844,31 @@ private suspend fun copyExerciseInto(
             ),
         )
     }
+}
+
+/**
+ * Refuses a log that does not describe the write it accompanies (ROADMAP N299).
+ *
+ * The record is what an undo trusts, so a call site that swapped the two targets would make undo
+ * write a plan nobody authored. This is a caller bug, not a user error, and it fails before the
+ * transaction opens.
+ */
+private fun requireWriteMatches(write: ProgressionSetWrite, edit: TemplateSetEdit) {
+    val after = write.after
+    val matches = after.weightGrams == edit.targetWeightGrams &&
+        after.repsCurrent == edit.targetRepsCurrent &&
+        after.durationSeconds == edit.targetDurationSeconds
+    if (!matches) throw InvalidInputException("the recorded step does not match the plan write")
+}
+
+/**
+ * Whether the run leaves a rung with a load (ROADMAP N79).
+ *
+ * False for an anchor with no added weight to take the value off, and false once the ladder has run
+ * down to nothing — a negative weight being assistance in this app rather than a small weight (N15).
+ */
+private fun hasSomethingToTakeOff(sets: List<TemplateSet>, run: RungRun): Boolean {
+    val anchor = sets[run.anchorIndex]
+    val load = Load(anchor.targetWeightGrams ?: 0L, anchor.targetAssistanceGrams ?: 0L)
+    return rungLoad(load, SetType.DROP, run) != null
 }

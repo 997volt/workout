@@ -28,6 +28,7 @@ import com.example.androidapp.domain.model.pendingProgressionFor
 import com.example.androidapp.domain.model.runContinuesAfter
 import com.example.androidapp.domain.repository.MeasurementRepository
 import com.example.androidapp.domain.repository.ProgramRepository
+import com.example.androidapp.domain.repository.ProgressionRepository
 import com.example.androidapp.domain.repository.SettingsRepository
 import com.example.androidapp.domain.repository.TemplateRepository
 import com.example.androidapp.domain.repository.WorkoutRepository
@@ -79,6 +80,7 @@ class ActiveWorkoutViewModel @Inject constructor(
     private val timeSource: TimeSource,
     private val templateRepository: TemplateRepository,
     private val programRepository: ProgramRepository,
+    private val progressionRepository: ProgressionRepository,
     savedStateHandle: SavedStateHandle,
     private val settingsRepository: SettingsRepository,
     private val measurementRepository: MeasurementRepository,
@@ -249,6 +251,16 @@ class ActiveWorkoutViewModel @Inject constructor(
      */
     private val _pendingProgression = MutableStateFlow<PendingProgression?>(null)
     val pendingProgression: StateFlow<PendingProgression?> = _pendingProgression.asStateFlow()
+
+    /**
+     * The steps auto progression just wrote, or null while there is nothing to read back (N299).
+     *
+     * Held until dismissed, the next auto step, or an undo. A snackbar would queue behind the finish
+     * snackbar the same *Done* produces; a banner above the list is the one place the news and its
+     * undo can both be seen.
+     */
+    private val _autoStep = MutableStateFlow<AutoProgressionMoment?>(null)
+    val autoStep: StateFlow<AutoProgressionMoment?> = _autoStep.asStateFlow()
 
     /** Emits true once a finish or discard succeeds, so the screen can leave. */
     private val _closed = MutableStateFlow(false)
@@ -468,23 +480,24 @@ class ActiveWorkoutViewModel @Inject constructor(
     fun onFinishExercise(sessionExerciseId: String) {
         val questionOpen = _pendingProgression.value?.sessionExerciseId == sessionExerciseId
         val row = uiState.value.exercises.firstOrNull { it.id == sessionExerciseId }
-        // **The one place the mode is resolved** (ROADMAP N235): the movement's own answer when it has
-        // one, the app setting otherwise. A movement that says *Off* is not asked, and one that says
-        // *Apply at Done* is asked pre-filled, whatever the device is set to.
-        val mode = row?.progressionMode ?: progressionMode.value
+        // **The movement's own answer is the most specific** (ROADMAP N235): only a movement with no
+        // answer can fall through to the program's switch and then to the app setting.
+        val movementMode = row?.progressionMode
         when {
             questionOpen -> {
-                // *Not now* finishes the exercise, and **records what was offered** (ROADMAP N236): the offer
-                // was frozen from the plan as it stood, so nothing can recompute it once the plan moves on.
+                // *Not now* finishes the exercise, and **records what was offered** (ROADMAP N236): the
+                // offer was frozen from the plan as it stood, so nothing can recompute it once the plan
+                // moves on.
                 val declined = _pendingProgression.value?.sets
                     .orEmpty()
                     .flatMap { it.prompt.offer?.directions.orEmpty() }
                     .toSet()
                 _pendingProgression.value = null
                 viewModelScope.launch {
-                    // A failed record does not stop the finish: the lifter declined, and the exercise is done
-                    // either way. The failure is stated **after** the finish, because finishing clears the
-                    // error channel on success — saying it before is saying it to nobody (B309).
+                    // A failed record does not stop the finish: the lifter declined, and the exercise is
+                    // done either way. The failure is stated **after** the finish, because finishing
+                    // clears the error channel on success — saying it before is saying it to nobody
+                    // (B309).
                     val declineError = if (declined.isNotEmpty()) {
                         (workoutRepository.declineProgression(sessionExerciseId, declined) as? DataResult.Failure)
                             ?.error
@@ -496,24 +509,135 @@ class ActiveWorkoutViewModel @Inject constructor(
                 }
             }
 
-            mode != ProgressionMode.OFF && row?.progression?.hasPlan == true -> {
-                val question = pendingProgressionFor(
-                    sessionExerciseId = sessionExerciseId,
-                    exerciseName = row.name,
-                    unit = row.weightUnit,
-                    prompt = row.progression,
-                )
-                // *Apply at Done* starts with every earned step picked, so one press writes them all; the
-                // lifter still reads the answer, and nothing is written until it (N33, P3.17).
-                _pendingProgression.value = if (mode == ProgressionMode.APPLY_AT_DONE) {
-                    question.chooseEveryOffer()
-                } else {
-                    question
+            movementMode != null -> finishWithMode(sessionExerciseId, row, movementMode)
+            row?.progression?.hasPlan != true ->
+                viewModelScope.launch { finishExercise(sessionExerciseId) }
+
+            else -> viewModelScope.launch { resolveAutoAndFinish(sessionExerciseId, row) }
+        }
+    }
+
+    /**
+     * Resolves whether this session is inside a program that adjusts itself (ROADMAP N299).
+     *
+     * The read is through the session's **template**, because a session records only that: it is
+     * what makes a start from home, the template list or a repeat all count, and what survives a
+     * resume. A failed read is said and then falls back to the device's own answer, so a storage
+     * error cannot silently turn a mode off.
+     */
+    private suspend fun resolveAutoAndFinish(
+        sessionExerciseId: String,
+        row: SessionExerciseRow,
+    ) {
+        val templateId = uiState.value.sessionTemplateId
+        val autoProgram = if (templateId == null) {
+            null
+        } else {
+            when (val read = progressionRepository.autoProgramForTemplate(templateId)) {
+                is DataResult.Success -> read.data
+                is DataResult.Failure -> {
+                    lastError.value = read.error
+                    null
                 }
             }
-
-            else -> viewModelScope.launch { finishExercise(sessionExerciseId) }
         }
+        if (autoProgram != null) {
+            applyAutoProgression(sessionExerciseId, row, autoProgram)
+        } else {
+            finishWithMode(sessionExerciseId, row, progressionMode.value)
+        }
+    }
+
+    /** The question or the finish a non-auto exercise gets (N50, N66, N235). */
+    private fun finishWithMode(
+        sessionExerciseId: String,
+        row: SessionExerciseRow?,
+        mode: ProgressionMode,
+    ) {
+        if (mode != ProgressionMode.OFF && row?.progression?.hasPlan == true) {
+            val question = pendingProgressionFor(
+                sessionExerciseId = sessionExerciseId,
+                exerciseName = row.name,
+                unit = row.weightUnit,
+                prompt = row.progression,
+            )
+            // *Apply at Done* starts with every earned step picked, so one press writes them all; the
+            // lifter still reads the answer, and nothing is written until it (N33, P3.17).
+            _pendingProgression.value = if (mode == ProgressionMode.APPLY_AT_DONE) {
+                question.chooseEveryOffer()
+            } else {
+                question
+            }
+        } else {
+            viewModelScope.launch { finishExercise(sessionExerciseId) }
+        }
+    }
+
+    /**
+     * Writes every earned step without asking, then finishes the exercise (ROADMAP N299).
+     *
+     * The order is the plan's: the write, its record, then the finish. A failure leaves the exercise
+     * open so a retry can offer what did not land; the rows that did land no longer offer anything,
+     * because the plan has moved past the work that earned them.
+     */
+    private suspend fun applyAutoProgression(
+        sessionExerciseId: String,
+        row: SessionExerciseRow,
+        programId: String,
+    ) {
+        val question = pendingProgressionFor(
+            sessionExerciseId = sessionExerciseId,
+            exerciseName = row.name,
+            unit = row.weightUnit,
+            prompt = row.progression,
+        ).chooseEveryOffer()
+        if (question.chosen.isEmpty()) {
+            finishExercise(sessionExerciseId)
+            return
+        }
+        val steps = mutableListOf<AutoProgressionStep>()
+        val failure = writeAutoProgressionSteps(
+            chosen = question.chosen,
+            sessionExerciseId = sessionExerciseId,
+            programId = programId,
+            repository = templateRepository,
+            onWritten = { steps += it },
+        )
+        if (failure != null) {
+            lastError.value = failure
+            return
+        }
+        if (steps.isNotEmpty()) {
+            _autoStep.value = AutoProgressionMoment(
+                exerciseName = row.name,
+                unit = row.weightUnit,
+                steps = steps,
+            )
+        }
+        finishExercise(sessionExerciseId)
+        // A step was taken, so an earlier *Not now* no longer describes this exercise (B310).
+        val cleared = workoutRepository.declineProgression(sessionExerciseId, emptySet())
+        if (cleared is DataResult.Failure && lastError.value == null) lastError.value = cleared.error
+    }
+
+    /** Takes back the auto steps the banner names, newest first (ROADMAP N299). */
+    fun onUndoAutoStep() {
+        val moment = _autoStep.value ?: return
+        viewModelScope.launch {
+            var failure: DataError? = null
+            moment.steps.asReversed().forEach { step ->
+                if (failure == null) {
+                    failure = (progressionRepository.undo(step.writeId) as? DataResult.Failure)?.error
+                }
+            }
+            _autoStep.value = null
+            if (failure != null) lastError.value = failure
+        }
+    }
+
+    /** The banner has been read, so it is not shown again (ROADMAP N299). */
+    fun onDismissAutoStep() {
+        _autoStep.value = null
     }
 
     /**

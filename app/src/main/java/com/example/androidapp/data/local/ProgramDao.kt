@@ -37,6 +37,7 @@ interface ProgramDao {
                p.position AS position,
                p.kind AS kind,
                p.startDate AS startDate,
+               p.autoProgression AS autoProgression,
                p.createdAt AS createdAt,
                (
                    SELECT COUNT(*) FROM program_slots ps
@@ -58,6 +59,7 @@ interface ProgramDao {
                p.position AS position,
                p.kind AS kind,
                p.startDate AS startDate,
+               p.autoProgression AS autoProgression,
                p.createdAt AS createdAt,
                (
                    SELECT COUNT(*) FROM program_slots ps
@@ -84,6 +86,7 @@ interface ProgramDao {
                p.position AS position,
                p.kind AS kind,
                p.startDate AS startDate,
+               p.autoProgression AS autoProgression,
                p.createdAt AS createdAt,
                (
                    SELECT COUNT(*) FROM program_slots ps
@@ -104,6 +107,7 @@ interface ProgramDao {
                p.position AS position,
                p.kind AS kind,
                p.startDate AS startDate,
+               p.autoProgression AS autoProgression,
                p.createdAt AS createdAt,
                (
                    SELECT COUNT(*) FROM program_slots ps
@@ -133,6 +137,7 @@ interface ProgramDao {
                p.position AS position,
                p.kind AS kind,
                p.startDate AS startDate,
+               p.autoProgression AS autoProgression,
                p.createdAt AS createdAt,
                (
                    SELECT COUNT(*) FROM program_slots ps
@@ -275,6 +280,61 @@ interface ProgramDao {
     /** The day a block begins, or null for the day it was created (ROADMAP N174). */
     @Query("UPDATE programs SET startDate = :startDate, updatedAt = :at WHERE id = :id AND deletedAt IS NULL")
     suspend fun setProgramStartDate(id: String, startDate: Long?, at: Long): Int
+
+    /**
+     * Switches the program's own progression on or off (ROADMAP N299).
+     *
+     * One column: the baseline is not written here, because the repository puts the snapshot and the
+     * switch in one transaction and a half-applied pair would be a program that says auto is on with
+     * nothing to reset to.
+     */
+    @Query(
+        "UPDATE programs SET autoProgression = :enabled, updatedAt = :at " +
+            "WHERE id = :id AND deletedAt IS NULL",
+    )
+    suspend fun setAutoProgression(id: String, enabled: Boolean, at: Long): Int
+
+    /**
+     * The first program whose switch covers [templateId], or null (ROADMAP N299).
+     *
+     * The template is what a session records, so it is what decides whether a *Done* is inside a
+     * program that adjusts itself. One row even when two auto programs name the same workout: the
+     * plan is shared, and the write happens once.
+     */
+    @Query(
+        """
+        SELECT p.id FROM programs p
+        JOIN program_slots ps ON ps.programId = p.id
+        WHERE ps.templateId = :templateId
+          AND p.autoProgression = 1
+          AND p.deletedAt IS NULL
+          AND ps.deletedAt IS NULL
+        ORDER BY p.position ASC, p.name ASC
+        LIMIT 1
+        """,
+    )
+    suspend fun findAutoProgramForTemplate(templateId: String): String?
+
+    /**
+     * Every live planned set of the workouts this program schedules (ROADMAP N299).
+     *
+     * The baseline is one row per set across every day the program names; `DISTINCT` keeps a workout
+     * used on two days from capturing the same set twice.
+     */
+    @Query(
+        """
+        SELECT DISTINCT ts.* FROM template_sets ts
+        JOIN template_exercises te ON te.id = ts.templateExerciseId
+        JOIN program_slots ps ON ps.templateId = te.templateId
+        JOIN templates t ON t.id = ps.templateId
+        WHERE ps.programId = :programId
+          AND ps.deletedAt IS NULL
+          AND te.deletedAt IS NULL
+          AND ts.deletedAt IS NULL
+          AND t.deletedAt IS NULL
+        """,
+    )
+    suspend fun findProgramSets(programId: String): List<TemplateSetEntity>
 
     /**
      * Soft-deletes a program and takes it out of use in the same statement (P3.3).

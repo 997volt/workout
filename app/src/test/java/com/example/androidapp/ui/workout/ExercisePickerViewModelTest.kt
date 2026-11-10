@@ -624,6 +624,14 @@ class ExercisePickerViewModelTest {
             error("these tests do not write a plan")
         }
 
+        override suspend fun applyProgression(
+            templateSetId: String,
+            edit: TemplateSetEdit,
+            write: com.example.androidapp.domain.repository.ProgressionSetWrite,
+        ): DataResult<String> {
+            error("these tests do not write a plan")
+        }
+
         override suspend fun removeSet(templateSetId: String): DataResult<Unit> {
             error("these tests do not write a plan")
         }

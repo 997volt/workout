@@ -73,6 +73,7 @@ fun ActiveWorkoutRoute(
     RestCueAndScreenOn(clock, restCueEnabled, keepScreenOn, restTimerEnabled)
     val summary by viewModel.summary.collectAsStateWithLifecycle()
     val personalRecord by viewModel.personalRecord.collectAsStateWithLifecycle()
+    val autoStep by viewModel.autoStep.collectAsStateWithLifecycle()
     val setWriteOutcome by viewModel.setWriteOutcome.collectAsStateWithLifecycle()
 
     ActiveWorkoutScreen(
@@ -87,6 +88,9 @@ fun ActiveWorkoutRoute(
         summary = summary,
         onDismissSummary = viewModel::onDismissSummary,
         personalRecord = personalRecord,
+        autoStep = autoStep,
+        onUndoAutoStep = viewModel::onUndoAutoStep,
+        onDismissAutoStep = viewModel::onDismissAutoStep,
         bodyweightPrompt = viewModel.bodyweightPrompt.collectAsStateWithLifecycle().value,
         onEnterBodyweight = viewModel::onBodyweightTaken,
         onDismissBodyweight = viewModel::onDismissBodyweightPrompt,
@@ -189,6 +193,10 @@ fun ActiveWorkoutScreen(
     defaultRestSeconds: Int = RestTimer.DEFAULT_SECONDS,
     summary: WorkoutReview? = null,
     personalRecord: PersonalRecordMoment? = null,
+    /** The steps auto progression just wrote, or null when there is nothing to read back (N299). */
+    autoStep: AutoProgressionMoment? = null,
+    onUndoAutoStep: () -> Unit = {},
+    onDismissAutoStep: () -> Unit = {},
     bodyweightPrompt: PendingBodyweight? = null,
     /**
      * The progression question a *Done* froze, or null while none is open (ROADMAP N74).
@@ -251,6 +259,9 @@ fun ActiveWorkoutScreen(
             onSetActivityMetrics = onSetActivityMetrics,
             onAddActivity = { choosingActivity = true },
             personalRecord = personalRecord,
+            autoStep = autoStep,
+            onUndoAutoStep = onUndoAutoStep,
+            onDismissAutoStep = onDismissAutoStep,
             onToggleSuperset = onToggleSuperset,
             restTimerEnabled = restTimerEnabled,
             defaultRestSeconds = defaultRestSeconds,
@@ -382,10 +393,23 @@ private fun WorkoutBody(
     onToggleSuperset: (String) -> Unit,
     modifier: Modifier = Modifier,
     personalRecord: PersonalRecordMoment? = null,
+    autoStep: AutoProgressionMoment? = null,
+    onUndoAutoStep: () -> Unit = {},
+    onDismissAutoStep: () -> Unit = {},
     restTimerEnabled: Boolean = true,
     defaultRestSeconds: Int = RestTimer.DEFAULT_SECONDS,
 ) {
     Column(modifier = modifier.fillMaxSize()) {
+        // The app's own write sits above the work with its undo, before the record: a step the
+        // lifter did not tap should be the first thing they can take back (N299).
+        autoStep?.let {
+            AutoProgressionBanner(
+                moment = it,
+                onUndo = onUndoAutoStep,
+                onDismiss = onDismissAutoStep,
+                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+            )
+        }
         // The record sits above the work, not in a dialog: it happens *between* sets, and
         // anything that has to be dismissed is in the way there (ROADMAP N23).
         personalRecord?.let {

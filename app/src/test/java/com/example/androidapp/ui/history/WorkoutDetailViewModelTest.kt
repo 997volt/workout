@@ -477,6 +477,12 @@ private class FakeTemplateRepository(
     override suspend fun updateSet(templateSetId: String, edit: TemplateSetEdit): DataResult<Unit> =
         unused()
 
+    override suspend fun applyProgression(
+        templateSetId: String,
+        edit: TemplateSetEdit,
+        write: com.example.androidapp.domain.repository.ProgressionSetWrite,
+    ): DataResult<String> = unused()
+
     override suspend fun removeSet(templateSetId: String): DataResult<Unit> = unused()
     override suspend fun restoreSet(templateSetId: String): DataResult<Unit> = unused()
     override suspend fun moveExercise(templateExerciseId: String, delta: Int): DataResult<Unit> =
