@@ -13,6 +13,16 @@ internal interface SettingsTags {
      */
     val DATA_EXPORT: String get() = "data_export"
 
+    /** An encrypted export (N294). */
+    val DATA_EXPORT_ENCRYPTED: String get() = "data_export_encrypted"
+
+    /** The password prompt and its controls, shared by an encrypted export and import (N294). */
+    val PASSWORD_DIALOG: String get() = "password_dialog"
+    val PASSWORD_FIELD: String get() = "password_field"
+    val PASSWORD_CONFIRM_FIELD: String get() = "password_confirm_field"
+    val PASSWORD_CONFIRM: String get() = "password_confirm"
+    val PASSWORD_CANCEL: String get() = "password_cancel"
+
     val DATA_IMPORT: String get() = "data_import"
 
     /** The bottom bar's five roots (ROADMAP N34). */

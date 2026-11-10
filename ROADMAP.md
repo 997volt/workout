@@ -15,23 +15,6 @@ work was planned, so they do not always run in order — and an id this file doe
 shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 [CHANGELOG-1.x.md](CHANGELOG-1.x.md) for the 1.x releases.
 
-## Later — the rest of the 2.22 review
-
-The rows below are real and specified, but none is in flight: a defect here is low-frequency or a polish item,
-an engineering row is not user-visible, and a feature is waiting for a decision. A row leaves this section when
-it is picked up; its design argument moves to [DECISIONS.md](DECISIONS.md).
-
-### Features
-
-Each row below is a product candidate, not an agreed design; the constraints and the decision it touches are
-named so the row can be picked up without re-arguing it from scratch. The id is the planning id; no row here is
-agreed to ship.
-
-- **N294 — An encrypted backup file.** Encryption at rest is parked; an encrypted *export* is narrower: a
-  password-protected file for a folder another app syncs, still user-chosen and local. It needs a new format
-  version, Android Keystore/AES (no new dependency), and plaintext import kept for existing files. Only worth
-  doing when a backup actually leaves the device.
-
 ## Parked — deliberately not planned
 
 Each row is a product in its own right, contradicts "local-only", or both. Parking is a

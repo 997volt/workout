@@ -344,6 +344,17 @@ the rule; that one argues it.
   there reads as *matched*. What did not travel: the prefill and the progression use of the target.
   ([evidence](DECISIONS-EVIDENCE.md#n131))
 
+- **An encrypted export is a password-derived container, not a Keystore key** (N294). The Data section offers
+  a second export beside the plain one: the ordinary backup JSON is wrapped in a self-describing JSON envelope
+  (version, KDF, iteration count, salt, nonce, ciphertext), and PBKDF2-HMAC-SHA256 with 210,000 iterations and
+  a 16-byte salt derives the AES-256-GCM key (12-byte nonce, 128-bit tag). The password is never stored, and
+  the envelope's version and KDF are checked before the cipher runs; a wrong password and an edited ciphertext
+  are one refusal because GCM cannot tell them apart. **Android Keystore was rejected**: a Keystore key cannot
+  leave the phone, and a backup whose key stayed behind would be unreadable on the replacement device that is
+  the reason to make one. The plaintext export and import stay for existing files; the encrypted file is still
+  the backup document, so the backup schema does not move — only the container has a version. The automatic
+  backup stays plaintext, because encrypting it would need the password stored on the device; this is the
+  manual export for a folder another app syncs.
 - **Settings live in `SharedPreferences`, not DataStore** (N21) — integers, booleans and two
   small maps owned by one process; writes are **committed**, so the screen never reports a
   save that did not reach disk. The move is warranted when a setting needs a schema or a

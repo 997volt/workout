@@ -1111,6 +1111,21 @@
     <string name="diagnostics_repair_reason">The pass that settles an older library stopped, so some rows may still be in the old shape. Your workouts are unchanged; a retry is safe.</string>
 
     <string name="settings_data_title">Data</string>
+    <string name="settings_data_export_encrypted">Export encrypted</string>
+    <string name="settings_data_export_encrypted_hint">A password-protected file for a folder another app syncs. The password is not stored.</string>
+    <string name="transfer_password_export_title">Encrypt the backup</string>
+    <string name="transfer_password_export_hint">Choose a password for this file. Without it the file cannot be restored, and the app cannot recover it.</string>
+    <string name="transfer_password_import_title">Open encrypted backup</string>
+    <string name="transfer_password_import_hint">Enter the password this file was encrypted with.</string>
+    <string name="transfer_password_field">Password</string>
+    <string name="transfer_password_confirm_field">Confirm password</string>
+    <string name="transfer_password_export_confirm">Encrypt</string>
+    <string name="transfer_password_import_confirm">Open</string>
+    <plurals name="transfer_password_too_short">
+        <item quantity="one">Use a password of at least %1$d character.</item>
+        <item quantity="other">Use a password of at least %1$d characters.</item>
+    </plurals>
+    <string name="transfer_password_mismatch">The passwords do not match.</string>
     <string name="settings_data_export_hint">Write a backup file, choosing where it goes.</string>
     <string name="settings_data_import_hint">Merge a backup into this device. Nothing is overwritten.</string>
     <string name="settings_data_clear_hint">Delete every workout, measurement and target. This cannot be undone.</string>

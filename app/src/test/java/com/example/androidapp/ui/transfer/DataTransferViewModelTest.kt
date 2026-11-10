@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.androidapp.data.transfer.EncryptedBackup
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.repository.BackupPreview
@@ -47,7 +48,9 @@ class DataTransferViewModelTest {
     @After
     fun tearDown() = Dispatchers.resetMain()
 
-    private fun viewModel() = DataTransferViewModel(repository, io)
+    private fun viewModel() = DataTransferViewModel(repository, io).apply {
+        cryptoDispatcher = dispatcher
+    }
 
     @Test
     fun anExport_ready_isTheDocumentsText() = runTest(dispatcher) {
@@ -82,6 +85,52 @@ class DataTransferViewModelTest {
         viewModel.writeBackup(context, uri)
         advanceUntilIdle()
         assertThat(viewModel.outcome.value).isEqualTo(TransferOutcome.StorageFailure)
+    }
+
+    @Test
+    fun anEncryptedExport_writesAnEnvelopeThatThePasswordOpens() = runTest(dispatcher) {
+        // N294: the same writer, a different container; the plaintext never reaches the document.
+        repository.exportResult = DataResult.Success("{\"schemaVersion\":9}")
+        val viewModel = viewModel()
+
+        viewModel.writeBackup(context, uri, "correct horse battery")
+        advanceUntilIdle()
+
+        val written = io.written!!
+        assertThat(EncryptedBackup.isEncrypted(written)).isTrue()
+        assertThat(
+            (EncryptedBackup.decrypt(written, "correct horse battery") as DataResult.Success).data,
+        ).isEqualTo("{\"schemaVersion\":9}")
+        assertThat(viewModel.outcome.value).isEqualTo(TransferOutcome.Exported)
+    }
+
+    @Test
+    fun anEncryptedImport_asksForItsPassword_andRetriesAfterAWrongOne() = runTest(dispatcher) {
+        val plain = "{\"schemaVersion\":9}"
+        val envelope = (EncryptedBackup.encrypt(plain, "correct horse battery") as DataResult.Success).data
+        io.readText = envelope
+        repository.previewResult = DataResult.Success(preview())
+        val viewModel = viewModel()
+
+        viewModel.readBackup(context, uri)
+        advanceUntilIdle()
+
+        assertThat(viewModel.pendingEncryptedImport.value).isEqualTo(envelope)
+        assertThat(viewModel.pendingImport.value).isNull()
+
+        viewModel.submitEncryptedImport("not the password")
+        advanceUntilIdle()
+
+        assertThat(viewModel.encryptedImportError.value).isNotNull()
+        assertThat(viewModel.pendingEncryptedImport.value).isEqualTo(envelope)
+        assertThat(viewModel.pendingImport.value).isNull()
+
+        viewModel.submitEncryptedImport("correct horse battery")
+        advanceUntilIdle()
+
+        assertThat(viewModel.encryptedImportError.value).isNull()
+        assertThat(viewModel.pendingEncryptedImport.value).isNull()
+        assertThat(viewModel.pendingImport.value?.text).isEqualTo(plain)
     }
 
     @Test

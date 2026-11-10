@@ -19,6 +19,8 @@ import com.example.androidapp.domain.DataError
 /** The two actions the data menu offers, ready to invoke from `onClick`. */
 class DataTransferActions(
     val export: () -> Unit,
+    /** Writes the backup encrypted with the given password (N294). */
+    val exportEncrypted: (String) -> Unit,
     val import: () -> Unit,
 )
 
@@ -54,12 +56,26 @@ fun rememberDataTransferActions(
     // by the outcome that transfer publishes.
     var transferIsAnExport by remember { mutableStateOf(true) }
 
+    // The password for the encrypted document the picker is about to return. Held in composition because the
+    // picker answers after this call returns; cleared as soon as the write starts.
+    var pendingExportPassword by remember { mutableStateOf<String?>(null) }
+
     val createDocument = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument(JSON_MIME_TYPE),
     ) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult // user backed out
         transferIsAnExport = true
         viewModel.writeBackup(context, uri)
+    }
+
+    val createEncryptedDocument = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument(JSON_MIME_TYPE),
+    ) { uri ->
+        val password = pendingExportPassword
+        pendingExportPassword = null
+        if (uri == null || password == null) return@rememberLauncherForActivityResult
+        transferIsAnExport = true
+        viewModel.writeBackup(context, uri, password)
     }
 
     val openDocument = rememberLauncherForActivityResult(
@@ -91,9 +107,13 @@ fun rememberDataTransferActions(
         viewModel.onOutcomeShown()
     }
 
-    return remember(createDocument, openDocument) {
+    return remember(createDocument, createEncryptedDocument, openDocument) {
         DataTransferActions(
             export = { createDocument.launch(DEFAULT_FILE_NAME) },
+            exportEncrypted = { password ->
+                pendingExportPassword = password
+                createEncryptedDocument.launch(ENCRYPTED_FILE_NAME)
+            },
             import = { openDocument.launch(arrayOf(JSON_MIME_TYPE, "text/plain")) },
         )
     }
@@ -162,6 +182,9 @@ private fun rememberTransferMessages(): TransferMessages {
 }
 
 private const val DEFAULT_FILE_NAME = "workout-backup.json"
+
+/** A distinct name so an encrypted file is not mistaken for a plain one in a folder. */
+private const val ENCRYPTED_FILE_NAME = "workout-backup-encrypted.json"
 
 /** What both document pickers accept: this app's own JSON, and the `text/plain` some providers report it as. */
 internal const val JSON_MIME_TYPE = "application/json"

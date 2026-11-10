@@ -39,6 +39,7 @@ class SettingsScreenTest {
 
     private val chosen = mutableListOf<Int>()
     private var exported = 0
+    private var encryptedExported = 0
     private var imported = 0
     private var cleared = 0
     private var diagnosticsOpened = 0
@@ -64,6 +65,7 @@ class SettingsScreenTest {
                 onSetBackupSchedule = { backupScheduleWrites += it },
                 onChooseBackupFolder = { folderPicks++ },
                 onExportData = { exported++ },
+                onEncryptExport = { encryptedExported++ },
                 onImportData = { imported++ },
                 onClearData = { cleared++ },
                 onOpenDiagnostics = { diagnosticsOpened++ },
@@ -326,5 +328,14 @@ class SettingsScreenTest {
             .performScrollTo()
             .performClick()
         assertEquals(listOf(8), deloadWrites)
+    }
+
+    @Test
+    fun theEncryptedExportAction_asksForItsPassword() {
+        show(SettingsUiState())
+        composeTestRule.onNodeWithTag(TestTags.DATA_EXPORT_ENCRYPTED)
+            .performScrollTo()
+            .performClick()
+        assertEquals(1, encryptedExported)
     }
 }

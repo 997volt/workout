@@ -1,0 +1,77 @@
+package com.example.androidapp.data.transfer
+
+import com.example.androidapp.domain.DataResult
+import com.google.common.truth.Truth.assertThat
+import kotlinx.serialization.json.Json
+import org.junit.Test
+import java.util.Base64
+
+/**
+ * The password-protected backup container (ROADMAP N294).
+ *
+ * The plaintext is the ordinary backup; the container's only promise is that the password — and nothing
+ * else — opens it, that the bytes are authenticated, and that a file this app cannot open says so rather
+ * than restoring something partial.
+ */
+class EncryptedBackupTest {
+
+    private val plaintext = """{"schemaVersion":9,"programs":[]}"""
+    private val password = "correct horse battery"
+
+    @Test
+    fun aRoundTrip_returnsThePlaintext() {
+        val envelope = (EncryptedBackup.encrypt(plaintext, password) as DataResult.Success).data
+
+        assertThat(EncryptedBackup.isEncrypted(envelope)).isTrue()
+        assertThat(EncryptedBackup.isEncrypted(plaintext)).isFalse()
+        assertThat((EncryptedBackup.decrypt(envelope, password) as DataResult.Success).data)
+            .isEqualTo(plaintext)
+    }
+
+    @Test
+    fun aWrongPassword_isRefused() {
+        val envelope = (EncryptedBackup.encrypt(plaintext, password) as DataResult.Success).data
+
+        val opened = EncryptedBackup.decrypt(envelope, "not the password")
+
+        assertThat(opened).isInstanceOf(DataResult.Failure::class.java)
+    }
+
+    @Test
+    fun aTamperedCiphertext_isRefused() {
+        val envelope = (EncryptedBackup.encrypt(plaintext, password) as DataResult.Success).data
+        val parsed = Json.decodeFromString(EncryptedBackupEnvelope.serializer(), envelope)
+        val bytes = Base64.getDecoder().decode(parsed.ciphertext)
+        bytes[0] = (bytes[0].toInt() xor 1).toByte()
+        val tampered = Json.encodeToString(
+            EncryptedBackupEnvelope.serializer(),
+            parsed.copy(ciphertext = Base64.getEncoder().encodeToString(bytes)),
+        )
+
+        assertThat(EncryptedBackup.decrypt(tampered, password))
+            .isInstanceOf(DataResult.Failure::class.java)
+    }
+
+    @Test
+    fun aShortPassword_isNotAcceptedForANewFile() {
+        assertThat(EncryptedBackup.encrypt(plaintext, "short"))
+            .isInstanceOf(DataResult.Failure::class.java)
+    }
+
+    @Test
+    fun anUnknownEnvelopeVersion_isRefused() {
+        val envelope = (EncryptedBackup.encrypt(plaintext, password) as DataResult.Success).data
+        val parsed = Json.decodeFromString(EncryptedBackupEnvelope.serializer(), envelope)
+
+        assertThat(EncryptedBackup.decrypt(envelope, password)).isInstanceOf(DataResult.Success::class.java)
+        assertThat(
+            EncryptedBackup.decrypt(
+                Json.encodeToString(
+                    EncryptedBackupEnvelope.serializer(),
+                    parsed.copy(version = 2),
+                ),
+                password
+            )
+        ).isInstanceOf(DataResult.Failure::class.java)
+    }
+}

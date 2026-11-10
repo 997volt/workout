@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -64,7 +65,6 @@ import com.example.androidapp.ui.components.label
 import com.example.androidapp.ui.theme.TileAccent
 import com.example.androidapp.ui.transfer.ClearOutcome
 import com.example.androidapp.ui.transfer.DataTransferViewModel
-import com.example.androidapp.ui.transfer.ImportPreviewDialog
 import com.example.androidapp.ui.transfer.rememberDataTransferActions
 import kotlinx.coroutines.launch
 import java.time.ZoneId
@@ -91,13 +91,8 @@ fun SettingsRoute(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val pendingImport by transferViewModel.pendingImport.collectAsStateWithLifecycle()
-    pendingImport?.let { pending ->
-        ImportPreviewDialog(
-            preview = pending.preview,
-            onConfirm = transferViewModel::confirmImport,
-            onDismiss = transferViewModel::cancelImport,
-        )
-    }
+    val pendingEncryptedImport by transferViewModel.pendingEncryptedImport.collectAsStateWithLifecycle()
+    val encryptedImportError by transferViewModel.encryptedImportError.collectAsStateWithLifecycle()
 
     // The data actions report into a snackbar and a held failure, the shape the home screen used
     // before they moved (F7, F8). The clear is suspending and its sentence is a resource, so it
@@ -105,6 +100,16 @@ fun SettingsRoute(
     var message by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val transferActions = rememberDataTransferActions(transferViewModel) { message = it }
+    val requestEncryptedExport = rememberEncryptedExport(transferActions.exportEncrypted)
+    SettingsTransferDialogs(
+        pendingImport = pendingImport,
+        pendingEncryptedImport = pendingEncryptedImport,
+        encryptedImportError = encryptedImportError,
+        onConfirmImport = transferViewModel::confirmImport,
+        onCancelImport = transferViewModel::cancelImport,
+        onSubmitEncryptedPassword = transferViewModel::submitEncryptedImport,
+        onCancelEncryptedImport = transferViewModel::cancelEncryptedImport,
+    )
     val clearedText = stringResource(R.string.clear_done)
     var failure by remember { mutableStateOf<DataError?>(null) }
     FailureMessage(failure = failure, onMessage = { message = it }, onClear = { failure = null })
@@ -127,6 +132,7 @@ fun SettingsRoute(
         onChooseBackupFolder = chooseBackupFolder,
         onBackupNow = viewModel::onBackupNow,
         onExportData = transferActions.export,
+        onEncryptExport = requestEncryptedExport,
         onImportData = transferActions.import,
         onOpenDiagnostics = onOpenDiagnostics,
         onClearData = {
@@ -159,6 +165,7 @@ fun SettingsScreen(
     onSetBackupSchedule: (BackupSchedule) -> Unit,
     onChooseBackupFolder: () -> Unit,
     onExportData: () -> Unit,
+    onEncryptExport: () -> Unit,
     onImportData: () -> Unit,
     onClearData: () -> Unit,
     onOpenDiagnostics: () -> Unit,
@@ -212,6 +219,7 @@ fun SettingsScreen(
             onChooseBackupFolder = onChooseBackupFolder,
             onBackupNow = onBackupNow,
             onExportData = onExportData,
+            onEncryptExport = onEncryptExport,
             onImportData = onImportData,
             onClearData = { confirmingClear = true },
             onOpenDiagnostics = onOpenDiagnostics,
@@ -241,6 +249,7 @@ private fun SettingsBody(
     onChooseBackupFolder: () -> Unit,
     onBackupNow: () -> Unit,
     onExportData: () -> Unit,
+    onEncryptExport: () -> Unit,
     onImportData: () -> Unit,
     onClearData: () -> Unit,
     onOpenDiagnostics: () -> Unit,
@@ -286,6 +295,7 @@ private fun SettingsBody(
         SupportSection(onOpenDiagnostics = onOpenDiagnostics)
         DataSection(
             onExport = onExportData,
+            onEncryptExport = onEncryptExport,
             onImport = onImportData,
             onClear = onClearData,
         )
@@ -346,6 +356,7 @@ private fun SupportSection(
 @Composable
 private fun DataSection(
     onExport: () -> Unit,
+    onEncryptExport: () -> Unit,
     onImport: () -> Unit,
     onClear: () -> Unit,
     modifier: Modifier = Modifier,
@@ -360,6 +371,15 @@ private fun DataSection(
                 onClick = onExport,
                 onClickLabel = stringResource(R.string.transfer_export),
                 testTag = TestTags.DATA_EXPORT,
+            )
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            AppRow(
+                headline = stringResource(R.string.settings_data_export_encrypted),
+                supporting = stringResource(R.string.settings_data_export_encrypted_hint),
+                leading = { IconTile(icon = Icons.Filled.Lock, accent = TileAccent.Indigo) },
+                onClick = onEncryptExport,
+                onClickLabel = stringResource(R.string.settings_data_export_encrypted),
+                testTag = TestTags.DATA_EXPORT_ENCRYPTED,
             )
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             AppRow(

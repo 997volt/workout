@@ -42,6 +42,13 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   many weeks since its last recovery week (or since it started) and opens the creator. It counts only: nothing
   is written, no notification is scheduled, and the cadence is the lifter's rather than a recovery model.
 
+- **A password-protected backup export** (N294). The Data section offers *Export encrypted* beside the plain
+  file; import detects the envelope and asks for its password before the preview. PBKDF2-HMAC-SHA256 derives
+  an AES-256-GCM key from the password, so the file opens on a replacement device — a Keystore key could not
+  leave the phone and was rejected for that reason. The password is never stored, a wrong password and an
+  edited file are both refused, and plaintext export/import is unchanged. The envelope is version 1; the
+  backup document and its schema are unchanged, and the automatic backup stays plaintext.
+
 ### Fixed
 
 - **The shell owns the bottom system inset once** (B358). The tab bar already includes the navigation bar,

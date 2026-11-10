@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.androidapp.data.transfer.EncryptedBackup
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.repository.BackupPreview
@@ -11,10 +12,13 @@ import com.example.androidapp.domain.repository.BackupRepository
 import com.example.androidapp.domain.repository.ImportSummary
 import com.example.androidapp.platform.DocumentIo
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 /** What an import did, or why it could not be done. */
@@ -61,6 +65,14 @@ class DataTransferViewModel @Inject constructor(
     private val documentIo: DocumentIo,
 ) : ViewModel() {
 
+    /**
+     * Where PBKDF2 and AES run.
+     *
+     * A mutable seam rather than a constructor dependency: Hilt has no binding for a dispatcher, and a
+     * JVM test wants the work on its own scheduler. Production keeps the default.
+     */
+    internal var cryptoDispatcher: CoroutineDispatcher = Dispatchers.Default
+
     private val _outcome = MutableStateFlow<TransferOutcome?>(null)
 
     /** The last transfer's result, or null while there is nothing to say. Cleared by [onOutcomeShown]. */
@@ -98,6 +110,16 @@ class DataTransferViewModel @Inject constructor(
     /** The file the picker returned, held until the sheet is answered. */
     val pendingImport: StateFlow<PendingImport?> = _pendingImport.asStateFlow()
 
+    private val _pendingEncryptedImport = MutableStateFlow<String?>(null)
+
+    /** The encrypted file the picker returned, held while its password is asked for (N294). */
+    val pendingEncryptedImport: StateFlow<String?> = _pendingEncryptedImport.asStateFlow()
+
+    private val _encryptedImportError = MutableStateFlow<DataError?>(null)
+
+    /** Why the last password did not open the pending file; the dialog stays open on it. */
+    val encryptedImportError: StateFlow<DataError?> = _encryptedImportError.asStateFlow()
+
     /** Merges the file that was previewed, after the lifter confirmed what it holds. */
     fun confirmImport() {
         val pending = _pendingImport.value ?: return
@@ -123,16 +145,34 @@ class DataTransferViewModel @Inject constructor(
     }
 
     /** Writes the backup to the document the picker returned, and reports what happened. */
-    fun writeBackup(context: Context, uri: Uri) {
+    fun writeBackup(context: Context, uri: Uri, password: String? = null) {
         viewModelScope.launch {
-            _outcome.value = when (val produced = export()) {
-                is ExportOutcome.Ready -> if (documentIo.write(context, uri, produced.json)) {
-                    TransferOutcome.Exported
-                } else {
-                    TransferOutcome.StorageFailure
+            val produced = when (val exported = export()) {
+                is ExportOutcome.Ready -> exported
+                is ExportOutcome.Failed -> {
+                    _outcome.value = TransferOutcome.Refused(exported.error)
+                    return@launch
                 }
-
-                is ExportOutcome.Failed -> TransferOutcome.Refused(produced.error)
+            }
+            val text = if (password == null) {
+                produced.json
+            } else {
+                when (
+                    val encrypted = withContext(cryptoDispatcher) {
+                        EncryptedBackup.encrypt(produced.json, password)
+                    }
+                ) {
+                    is DataResult.Success -> encrypted.data
+                    is DataResult.Failure -> {
+                        _outcome.value = TransferOutcome.Refused(encrypted.error)
+                        return@launch
+                    }
+                }
+            }
+            _outcome.value = if (documentIo.write(context, uri, text)) {
+                TransferOutcome.Exported
+            } else {
+                TransferOutcome.StorageFailure
             }
         }
     }
@@ -151,10 +191,45 @@ class DataTransferViewModel @Inject constructor(
                 _outcome.value = TransferOutcome.StorageFailure
                 return@launch
             }
-            when (val preview = backupRepository.preview(text)) {
-                is DataResult.Success -> _pendingImport.value = PendingImport(text, preview.data)
-                is DataResult.Failure -> _outcome.value = TransferOutcome.Refused(preview.error)
+            if (EncryptedBackup.isEncrypted(text)) {
+                _encryptedImportError.value = null
+                _pendingEncryptedImport.value = text
+                return@launch
             }
+            preview(text)
+        }
+    }
+
+    /** Opens the pending encrypted file with [password], or keeps it for another try (N294). */
+    fun submitEncryptedImport(password: String) {
+        val text = _pendingEncryptedImport.value ?: return
+        viewModelScope.launch {
+            when (
+                val opened = withContext(cryptoDispatcher) {
+                    EncryptedBackup.decrypt(text, password)
+                }
+            ) {
+                is DataResult.Success -> {
+                    _encryptedImportError.value = null
+                    _pendingEncryptedImport.value = null
+                    preview(opened.data)
+                }
+
+                is DataResult.Failure -> _encryptedImportError.value = opened.error
+            }
+        }
+    }
+
+    /** Backs out of the password question and forgets the file. */
+    fun cancelEncryptedImport() {
+        _pendingEncryptedImport.value = null
+        _encryptedImportError.value = null
+    }
+
+    private suspend fun preview(text: String) {
+        when (val preview = backupRepository.preview(text)) {
+            is DataResult.Success -> _pendingImport.value = PendingImport(text, preview.data)
+            is DataResult.Failure -> _outcome.value = TransferOutcome.Refused(preview.error)
         }
     }
 
