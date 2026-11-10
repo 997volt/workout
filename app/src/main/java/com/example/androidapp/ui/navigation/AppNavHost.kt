@@ -1,6 +1,9 @@
 package com.example.androidapp.ui.navigation
 
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -109,12 +112,20 @@ fun AppNavHost(
         },
         modifier = modifier,
     ) { innerPadding ->
+        // The shell owns the bottom system inset, exactly once (B358). A tab screen's bar already
+        // contains the navigation-bar inset, so the bar's height is the padding; a screen without the
+        // bar gets the inset directly. The bar is a sibling of the NavHost, so consuming it here leaves
+        // the top status-bar inset for each screen's own top bar.
+        val navBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+        val bottom = if (showBar) innerPadding.calculateBottomPadding() else navBottom
         CompositionLocalProvider(LocalWeightUnit provides weightUnit) {
             NavHost(
                 navController = navController,
                 startDestination = WorkoutsHome,
                 // Applied once here instead of by every screen (ROADMAP N34).
-                modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()),
+                modifier = Modifier
+                    .padding(bottom = bottom)
+                    .consumeWindowInsets(WindowInsets.navigationBars),
             ) {
                 homeDestinations(navController)
                 workoutDestinations(navController)

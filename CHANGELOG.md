@@ -32,6 +32,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The shell owns the bottom system inset once** (B358). The tab bar already includes the navigation bar,
+  and every screen's Scaffold was adding the same inset again. The shell now consumes the navigation-bar
+  inset and reserves the bar (or the bar's own inset when no tab bar is shown); the deload creator's third
+  `navigationBarsPadding()` is gone. Verified in gesture and three-button navigation on the emulator: the
+  last Settings row sat 63 px higher before the fix.
 - **A second deload is no longer drafted from the first** (B397). The creator reads the source slot's own
   last normal session, not the exercise-wide last performance, so the previous deload's already-light
   numbers cannot feed the next draft. A deload names no slot, so it is not that history.

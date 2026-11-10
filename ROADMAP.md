@@ -21,15 +21,6 @@ The rows below are real and specified, but none is in flight: a defect here is l
 an engineering row is not user-visible, and a feature is waiting for a decision. A row leaves this section when
 it is picked up; its design argument moves to [DECISIONS.md](DECISIONS.md).
 
-### Defects and polish
-
-- **B358 — The shell and the screens must not both apply the navigation-bar inset.** The shell reserves the
-  tab bar, whose height already includes the system bar, and each screen's default `Scaffold` adds the system
-  inset again ([AppNavHost.kt](app/src/main/java/com/example/androidapp/ui/navigation/AppNavHost.kt)); the
-  deload screen adds a third `navigationBarsPadding()`. Fixed means the shell or the screens own the bottom
-  inset exactly once, verified on a gesture-navigation and a three-button device (this was reasoned from code,
-  not measured).
-
 ### Features
 
 Each row below is a product candidate, not an agreed design; the constraints and the decision it touches are
