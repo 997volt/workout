@@ -23,6 +23,7 @@ import com.example.androidapp.domain.model.ExerciseAdherence
 import com.example.androidapp.domain.model.MonthAdherence
 import com.example.androidapp.domain.model.MonthlyRatio
 import com.example.androidapp.domain.model.OccurrenceState
+import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.model.SlotAdherence
 import com.example.androidapp.domain.model.Streak
 import com.example.androidapp.domain.model.WorkoutProgram
@@ -340,6 +341,31 @@ class AdherenceScreenTest {
             .performClick()
 
         assertThat(toggled).isEqualTo(Triple("p1", week, true))
+    }
+
+    @Test
+    fun aBlock_isNotOfferedACalendarWeekToExempt() {
+        // B398: a block's days are its own weeks, so the calendar's "exempt this week" would key a
+        // mark the block's run never reads. Its deload action lives on the block day instead.
+        val week = LocalDate.of(2026, 10, 5)
+        setScreen(
+            state = AdherenceUiState(
+                month = october,
+                currentMonth = october,
+                isLoading = false,
+                programs = listOf(
+                    WorkoutProgram(
+                        id = "block1",
+                        name = "Base block",
+                        isActive = true,
+                        kind = ProgramKind.SEQUENCE,
+                    ),
+                ),
+                markableWeeks = listOf(week),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Adherence.DELOAD_TITLE).assertDoesNotExist()
     }
 
     @Test

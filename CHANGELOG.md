@@ -32,6 +32,9 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A block is no longer offered a calendar week to exempt** (B398). The Adherence section's chips are
+  weekly-only; a block's days are its own weeks, so a calendar mark would be keyed to a week its run never
+  reads. The block's deload action stays on its own day.
 - **A substituted exercise no longer takes another plan's entry** (B395). The live workout pairs a session
   row to its plan by the row's origin and never pairs a stand-in, so the substitute cannot borrow a later
   entry of the movement it now performs, the real row keeps its own targets, and progression writes nothing

@@ -54,6 +54,7 @@ import com.example.androidapp.domain.model.BlockProgress
 import com.example.androidapp.domain.model.DayOccurrence
 import com.example.androidapp.domain.model.MonthAdherence
 import com.example.androidapp.domain.model.OccurrenceState
+import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.CenteredMessage
@@ -435,7 +436,10 @@ private fun DeloadWeeks(
     onToggle: (String, LocalDate, Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    if (programs.isEmpty() || weeks.isEmpty()) return
+    // A block's own weeks are not the calendar's (N174); the exemption it can be given is the
+    // deload mark on a block day's parent, never a calendar week. B398.
+    val weekly = programs.filter { it.kind == ProgramKind.WEEKLY }
+    if (weekly.isEmpty() || weeks.isEmpty()) return
     // A plan is one tap from unreachable, so unmarking asks first; a mark with no plan is harmless (B162).
     var unmarking by remember { mutableStateOf<Pair<WorkoutProgram, LocalDate>?>(null) }
 
@@ -453,7 +457,7 @@ private fun DeloadWeeks(
         )
         weeks.forEach { week ->
             DeloadWeekRow(
-                programs = programs,
+                programs = weekly,
                 week = week,
                 deloadWeeks = deloadWeeks,
                 plans = plans,

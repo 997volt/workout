@@ -100,13 +100,6 @@ already-deloaded load and compound the reduction. Read the source **slot's** own
 deload session names no slot — or exclude the templates the deload days own, and test a second deload
 after a first.
 
-### B398 — The Adherence deload chip is offered for a sequence
-
-The creator is hidden for a sequence because a block has no week-keyed schedule, but the Adherence
-chip is drawn per active program and is not filtered by kind. An active sequence can be marked, the
-mark is stored, and nothing in the sequence reads it. Hide the chip for `ProgramKind.SEQUENCE`, or make
-the action say why it does not apply; the mark writer can keep accepting a week for the weekly caller.
-
 ### N301 — A program with no end suggests when a deload may be due
 
 The stall card is reactive. A program that runs forever has no moment that says "you have been at this
