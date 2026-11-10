@@ -99,6 +99,11 @@ internal fun HomeBody(
         // place, every day. B182 led with the block when the plan was empty, to keep those rows on a compact
         // screen; the cost of this rule is that scroll, and the trade accepts it, because two rows that swap
         // ends from one day to the next are worse than two rows consistently below the fold.
+        if (state.isExemptWeek) {
+            // The week is exempt, not the work: the cards are still the program's full workouts, so
+            // the banner is a statement about the record rather than a label on a session (N300).
+            item(key = "exempt_week") { ExemptWeekBanner() }
+        }
         wayInItems(
             // Starting is offered only while nothing is running (B101): the bar's Resume pill is the same
             // action, and a second row for it would be the pill under the wrong label.
@@ -123,6 +128,22 @@ internal fun HomeBody(
                 testTag = TestTags.HOME_WEEKLY_REVIEW,
             )
         }
+    }
+}
+
+/** The sentence home owed an exempt week: the training is real, the score is not (ROADMAP N300). */
+@Composable
+private fun ExemptWeekBanner() {
+    AppCard(modifier = Modifier.testTag(TestTags.HOME_EXEMPT_WEEK)) {
+        Text(
+            text = stringResource(R.string.home_exempt_week_title),
+            style = MaterialTheme.typography.titleSmall,
+        )
+        Text(
+            text = stringResource(R.string.home_exempt_week_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

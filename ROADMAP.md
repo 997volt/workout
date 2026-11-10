@@ -34,45 +34,9 @@ agreed to ship.
 
 ## Later — the deload seam
 
-Two different things carry one name today. P3.10's mark exempts a week from scoring and leaves its
-workouts alone; N147's built plan writes lighter ones. The Adherence chip calls the mark a deload, the
-creator lives in a program-editor overflow, and neither says what the other is. N300 separates the two
-actions, the B rows are the draft's blind spots, and N301 is the follow-on for a program with no end.
-None of it is in flight.
-
-### N300 — An exempt week and a deload week are two actions
-
-The mark is an **exemption**, not a lighter week: its slots still prescribe their full workouts, and
-the only thing it changes is that the week is not scored. The built plan is the deload. The change is
-to say that in the names and give each action its own way in.
-
-- **Name them apart.** The Adherence mark becomes *Exempt week* — "not scored" — and *Deload week*
-  stays the creator's plan. One entry on the program screen offers *Exempt this/next week* and *Build
-  a lighter week*, so the choice is made where a lifter is looking at the program rather than in two
-  screens that never mention each other.
-- **Offer the prospective exemption.** Today a week can be exempted only after it has started
-  (Adherence), and the creator only builds next week. A vacation, a sick week or a planned rest week
-  cannot be pre-marked without writing workouts nobody asked for. The repository already stores a bare
-  mark; add the action for next week, and let a later *Build* reuse it.
-- **Do not ask the missed-day question about an exempt week.** A built week is already left out
-  (B163); a marked week still asks. That contradicts the name: the week is exempt from judgement, and
-  the prompt is a judgement. Amend P3.10's "the missed-day question is unaffected" — the calendar
-  still draws the days, a session still marks a trained day, and the ratio still leaves the week out;
-  only the question goes. The argument moves to DECISIONS when this is picked up.
-- **Show it on home.** A marked-only week looks exactly like a normal one on the training surface. A
-  banner saying the week is not scored is enough; the full workouts must not be labelled *Deload*.
-- **Reach the creator.** Add it to the program screen, not only the overflow and the stall card. A
-  program that runs for years should not hide its recovery week behind a menu.
-- **Give the draft an effort.** It deliberately writes no target RPE, so the workout opens its effort
-  field on the app default 9.0 — the opposite of a deload. Write a deload effort (6.0 would do) or show
-  a genuinely blank field; the first is one decision, the second a wider change to the session's
-  no-target shape.
-- **Name the workout after its week.** *Deload A* is indistinguishable after a year of them; put the
-  week in the default name or hide the templates once the week is over, keeping them resolvable for
-  the history that names them.
-- **Say what unmarking does.** The dialog says the plan will not be used; it does not say the week
-  returns to the normal schedule and can read as missed, because the deload sessions used templates
-  that settle no slot. Say both, and keep the templates.
+An exempt week and a deload week are two named actions now (N300). What remains is the cadence: N301 is
+the follow-on for a program with no end, and a suggestion rather than a computed deload. It is not in
+flight.
 
 ### N301 — A program with no end suggests when a deload may be due
 

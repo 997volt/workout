@@ -216,6 +216,13 @@ data class WorkoutsHomeUiState(
     /** Whether any program is followed, which is what makes an empty day a rest day (ROADMAP N126). */
     val hasActiveProgram: Boolean = false,
     /**
+     * True when a followed program's current week is **exempt** (ROADMAP N300).
+     *
+     * The week's workouts are still the program's own and are still offered; only its days are left
+     * out of the record. The banner says so rather than labelling a full workout *Deload*.
+     */
+    val isExemptWeek: Boolean = false,
+    /**
      * The followed blocks that have no session left, by name (ROADMAP B197).
      *
      * A finished block is not a rest day in the ordinary sense: there is nothing coming, and the
@@ -403,6 +410,23 @@ class WorkoutsHomeViewModel @Inject constructor(
             }
 
     /**
+     * Whether one of the followed programs' current weeks is marked (ROADMAP N300).
+     *
+     * A mark without a plan is P3.10's original exemption, and home used to have no way to say so;
+     * the banner is that sentence, not a second schedule.
+     */
+    private val exemptWeek: Flow<Boolean> =
+        combine(activePrograms, screenDay) { programs, screen -> programs to screen }
+            .flatMapLatest { (programs, screen) ->
+                if (programs.isEmpty()) {
+                    flowOf(false)
+                } else {
+                    deloadRepository.observeMarkedPrograms(ProgramSchedule.weekStartOf(screen.date))
+                        .map { marked -> programs.any { it.id in marked } }
+                }
+            }
+
+    /**
      * Each followed sequence's place (ROADMAP N176).
      *
      * Read only while a sequence is followed, so a shelf of weekly programs costs home nothing. The
@@ -431,6 +455,7 @@ class WorkoutsHomeViewModel @Inject constructor(
         val programs: List<WorkoutProgram>,
         val slots: List<ProgramSlot>,
         val deloadWeeks: List<DeloadWeek>,
+        val isExemptWeek: Boolean,
         val sequencePlans: List<TodayPlan>,
         val schedules: Map<String, SequenceSchedule>,
     )
@@ -440,14 +465,16 @@ class WorkoutsHomeViewModel @Inject constructor(
             activePrograms,
             activeProgramSlots,
             deloadWeeks,
+            exemptWeek,
             combine(activePrograms, sequenceSchedules, screenDay) { programs, schedules, screen ->
                 sequenceTodayPlans(programs, schedules, screen.date) to schedules
             },
-        ) { programs, slots, deloads, sequences ->
+        ) { programs, slots, deloads, exempt, sequences ->
             ProgramsPart(
                 programs = programs,
                 slots = slots,
                 deloadWeeks = deloads,
+                isExemptWeek = exempt,
                 sequencePlans = sequences.first,
                 schedules = sequences.second,
             )
@@ -489,6 +516,7 @@ class WorkoutsHomeViewModel @Inject constructor(
             ),
             // N126: what makes an empty day a rest day rather than a day with nothing to say.
             hasActiveProgram = programs.programs.isNotEmpty(),
+            isExemptWeek = programs.isExemptWeek,
             finishedBlocks = finishedBlockNames(programs.programs, programs.schedules),
             templates = templates,
         )

@@ -97,6 +97,20 @@ internal object ProgramsTags {
     /** The bar's ⋮ entry that opens the deload creator (ROADMAP N147). */
     const val DELOAD = "program_deload_open"
 
+    /** The bar's ⋮ entry that opens the recovery-week choices (ROADMAP N300). */
+    const val WEEKS_MENU = "program_weeks_open"
+
+    /** The program screen's visible recovery entry (ROADMAP N300). */
+    const val RECOVERY_WEEK = "program_recovery_week"
+
+    /** The recovery choices: the screen, its two week actions, the builder and the unmark question. */
+    const val WEEKS_SCREEN = "program_weeks_screen"
+    const val WEEKS_THIS = "program_weeks_this"
+    const val WEEKS_NEXT = "program_weeks_next"
+    const val WEEKS_BUILD = "program_weeks_build"
+    const val WEEKS_UNMARK_DIALOG = "program_weeks_unmark_dialog"
+    const val WEEKS_UNMARK_CONFIRM = "program_weeks_unmark_confirm"
+
     /** The bar's ⋮ entry that opens auto progression (ROADMAP N299). */
     const val AUTO_PROGRESSION = "program_auto_progression_open"
 

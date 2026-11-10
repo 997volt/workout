@@ -440,10 +440,14 @@ class RoomProgramRepository @Inject constructor(
                 )
             }
 
-        // A built deload week has its own days, which are not asked about (B163): the week is exempt
-        // and a day keyed to it has no slot a skip could be recorded against. A marked week with no plan
-        // is P3.10's own shape and keeps asking about the slots.
-        val builtWeeks = deloadDao.findDeloadDaysForWeek(weekStart.toEpochDay()).map { it.programId }.toSet()
+        // An exempt week is not asked about, with or without a built plan (B163, N300): the week is
+        // left out of judgement, and the missed-day prompt is a judgement. A built week's days have no
+        // slot a skip could be recorded against; a marked-only week's slots are still scheduled and
+        // still drawn, only the question goes.
+        val exemptWeeks = deloadDao
+            .findDeloadsBetween(weekStart.toEpochDay(), weekStart.toEpochDay())
+            .map { it.programId }
+            .toSet()
 
         // The union of every active program's misses (P3.12). Each program is resolved on its
         // own slots — a session settles an occurrence by its template, so the same session list
@@ -455,7 +459,7 @@ class RoomProgramRepository @Inject constructor(
             // there is no weekly occurrence to miss — and asking on its behalf recorded a week-keyed
             // skip that settled a session weeks before it was due (B195).
             if (program.kind == ProgramKind.SEQUENCE) return@forEach
-            if (program.id in builtWeeks) return@forEach
+            if (program.id in exemptWeeks) return@forEach
             val slots = dao.findSlotDetails(program.id).map { it.toDomain() }
             pending += ProgramSchedule.pendingOccurrences(
                 // A phased program is asked about the week it is training now (N292); a program with

@@ -18,6 +18,9 @@ internal interface HomeTags {
     /** The body's row that starts an empty workout (ROADMAP N102). */
     val HOME_START: String get() = "home_start"
 
+    /** The banner that says the followed program's week is exempt from scoring (ROADMAP N300). */
+    val HOME_EXEMPT_WEEK: String get() = "home_exempt_week"
+
     /** The bar's pill, drawn only while a workout is running (ROADMAP N102). */
     val HOME_RESUME: String get() = "home_resume"
 

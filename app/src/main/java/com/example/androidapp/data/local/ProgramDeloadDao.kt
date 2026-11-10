@@ -25,6 +25,10 @@ interface ProgramDeloadDao {
     )
     suspend fun findDeloadsBetween(from: Long, to: Long): List<ProgramDeloadEntity>
 
+    /** The live marks for one week, built or not (ROADMAP N300). */
+    @Query("SELECT * FROM program_deloads WHERE weekStart = :weekStart AND deletedAt IS NULL")
+    fun observeDeloadsForWeek(weekStart: Long): Flow<List<ProgramDeloadEntity>>
+
     @Query(
         """
         SELECT COUNT(*) FROM program_deloads

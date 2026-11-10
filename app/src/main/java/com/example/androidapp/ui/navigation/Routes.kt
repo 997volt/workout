@@ -176,6 +176,10 @@ data class ProgramDeload(val programId: String)
 @Serializable
 data class ProgramProgression(val programId: String)
 
+/** The week actions for one program: exempt this/next week, or build a lighter one (ROADMAP N300). */
+@Serializable
+data class ProgramWeeks(val programId: String)
+
 /** The history list (ROADMAP P1.6). */
 @Serializable
 data object WorkoutHistory

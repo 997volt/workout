@@ -25,6 +25,14 @@ interface DeloadRepository {
     fun observeWeekPlans(weekStart: LocalDate): Flow<List<DeloadWeek>>
 
     /**
+     * The programs whose week is **exempt**, whether or not a lighter plan was built for it (N300).
+     *
+     * The mark is the exemption; a built plan is the lighter week. Home reads this for the banner, and
+     * the builder uses it to reuse a mark made in advance.
+     */
+    fun observeMarkedPrograms(weekStart: LocalDate): Flow<Set<String>>
+
+    /**
      * Writes [days] as the deload for [weekStart] — the next week, or the current one for older plans
      * (N147, N158) — marking the week if it is not already.
      *

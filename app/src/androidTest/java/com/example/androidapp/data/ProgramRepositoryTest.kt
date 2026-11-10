@@ -612,6 +612,21 @@ class ProgramRepositoryTest {
     }
 
     @Test
+    fun anExemptWeekWithNoPlan_isNotAskedAbout() = runTest {
+        // N300: a mark is an exemption, so the missed-day prompt — a judgement — goes even though the
+        // week's workouts are still the program's own.
+        val program = create("Upper/Lower")
+        val template = createTemplate("Heavy lower")
+        repository.addSlot(program, template, DayOfWeek.TUESDAY)
+        repository.activateProgram(program)
+        assertEquals(1, repository.pendingOccurrences(today, utc).getOrNull()?.size)
+
+        adherence.setDeloadWeek(program, monday, marked = true)
+
+        assertTrue(repository.pendingOccurrences(today, utc).getOrNull().isNullOrEmpty())
+    }
+
+    @Test
     fun aSessionStartedFromTheSubstitute_settlesTheSlot_andAdherenceScoresItDone() = runTest {
         // ROADMAP P3.11: the picked workout is recorded for one slot and one week, and a session
         // started from it settles the occurrence — or the app would keep asking about a day already
@@ -846,8 +861,10 @@ class ProgramRepositoryTest {
         repository.addSlot(program, createTemplate("Week 2 day"), DayOfWeek.MONDAY, phaseWeek = 2)
         repository.activateProgram(program)
 
-        val occurrences = (adherence
-            .occurrencesOn(date = LocalDate.of(2026, 10, 12), today = today, zone = utc) as DataResult.Success).data
+        val occurrences = (
+            adherence
+                .occurrencesOn(date = LocalDate.of(2026, 10, 12), today = today, zone = utc) as DataResult.Success
+            ).data
 
         assertEquals(listOf("Week 1 day"), occurrences.map { it.templateName })
     }

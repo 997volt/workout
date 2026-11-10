@@ -127,6 +127,34 @@ class WorkoutsHomeScreenTest {
     }
 
     @Test
+    fun anExemptWeek_saysSo_withoutRelabellingTheWorkout() {
+        // N300: the mark changes the record, not the session. The banner is the only change; the card
+        // still names the program's own workout.
+        setScreen(
+            WorkoutsHomeUiState(
+                isLoading = false,
+                isExemptWeek = true,
+                hasActiveProgram = true,
+                todaysPlan = listOf(
+                    TodayPlan(
+                        id = "slot-1",
+                        templateId = "t1",
+                        name = "Heavy lower",
+                        exerciseCount = 5,
+                        slotId = "slot-1",
+                        programName = "Upper/Lower",
+                    ),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.HOME_EXEMPT_WEEK).assertExists()
+        composeTestRule.onNodeWithText("This week is not scored").assertExists()
+        scrollToToday()
+        composeTestRule.onNodeWithText("Heavy lower").assertExists()
+    }
+
+    @Test
     fun withNothingLogged_theBodyIsTheWaysIn() {
         // N102: with no history and nothing running the screen is never blank — the four ways in *are* the
         // body — so the first-run message that explained an empty list went with the list it explained.

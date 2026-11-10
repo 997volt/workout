@@ -174,7 +174,7 @@ class ProgramDeloadViewModelTest {
         viewModel.onCreate()
         advanceUntilIdle()
 
-        assertThat(repository.writes.single()[0].name).isEqualTo("Deload A")
+        assertThat(repository.writes.single()[0].name).isEqualTo("Deload A · 12 Oct")
         assertThat(repository.writes.single()[0].exercises.map { it.exerciseId })
             .containsExactly("back-squat", "bench")
     }
@@ -189,7 +189,7 @@ class ProgramDeloadViewModelTest {
         advanceUntilIdle()
 
         assertThat(repository.writes).hasSize(1)
-        assertThat(repository.writes.single().single().name).isEqualTo("Deload A")
+        assertThat(repository.writes.single().single().name).isEqualTo("Deload A · 12 Oct")
         assertThat(viewModel.uiState.value.created).isNotNull()
         assertThat(viewModel.uiState.value.created?.weekStart).isEqualTo(LocalDate.of(2026, 10, 12))
     }
@@ -309,6 +309,8 @@ class ProgramDeloadViewModelTest {
         val writes = mutableListOf<List<DeloadDayInput>>()
 
         override fun observeWeekPlans(weekStart: LocalDate): Flow<List<DeloadWeek>> = flowOf(emptyList())
+
+        override fun observeMarkedPrograms(weekStart: LocalDate): Flow<Set<String>> = flowOf(emptySet())
 
         override suspend fun findLastPlan(programId: String, beforeWeek: LocalDate): DeloadWeek? = null
 

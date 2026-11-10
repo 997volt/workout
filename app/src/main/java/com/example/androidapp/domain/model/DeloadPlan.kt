@@ -71,6 +71,15 @@ const val DELOAD_MIN_REPS = 5
 /** The share of the plan's load the draft keeps by default: 60%, a 40% back-off. */
 const val DELOAD_DEFAULT_LOAD_KEPT_PERCENT = 60
 
+/**
+ * The effort a deload workout asks for, in half-points: 6.0 (ROADMAP N300).
+ *
+ * Without one the session opens its effort field on the app default 9.0, which is the opposite of a
+ * deload. This is the week's one deliberate effort; the plan's own RPE is not carried, because a deload
+ * at the plan's effort is not a deload.
+ */
+const val DELOAD_TARGET_RPE_HALVES = 12
+
 /** The lightest share the creator offers, as a percentage kept rather than removed. */
 const val DELOAD_LOAD_KEPT_PERCENT_LOW = 50
 
@@ -126,29 +135,62 @@ fun deloadSetTargets(
     val performed = previous?.sets.orEmpty().filter { it.setType.recordsEffort }
 
     val setCount = planned.size.coerceIn(DELOAD_MIN_SETS, DELOAD_MAX_SETS)
-    // A hold is the plan's type, not history's: the plan wins where it says anything (N14). History only
-    // supplies a hold when the plan is silent about both reps and seconds.
-    val planHolds = planned.any { it.targetDurationSeconds != null }
-    val planCounts = planned.any {
-        it.targetRepsMax != null || it.targetRepsMin != null || it.targetRepsCurrent != null
-    }
-    val hold = when {
-        planHolds -> planned.mapNotNull { it.targetDurationSeconds }.maxOrNull()
-        planCounts -> null
-        else -> performed.mapNotNull { it.durationSeconds }.maxOrNull()
-    }
+    val hold = deloadHold(planned, performed)
+    val reps = deloadReps(planned, performed, hold)
+    val (weight, assistance) = deloadLoad(planned, performed, loadKeptPercent, stepGrams)
+
+    val target = DeloadSetTarget(
+        weightGrams = weight,
+        assistanceGrams = assistance,
+        reps = reps,
+        durationSeconds = hold,
+    )
+    return List(setCount) { target }
+}
+
+/**
+ * The plan's type wins: a hold if it states one, a counted set if it states reps, and history only when
+ * the plan is silent about both (N14, B396).
+ */
+private fun deloadHold(
+    planned: List<TemplateSet>,
+    performed: List<SetEntry>,
+): Int? = when {
+    planned.any { it.targetDurationSeconds != null } ->
+        planned.mapNotNull { it.targetDurationSeconds }.maxOrNull()
+
+    planned.any { it.targetRepsMax != null || it.targetRepsMin != null || it.targetRepsCurrent != null } ->
+        null
+
+    else -> performed.mapNotNull { it.durationSeconds }.maxOrNull()
+}
+
+/** One rep number for a counted exercise; a hold has none, and history fills only a silent plan. */
+private fun deloadReps(
+    planned: List<TemplateSet>,
+    performed: List<SetEntry>,
+    hold: Int?,
+): Int? {
+    if (hold != null) return null
     val plannedReps = planned
         .mapNotNull { it.targetRepsMax ?: it.targetRepsMin ?: it.targetRepsCurrent }
         .maxOrNull()
     val performedReps = performed.maxOfOrNull { it.reps }
-    val reps = if (hold != null) {
-        null
-    } else {
-        (plannedReps ?: performedReps)?.coerceAtLeast(DELOAD_MIN_REPS)
-    }
+    return (plannedReps ?: performedReps)?.coerceAtLeast(DELOAD_MIN_REPS)
+}
 
-    // The plan wins where it states a load and history only fills what it leaves unsaid, the precedence
-    // the workout's own prefill already uses (N14, N59).
+/**
+ * The load to write, and the assistance when the movement is assisted (N15).
+ *
+ * The plan wins where it states a load and history only fills what it leaves unsaid, the precedence the
+ * workout's own prefill already uses (N14, N59).
+ */
+private fun deloadLoad(
+    planned: List<TemplateSet>,
+    performed: List<SetEntry>,
+    loadKeptPercent: Int,
+    stepGrams: Long,
+): Pair<Long?, Long?> {
     val plannedAssistance = planned.mapNotNull { it.targetAssistanceGrams }.maxOrNull()
     val plannedWeight = planned.mapNotNull { it.targetWeightGrams }.maxOrNull()
     val performedAssistance = performed.maxOfOrNull { it.assistanceGrams }
@@ -162,20 +204,10 @@ fun deloadSetTargets(
         else -> performedAssistance
     }
     val assisted = assistance != null && assistance > 0L
-    val weight = if (assisted) {
-        // An assisted set stores no added weight (N15); the help is the load.
-        0L
-    } else {
-        val source = plannedWeight ?: performedWeight
-        source?.takeIf { it > 0L }
-            ?.let { roundToStep(it * loadKeptPercent / FULL_PERCENT, stepGrams) }
-    }
+    if (assisted) return 0L to assistance
 
-    val target = DeloadSetTarget(
-        weightGrams = weight,
-        assistanceGrams = if (assisted) assistance else null,
-        reps = reps,
-        durationSeconds = hold,
-    )
-    return List(setCount) { target }
+    val source = plannedWeight ?: performedWeight
+    val weight = source?.takeIf { it > 0L }
+        ?.let { roundToStep(it * loadKeptPercent / FULL_PERCENT, stepGrams) }
+    return weight to null
 }

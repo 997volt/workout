@@ -114,6 +114,7 @@ class DeloadRepositoryTest {
             planned.single().sets.first().targetWeightGrams,
         )
         assertEquals(5, planned.single().sets.first().targetRepsMin)
+        assertEquals("a deload asks for 6.0, not the 9.0 default", 12, planned.single().targetRpeHalves)
     }
 
     @Test

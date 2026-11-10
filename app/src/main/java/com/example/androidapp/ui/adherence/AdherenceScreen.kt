@@ -524,10 +524,10 @@ private fun DeloadWeekRow(
                 val marked = week in deloadWeeks[program.id].orEmpty()
                 val built = week in plans[program.id].orEmpty()
                 DeloadChip(
-                    label = if (programs.size == 1) {
-                        stringResource(R.string.adherence_deload_mark)
-                    } else {
-                        program.name
+                    label = when {
+                        programs.size > 1 -> program.name
+                        built -> stringResource(R.string.adherence_deload_plan)
+                        else -> stringResource(R.string.adherence_deload_mark)
                     },
                     marked = marked,
                     built = built,

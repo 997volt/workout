@@ -459,9 +459,12 @@ internal class FakeMeasurementRepository : MeasurementRepository {
 internal class FakeDeloadRepository : DeloadRepository {
 
     val weeks = MutableStateFlow<List<DeloadWeek>>(emptyList())
+    val markedPrograms = MutableStateFlow<Set<String>>(emptySet())
     var lastPlan: DeloadWeek? = null
 
     override fun observeWeekPlans(weekStart: LocalDate): Flow<List<DeloadWeek>> = weeks
+
+    override fun observeMarkedPrograms(weekStart: LocalDate): Flow<Set<String>> = markedPrograms
 
     override suspend fun createDeload(
         programId: String,

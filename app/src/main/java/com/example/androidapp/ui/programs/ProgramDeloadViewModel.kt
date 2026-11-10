@@ -29,6 +29,8 @@ import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 import javax.inject.Inject
 
 /** One exercise the creator may keep, with the sets the rule derived for it (ROADMAP N147). */
@@ -293,10 +295,12 @@ class ProgramDeloadViewModel @Inject constructor(
     fun onCreate() {
         val current = _state.value
         if (!current.canCreate) return
+        val weekStart = current.weekStart ?: return
         _state.update { it.copy(creating = true, error = null) }
 
         val inputs = buildDeloadInputs(
             sources = sources,
+            weekStart = weekStart,
             dayCount = current.dayCount,
             selectedByDay = selectedByDay,
             loadKeptPercent = current.loadKeptPercent,
@@ -342,8 +346,10 @@ class ProgramDeloadViewModel @Inject constructor(
      */
     private fun rebuild() {
         val current = _state.value
+        val weekStart = current.weekStart ?: return
         val days = buildDeloadDays(
             sources = sources,
+            weekStart = weekStart,
             dayCount = current.dayCount,
             selectedByDay = selectedByDay,
             loadKeptPercent = current.loadKeptPercent,
@@ -367,13 +373,23 @@ class ProgramDeloadViewModel @Inject constructor(
  */
 private data class PoolExercise(val exercise: DeloadSourceExercise, val sourceName: String)
 
-/** The written workout's name: Deload A, Deload B, … in day order (N152). */
-private fun deloadDayName(index: Int): String =
-    if (index < DELOAD_DAY_LETTERS) {
+/**
+ * The written workout's name: *Deload A · 12 Oct*, in day order (N152, N300).
+ *
+ * The week is in the name because *Deload A* is indistinguishable after a year of them, and the
+ * template library keeps every one. The date is the week's Monday, which is what the creator chose.
+ */
+private fun deloadDayName(index: Int, weekStart: LocalDate): String {
+    val base = if (index < DELOAD_DAY_LETTERS) {
         "Deload ${('A'.code + index).toChar()}"
     } else {
         "Deload ${index + 1}"
     }
+    return "$base · ${DELOAD_WEEK_LABEL.format(weekStart)}"
+}
+
+private val DELOAD_WEEK_LABEL: DateTimeFormatter =
+    DateTimeFormatter.ofPattern("d MMM", Locale.ENGLISH)
 
 /** Past the alphabet a week is numbered rather than lettered; the cap is the alphabet, not a day limit. */
 private const val DELOAD_DAY_LETTERS = 26
@@ -389,8 +405,11 @@ private fun poolOf(sources: List<DeloadSourceDay>): List<PoolExercise> =
  * shape. Every day carries the **whole program pool**, selected per day; the day's name and weekday start
  * from the source day at its position.
  */
+// The creator's whole draft as arguments: sources, the week being named, and the four controls.
+@Suppress("LongParameterList")
 internal fun buildDeloadDays(
     sources: List<DeloadSourceDay>,
+    weekStart: LocalDate,
     dayCount: Int,
     selectedByDay: List<Set<String>>,
     loadKeptPercent: Int,
@@ -402,7 +421,7 @@ internal fun buildDeloadDays(
         val selected = selectedByDay.getOrElse(index) { emptySet() }
         DeloadDayUi(
             sourceSlotId = day.sourceSlotId,
-            sourceName = deloadDayName(index),
+            sourceName = deloadDayName(index, weekStart),
             weekday = day.weekdayAfter(weekdayOf),
             exercises = pool.map { pooled ->
                 val exercise = pooled.exercise
@@ -458,8 +477,11 @@ internal fun buildDeloadPool(days: List<DeloadDayUi>): List<DeloadPoolRowUi> {
  * and the workout is named **Deload A, Deload B, …** in day order, so the built week reads as a week rather
  * than as copies of the program's templates. The template editor renames one afterwards.
  */
+// The write reads the same six inputs as the preview, so the two cannot disagree by a parameter.
+@Suppress("LongParameterList")
 internal fun buildDeloadInputs(
     sources: List<DeloadSourceDay>,
+    weekStart: LocalDate,
     dayCount: Int,
     selectedByDay: List<Set<String>>,
     loadKeptPercent: Int,
@@ -472,7 +494,7 @@ internal fun buildDeloadInputs(
         val kept = pool.map { it.exercise }.filter { it.templateExerciseId in selected }
         if (kept.isEmpty()) return@mapNotNull null
         DeloadDayInput(
-            name = deloadDayName(index),
+            name = deloadDayName(index, weekStart),
             weekday = day.weekdayAfter(weekdayOf),
             exercises = kept.map { exercise ->
                 DeloadExerciseInput(

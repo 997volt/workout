@@ -1432,9 +1432,9 @@ the rule; that one argues it.
   rather than being a dated plan (N16) or a derived week. **Exempt from the ratio, not from the
   calendar**: a deload week's scheduled occurrences are neither done, skipped nor missed, so a
   deliberate back-off cannot read as a failure, while its sessions still mark their days. A built plan's own
-  days are the calendar's schedule (B161), and the missed-day question does not ask about a built week (B163):
-  a deload day has no slot a skip could record, so the week is left out of that question; a marked week with no
-  plan keeps its slots and still asks. **Nothing is scaled for you by the app** — a week marked
+  days are the calendar's schedule (B161), and the missed-day question does not ask about an **exempt** week at
+  all (B163, N300): a deload day has no slot a skip could record, and a marked week with no plan keeps its slots
+  but the prompt — a judgement — goes with the score. **Nothing is scaled for you by the app** — a week marked
   with no plan prescribes what the slot's template prescribes (N73), and N147's creator writes a draft only
   when the lifter asks for it — and **the creator plans the next week** (N158): the mark is still the lifter's,
   but the one-week forward window replaces the old no-forward-view rule, because on a Sunday the old rule built a
@@ -1446,7 +1446,8 @@ the rule; that one argues it.
   two days while the program has four. The draft is one visible rule — the plan's stand-alone working sets
   kept up to three, its highest rep target floored at five, its heaviest stated load kept at 60% (50/70
   offered) or the last finished session's where the plan states none, rounded to the exercise's step; no
-  warm-up, no rung, no effort target — and the screen's preview and the write read the same pure function.
+  warm-up, no rung, and a deload effort target of 6.0 (N300) — and the screen's preview and the write read the
+  same pure function. A timed movement keeps its hold and loses sets rather than being drafted as reps (B396).
   **Nothing scales by itself**: the creator writes only when called and the saved plan never recalculates;
   anything finer is a template edit. It applies to the **next week** (N158), so no deload day is in the past;
   the current week is still accepted for older plans, and the mark is written in the same transaction. Home's
@@ -1465,13 +1466,23 @@ the rule; that one argues it.
   program-wide pool is one list below them — one row per **source instance**, with that day's plan and name, and
   a chip per deload day on each row (N156) — and the day count is the
   deload's, not a prefix of the program; a movement on two source days is two rows, so the same exercise can be
-  kept more than once (N157). The workout is named **Deload A, Deload B, …** in day order, so the built week reads as a week
-  rather than as copies of the templates; the weekday still starts from the source day at that position, and the
+  kept more than once (N157). The workout is named **Deload A · 5 Oct, Deload B · 5 Oct, …** in day order, with its
+  week, so a year of them is not a shelf of identical names (N300); the weekday still starts from the source day at
+  that position, and the
   template editor renames a workout that now mixes upper and lower work. The store is
   **schema 7**; the **backup's `schemaVersion` stays at 5**, so an older build reading a newer file keeps the mark
   and the workouts but not the plan (B165). The plan travels in the backup as authored setup; N47's program
   document still carries neither it nor its workouts, because a week-keyed plan is history.
   ([evidence](DECISIONS-EVIDENCE.md#n147))
+- **An exempt week and a deload week are two actions** (N300). The mark is the **exemption**: it is named *Exempt
+  week*, it leaves the program's own workouts and schedule alone, and its only effect is to leave the week out of
+  done/skipped/missed and to stop the missed-day question. The built plan is the **deload week**: the lighter training
+  the creator writes. The program screen offers *Exempt this week*, *Exempt next week* and *Build a deload week* in one
+  place, because a vacation is known before its week starts and the calendar can only mark a week that already has;
+  a later build reuses the mark it finds. Home says *this week is not scored* rather than labelling the full workout a
+  deload, and a calendar exemption is offered only for a weekly program — a block's days are its own weeks (B398). The
+  creator writes the 6.0 effort, names each workout with its week, and a built week's unmarking asks first and says
+  both consequences: the week returns to the normal schedule and can read as missed, and the templates stay.
 - **A substitute is an event keyed by slot and week, and it stands in for matching** (P3.11). The
   pick is made at the point of starting, like the missed-day question, and recorded for that slot
   and week before the session opens; editing the program instead would change every week that

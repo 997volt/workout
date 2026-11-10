@@ -30,6 +30,13 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   week is outside the program and writes nothing, while a marked week with no plan built still trains the
   program and does not suppress auto.
 
+- **An exempt week and a deload week are two actions** (N300). The Adherence mark is *Exempt* — not scored, with
+  the program's workouts untouched — and *Deload* is the lighter plan the creator writes. A program's screen has a
+  visible *Recovery week* entry that offers exempting this or next week and building a lighter one; the mark can be
+  made before the week starts, a later build reuses it, and a marked week is no longer asked about by the missed-day
+  prompt. Home says the week is not scored without relabelling the workouts. The creator now writes a 6.0 effort and
+  names each workout with its week, and unmarking a built week asks and says both what changes and what stays.
+
 ### Fixed
 
 - **The shell owns the bottom system inset once** (B358). The tab bar already includes the navigation bar,

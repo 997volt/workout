@@ -657,13 +657,14 @@
     <string name="adherence_day_scheduled">%1$s, scheduled</string>
     <string name="adherence_day_rest">%1$s, rest</string>
     <!-- Marking a week as a deload (ROADMAP P3.10): exempt from the ratio, not the calendar. -->
-    <string name="adherence_deload_title">Deload weeks</string>
-    <string name="adherence_deload_hint">A deload week is not scored — its days count as neither done, skipped nor missed — but they stay on the calendar.</string>
+    <string name="adherence_deload_title">Exempt weeks</string>
+    <string name="adherence_deload_hint">An exempt week is not scored — its days count as neither done, skipped nor missed — but they stay on the calendar. A deload week is a lighter plan you build.</string>
     <string name="adherence_deload_week">Week of %1$s</string>
-    <string name="adherence_deload_mark">Deload</string>
+    <string name="adherence_deload_mark">Exempt</string>
+    <string name="adherence_deload_plan">Deload</string>
     <string name="adherence_deload_built">%1$s · built</string>
     <string name="adherence_deload_unmark_title">Unmark this deload week?</string>
-    <string name="adherence_deload_unmark_text">The workouts it built stay in the library, but this week’s plan will no longer be used. You can build it again from the program.</string>
+    <string name="adherence_deload_unmark_text">The week returns to the normal schedule and can read as missed. The deload workouts stay in your templates.</string>
     <string name="adherence_deload_unmark_confirm">Unmark</string>
     <!-- Correcting one day's occurrences (ROADMAP P3.13). -->
     <string name="adherence_day_nothing">Nothing was scheduled on this day.</string>
@@ -698,6 +699,8 @@
     <!-- What the plan surface says when the day has nothing on it (ROADMAP N126). Two lines and not one,
          because "nothing is followed" and "followed, and today is rest" are different facts — and a
          weekday-less program is the second one on every day, never scheduled and never missed. -->
+    <string name="home_exempt_week_title">This week is not scored</string>
+    <string name="home_exempt_week_hint">Your program’s workouts are still planned. The calendar leaves this week out of done, skipped and missed.</string>
     <string name="home_no_plan">No workout planned today</string>
     <string name="home_no_plan_hint">Follow a program to schedule your week.</string>
     <string name="home_plan_sequence_day">Day %1$d of %2$d</string>
@@ -1231,7 +1234,23 @@
     <!-- A program's planned work per muscle (ROADMAP N119). Counts and shares, never a verdict: a range a
          lifter should hit is a claim this app has no evidence for. -->
     <string name="program_balance">Muscle balance</string>
-    <string name="program_deload">Deload week</string>
+    <string name="program_recovery_week">Recovery week</string>
+    <string name="program_recovery_week_hint">Exempt a week from scoring, or build a lighter one.</string>
+    <string name="program_weeks_title">Recovery week</string>
+    <string name="program_weeks_intro">An exempt week is not scored and keeps your workouts. A deload week is a lighter plan written for next week.</string>
+    <string name="program_weeks_this_week">This week</string>
+    <string name="program_weeks_next_week">Next week</string>
+    <string name="program_weeks_exempt">Exempt this week</string>
+    <string name="program_weeks_remove">Remove the exemption</string>
+    <string name="program_weeks_exempt_hint">Not scored. Your program’s workouts stay as they are.</string>
+    <string name="program_weeks_exempted">This week is exempt from scoring.</string>
+    <string name="program_weeks_has_plan">A deload plan is built for this week.</string>
+    <string name="program_weeks_build">Build a deload week</string>
+    <string name="program_weeks_build_hint">Writes a lighter plan for next week, from this program’s own workouts.</string>
+    <string name="program_weeks_unmark_title">Remove this exemption?</string>
+    <string name="program_weeks_unmark_text">The week returns to the normal schedule and can read as missed. The deload workouts stay in your templates.</string>
+    <string name="program_weeks_unmark_confirm">Remove</string>
+    <string name="program_weeks_not_found">This program no longer exists.</string>
     <string name="program_progression">Auto progression</string>
     <string name="program_progression_title">Auto progression</string>
     <string name="program_progression_intro">When this is on, the app raises this program\'s planned targets from what you log. It never lowers them, and every change is recorded.</string>

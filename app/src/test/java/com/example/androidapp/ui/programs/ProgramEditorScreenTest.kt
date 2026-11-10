@@ -60,6 +60,7 @@ class ProgramEditorScreenTest {
         onOpenTemplate: (String) -> Unit = {},
         onOpenBalance: () -> Unit = {},
         onOpenDeload: () -> Unit = {},
+        onOpenWeeks: () -> Unit = {},
         onOpenProgression: () -> Unit = {},
         onPreviewSlot: (String, String) -> Unit = { _, _ -> },
         onClosePreview: () -> Unit = {},
@@ -82,6 +83,7 @@ class ProgramEditorScreenTest {
                 onOpenTemplate = onOpenTemplate,
                 onOpenBalance = onOpenBalance,
                 onOpenDeload = onOpenDeload,
+                onOpenWeeks = onOpenWeeks,
                 onOpenProgression = onOpenProgression,
                 onPreviewSlot = onPreviewSlot,
                 onClosePreview = onClosePreview,
@@ -162,15 +164,25 @@ class ProgramEditorScreenTest {
     }
 
     @Test
-    fun theBarsMenu_carriesTheDeloadCreator() {
-        // ROADMAP N147: the creator builds a week from this program's own workouts, so its way in is
-        // the program that owns them.
+    fun theBarsMenu_carriesTheRecoveryWeekChoices() {
+        // N300: one entry offers the exemption and the built deload; the creator is reached from it.
         var opened = false
-        setScreen(onOpenDeload = { opened = true })
+        setScreen(onOpenWeeks = { opened = true })
 
         composeTestRule.onNodeWithTag(TestTags.Programs.MENU).performClick()
-        composeTestRule.onNodeWithTag(TestTags.Programs.DELOAD).assertExists()
-        composeTestRule.onNodeWithTag(TestTags.Programs.DELOAD).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Programs.WEEKS_MENU).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Programs.WEEKS_MENU).performClick()
+
+        assertThat(opened).isTrue()
+    }
+
+    @Test
+    fun theBody_carriesTheRecoveryWeekEntry() {
+        // N300: not only the overflow — a program followed for years should not hide its recovery week.
+        var opened = false
+        setScreen(onOpenWeeks = { opened = true })
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.RECOVERY_WEEK).performClick()
 
         assertThat(opened).isTrue()
     }

@@ -101,8 +101,10 @@ fun ProgramEditorRoute(
     onOpenTemplate: (String) -> Unit,
     /** Opens this program's balance view (ROADMAP N119), which the bar's ⋮ carries. */
     onOpenBalance: () -> Unit,
-    /** Opens the deload creator for this program (ROADMAP N147), beside balance in the bar's ⋮. */
+    /** Opens the deload creator direct, from a stall card (ROADMAP N147). */
     onOpenDeload: () -> Unit,
+    /** Opens the recovery-week choices: exempt this/next week, or build a deload (ROADMAP N300). */
+    onOpenWeeks: () -> Unit,
     /** Opens this program's auto progression switch and preflight (ROADMAP N299). */
     onOpenProgression: () -> Unit,
     modifier: Modifier = Modifier,
@@ -147,6 +149,7 @@ fun ProgramEditorRoute(
         onOpenTemplate = onOpenTemplate,
         onOpenBalance = onOpenBalance,
         onOpenDeload = onOpenDeload,
+        onOpenWeeks = onOpenWeeks,
         onOpenProgression = onOpenProgression,
         onPreviewSlot = viewModel::onPreviewSlot,
         onClosePreview = viewModel::onClosePreview,
@@ -178,6 +181,7 @@ fun ProgramEditorScreen(
     onOpenTemplate: (String) -> Unit,
     onOpenBalance: () -> Unit,
     onOpenDeload: () -> Unit,
+    onOpenWeeks: () -> Unit,
     onOpenProgression: () -> Unit,
     onPreviewSlot: (String, String) -> Unit,
     onClosePreview: () -> Unit,
@@ -211,7 +215,7 @@ fun ProgramEditorScreen(
                 isSequence = isSequence,
                 onBack = onBack,
                 onOpenBalance = onOpenBalance,
-                onOpenDeload = onOpenDeload,
+                onOpenWeeks = onOpenWeeks,
                 onOpenProgression = onOpenProgression,
                 onDelete = { confirmingDelete = true },
                 onExport = onExportProgram,
@@ -234,6 +238,7 @@ fun ProgramEditorScreen(
             onOpenTemplate = onOpenTemplate,
             onPreviewSlot = onPreviewSlot,
             onOpenDeload = onOpenDeload,
+            onOpenWeeks = onOpenWeeks,
             modifier = Modifier.padding(innerPadding),
         )
     }
@@ -343,7 +348,7 @@ private fun ProgramEditorTopBar(
     isSequence: Boolean,
     onBack: () -> Unit,
     onOpenBalance: () -> Unit,
-    onOpenDeload: () -> Unit,
+    onOpenWeeks: () -> Unit,
     onOpenProgression: () -> Unit,
     onDelete: () -> Unit,
     onExport: () -> Unit,
@@ -379,7 +384,7 @@ private fun ProgramEditorTopBar(
                     isSequence = isSequence,
                     onDismiss = { open = false },
                     onOpenBalance = onOpenBalance,
-                    onOpenDeload = onOpenDeload,
+                    onOpenWeeks = onOpenWeeks,
                     onOpenProgression = onOpenProgression,
                     onExport = onExport,
                     onDelete = onDelete,
@@ -390,9 +395,10 @@ private fun ProgramEditorTopBar(
 }
 
 /**
- * The editor's one overflow menu: deload, balance, export, delete (ROADMAP N119, N147).
+ * The editor's one overflow menu: recovery week, auto progression, balance, export, delete (ROADMAP N119,
+ * N147, N299, N300).
  *
- * Split out because the bar was at the length this project allows, and because the four entries are one
+ * Split out because the bar was at the length this project allows, and because the entries are one
  * kind of thing — the actions this editor's bar carries — with the destructive one last and coloured.
  */
 @Composable
@@ -401,7 +407,7 @@ private fun ProgramEditorMenu(
     isSequence: Boolean,
     onDismiss: () -> Unit,
     onOpenBalance: () -> Unit,
-    onOpenDeload: () -> Unit,
+    onOpenWeeks: () -> Unit,
     onOpenProgression: () -> Unit,
     onExport: () -> Unit,
     onDelete: () -> Unit,
@@ -415,16 +421,16 @@ private fun ProgramEditorMenu(
             },
             modifier = Modifier.testTag(TestTags.Programs.AUTO_PROGRESSION),
         )
-        // A deload is a week the lifter marks (P3.10), and a sequence has no weeks (N176): the
-        // creator is not offered for one rather than offered and refused.
+        // A weekly program's weeks are the calendar's; a block has its own order (N176), so the
+        // calendar exemption is not offered for one rather than offered and refused (B398).
         if (!isSequence) {
             DropdownMenuItem(
-                text = { Text(stringResource(R.string.program_deload)) },
+                text = { Text(stringResource(R.string.program_recovery_week)) },
                 onClick = {
                     onDismiss()
-                    onOpenDeload()
+                    onOpenWeeks()
                 },
-                modifier = Modifier.testTag(TestTags.Programs.DELOAD),
+                modifier = Modifier.testTag(TestTags.Programs.WEEKS_MENU),
             )
         }
         DropdownMenuItem(
@@ -475,6 +481,8 @@ private fun ProgramEditorBody(
     onPreviewSlot: (String, String) -> Unit,
     /** Opens the deload creator this program already has (ROADMAP N237). */
     onOpenDeload: () -> Unit,
+    /** Opens the recovery-week choices (ROADMAP N300). */
+    onOpenWeeks: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     if (state.isLoading) {
@@ -514,6 +522,7 @@ private fun ProgramEditorBody(
                 onRemoveWeek = phases.onRemove,
             )
             HorizontalDivider()
+            RecoveryWeekCard(onOpen = onOpenWeeks)
         }
 
         // A prescription that stopped moving, said where the program is read (N237). Nothing is written: the
@@ -1102,6 +1111,7 @@ private fun ProgramEditorScreenPreview() {
             onOpenTemplate = {},
             onOpenBalance = {},
             onOpenDeload = {},
+            onOpenWeeks = {},
             onOpenProgression = {},
             onPreviewSlot = { _, _ -> },
             onClosePreview = {},

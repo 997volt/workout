@@ -7,6 +7,7 @@ import com.example.androidapp.domain.model.TemplateSet
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import java.time.DayOfWeek
+import java.time.LocalDate
 
 /**
  * The creator's two pure readings of one snapshot (ROADMAP N147, N152).
@@ -48,6 +49,8 @@ class DeloadCreatorStateTest {
         stepGrams = 2_500L,
         previous = PreviousPerformance(emptyList()),
     )
+
+    private val week = LocalDate.of(2026, 10, 5)
 
     private val sources = listOf(
         DeloadSourceDay(
@@ -91,6 +94,7 @@ class DeloadCreatorStateTest {
     fun theDayCount_showsOnlyThatManyDayCards() {
         val days = buildDeloadDays(
             sources = sources,
+            weekStart = week,
             dayCount = 1,
             selectedByDay = listOf(setOf("te1", "te2", "te3", "te4", "te5")),
             loadKeptPercent = 60,
@@ -105,6 +109,7 @@ class DeloadCreatorStateTest {
         // N152: the day 1 card is not limited to the source day it starts from.
         val days = buildDeloadDays(
             sources = sources,
+            weekStart = week,
             dayCount = 1,
             selectedByDay = listOf(setOf("te1")),
             loadKeptPercent = 60,
@@ -126,6 +131,7 @@ class DeloadCreatorStateTest {
         // N156: the screen draws one row per exercise, so the days each row is kept on are its chips.
         val days = buildDeloadDays(
             sources = sources,
+            weekStart = week,
             dayCount = 3,
             selectedByDay = listOf(setOf("te1"), setOf("te1", "te3"), emptySet()),
             loadKeptPercent = 60,
@@ -146,6 +152,7 @@ class DeloadCreatorStateTest {
     fun theShare_movesEveryShownLoad() {
         val days = buildDeloadDays(
             sources = sources,
+            weekStart = week,
             dayCount = 1,
             selectedByDay = listOf(setOf("te1")),
             loadKeptPercent = 70,
@@ -160,6 +167,7 @@ class DeloadCreatorStateTest {
     fun onlyTheExercisesTickedOnThatDay_areWritten() {
         val inputs = buildDeloadInputs(
             sources = sources,
+            weekStart = week,
             dayCount = 1,
             selectedByDay = listOf(setOf("te1")),
             loadKeptPercent = 60,
@@ -168,7 +176,7 @@ class DeloadCreatorStateTest {
 
         assertThat(inputs).hasSize(1)
         val day = inputs.single()
-        assertThat(day.name).isEqualTo("Deload A")
+        assertThat(day.name).isEqualTo("Deload A · 5 Oct")
         assertThat(day.weekday).isEqualTo(DayOfWeek.MONDAY)
         assertThat(day.exercises.map { it.exerciseId }).containsExactly("back-squat")
         val written = day.exercises.single()
@@ -183,13 +191,14 @@ class DeloadCreatorStateTest {
         // The request: four program days, two deload days, a lift from the third and one from the fourth.
         val inputs = buildDeloadInputs(
             sources = sources,
+            weekStart = week,
             dayCount = 2,
             selectedByDay = listOf(setOf("te4"), setOf("te5")),
             loadKeptPercent = 60,
             weekdayOf = weekdayOf,
         )
 
-        assertThat(inputs.map { it.name }).containsExactly("Deload A", "Deload B").inOrder()
+        assertThat(inputs.map { it.name }).containsExactly("Deload A · 5 Oct", "Deload B · 5 Oct").inOrder()
         assertThat(inputs[0].exercises.map { it.exerciseId }).containsExactly("row")
         assertThat(inputs[1].exercises.map { it.exerciseId }).containsExactly("front-squat")
     }
@@ -198,19 +207,21 @@ class DeloadCreatorStateTest {
     fun aDayWithNothingTicked_isNotWritten() {
         val inputs = buildDeloadInputs(
             sources = sources,
+            weekStart = week,
             dayCount = 2,
             selectedByDay = listOf(emptySet(), setOf("te3")),
             loadKeptPercent = 60,
             weekdayOf = weekdayOf,
         )
 
-        assertThat(inputs.map { it.name }).containsExactly("Deload B")
+        assertThat(inputs.map { it.name }).containsExactly("Deload B · 5 Oct")
     }
 
     @Test
     fun aMovedOrRemovedWeekday_travelsWithTheDay() {
         val moved = buildDeloadInputs(
             sources = sources,
+            weekStart = week,
             dayCount = 1,
             selectedByDay = listOf(setOf("te1")),
             loadKeptPercent = 60,
@@ -218,6 +229,7 @@ class DeloadCreatorStateTest {
         )
         val removed = buildDeloadInputs(
             sources = sources,
+            weekStart = week,
             dayCount = 1,
             selectedByDay = listOf(setOf("te1")),
             loadKeptPercent = 60,
@@ -232,6 +244,7 @@ class DeloadCreatorStateTest {
     fun theVisibleSelection_isTheCountTheScreenReports() {
         val days = buildDeloadDays(
             sources = sources,
+            weekStart = week,
             dayCount = 2,
             selectedByDay = listOf(setOf("te1"), setOf("te3")),
             loadKeptPercent = 60,
@@ -261,6 +274,7 @@ class DeloadCreatorStateTest {
 
         val days = buildDeloadDays(
             sources = duplicate,
+            weekStart = week,
             dayCount = 1,
             selectedByDay = listOf(setOf("t1", "t2")),
             loadKeptPercent = 60,
@@ -292,6 +306,7 @@ class DeloadCreatorStateTest {
 
         val inputs = buildDeloadInputs(
             sources = duplicate,
+            weekStart = week,
             dayCount = 1,
             selectedByDay = listOf(setOf("t1", "t2")),
             loadKeptPercent = 60,

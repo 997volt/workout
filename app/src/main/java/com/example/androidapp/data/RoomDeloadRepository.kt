@@ -13,6 +13,7 @@ import com.example.androidapp.domain.InvalidInputException
 import com.example.androidapp.domain.NotFoundException
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.dataResultOf
+import com.example.androidapp.domain.model.DELOAD_TARGET_RPE_HALVES
 import com.example.androidapp.domain.model.DeloadDay
 import com.example.androidapp.domain.model.DeloadWeek
 import com.example.androidapp.domain.model.ProgramSchedule
@@ -51,6 +52,10 @@ class RoomDeloadRepository @Inject constructor(
 
     override fun observeWeekPlans(weekStart: LocalDate): Flow<List<DeloadWeek>> =
         deloadDao.observeDeloadDaysForWeek(weekStart.toEpochDay()).map { rows -> rows.toDeloadWeeks() }
+
+    override fun observeMarkedPrograms(weekStart: LocalDate): Flow<Set<String>> =
+        deloadDao.observeDeloadsForWeek(weekStart.toEpochDay())
+            .map { rows -> rows.map { it.programId }.toSet() }
 
     override suspend fun findLastPlan(programId: String, beforeWeek: LocalDate): DeloadWeek? {
         val mark = deloadDao.findLatestDeloadBefore(programId, beforeWeek.toEpochDay()) ?: return null
@@ -193,9 +198,9 @@ class RoomDeloadRepository @Inject constructor(
                 position = position,
                 restSeconds = exercise.restSeconds,
                 techniqueNote = exercise.techniqueNote,
-                // The plan's effort is not carried: a deload at the plan's RPE is not a deload, and the
-                // draft states no effort rather than inventing one.
-                targetRpeHalves = null,
+                // A deload effort, not the plan's and not the session's 9.0 default (N300): leaving it
+                // blank opened the workout's effort field on the opposite of a deload.
+                targetRpeHalves = DELOAD_TARGET_RPE_HALVES,
                 supersetGroup = exercise.supersetGroup,
                 createdAt = now,
                 updatedAt = now,
