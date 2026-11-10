@@ -1455,6 +1455,10 @@
     <!-- The draft's prescription, e.g. "3 × 5 · 60 kg". The sets line alone is used when the plan wrote
          no reps, and the load joins it only when one was derived. -->
     <string name="deload_sets_reps">%1$d × %2$d</string>
+    <plurals name="deload_sets_seconds">
+        <item quantity="one">%1$d × %2$d second</item>
+        <item quantity="other">%1$d × %2$d seconds</item>
+    </plurals>
     <plurals name="deload_sets">
         <item quantity="one">%1$d set</item>
         <item quantity="other">%1$d sets</item>

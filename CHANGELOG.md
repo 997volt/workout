@@ -32,6 +32,9 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A timed movement is drafted as a hold in a deload week** (B396). The draft reads the plan's seconds
+  instead of turning a hold's absent reps into a five-rep counted set; the reduced set count is the week's
+  reduction, and the writer keeps the hold's duration with no reps.
 - **A block is no longer offered a calendar week to exempt** (B398). The Adherence section's chips are
   weekly-only; a block's days are its own weeks, so a calendar mark would be keyed to a week its run never
   reads. The block's deload action stays on its own day.

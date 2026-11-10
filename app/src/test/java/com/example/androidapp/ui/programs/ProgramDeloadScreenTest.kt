@@ -151,6 +151,35 @@ class ProgramDeloadScreenTest {
     }
 
     @Test
+    fun aTimedMovement_readsAsAHoldNotAsCountedReps() {
+        // B396: the row said a hold's five reps; it now states the seconds the plan asked for.
+        setScreen(
+            state = ready.copy(
+                days = listOf(
+                    day(
+                        exercises = listOf(
+                            exercise(
+                                sets = List(2) {
+                                    DeloadSetTarget(
+                                        weightGrams = 60_000L,
+                                        assistanceGrams = null,
+                                        reps = null,
+                                        durationSeconds = 45,
+                                    )
+                                },
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        scrollTo(TestTags.Deload.day("s1"))
+        composeTestRule.onNodeWithText("2 × 45 seconds · 60 kg").assertIsDisplayed()
+        composeTestRule.onNodeWithText("2 × 5").assertDoesNotExist()
+    }
+
+    @Test
     fun aDayChip_keepsThatExerciseOnThatDay() {
         var toggled: Pair<Int, String>? = null
         setScreen(

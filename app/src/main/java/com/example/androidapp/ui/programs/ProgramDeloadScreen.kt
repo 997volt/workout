@@ -552,20 +552,28 @@ private fun WeekdayPicker(
 }
 
 /**
- * One exercise's draft, as the screen states it: `3 × 5 · 60 kg`.
+ * One exercise's draft, as the screen states it: `3 × 5 · 60 kg`, or `3 × 45 seconds · 40 kg` for a hold.
  *
  * The set count is the rule's own (the plan's, up to three), the reps are its highest target floored
  * at five, and the load is what the chosen share derives — with the unit the exercise is shown in
- * (N64). Nothing is added for a value the rule could not derive: no reps reads as a set count, no load
- * as the sets and reps alone.
+ * (N64). A hold keeps the plan's seconds and drops sets (B396). Nothing is added for a value the rule
+ * could not derive: no reps reads as a set count, no load as the sets and reps alone.
  */
 @Composable
 private fun prescriptionOf(sets: List<DeloadSetTarget>, weightUnit: WeightUnit): String {
     val first = sets.firstOrNull() ?: return ""
     val setCount = sets.size
-    val base = first.reps?.let { reps ->
-        stringResource(R.string.deload_sets_reps, setCount, reps)
-    } ?: pluralStringResource(R.plurals.deload_sets, setCount, setCount)
+    val base = when {
+        first.durationSeconds != null -> pluralStringResource(
+            R.plurals.deload_sets_seconds,
+            first.durationSeconds,
+            setCount,
+            first.durationSeconds,
+        )
+
+        first.reps != null -> stringResource(R.string.deload_sets_reps, setCount, first.reps)
+        else -> pluralStringResource(R.plurals.deload_sets, setCount, setCount)
+    }
 
     val assistance = first.assistanceGrams?.takeIf { it > 0L }
     val added = first.weightGrams?.takeIf { it > 0L }

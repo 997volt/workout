@@ -10,6 +10,7 @@ import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.getOrNull
+import com.example.androidapp.domain.model.DeloadSetTarget
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
@@ -246,6 +247,45 @@ class DeloadRepositoryTest {
             "the slot's own Monday is not the week's schedule",
             adherence.occurrencesOn(monday, today, utc).getOrNull().orEmpty().isEmpty(),
         )
+    }
+
+    @Test
+    fun aTimedMovement_isWrittenAsAHold_notAsCountedReps() = runTest {
+        // B396: the target's seconds are what the plan wrote, and the set carries no reps — the write
+        // used to store a five-rep counted set for a hold.
+        val source = templates.observeExercises(template).first().single()
+        val hold = DeloadSetTarget(
+            weightGrams = 60_000L,
+            assistanceGrams = null,
+            reps = null,
+            durationSeconds = 45,
+        )
+        val created = (
+            deloads.createDeload(
+                programId = program,
+                weekStart = monday,
+                days = listOf(
+                    DeloadDayInput(
+                        name = "Deload A",
+                        weekday = DayOfWeek.MONDAY,
+                        exercises = listOf(
+                            DeloadExerciseInput(
+                                exerciseId = source.exerciseId,
+                                restSeconds = source.restSeconds,
+                                techniqueNote = source.techniqueNote,
+                                supersetGroup = source.supersetGroup,
+                                sets = listOf(hold, hold),
+                            ),
+                        ),
+                    ),
+                ),
+            ) as DataResult.Success
+            ).data
+
+        val written = templates.observeExercises(created.templateIds.single()).first().single()
+        assertEquals(2, written.sets.size)
+        assertTrue(written.sets.all { it.targetDurationSeconds == 45 })
+        assertTrue(written.sets.all { it.targetRepsMin == null && it.targetRepsMax == null })
     }
 
     @Test

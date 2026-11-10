@@ -19,6 +19,7 @@ class DeloadPlanTest {
         assistanceGrams: Long? = null,
         repsMin: Int? = 5,
         repsMax: Int? = 5,
+        durationSeconds: Int? = null,
     ) = TemplateSet(
         id = "ts$index",
         templateExerciseId = "te1",
@@ -29,6 +30,7 @@ class DeloadPlanTest {
         targetRepsMin = repsMin,
         targetRepsMax = repsMax,
         targetRepsCurrent = null,
+        targetDurationSeconds = durationSeconds,
         note = null,
     )
 
@@ -38,6 +40,7 @@ class DeloadPlanTest {
         weightGrams: Long = 100_000L,
         assistanceGrams: Long = 0L,
         role: SetType = SetType.NORMAL,
+        durationSeconds: Int? = null,
     ) = SetEntry(
         id = "p$index",
         sessionExerciseId = "se1",
@@ -46,6 +49,7 @@ class DeloadPlanTest {
         weightGrams = weightGrams,
         assistanceGrams = assistanceGrams,
         setType = role,
+        durationSeconds = durationSeconds,
     )
 
     @Test
@@ -115,6 +119,36 @@ class DeloadPlanTest {
         val targets = deloadSetTargets(planned, null, stepGrams = 2_500L)
 
         assertThat(targets.map { it.reps }).containsExactly(12, 12, 12)
+    }
+
+    @Test
+    fun aTimedMovement_keepsItsHold_andLosesSets() {
+        // B396: the draft used to read a hold's absent reps as zero and write a five-rep counted set.
+        // The hold is the plan's own number; the reduced count is the deload.
+        val planned = List(4) {
+            set(it, repsMin = null, repsMax = null, durationSeconds = 45)
+        }
+
+        val targets = deloadSetTargets(planned, null, stepGrams = 2_500L)
+
+        assertThat(targets).hasSize(3)
+        assertThat(targets.map { it.durationSeconds }).containsExactly(45, 45, 45)
+        assertThat(targets.map { it.reps }).containsExactly(null, null, null)
+        assertThat(targets.map { it.weightGrams }).containsExactly(60_000L, 60_000L, 60_000L)
+    }
+
+    @Test
+    fun aTimedMovementWithNoPlannedTarget_usesTheLastSessionsHold() {
+        // The plan is silent about both reps and seconds, so history decides the type (N14's precedence).
+        val previous = PreviousPerformance(
+            listOf(performed(0, reps = 0, durationSeconds = 60)),
+        )
+
+        val targets = deloadSetTargets(emptyList(), previous, stepGrams = 2_500L)
+
+        assertThat(targets).hasSize(1)
+        assertThat(targets.single().durationSeconds).isEqualTo(60)
+        assertThat(targets.single().reps).isNull()
     }
 
     @Test

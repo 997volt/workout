@@ -83,15 +83,6 @@ to say that in the names and give each action its own way in.
   returns to the normal schedule and can read as missed, because the deload sessions used templates
   that settle no slot. Say both, and keep the templates.
 
-### B396 — A timed movement is drafted as a counted set
-
-`deloadSetTargets` reads reps and weight only. A hold's plan names seconds and no reps, so the draft
-falls back to the hold's zero-rep history, floors it at five, and writes a counted set with no
-duration — or, with no history, no target at all. The week's hold is not scaled. The draft needs a
-duration target and a rule for it: keep the hold and let the reduced set count be the deload, or apply
-the same share to the seconds and round to the 15-second step. Either way the preview and the write
-read the same function, and a timed movement never becomes a counted one.
-
 ### B397 — A previous deload can feed the next draft's load fallback
 
 When the plan states no load, the draft falls back to the exercise's last finished session. A built

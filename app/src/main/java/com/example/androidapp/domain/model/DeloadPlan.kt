@@ -47,14 +47,16 @@ data class DeloadWeek(
 /**
  * What one deload set prescribes (ROADMAP N147).
  *
- * The shape [TemplateSet] already has, reduced to the three targets the creator derives: a load (or the
- * assistance it stores instead, N15), and one rep count. The set role is always [SetType.NORMAL] — a
- * deload carries no ramp and no rung — so it is not a field.
+ * The shape [TemplateSet] already has, reduced to the targets the creator derives: a load (or the
+ * assistance it stores instead, N15), and one rep count **or one hold duration** (ROADMAP B396). The set
+ * role is always [SetType.NORMAL] — a deload carries no ramp and no rung — so it is not a field.
  */
 data class DeloadSetTarget(
     val weightGrams: Long?,
     val assistanceGrams: Long?,
     val reps: Int?,
+    /** A timed movement's hold, in seconds; null for a counted set (B396). */
+    val durationSeconds: Int? = null,
 )
 
 /** The plan's working sets are kept up to this many, because past it the count is the volume a deload removes. */
@@ -97,7 +99,9 @@ private const val FULL_PERCENT = 100.0
  * - **Reps:** one number, the highest target those sets name, floored at [DELOAD_MIN_REPS]. A 5/3/1 plan
  *   therefore does 5s and a top-single plan does 5s rather than one. Where the plan names none, the last
  *   finished session's highest working reps; where neither does, none — the app does not invent a number
- *   (N14).
+ *   (N14). **A timed hold keeps its seconds** instead (B396): the plan's longest hold, or the last
+ *   session's where the plan states none. The reduced set count is the week's reduction; scaling a hold
+ *   would be a second opinion about a number the plan already wrote.
  * - **Load:** the plan's heaviest stated working load, or the last finished session's where the plan states
  *   none, kept at [loadKeptPercent] and rounded to [stepGrams] (N77). No load where neither states one,
  *   because zero is a claim. An assisted movement keeps its help instead: assistance is a magnitude, and
@@ -122,11 +126,26 @@ fun deloadSetTargets(
     val performed = previous?.sets.orEmpty().filter { it.setType.recordsEffort }
 
     val setCount = planned.size.coerceIn(DELOAD_MIN_SETS, DELOAD_MAX_SETS)
+    // A hold is the plan's type, not history's: the plan wins where it says anything (N14). History only
+    // supplies a hold when the plan is silent about both reps and seconds.
+    val planHolds = planned.any { it.targetDurationSeconds != null }
+    val planCounts = planned.any {
+        it.targetRepsMax != null || it.targetRepsMin != null || it.targetRepsCurrent != null
+    }
+    val hold = when {
+        planHolds -> planned.mapNotNull { it.targetDurationSeconds }.maxOrNull()
+        planCounts -> null
+        else -> performed.mapNotNull { it.durationSeconds }.maxOrNull()
+    }
     val plannedReps = planned
         .mapNotNull { it.targetRepsMax ?: it.targetRepsMin ?: it.targetRepsCurrent }
         .maxOrNull()
     val performedReps = performed.maxOfOrNull { it.reps }
-    val reps = (plannedReps ?: performedReps)?.coerceAtLeast(DELOAD_MIN_REPS)
+    val reps = if (hold != null) {
+        null
+    } else {
+        (plannedReps ?: performedReps)?.coerceAtLeast(DELOAD_MIN_REPS)
+    }
 
     // The plan wins where it states a load and history only fills what it leaves unsaid, the precedence
     // the workout's own prefill already uses (N14, N59).
@@ -156,6 +175,7 @@ fun deloadSetTargets(
         weightGrams = weight,
         assistanceGrams = if (assisted) assistance else null,
         reps = reps,
+        durationSeconds = hold,
     )
     return List(setCount) { target }
 }
