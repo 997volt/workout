@@ -24,14 +24,6 @@ itself changed no code.
 
 ### The rest of the review
 
-- **B404 — The cadence suggestion does not notice the deload it just sent the lifter to build.**
-  The suggestion is a one-shot filled in `init` and after a mark
-  ([ProgramWeeksViewModel.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramWeeksViewModel.kt)),
-  while the creator is a separate destination pushed on the same back-stack entry. Returning to the
-  screen therefore leaves "A recovery week may be due" up even though the week is now marked and built
-  — the state `findLastMark` would report as zero weeks. Fixed means deriving the suggestion from the
-  live marks, or refreshing it on resume.
-
 - **B405 — *Use last deload* is shadowed by an exempt-only mark.** `findLastPlan` reads only this
   program's newest mark and gives up when that week has no days
   ([RoomDeloadRepository.kt](app/src/main/java/com/example/androidapp/data/RoomDeloadRepository.kt));
@@ -153,16 +145,17 @@ itself changed no code.
 
 ### Coverage and one open question
 
-- **N302 — The tests the review found missing.** Neither new ViewModel has a unit test
-  (`ProgramProgressionViewModel`, `ProgramWeeksViewModel`) although every sibling program ViewModel does,
-  so the consent-before-enable path, the cadence read and the reset are only exercised through
-  hand-built screen state. The program-document half of "importing a program never starts writing" — the
+- **N302 — The tests the review found missing.** `ProgramProgressionViewModel` has no unit test, although
+  every sibling program ViewModel does, so the consent-before-enable path and the reset are only exercised
+  through hand-built screen state (the recovery screen's own wiring now has a
+  [test](app/src/test/java/com/example/androidapp/ui/programs/ProgramWeeksViewModelTest.kt)). The
+  program-document half of "importing a program never starts writing" — the
   switch dropped by the `:shared` mapping
   ([SharedProgramDocument.kt](app/src/main/java/com/example/androidapp/data/transfer/SharedProgramDocument.kt)) —
   is untested. And `PlanEntriesTest.substitutingBackRestoresThePlan` builds a row whose origin is already
   cleared ([PlanEntriesTest.kt](app/src/test/java/com/example/androidapp/ui/workout/PlanEntriesTest.kt)),
   so the clearing it names, which lives in `RoomWorkoutRepository`, has no test at all. Fixed means those
-  four tests, not a coverage number.
+  three tests, not a coverage number.
 
 - **N303 — Decide whether a block may be auto-adjusted.** The auto switch is offered for a sequence
   ([ProgramEditorScreen.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramEditorScreen.kt))

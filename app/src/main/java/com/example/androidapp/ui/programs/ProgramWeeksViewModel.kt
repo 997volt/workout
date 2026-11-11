@@ -76,10 +76,6 @@ class ProgramWeeksViewModel @Inject constructor(
     private val error = MutableStateFlow<DataError?>(null)
     private val suggestion = MutableStateFlow<DeloadSuggestion?>(null)
 
-    init {
-        viewModelScope.launch { refreshSuggestion() }
-    }
-
     private val marks: kotlinx.coroutines.flow.Flow<Weeks> = combine(
         deloads.observeMarkedPrograms(thisWeek),
         deloads.observeMarkedPrograms(nextWeek),
@@ -92,6 +88,12 @@ class ProgramWeeksViewModel @Inject constructor(
             thisPlan = thisPlans.any { it.programId == programId && it.days.isNotEmpty() },
             nextPlan = nextPlans.any { it.programId == programId && it.days.isNotEmpty() },
         )
+    }
+
+    init {
+        // The suggestion counts marks, so it is re-read whenever one appears or goes — including the one
+        // the creator writes for the week this screen just sent the lifter to build (B404).
+        viewModelScope.launch { marks.collect { refreshSuggestion() } }
     }
 
     val uiState: StateFlow<ProgramWeeksUiState> = combine(
@@ -126,10 +128,9 @@ class ProgramWeeksViewModel @Inject constructor(
         if (writing.value) return
         viewModelScope.launch {
             writing.value = true
-            when (val result = adherence.setDeloadWeek(programId, weekStart, exempt)) {
-                is DataResult.Failure -> error.value = result.error
-                is DataResult.Success -> refreshSuggestion()
-            }
+            // The suggestion follows the write through the live marks, not from here (B404).
+            val result = adherence.setDeloadWeek(programId, weekStart, exempt)
+            if (result is DataResult.Failure) error.value = result.error
             writing.value = false
         }
     }
@@ -139,14 +140,20 @@ class ProgramWeeksViewModel @Inject constructor(
     }
 
     /**
-     * The cadence suggestion: whole weeks since the last mark, or since the program started (N301).
+     * The cadence suggestion: whole weeks since the last recovery week, or since the program started
+     * (N301).
      *
-     * One read per open/write rather than a live flow: the screen is short-lived, and the suggestion
-     * only changes when the cadence or a mark does — the latter through [onSetExempt].
+     * One read per mark change rather than a live count: the base can be a mark from months ago, which
+     * the two week flows on screen cannot see, so the collector that calls this is what makes it live
+     * (B404). A program that is gone has no suggestion to make.
      */
     private suspend fun refreshSuggestion() {
         val cadence = settings.observeDeloadSuggestionWeeks().first()
-        val program = programs.observeProgram(programId).first() ?: return
+        val program = programs.observeProgram(programId).first()
+        if (program == null) {
+            suggestion.value = null
+            return
+        }
         val started = program.startDate
             ?: program.createdAtMillis.takeIf { it > 0L }
                 ?.let { Instant.ofEpochMilli(it).atZone(zone).toLocalDate() }

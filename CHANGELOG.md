@@ -51,6 +51,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The recovery suggestion follows a deload built while its screen is open** (B404). The cadence suggestion
+  was read once when the recovery screen opened, so building a week from that screen and coming back left
+  "A recovery week may be due" up even though the week was now marked and built. It re-reads whenever this
+  or next week's mark changes — the same signal the two week cards already follow.
 - **An exempt week no longer reads as a deload where its days are drawn** (B403). The calendar's day state
   and the weekly review said "Deload week — not scored" and "Deload", but a mark with no plan keeps the
   program's own workouts, so a full normal session was still relabelled on two surfaces. Both now say

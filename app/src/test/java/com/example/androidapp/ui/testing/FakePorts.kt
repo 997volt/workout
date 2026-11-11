@@ -460,16 +460,20 @@ internal class FakeMeasurementRepository : MeasurementRepository {
 internal class FakeDeloadRepository : DeloadRepository {
 
     val weeks = MutableStateFlow<List<DeloadWeek>>(emptyList())
-    val markedPrograms = MutableStateFlow<Set<String>>(emptySet())
+
+    /** The programs marked in each week, as the store holds them (N300); an absent week is unmarked. */
+    val marksByWeek = MutableStateFlow<Map<LocalDate, Set<String>>>(emptyMap())
 
     /** The templates a test says are days of a built deload week (B400). */
     val deloadWorkouts = mutableSetOf<String>()
     var lastPlan: DeloadWeek? = null
     var lastMark: LocalDate? = null
 
-    override fun observeWeekPlans(weekStart: LocalDate): Flow<List<DeloadWeek>> = weeks
+    override fun observeWeekPlans(weekStart: LocalDate): Flow<List<DeloadWeek>> =
+        weeks.map { built -> built.filter { it.weekStart == weekStart } }
 
-    override fun observeMarkedPrograms(weekStart: LocalDate): Flow<Set<String>> = markedPrograms
+    override fun observeMarkedPrograms(weekStart: LocalDate): Flow<Set<String>> =
+        marksByWeek.map { it[weekStart].orEmpty() }
 
     override fun observeDeloadWorkout(templateId: String): Flow<Boolean> =
         flowOf(templateId in deloadWorkouts)
