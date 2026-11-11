@@ -19,6 +19,7 @@ import com.example.androidapp.domain.repository.DeloadCreation
 import com.example.androidapp.domain.repository.DeloadDayInput
 import com.example.androidapp.domain.repository.DeloadExerciseInput
 import com.example.androidapp.domain.repository.DeloadRepository
+import com.example.androidapp.ui.history.HistoryFormat
 import com.example.androidapp.ui.navigation.ProgramDeload
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,8 +30,6 @@ import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 import javax.inject.Inject
 
 /** One exercise the creator may keep, with the sets the rule derived for it (ROADMAP N147). */
@@ -137,11 +136,23 @@ class ProgramDeloadViewModel @Inject constructor(
 
     private val programId: String = savedStateHandle.toRoute<ProgramDeload>().programId
 
+    private val zone: ZoneId = ZoneId.systemDefault()
+
     // The creator plans the week that has not started: the next Monday, so every deload day is in the
     // future and a Sunday session does not build the week that is already ending (N158).
     private val weekStart: LocalDate = ProgramSchedule.weekStartOf(
-        timeSource.now().atZone(ZoneId.systemDefault()).toLocalDate(),
+        timeSource.now().atZone(zone).toLocalDate(),
     ).plusWeeks(1)
+
+    /**
+     * The week as each written workout's name states it (B408).
+     *
+     * The same history formatter every visible date uses (B373), and with the year: the reason for naming
+     * the week was that a year of deloads is indistinguishable, and next October's would otherwise get the
+     * same name.
+     */
+    private fun historyLabel(week: LocalDate): String =
+        HistoryFormat.date(week.atStartOfDay(zone).toInstant(), zone)
 
     private val _state = MutableStateFlow(DeloadCreatorUiState(weekStart = weekStart))
     val uiState: StateFlow<DeloadCreatorUiState> = _state.asStateFlow()
@@ -300,7 +311,7 @@ class ProgramDeloadViewModel @Inject constructor(
 
         val inputs = buildDeloadInputs(
             sources = sources,
-            weekStart = weekStart,
+            weekLabel = historyLabel(weekStart),
             dayCount = current.dayCount,
             selectedByDay = selectedByDay,
             loadKeptPercent = current.loadKeptPercent,
@@ -349,7 +360,7 @@ class ProgramDeloadViewModel @Inject constructor(
         val weekStart = current.weekStart ?: return
         val days = buildDeloadDays(
             sources = sources,
-            weekStart = weekStart,
+            weekLabel = historyLabel(weekStart),
             dayCount = current.dayCount,
             selectedByDay = selectedByDay,
             loadKeptPercent = current.loadKeptPercent,
@@ -374,22 +385,20 @@ class ProgramDeloadViewModel @Inject constructor(
 private data class PoolExercise(val exercise: DeloadSourceExercise, val sourceName: String)
 
 /**
- * The written workout's name: *Deload A · 12 Oct*, in day order (N152, N300).
+ * The written workout's name: *Deload A · Oct 5, 2026*, in day order (N152, N300).
  *
  * The week is in the name because *Deload A* is indistinguishable after a year of them, and the
- * template library keeps every one. The date is the week's Monday, which is what the creator chose.
+ * template library keeps every one — so the label carries the year and is formatted by the caller,
+ * through the same history formatter every visible date uses (B373, B408).
  */
-private fun deloadDayName(index: Int, weekStart: LocalDate): String {
+private fun deloadDayName(index: Int, weekLabel: String): String {
     val base = if (index < DELOAD_DAY_LETTERS) {
         "Deload ${('A'.code + index).toChar()}"
     } else {
         "Deload ${index + 1}"
     }
-    return "$base · ${DELOAD_WEEK_LABEL.format(weekStart)}"
+    return "$base · $weekLabel"
 }
-
-private val DELOAD_WEEK_LABEL: DateTimeFormatter =
-    DateTimeFormatter.ofPattern("d MMM", Locale.ENGLISH)
 
 /** Past the alphabet a week is numbered rather than lettered; the cap is the alphabet, not a day limit. */
 private const val DELOAD_DAY_LETTERS = 26
@@ -409,7 +418,7 @@ private fun poolOf(sources: List<DeloadSourceDay>): List<PoolExercise> =
 @Suppress("LongParameterList")
 internal fun buildDeloadDays(
     sources: List<DeloadSourceDay>,
-    weekStart: LocalDate,
+    weekLabel: String,
     dayCount: Int,
     selectedByDay: List<Set<String>>,
     loadKeptPercent: Int,
@@ -421,7 +430,7 @@ internal fun buildDeloadDays(
         val selected = selectedByDay.getOrElse(index) { emptySet() }
         DeloadDayUi(
             sourceSlotId = day.sourceSlotId,
-            sourceName = deloadDayName(index, weekStart),
+            sourceName = deloadDayName(index, weekLabel),
             weekday = day.weekdayAfter(weekdayOf),
             exercises = pool.map { pooled ->
                 val exercise = pooled.exercise
@@ -481,7 +490,7 @@ internal fun buildDeloadPool(days: List<DeloadDayUi>): List<DeloadPoolRowUi> {
 @Suppress("LongParameterList")
 internal fun buildDeloadInputs(
     sources: List<DeloadSourceDay>,
-    weekStart: LocalDate,
+    weekLabel: String,
     dayCount: Int,
     selectedByDay: List<Set<String>>,
     loadKeptPercent: Int,
@@ -494,7 +503,7 @@ internal fun buildDeloadInputs(
         val kept = pool.map { it.exercise }.filter { it.templateExerciseId in selected }
         if (kept.isEmpty()) return@mapNotNull null
         DeloadDayInput(
-            name = deloadDayName(index, weekStart),
+            name = deloadDayName(index, weekLabel),
             weekday = day.weekdayAfter(weekdayOf),
             exercises = kept.map { exercise ->
                 DeloadExerciseInput(

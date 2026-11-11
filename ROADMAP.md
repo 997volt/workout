@@ -24,14 +24,6 @@ itself changed no code.
 
 ### The rest of the review
 
-- **B408 — New dates bypass the one formatter, and a persisted deload name has no year.** B373 requires
-  a visible date to go through `HistoryFormat`; the weeks screen hard-codes `"d MMM yyyy"` with
-  `Locale.ENGLISH`, and the creator writes "Deload A · 12 Oct" into the workout's name
-  ([ProgramDeloadViewModel.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramDeloadViewModel.kt)).
-  The stated reason for adding the date is that a year of deloads is indistinguishable, yet next
-  October's deload gets the same name. Fixed means formatting through `HistoryFormat` and a name that
-  carries the year.
-
 - **B409 — Imported progression state skips the validator.** `progressionWrites` and
   `progressionBaselines` are not checked by
   [BackupValidator.kt](app/src/main/java/com/example/androidapp/data/transfer/BackupValidator.kt), and

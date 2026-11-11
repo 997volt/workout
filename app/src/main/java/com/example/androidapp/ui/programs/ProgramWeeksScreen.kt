@@ -37,6 +37,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
 import com.example.androidapp.domain.model.DeloadSuggestion
+import com.example.androidapp.ui.history.HistoryFormat
 import com.example.androidapp.ui.components.AppCard
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.CenteredMessage
@@ -44,8 +45,7 @@ import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.TopBarTitle
 import com.example.androidapp.ui.components.dataErrorMessage
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.util.Locale
+import java.time.ZoneId
 
 /** The recovery-week choices for one program (ROADMAP N300). */
 @Composable
@@ -335,9 +335,11 @@ private fun WeekCard(
     onToggle: (exempt: Boolean, hasPlan: Boolean) -> Unit,
 ) {
     AppCard {
+        val zone = ZoneId.systemDefault()
         Text(text = title, style = MaterialTheme.typography.titleSmall)
         Text(
-            text = WEEK_DATE.format(week),
+            // The one history formatter, so this date reads like every other (B373, B408).
+            text = HistoryFormat.date(week.atStartOfDay(zone).toInstant(), zone),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -372,6 +374,3 @@ private fun WeekCard(
         }
     }
 }
-
-private val WEEK_DATE: DateTimeFormatter =
-    DateTimeFormatter.ofPattern("d MMM yyyy", Locale.ENGLISH)

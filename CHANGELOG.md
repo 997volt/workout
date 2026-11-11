@@ -51,6 +51,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A deload's name and the recovery screen's dates use the one history formatter** (B408). The weeks
+  screen hard-coded `d MMM yyyy`, and the creator wrote "Deload A · 12 Oct" into the workout's name — so the
+  date ignored the device locale and, the very reason it was added, next October's deload would get the same
+  name. Both now go through `HistoryFormat`, and the persisted name carries the year.
 - **The auto-progression and recovery screens use the shared screen title** (B407). Both put a bare
   `Text` in the top bar, so the title could wrap and was not a heading to a screen reader; every other
   pushed screen uses the component that clamps it and marks it, and now these two do too.

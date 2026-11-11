@@ -174,7 +174,9 @@ class ProgramDeloadViewModelTest {
         viewModel.onCreate()
         advanceUntilIdle()
 
-        assertThat(repository.writes.single()[0].name).isEqualTo("Deload A · 12 Oct")
+        // B408: the name states the week through HistoryFormat, year included.
+        assertThat(repository.writes.single()[0].name).startsWith("Deload A · ")
+        assertThat(repository.writes.single()[0].name).contains("2026")
         assertThat(repository.writes.single()[0].exercises.map { it.exerciseId })
             .containsExactly("back-squat", "bench")
     }
@@ -189,7 +191,8 @@ class ProgramDeloadViewModelTest {
         advanceUntilIdle()
 
         assertThat(repository.writes).hasSize(1)
-        assertThat(repository.writes.single().single().name).isEqualTo("Deload A · 12 Oct")
+        assertThat(repository.writes.single().single().name).startsWith("Deload A · ")
+        assertThat(repository.writes.single().single().name).contains("2026")
         assertThat(viewModel.uiState.value.created).isNotNull()
         assertThat(viewModel.uiState.value.created?.weekStart).isEqualTo(LocalDate.of(2026, 10, 12))
     }
