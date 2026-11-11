@@ -663,7 +663,7 @@
     <string name="adherence_deload_mark">Exempt</string>
     <string name="adherence_deload_plan">Deload</string>
     <string name="adherence_deload_built">%1$s · built</string>
-    <string name="adherence_deload_unmark_title">Unmark this deload week?</string>
+    <string name="adherence_deload_unmark_title">Remove this exemption?</string>
     <string name="adherence_deload_unmark_text">The week returns to the normal schedule and can read as missed. The deload workouts stay in your templates.</string>
     <string name="adherence_deload_unmark_confirm">Unmark</string>
     <!-- Correcting one day's occurrences (ROADMAP P3.13). -->
@@ -1485,7 +1485,7 @@
          the exercises each keeps, and derives the numbers from the program's own plan. -->
     <string name="deload_title">Deload week</string>
     <string name="deload_week">Week of %1$s</string>
-    <string name="deload_intro">Same exercises, less work: the plan’s sets up to three, its highest reps (at least five), and a share of its load you choose below. Each day becomes an ordinary template you can edit afterwards.</string>
+    <string name="deload_intro">Same exercises, less work: the plan’s sets up to three, its highest reps (at least five) or its hold in seconds, a share of its load you choose below, and a 6.0 effort. Each day becomes an ordinary template you can edit afterwards.</string>
     <string name="deload_days">Days</string>
     <string name="deload_days_hint">How many days the week has. Every exercise below can be kept on any of them.</string>
     <string name="deload_days_count">%1$d of %2$d</string>

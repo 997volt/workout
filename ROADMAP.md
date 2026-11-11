@@ -24,14 +24,6 @@ itself changed no code.
 
 ### The rest of the review
 
-- **B418 — Three sentences still describe the pre-N300 shape.** `ProgramSchedule.monthAdherence` still
-  says the missed-day question is unaffected
-  ([ProgramSchedule.kt](app/src/main/java/com/example/androidapp/domain/model/ProgramSchedule.kt))
-  although a marked program is now dropped from it; the creator's intro still describes counted sets
-  only and omits the 6.0 effort
-  ([strings.xml](app/src/main/res/values/strings.xml)); and the Adherence unmark dialog still says
-  "Unmark this deload week?" for the renamed exemption. Fixed means correcting all three.
-
 - **B419 — A logged step's *before* is not checked against the plan.** `requireWriteMatches` compares
   only `after` to the edit
   ([RoomTemplateRepository.kt](app/src/main/java/com/example/androidapp/data/RoomTemplateRepository.kt)),

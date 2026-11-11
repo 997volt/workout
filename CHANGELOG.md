@@ -51,6 +51,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **Three sentences that still described the pre-2.28 shape are corrected** (B418). The deload
+  creator's explanation now mentions a timed movement's hold and the 6.0 effort it writes, the Adherence
+  unmark dialog is titled "Remove this exemption?" rather than naming the mark a deload, and the adherence
+  code's own note no longer claims the missed-day question ignores an exempt week.
 - **A program whose movements answer for themselves is not told to fix its plans** (B417). The screen
   printed one warning whenever nothing would be adjusted, so a program where every movement had its own
   answer was told to fix plans that were not broken. It now separates the two facts: a plan to fix keeps

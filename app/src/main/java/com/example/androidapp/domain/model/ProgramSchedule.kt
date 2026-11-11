@@ -233,8 +233,9 @@ object ProgramSchedule {
      * **A deload week is exempt from the ratio, not from the calendar** (P3.10): its scheduled
      * occurrences are neither done, skipped nor missed, so a deliberate back-off cannot read as a
      * failure — while the day is still drawn as scheduled, and a session performed in it still
-     * marks its trained day. The missed-day question is unaffected: the week is exempt from
-     * judgement, not from the schedule.
+     * marks its trained day. The missed-day question is the one judgement the exemption does reach
+     * (B418): the prompt asks whether a planned day should be written off, and a week left out of the
+     * record is not asked about.
      */
     fun monthAdherence(
         slots: List<ProgramSlot>,
