@@ -94,9 +94,6 @@ internal object ProgramsTags {
     /** The bar's ⋮ entry that opens the balance view (ROADMAP N119). */
     const val BALANCE = "program_balance_open"
 
-    /** The bar's ⋮ entry that opens the deload creator (ROADMAP N147). */
-    const val DELOAD = "program_deload_open"
-
     /** The bar's ⋮ entry that opens the recovery-week choices (ROADMAP N300). */
     const val WEEKS_MENU = "program_weeks_open"
 

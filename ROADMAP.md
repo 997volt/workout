@@ -24,12 +24,6 @@ itself changed no code.
 
 ### The rest of the review
 
-- **B416 — A dead test tag.** `TestTags.Programs.DELOAD` has had no reference since the editor's menu
-  moved to `WEEKS_MENU`
-  ([ProgramsTags.kt](app/src/main/java/com/example/androidapp/ui/components/ProgramsTags.kt)); the rule
-  is to delete an API the moment nothing calls it. Its comment still names a bar entry that no longer
-  exists.
-
 - **B417 — The preflight tells the lifter to fix plans that are not broken.** The "Nothing in this
   program can progress yet. Fix the plans below." line is gated only on `willProgress` being empty
   ([ProgramProgressionScreen.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramProgressionScreen.kt)),
