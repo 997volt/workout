@@ -15,6 +15,214 @@ work was planned, so they do not always run in order — and an id this file doe
 shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 [CHANGELOG-1.x.md](CHANGELOG-1.x.md) for the 1.x releases.
 
+## Next — the 2.28 review
+
+The twelve commits after 2.28 were read against the decisions they claim to follow (N294, N299, N300,
+N301 and B358, B395–B398), and the rows below are what that read found. They are ordered by what they
+cost: the first two should land before 2.29 cuts, the rest are independent, and the last section is the
+coverage that let these through plus one scope question. Nothing here was fixed during the review
+because two rows (B400, N303) need a decision first and the rest are unrelated to each other.
+
+### Before 2.29
+
+- **B399 — The *Next week* card is labelled *this week*.** Both cards on the recovery screen draw the
+  same strings — the toggle says "Exempt this week", the marked line says "This week is exempt from
+  scoring", the plan line says "A deload plan is built for this week"
+  ([ProgramWeeksScreen.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramWeeksScreen.kt)) —
+  while the second card's toggle writes `nextWeek`. Two identical "Exempt this week" controls sit on one
+  screen and only one acts on the current week, so neither the lifter nor TalkBack can tell which week a
+  tap changes; [ProgramWeeksScreenTest.kt](app/src/test/java/com/example/androidapp/ui/programs/ProgramWeeksScreenTest.kt)
+  asserts both labels and so encodes the bug. Fixed means per-card wording ("Exempt next week", "Next
+  week is exempt from scoring", "for next week"), every control naming what it does, and a test that
+  asserts each card's own label.
+
+- **B400 — A deload workout earns a progression step.** N300 gave the creator a 6.0 effort
+  ([RoomDeloadRepository.kt](app/src/main/java/com/example/androidapp/data/RoomDeloadRepository.kt)) so
+  the session stopped opening on 9.0; the same number opens the N74 gate, and a deload set carries a
+  60 % load with a fixed rep target, so *Done* offers — and *Apply at done* writes — a heavier load on
+  the week's **lighter** plan (a hold deload gets +15 s the same way). Before this range the creator
+  left the effort unset, so nothing was offered. [DECISIONS.md](DECISIONS.md) still justifies the
+  deload boundary with "separate templates, no target RPE", which is now false. Fixed means the deload
+  template earns no step (the auto switch already cannot reach it, because no slot names it) and that
+  decision sentence is corrected; whether the 6.0 lives on the plan or on the session is this row's
+  decision.
+
+### The rest of the review
+
+- **B401 — An encrypted import can preview after the password was dismissed.**
+  `submitEncryptedImport` decrypts on a background dispatcher and then calls `preview`
+  unconditionally ([DataTransferViewModel.kt](app/src/main/java/com/example/androidapp/ui/transfer/DataTransferViewModel.kt)),
+  so `cancelEncryptedImport` cannot stop it and the preview sheet appears after the user backed out.
+  The dialog also has no in-flight state ([PasswordPromptDialog.kt](app/src/main/java/com/example/androidapp/ui/transfer/PasswordPromptDialog.kt)),
+  so a second tap stacks a second PBKDF2 derivation. Fixed means a decrypting flag that disables both
+  buttons and a pending-file check (or a cancelled job) before previewing.
+
+- **B402 — A second auto step forgets the first one's undo.** `_autoStep` is a single slot replaced by
+  the next exercise's moment
+  ([ActiveWorkoutViewModel.kt](app/src/main/java/com/example/androidapp/ui/workout/ActiveWorkoutViewModel.kt)),
+  and `ProgressionRepository.undo` has no other caller anywhere, so finishing a second exercise before
+  reading the banner makes the first batch's writes un-undoable — though the banner is documented as
+  staying until dismissed or undone. A partial write failure has the same hole: the steps that landed
+  are never shown with an undo. Fixed means accumulating or queueing the moments until dismissal.
+
+- **B403 — An exempt week still reads *Deload* where its days are drawn.** Any mark raises
+  `OccurrenceState.DELOAD` ([ProgramSchedule.kt](app/src/main/java/com/example/androidapp/domain/model/ProgramSchedule.kt)),
+  and the calendar and the weekly review render it as "Deload week — not scored" and "Deload"
+  ([strings.xml](app/src/main/res/values/strings.xml),
+  [AdherenceScreen.kt](app/src/main/java/com/example/androidapp/ui/adherence/AdherenceScreen.kt),
+  [WeeklyReviewScreen.kt](app/src/main/java/com/example/androidapp/ui/weekly/WeeklyReviewScreen.kt)).
+  A mark with no plan keeps the program's own workouts (N300), so a full normal session is still
+  labelled a deload on two surfaces — the relabelling Home was fixed not to do. Fixed means a wording
+  true of both actions ("Recovery week — not scored") or two occurrence states.
+
+- **B404 — The cadence suggestion does not notice the deload it just sent the lifter to build.**
+  The suggestion is a one-shot filled in `init` and after a mark
+  ([ProgramWeeksViewModel.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramWeeksViewModel.kt)),
+  while the creator is a separate destination pushed on the same back-stack entry. Returning to the
+  screen therefore leaves "A recovery week may be due" up even though the week is now marked and built
+  — the state `findLastMark` would report as zero weeks. Fixed means deriving the suggestion from the
+  live marks, or refreshing it on resume.
+
+- **B405 — *Use last deload* is shadowed by an exempt-only mark.** `findLastPlan` reads only this
+  program's newest mark and gives up when that week has no days
+  ([RoomDeloadRepository.kt](app/src/main/java/com/example/androidapp/data/RoomDeloadRepository.kt));
+  with N300's one-tap exemption such a mark is routine, and an older built plan can then no longer be
+  recalled. Fixed means walking the marks back until one has days for this program (one query with an
+  `EXISTS`, rather than a read per mark).
+
+- **B406 — Home's exempt banner speaks for the whole app.** `isExemptWeek` is true when *any* followed
+  program's week is marked and is not filtered to weekly programs
+  ([WorkoutsHomeViewModel.kt](app/src/main/java/com/example/androidapp/ui/home/WorkoutsHomeViewModel.kt)),
+  so with two programs "This week is not scored" claims a program that is still scored, and a block's
+  mark can raise it although a block has no scored calendar week (B398). Its hint "workouts are still
+  planned" is also false for a **built** week, whose slots are replaced. Fixed means the weekly filter,
+  a sentence that names the program or requires every weekly program to be marked, and a hint true for
+  both actions.
+
+- **B407 — Two new top bars bypass `TopBarTitle`.** Both new screens put a raw `Text` in the bar's
+  title ([ProgramProgressionScreen.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramProgressionScreen.kt),
+  [ProgramWeeksScreen.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramWeeksScreen.kt)),
+  while B369's component is what clamps the title, keeps it to one line and marks it as a heading — and
+  every sibling pushed screen uses it. The two titles therefore lose heading semantics for a screen
+  reader and can wrap. Fixed means the component.
+
+- **B408 — New dates bypass the one formatter, and a persisted deload name has no year.** B373 requires
+  a visible date to go through `HistoryFormat`; the weeks screen hard-codes `"d MMM yyyy"` with
+  `Locale.ENGLISH`, and the creator writes "Deload A · 12 Oct" into the workout's name
+  ([ProgramDeloadViewModel.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramDeloadViewModel.kt)).
+  The stated reason for adding the date is that a year of deloads is indistinguishable, yet next
+  October's deload gets the same name. Fixed means formatting through `HistoryFormat` and a name that
+  carries the year.
+
+- **B409 — Imported progression state skips the validator.** `progressionWrites` and
+  `progressionBaselines` are not checked by
+  [BackupValidator.kt](app/src/main/java/com/example/androidapp/data/transfer/BackupValidator.kt), and
+  `resetToBaseline`/`undo` write the stored targets straight into `template_sets`
+  ([RoomProgressionRepository.kt](app/src/main/java/com/example/androidapp/data/RoomProgressionRepository.kt))
+  without the plan's own `validate` or the value limits, so a hand-edited backup can install a plan the
+  editor and the import gate would both refuse. Fixed means validating the new collections, or the
+  values at the write, the way template sets already are.
+
+- **B410 — The PBKDF2 work factor is below the figure it cites.** `ITERATIONS = 210_000` is documented
+  as OWASP's floor for PBKDF2-HMAC-SHA256
+  ([EncryptedBackup.kt](app/src/main/java/com/example/androidapp/data/transfer/EncryptedBackup.kt)), but
+  that table puts HMAC-SHA256 at 600,000 and 210,000 is its SHA-512 figure. The envelope carries the
+  count and the reader accepts a range, so raising it is backward-compatible. Fixed means 600,000,
+  measured on a phone, or a corrected comment — not both a wrong note and the cheaper number.
+
+- **B411 — Detecting an encrypted file parses the whole backup on the main thread.** `isEncrypted`
+  builds a full `JsonElement` tree of the file just to read one field
+  ([EncryptedBackup.kt](app/src/main/java/com/example/androidapp/data/transfer/EncryptedBackup.kt)) and
+  is called from the import coroutine on Main
+  ([DataTransferViewModel.kt](app/src/main/java/com/example/androidapp/ui/transfer/DataTransferViewModel.kt)),
+  so every **plain** import pays a second full parse and a stall that grows with the backup. Fixed means
+  a cheap prefix or lookup, or the check off the main thread.
+
+- **B412 — The encrypted export can lose its password while the file picker is open.**
+  `pendingExportPassword` is composition-held
+  ([DataTransferActions.kt](app/src/main/java/com/example/androidapp/ui/transfer/DataTransferActions.kt)),
+  and the activity handles no configuration change itself, so a rotation while the document picker is
+  in front recreates the screen, the callback sees a null password and returns silently — a file was
+  chosen and nothing was written or said. Fixed means holding the password in the ViewModel that owns
+  the write, or reporting the cancellation.
+
+- **B413 — The password prompt does not survive a rotation.** The dialog's two fields and the export
+  prompt's open flag are plain `remember`
+  ([PasswordPromptDialog.kt](app/src/main/java/com/example/androidapp/ui/transfer/PasswordPromptDialog.kt),
+  [SettingsTransferDialogs.kt](app/src/main/java/com/example/androidapp/ui/settings/SettingsTransferDialogs.kt)):
+  an import reopens with empty fields, an export prompt closes and drops what was typed. The precedent
+  is the bodyweight prompt held in its ViewModel (B283); `rememberSaveable` is the wrong fix because it
+  would put a password in the saved state.
+
+- **B414 — Reset is not guarded while it writes.** The baseline's button takes no `enabled` and neither
+  reset action checks `writing`, though the switch does
+  ([ProgramProgressionScreen.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramProgressionScreen.kt),
+  [ProgramProgressionViewModel.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramProgressionViewModel.kt)),
+  so a second confirm runs a concurrent reset and the first completion clears the flag while the second
+  is in flight. Fixed means disabling the button and returning early from both actions.
+
+- **B415 — The recovery screen's "this week" is frozen at construction.** `thisWeek`/`nextWeek` are
+  constructor values ([ProgramWeeksViewModel.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramWeeksViewModel.kt)),
+  so a screen kept across Sunday→Monday labels the previous week "This week" and exempts it. The balance
+  screen solved the same shape with a resume read (N286). Fixed means recomputing the pair on resume.
+
+- **B416 — A dead test tag.** `TestTags.Programs.DELOAD` has had no reference since the editor's menu
+  moved to `WEEKS_MENU`
+  ([ProgramsTags.kt](app/src/main/java/com/example/androidapp/ui/components/ProgramsTags.kt)); the rule
+  is to delete an API the moment nothing calls it. Its comment still names a bar entry that no longer
+  exists.
+
+- **B417 — The preflight tells the lifter to fix plans that are not broken.** The "Nothing in this
+  program can progress yet. Fix the plans below." line is gated only on `willProgress` being empty
+  ([ProgramProgressionScreen.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramProgressionScreen.kt)),
+  so a program whose movements all answer for themselves — `blocked` empty, only "Answers for
+  themselves" listed — is told to fix a list that has nothing wrong in it.
+  `AutoProgressionPreflight.hasNothing` models the distinction but has no production caller. Fixed means
+  branching on `blocked` versus `overridden`, a sentence for the all-overridden state, and either using
+  `hasNothing` or deleting it.
+
+- **B418 — Three sentences still describe the pre-N300 shape.** `ProgramSchedule.monthAdherence` still
+  says the missed-day question is unaffected
+  ([ProgramSchedule.kt](app/src/main/java/com/example/androidapp/domain/model/ProgramSchedule.kt))
+  although a marked program is now dropped from it; the creator's intro still describes counted sets
+  only and omits the 6.0 effort
+  ([strings.xml](app/src/main/res/values/strings.xml)); and the Adherence unmark dialog still says
+  "Unmark this deload week?" for the renamed exemption. Fixed means correcting all three.
+
+- **B419 — A logged step's *before* is not checked against the plan.** `requireWriteMatches` compares
+  only `after` to the edit
+  ([RoomTemplateRepository.kt](app/src/main/java/com/example/androidapp/data/RoomTemplateRepository.kt)),
+  so a caller racing the plan could record a `before` that never was and the undo would restore it.
+  Fixed means comparing both targets against the row read inside the transaction.
+
+- **B420 — Two small consistency nits the review found.** `ProgramWeeksRoute` omits the `modifier`
+  parameter every sibling route carries
+  ([ProgramWeeksScreen.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramWeeksScreen.kt)),
+  and the cadence card's spacing differs from the other settings cards — no top padding on the hint and
+  no row gap when the four chips wrap
+  ([DeloadSuggestionSection.kt](app/src/main/java/com/example/androidapp/ui/settings/DeloadSuggestionSection.kt)).
+
+### Coverage and one open question
+
+- **N302 — The tests the review found missing.** Neither new ViewModel has a unit test
+  (`ProgramProgressionViewModel`, `ProgramWeeksViewModel`) although every sibling program ViewModel does,
+  so the consent-before-enable path, the cadence read and the reset are only exercised through
+  hand-built screen state. The program-document half of "importing a program never starts writing" — the
+  switch dropped by the `:shared` mapping
+  ([SharedProgramDocument.kt](app/src/main/java/com/example/androidapp/data/transfer/SharedProgramDocument.kt)) —
+  is untested. And `PlanEntriesTest.substitutingBackRestoresThePlan` builds a row whose origin is already
+  cleared ([PlanEntriesTest.kt](app/src/test/java/com/example/androidapp/ui/workout/PlanEntriesTest.kt)),
+  so the clearing it names, which lives in `RoomWorkoutRepository`, has no test at all. Fixed means those
+  four tests, not a coverage number.
+
+- **N303 — Decide whether a block may be auto-adjusted.** The auto switch is offered for a sequence
+  ([ProgramEditorScreen.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramEditorScreen.kt))
+  although the row it ships from scoped auto progression to a followed **weekly** program, and a block is
+  exactly what N300 and B398 kept out of the calendar action. Nothing in the implementation is weekly-only
+  — resolution is by template, so a block's sessions do get adjusted — which makes this a decision rather
+  than a bug. Fixed means either a sentence in [DECISIONS.md](DECISIONS.md) saying why a block may be
+  auto, or the same `isSequence` guard the recovery week already takes.
+
 ## Parked — deliberately not planned
 
 Each row is a product in its own right, contradicts "local-only", or both. Parking is a
