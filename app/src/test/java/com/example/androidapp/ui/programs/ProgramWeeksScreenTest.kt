@@ -1,9 +1,7 @@
 package com.example.androidapp.ui.programs
 
-import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -128,13 +126,28 @@ class ProgramWeeksScreenTest {
 
         composeTestRule.onNodeWithTag(TestTags.Programs.WEEKS_SCREEN).assertIsDisplayed()
         composeTestRule.onNodeWithText("Recovery week").assertIsDisplayed()
-        composeTestRule.onAllNodesWithText("Exempt this week").assertCountEquals(2)
+        composeTestRule.onNodeWithText("Exempt this week").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Exempt next week").assertIsDisplayed()
         composeTestRule.onNodeWithText("Build a deload week").assertIsDisplayed()
+    }
+
+    @Test
+    fun theNextCard_namesNextWeek() {
+        // B399: one card per week, and each says the week its control acts on — the next-week card used
+        // to borrow the this-week words, so two identical controls sat on one screen.
+        setScreen(state = state(nextExempt = true, nextHasPlan = true))
+
+        composeTestRule.onNodeWithText("Next week is exempt from scoring.").assertIsDisplayed()
+        composeTestRule.onNodeWithText("A deload plan is built for next week.").assertIsDisplayed()
+        composeTestRule.onNodeWithText("This week is exempt from scoring.").assertDoesNotExist()
+        composeTestRule.onNodeWithText("A deload plan is built for this week.").assertDoesNotExist()
     }
 
     private fun state(
         thisExempt: Boolean = false,
         thisHasPlan: Boolean = false,
+        nextExempt: Boolean = false,
+        nextHasPlan: Boolean = false,
         suggestion: DeloadSuggestion? = null,
     ) = ProgramWeeksUiState(
         isLoading = false,
@@ -143,6 +156,8 @@ class ProgramWeeksScreenTest {
         nextWeek = nextWeek,
         thisWeekExempt = thisExempt,
         thisWeekHasPlan = thisHasPlan,
+        nextWeekExempt = nextExempt,
+        nextWeekHasPlan = nextHasPlan,
         suggestion = suggestion,
     )
 

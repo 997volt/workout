@@ -1263,10 +1263,13 @@
     <string name="program_weeks_this_week">This week</string>
     <string name="program_weeks_next_week">Next week</string>
     <string name="program_weeks_exempt">Exempt this week</string>
+    <string name="program_weeks_exempt_next">Exempt next week</string>
     <string name="program_weeks_remove">Remove the exemption</string>
     <string name="program_weeks_exempt_hint">Not scored. Your program’s workouts stay as they are.</string>
     <string name="program_weeks_exempted">This week is exempt from scoring.</string>
+    <string name="program_weeks_exempted_next">Next week is exempt from scoring.</string>
     <string name="program_weeks_has_plan">A deload plan is built for this week.</string>
+    <string name="program_weeks_has_plan_next">A deload plan is built for next week.</string>
     <string name="program_weeks_suggestion_title">A recovery week may be due</string>
     <plurals name="program_weeks_suggestion_since_last">
         <item quantity="one">It has been %1$d week since your last recovery week.</item>

@@ -1,5 +1,6 @@
 package com.example.androidapp.ui.programs
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -191,6 +192,7 @@ private fun RecoveryWeekChoices(
                 hasPlan = state.thisWeekHasPlan,
                 writing = state.writing,
                 tag = TestTags.Programs.WEEKS_THIS,
+                text = THIS_WEEK_TEXT,
                 onToggle = { exempt, plan ->
                     if (exempt && plan) onUnmark(week) else onSetExempt(week, !exempt)
                 },
@@ -204,6 +206,7 @@ private fun RecoveryWeekChoices(
                 hasPlan = state.nextWeekHasPlan,
                 writing = state.writing,
                 tag = TestTags.Programs.WEEKS_NEXT,
+                text = NEXT_WEEK_TEXT,
                 onToggle = { exempt, plan ->
                     if (exempt && plan) onUnmark(week) else onSetExempt(week, !exempt)
                 },
@@ -294,6 +297,31 @@ private fun UnmarkExemptionDialog(
     )
 }
 
+/**
+ * The three sentences one week's card states (ROADMAP N300, B399).
+ *
+ * A card's control acts on one week, so the words cannot be shared between the two cards: the next-week
+ * card saying "Exempt this week" names the wrong week to the lifter and to a screen reader, and there is
+ * no state a reader can use to tell the two controls apart.
+ */
+private data class WeekCardText(
+    @StringRes val exempt: Int,
+    @StringRes val exempted: Int,
+    @StringRes val hasPlan: Int,
+)
+
+private val THIS_WEEK_TEXT = WeekCardText(
+    exempt = R.string.program_weeks_exempt,
+    exempted = R.string.program_weeks_exempted,
+    hasPlan = R.string.program_weeks_has_plan,
+)
+
+private val NEXT_WEEK_TEXT = WeekCardText(
+    exempt = R.string.program_weeks_exempt_next,
+    exempted = R.string.program_weeks_exempted_next,
+    hasPlan = R.string.program_weeks_has_plan_next,
+)
+
 @Composable
 private fun WeekCard(
     title: String,
@@ -302,6 +330,7 @@ private fun WeekCard(
     hasPlan: Boolean,
     writing: Boolean,
     tag: String,
+    text: WeekCardText,
     onToggle: (exempt: Boolean, hasPlan: Boolean) -> Unit,
 ) {
     AppCard {
@@ -313,7 +342,7 @@ private fun WeekCard(
         )
         Text(
             text = if (exempt) {
-                stringResource(R.string.program_weeks_exempted)
+                stringResource(text.exempted)
             } else {
                 stringResource(R.string.program_weeks_exempt_hint)
             },
@@ -322,7 +351,7 @@ private fun WeekCard(
         )
         if (exempt && hasPlan) {
             Text(
-                text = stringResource(R.string.program_weeks_has_plan),
+                text = stringResource(text.hasPlan),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -336,7 +365,7 @@ private fun WeekCard(
                 if (exempt) {
                     stringResource(R.string.program_weeks_remove)
                 } else {
-                    stringResource(R.string.program_weeks_exempt)
+                    stringResource(text.exempt)
                 },
             )
         }

@@ -19,22 +19,10 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 The twelve commits after 2.28 were read against the decisions they claim to follow (N294, N299, N300,
 N301 and B358, B395–B398), and the rows below are what that read found. They are ordered by what they
-cost: the first two should land before 2.29 cuts, the rest are independent, and the last section is the
-coverage that let these through plus one scope question. Nothing here was fixed during the review
-because two rows (B400, N303) need a decision first and the rest are unrelated to each other.
+cost: the first should land before 2.29 cuts, the rest are independent, and the last section is the
+coverage that let these through plus one scope question. The review itself changed no code.
 
 ### Before 2.29
-
-- **B399 — The *Next week* card is labelled *this week*.** Both cards on the recovery screen draw the
-  same strings — the toggle says "Exempt this week", the marked line says "This week is exempt from
-  scoring", the plan line says "A deload plan is built for this week"
-  ([ProgramWeeksScreen.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramWeeksScreen.kt)) —
-  while the second card's toggle writes `nextWeek`. Two identical "Exempt this week" controls sit on one
-  screen and only one acts on the current week, so neither the lifter nor TalkBack can tell which week a
-  tap changes; [ProgramWeeksScreenTest.kt](app/src/test/java/com/example/androidapp/ui/programs/ProgramWeeksScreenTest.kt)
-  asserts both labels and so encodes the bug. Fixed means per-card wording ("Exempt next week", "Next
-  week is exempt from scoring", "for next week"), every control naming what it does, and a test that
-  asserts each card's own label.
 
 - **B400 — A deload workout earns a progression step.** N300 gave the creator a 6.0 effort
   ([RoomDeloadRepository.kt](app/src/main/java/com/example/androidapp/data/RoomDeloadRepository.kt)) so

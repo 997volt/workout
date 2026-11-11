@@ -51,6 +51,9 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The recovery screen's next-week card names next week** (B399). The two cards shared their words, so the
+  control that exempts next week said *Exempt this week* and a marked next week read *This week is exempt
+  from scoring*. Each card now says the week its control acts on, which is also what a screen reader reads.
 - **The shell owns the bottom system inset once** (B358). The tab bar already includes the navigation bar,
   and every screen's Scaffold was adding the same inset again. The shell now consumes the navigation-bar
   inset and reserves the bar (or the bar's own inset when no tab bar is shown); the deload creator's third
