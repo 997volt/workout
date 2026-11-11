@@ -257,12 +257,17 @@ class ActiveWorkoutViewModel @Inject constructor(
     /**
      * The steps auto progression just wrote, or null while there is nothing to read back (N299).
      *
-     * Held until dismissed, the next auto step, or an undo. A snackbar would queue behind the finish
-     * snackbar the same *Done* produces; a banner above the list is the one place the news and its
-     * undo can both be seen.
+     * One moment is on screen at a time; the rest wait in [queuedAutoSteps] until the banner is read or
+     * undone, because the banner is the only place those writes can be taken back (B402). Held until
+     * dismissed or undone — never replaced by the next exercise's steps, which is what used to make an
+     * earlier batch un-undoable. A snackbar would queue behind the finish snackbar the same *Done*
+     * produces; a banner above the list is the one place the news and its undo can both be seen.
      */
     private val _autoStep = MutableStateFlow<AutoProgressionMoment?>(null)
     val autoStep: StateFlow<AutoProgressionMoment?> = _autoStep.asStateFlow()
+
+    /** Moments waiting behind the one on screen, oldest first (B402). Main-thread only. */
+    private val queuedAutoSteps = ArrayDeque<AutoProgressionMoment>()
 
     /** Emits true once a finish or discard succeeds, so the screen can leave. */
     private val _closed = MutableStateFlow(false)
@@ -631,16 +636,32 @@ class ActiveWorkoutViewModel @Inject constructor(
             return
         }
         if (steps.isNotEmpty()) {
-            _autoStep.value = AutoProgressionMoment(
-                exerciseName = row.name,
-                unit = row.weightUnit,
-                steps = steps,
+            showAutoStep(
+                AutoProgressionMoment(
+                    exerciseName = row.name,
+                    unit = row.weightUnit,
+                    steps = steps,
+                ),
             )
         }
         finishExercise(sessionExerciseId)
         // A step was taken, so an earlier *Not now* no longer describes this exercise (B310).
         val cleared = workoutRepository.declineProgression(sessionExerciseId, emptySet())
         if (cleared is DataResult.Failure && lastError.value == null) lastError.value = cleared.error
+    }
+
+    /** The one on screen, or the next one queued behind it (B402). */
+    private fun showAutoStep(moment: AutoProgressionMoment) {
+        if (_autoStep.value == null) {
+            _autoStep.value = moment
+        } else {
+            queuedAutoSteps.addLast(moment)
+        }
+    }
+
+    /** The banner was read or undone, so the next write's news takes its place (B402). */
+    private fun advanceAutoStep() {
+        _autoStep.value = queuedAutoSteps.removeFirstOrNull()
     }
 
     /** Takes back the auto steps the banner names, newest first (ROADMAP N299). */
@@ -653,14 +674,14 @@ class ActiveWorkoutViewModel @Inject constructor(
                     failure = (progressionRepository.undo(step.writeId) as? DataResult.Failure)?.error
                 }
             }
-            _autoStep.value = null
+            advanceAutoStep()
             if (failure != null) lastError.value = failure
         }
     }
 
     /** The banner has been read, so it is not shown again (ROADMAP N299). */
     fun onDismissAutoStep() {
-        _autoStep.value = null
+        advanceAutoStep()
     }
 
     /**

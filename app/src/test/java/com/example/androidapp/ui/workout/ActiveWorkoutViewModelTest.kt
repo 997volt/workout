@@ -206,9 +206,11 @@ class ActiveWorkoutViewModelTest {
         weightGrams: Long,
         rpe: Int?,
         setType: SetType = SetType.NORMAL,
+        /** The row to log on, or null for the session's only exercise. */
+        sessionExerciseId: String? = null,
     ) {
         viewModel.onLogSet(
-            viewModel.uiState.value.exercises.single().id,
+            sessionExerciseId ?: viewModel.uiState.value.exercises.single().id,
             offeredSet(viewModel, setType = setType),
         )
         settle()
@@ -231,6 +233,22 @@ class ActiveWorkoutViewModelTest {
                 // The plan's one target RPE now lives on the exercise, not the set (N59, amended).
                 targetRpeHalves = 8,
                 sets = listOf(plannedSet(index = 0, reps = 5, weightGrams = 100_000L)),
+            ),
+        ),
+    )
+
+    /** Two exercises the plan answers, so two *Done* presses can each earn a step (B402). */
+    private fun twoAnsweredPlans() = FakeTemplateRepository(
+        planned = listOf(
+            plannedExercise(
+                position = 0,
+                targetRpeHalves = 8,
+                sets = listOf(plannedSet(index = 0, reps = 5, weightGrams = 100_000L)),
+            ),
+            plannedExercise(
+                position = 1,
+                targetRpeHalves = 8,
+                sets = listOf(plannedSet(index = 1, reps = 5, weightGrams = 100_000L)),
             ),
         ),
     )
@@ -826,6 +844,58 @@ class ActiveWorkoutViewModelTest {
         val moment = viewModel.autoStep.value
         assertNotNull("the write is read back", moment)
         assertEquals("and its id is what undo addresses", 1, moment!!.steps.size)
+    }
+
+    @Test
+    fun aSecondBatch_waitsBehindTheFirst_soBothCanBeUndone() = runTest(dispatcher) {
+        // B402: the banner is the only way to take a write back, so a second exercise's steps queue
+        // behind the first one's instead of replacing them (which lost the first batch's undo).
+        val repository = FakeWorkoutRepository()
+        val templates = twoAnsweredPlans()
+        val progression = FakeProgressionRepository().apply { autoPrograms["t1"] = "p1" }
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = templates,
+            progression = progression,
+        )
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        viewModel.onAddExercise("back-squat")
+        settle()
+        val rows = viewModel.uiState.value.exercises
+        assertEquals(2, rows.size)
+        rows.forEach { row ->
+            logAnsweredSet(
+                viewModel,
+                repository,
+                reps = 5,
+                weightGrams = 100_000L,
+                rpe = 7,
+                sessionExerciseId = row.id,
+            )
+        }
+
+        viewModel.onFinishExercise(rows[0].id)
+        settle()
+        val first = viewModel.autoStep.value?.steps?.single()?.writeId
+        assertEquals("w-1", first)
+
+        viewModel.onFinishExercise(rows[1].id)
+        settle()
+
+        assertEquals(
+            "the first batch is still the one on screen",
+            first,
+            viewModel.autoStep.value?.steps?.single()?.writeId,
+        )
+        assertEquals("both writes landed", 2, templates.progressionWrites.size)
+
+        viewModel.onDismissAutoStep()
+        settle()
+
+        assertEquals("the second batch is next", "w-2", viewModel.autoStep.value?.steps?.single()?.writeId)
     }
 
     @Test

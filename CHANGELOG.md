@@ -51,6 +51,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **Each auto-progression batch keeps its own undo** (B402). The banner is the only place a write can be
+  taken back, and a second exercise's steps replaced the first batch's banner, so its undo was lost as soon
+  as another exercise was finished. The batches now queue: the visible one is read or undone, then the next
+  takes its place.
 - **An encrypted import cannot preview a password question it just dismissed** (B401). The key derivation
   runs off the main thread, so *Cancel* could arrive while it worked and the import preview still opened
   behind it; a second tap also stacked a second 210,000-iteration derivation. The prompt disables both

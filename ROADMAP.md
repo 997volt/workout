@@ -24,14 +24,6 @@ itself changed no code.
 
 ### The rest of the review
 
-- **B402 — A second auto step forgets the first one's undo.** `_autoStep` is a single slot replaced by
-  the next exercise's moment
-  ([ActiveWorkoutViewModel.kt](app/src/main/java/com/example/androidapp/ui/workout/ActiveWorkoutViewModel.kt)),
-  and `ProgressionRepository.undo` has no other caller anywhere, so finishing a second exercise before
-  reading the banner makes the first batch's writes un-undoable — though the banner is documented as
-  staying until dismissed or undone. A partial write failure has the same hole: the steps that landed
-  are never shown with an undo. Fixed means accumulating or queueing the moments until dismissal.
-
 - **B403 — An exempt week still reads *Deload* where its days are drawn.** Any mark raises
   `OccurrenceState.DELOAD` ([ProgramSchedule.kt](app/src/main/java/com/example/androidapp/domain/model/ProgramSchedule.kt)),
   and the calendar and the weekly review render it as "Deload week — not scored" and "Deload"
