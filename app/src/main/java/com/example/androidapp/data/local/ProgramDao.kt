@@ -295,11 +295,12 @@ interface ProgramDao {
     suspend fun setAutoProgression(id: String, enabled: Boolean, at: Long): Int
 
     /**
-     * The first program whose switch covers [templateId], or null (ROADMAP N299).
+     * The first **weekly** program whose switch covers [templateId], or null (ROADMAP N299, N303).
      *
      * The template is what a session records, so it is what decides whether a *Done* is inside a
      * program that adjusts itself. One row even when two auto programs name the same workout: the
-     * plan is shared, and the write happens once.
+     * plan is shared, and the write happens once. A block never answers (N303): its weeks are the
+     * creator's own, so the kind is checked here as well as in the editor that offers the switch.
      */
     @Query(
         """
@@ -307,6 +308,7 @@ interface ProgramDao {
         JOIN program_slots ps ON ps.programId = p.id
         WHERE ps.templateId = :templateId
           AND p.autoProgression = 1
+          AND p.kind = 'WEEKLY'
           AND p.deletedAt IS NULL
           AND ps.deletedAt IS NULL
         ORDER BY p.position ASC, p.name ASC

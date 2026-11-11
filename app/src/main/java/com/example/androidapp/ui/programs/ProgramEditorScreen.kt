@@ -413,17 +413,17 @@ private fun ProgramEditorMenu(
     onDelete: () -> Unit,
 ) {
     DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
-        DropdownMenuItem(
-            text = { Text(stringResource(R.string.program_progression)) },
-            onClick = {
-                onDismiss()
-                onOpenProgression()
-            },
-            modifier = Modifier.testTag(TestTags.Programs.AUTO_PROGRESSION),
-        )
-        // A weekly program's weeks are the calendar's; a block has its own order (N176), so the
-        // calendar exemption is not offered for one rather than offered and refused (B398).
+        // A block is the creator's own cycle (N174), so the app does not adjust its targets and its
+        // weeks are not the calendar's (N303, B398). Neither entry is offered for one.
         if (!isSequence) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.program_progression)) },
+                onClick = {
+                    onDismiss()
+                    onOpenProgression()
+                },
+                modifier = Modifier.testTag(TestTags.Programs.AUTO_PROGRESSION),
+            )
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.program_recovery_week)) },
                 onClick = {

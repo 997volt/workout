@@ -15,22 +15,6 @@ work was planned, so they do not always run in order — and an id this file doe
 shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 [CHANGELOG-1.x.md](CHANGELOG-1.x.md) for the 1.x releases.
 
-## Next — the 2.28 review
-
-The twelve commits after 2.28 were read against the decisions they claim to follow (N294, N299, N300,
-N301 and B358, B395–B398). What is left is one question the read could not answer by fixing code: whether
-a block may be auto-adjusted.
-
-### One open question
-
-- **N303 — Decide whether a block may be auto-adjusted.** The auto switch is offered for a sequence
-  ([ProgramEditorScreen.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramEditorScreen.kt))
-  although the row it ships from scoped auto progression to a followed **weekly** program, and a block is
-  exactly what N300 and B398 kept out of the calendar action. Nothing in the implementation is weekly-only
-  — resolution is by template, so a block's sessions do get adjusted — which makes this a decision rather
-  than a bug. Fixed means either a sentence in [DECISIONS.md](DECISIONS.md) saying why a block may be
-  auto, or the same `isSequence` guard the recovery week already takes.
-
 ## Parked — deliberately not planned
 
 Each row is a product in its own right, contradicts "local-only", or both. Parking is a

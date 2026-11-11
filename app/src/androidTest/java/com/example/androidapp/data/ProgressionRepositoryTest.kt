@@ -13,6 +13,7 @@ import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.getOrNull
+import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.model.ProgressionDirection
 import com.example.androidapp.domain.model.ProgressionTargets
 import com.example.androidapp.domain.model.SetType
@@ -21,6 +22,7 @@ import com.example.androidapp.domain.repository.TemplateSetEdit
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -76,6 +78,45 @@ class ProgressionRepositoryTest {
         val restored = database.templateSetDao().findTemplateSet(SET_ID)!!
         assertEquals(100_000L, restored.targetWeightGrams)
         assertEquals(8, restored.targetRepsCurrent)
+    }
+
+    @Test
+    fun aBlock_neverResolvesToAuto_whateverItsFlagSays() = runTest {
+        // N303: a block's weeks are the creator's own, so the resolver ignores it even when a restored
+        // or hand-edited file says the switch is on. Only a weekly program answers.
+        database.programDao().insertProgram(
+            ProgramEntity(
+                id = "block",
+                name = "Base block",
+                kind = ProgramKind.SEQUENCE,
+                autoProgression = true,
+                createdAt = NOW,
+                updatedAt = NOW,
+                deletedAt = null,
+            ),
+        )
+        database.programDao().insertSlot(
+            ProgramSlotEntity(
+                id = "slot-block",
+                programId = "block",
+                templateId = "t1",
+                position = 0,
+                weekday = null,
+                phaseWeek = null,
+                createdAt = NOW,
+                updatedAt = NOW,
+                deletedAt = null,
+            ),
+        )
+
+        assertNull((progression.autoProgramForTemplate("t1") as DataResult.Success).data)
+
+        assertTrue(progression.setAutoProgression("p1", true) is DataResult.Success)
+        assertEquals(
+            "the weekly program is what answers",
+            "p1",
+            (progression.autoProgramForTemplate("t1") as DataResult.Success).data,
+        )
     }
 
     @Test

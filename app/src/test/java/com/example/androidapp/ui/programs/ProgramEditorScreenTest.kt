@@ -723,4 +723,17 @@ class ProgramEditorScreenTest {
 
         assertThat(opened).isTrue()
     }
+
+    @Test
+    fun aSequence_isOfferedNeitherAutoProgressionNorACalendarWeek() {
+        // N303: a block is the creator's own cycle, so the app does not adjust its targets and its weeks
+        // are not the calendar's. Both entries stay out rather than being offered and refused.
+        setScreen(state = twoSlots.copy(program = twoSlots.program?.copy(kind = ProgramKind.SEQUENCE)))
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.MENU).performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.AUTO_PROGRESSION).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.Programs.WEEKS_MENU).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.Programs.BALANCE).assertExists()
+    }
 }

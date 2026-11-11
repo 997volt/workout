@@ -25,7 +25,9 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   and the movement's own answer still wins (N235). Each write is stored with the whole target before and
   after; a banner reads it back with undo, and enabling captures the program's starting targets for a reset.
   A preflight lists what will move, what needs a target effort or reps, and which movements answer for
-  themselves. The switch, its log and the baseline travel in the backup, not the program document, so importing a
+  themselves. The switch is weekly-only: a block's weeks are the creator's own order, so a sequence is never
+  offered it and its template never resolves to auto. The switch, its log and the baseline travel in the
+  backup, not the program document, so importing a
   program never starts writing on another device; an older backup restores with auto off. A built deload
   week is outside the program and writes nothing, while a marked week with no plan built still trains the
   program and does not suppress auto.
