@@ -312,6 +312,8 @@ class ProgramDeloadViewModelTest {
 
         override fun observeMarkedPrograms(weekStart: LocalDate): Flow<Set<String>> = flowOf(emptySet())
 
+        override fun observeDeloadWorkout(templateId: String): Flow<Boolean> = flowOf(false)
+
         override suspend fun findLastPlan(programId: String, beforeWeek: LocalDate): DeloadWeek? = null
 
         override suspend fun findLastMark(programId: String, beforeWeek: LocalDate): LocalDate? = null

@@ -51,6 +51,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A deload workout no longer earns a progression step** (B400). The 6.0 effort N300 writes opened the N74
+  gate, and a deload set's fixed reps at a 60% load made *Done* offer — and *Apply at done* write — a heavier
+  load on the week that is meant to be lighter (a hold got +15 s the same way). A workout a live deload week
+  names now finishes without a question and without a write, whatever the movement or device mode says; the
+  auto switch already could not reach it.
 - **The recovery screen's next-week card names next week** (B399). The two cards shared their words, so the
   control that exempts next week said *Exempt this week* and a marked next week read *This week is exempt
   from scoring*. Each card now says the week its control acts on, which is also what a screen reader reads.

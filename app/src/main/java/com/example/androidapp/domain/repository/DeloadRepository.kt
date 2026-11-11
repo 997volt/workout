@@ -33,6 +33,16 @@ interface DeloadRepository {
     fun observeMarkedPrograms(weekStart: LocalDate): Flow<Set<String>>
 
     /**
+     * Whether the workout [templateId] is a day of a live deload week (ROADMAP B400).
+     *
+     * The lighter week is the point of the plan, so its workout earns no progression step: it is not
+     * trained against a target the app should raise, and a step written there would make the week a
+     * deload that gets heavier each time. Unmarking the built week hides its days, and the template is
+     * an ordinary workout again.
+     */
+    fun observeDeloadWorkout(templateId: String): Flow<Boolean>
+
+    /**
      * Writes [days] as the deload for [weekStart] — the next week, or the current one for older plans
      * (N147, N158) — marking the week if it is not already.
      *

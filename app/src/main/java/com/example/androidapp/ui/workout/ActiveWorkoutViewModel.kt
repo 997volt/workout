@@ -26,6 +26,7 @@ import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.WorkoutSession
 import com.example.androidapp.domain.model.pendingProgressionFor
 import com.example.androidapp.domain.model.runContinuesAfter
+import com.example.androidapp.domain.repository.DeloadRepository
 import com.example.androidapp.domain.repository.MeasurementRepository
 import com.example.androidapp.domain.repository.ProgramRepository
 import com.example.androidapp.domain.repository.ProgressionRepository
@@ -84,6 +85,7 @@ class ActiveWorkoutViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val settingsRepository: SettingsRepository,
     private val measurementRepository: MeasurementRepository,
+    private val deloadRepository: DeloadRepository,
 ) : ViewModel() {
 
     /**
@@ -326,6 +328,20 @@ class ActiveWorkoutViewModel @Inject constructor(
         val unit: WeightUnit,
     )
 
+    /**
+     * Whether the open workout is a day of a live deload week (ROADMAP B400).
+     *
+     * Read through the session's template, the same key auto progression resolves, so a start from home,
+     * the template list or a repeat all answer, and a resume survives. False until the session exists: there
+     * is no plan to stop earning a step before then.
+     */
+    private val isDeloadWorkout: Flow<Boolean> = activeSession
+        .map { it?.templateId ?: templateId }
+        .distinctUntilChanged()
+        .flatMapLatest { id ->
+            if (id == null) flowOf(false) else deloadRepository.observeDeloadWorkout(id)
+        }
+
     private val snapshots: Flow<Snapshot> = combine(
         combine(activeSession, sessionExercises, setsState) { session, exercises, logged ->
             SessionPart(session, exercises, logged)
@@ -337,7 +353,8 @@ class ActiveWorkoutViewModel @Inject constructor(
             ->
             PlanPart(planned, previous, unit)
         },
-    ) { session, plan ->
+        isDeloadWorkout,
+    ) { session, plan, deload ->
         Snapshot(
             session = session.session,
             exercises = session.exercises,
@@ -345,6 +362,7 @@ class ActiveWorkoutViewModel @Inject constructor(
             previous = plan.previous,
             planned = plan.planned,
             unit = plan.unit,
+            isDeloadWorkout = deload,
         )
     }
 
@@ -483,6 +501,9 @@ class ActiveWorkoutViewModel @Inject constructor(
         // **The movement's own answer is the most specific** (ROADMAP N235): only a movement with no
         // answer can fall through to the program's switch and then to the app setting.
         val movementMode = row?.progressionMode
+        // **A deload workout earns no step** (ROADMAP B400): the lighter week is the point, so *Done*
+        // finishes it with no question and no write, whatever the movement or device mode says.
+        val isDeload = uiState.value.isDeloadWorkout && row?.progression?.hasPlan == true
         when {
             questionOpen -> {
                 // *Not now* finishes the exercise, and **records what was offered** (ROADMAP N236): the
@@ -508,6 +529,8 @@ class ActiveWorkoutViewModel @Inject constructor(
                     if (declineError != null && lastError.value == null) lastError.value = declineError
                 }
             }
+
+            isDeload -> viewModelScope.launch { finishExercise(sessionExerciseId) }
 
             movementMode != null -> finishWithMode(sessionExerciseId, row, movementMode)
             row?.progression?.hasPlan != true ->

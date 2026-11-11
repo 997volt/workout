@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -116,6 +117,24 @@ class DeloadRepositoryTest {
         )
         assertEquals(5, planned.single().sets.first().targetRepsMin)
         assertEquals("a deload asks for 6.0, not the 9.0 default", 12, planned.single().targetRpeHalves)
+    }
+
+    @Test
+    fun aDeloadWorkout_isKnownFromItsTemplate_andUnmarkingMakesItOrdinary() = runTest {
+        // B400: the 6.0 effort N300 writes opens the N74 gate, and the fixed reps at a 60% load would
+        // earn a heavier target. The template the week names is what marks the workout as a deload, so
+        // the screen can finish it without offering a step.
+        val created = createDay("Heavy lower — deload", DayOfWeek.MONDAY)
+        val deloadTemplate = created.templateIds.single()
+        val ordinary = createTemplate("Ordinary day")
+
+        assertTrue(deloads.observeDeloadWorkout(deloadTemplate).first())
+        assertFalse("a workout the week does not name is ordinary", deloads.observeDeloadWorkout(ordinary).first())
+
+        // Unmarking the built week hides its days (the dialog says the templates stay), and the
+        // template is an ordinary workout again.
+        adherence.setDeloadWeek(program, monday, marked = false)
+        assertFalse(deloads.observeDeloadWorkout(deloadTemplate).first())
     }
 
     @Test

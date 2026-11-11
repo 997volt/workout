@@ -217,6 +217,13 @@ data class ActiveWorkoutUiState(
      * this template.
      */
     val sessionTemplateId: String? = null,
+    /**
+     * True when this session's workout is a day of a live deload week (ROADMAP B400).
+     *
+     * *Done* then finishes the exercise without offering a step, whatever the mode says: the lighter week
+     * is the point, and a step written on it would make the deload heavier each time it was trained.
+     */
+    val isDeloadWorkout: Boolean = false,
     /** Fixed for the life of the session, so it does not belong on the clock. */
     val startedAt: String = "",
     val exercises: List<SessionExerciseRow> = emptyList(),

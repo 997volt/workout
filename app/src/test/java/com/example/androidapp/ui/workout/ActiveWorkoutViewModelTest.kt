@@ -54,6 +54,7 @@ import com.example.androidapp.domain.repository.WorkoutRepository
 import com.example.androidapp.ui.components.DEFAULT_RPE_HALVES
 import com.example.androidapp.ui.components.SetEdit
 import com.example.androidapp.ui.components.WriteOutcome
+import com.example.androidapp.ui.testing.FakeDeloadRepository
 import com.example.androidapp.ui.testing.FakeProgressionRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -156,6 +157,7 @@ class ActiveWorkoutViewModelTest {
         progression: FakeProgressionRepository = FakeProgressionRepository(),
         slotId: String? = null,
         measurements: FakeBodyMeasurements = FakeBodyMeasurements(),
+        deloads: FakeDeloadRepository = FakeDeloadRepository(),
     ) = ActiveWorkoutViewModel(
         repository,
         clock,
@@ -165,6 +167,7 @@ class ActiveWorkoutViewModelTest {
         activeWorkoutRoute(templateId, repeatSessionId, slotId),
         settings,
         measurements,
+        deloads,
     )
 
     /**
@@ -853,6 +856,59 @@ class ActiveWorkoutViewModelTest {
         assertNull(viewModel.autoStep.value)
         assertEquals(emptyList<String>(), templates.progressionWrites)
         assertTrue(viewModel.uiState.value.exercises.single().isFinished)
+    }
+
+    @Test
+    fun aDeloadWorkout_earnsNoStep_andFinishesWithoutAQuestion() = runTest(dispatcher) {
+        // B400: the creator gives a deload a 6.0 effort, which opens the N74 gate, and its fixed reps at a
+        // 60 % load would earn a heavier target on the week that is meant to be lighter. The plan is the
+        // template's, so the whole workout is recognised by it and *Done* only finishes the exercise.
+        val repository = FakeWorkoutRepository()
+        val templates = answeredPlan()
+        val deloads = FakeDeloadRepository().apply { deloadWorkouts += "t1" }
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = templates,
+            deloads = deloads,
+        )
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        assertTrue("the workout is recognised as a deload", viewModel.uiState.value.isDeloadWorkout)
+        val id = viewModel.uiState.value.exercises.single().id
+        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
+
+        viewModel.onFinishExercise(id)
+        settle()
+
+        assertNull("no question is opened", viewModel.pendingProgression.value)
+        assertEquals("nothing is written to the plan", emptyList<String>(), templates.progressionWrites)
+        assertTrue("the exercise still finishes", viewModel.uiState.value.exercises.single().isFinished)
+    }
+
+    @Test
+    fun anOrdinaryWorkout_stillOffersItsStep() = runTest(dispatcher) {
+        // The other half of B400: the flag is the deload's, not a switch that stops every prompt.
+        val repository = FakeWorkoutRepository()
+        val templates = answeredPlan()
+        val viewModel = viewModelFor(repository, templateId = "t1", templates = templates)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        val id = viewModel.uiState.value.exercises.single().id
+        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
+
+        viewModel.onFinishExercise(id)
+        settle()
+
+        assertNotNull("an ordinary workout is still asked", viewModel.pendingProgression.value)
+        assertFalse(
+            "and it is not finished until the question is answered",
+            viewModel.uiState.value.exercises.single().isFinished,
+        )
     }
 
     @Test
@@ -2213,6 +2269,7 @@ class ActiveWorkoutViewModelTest {
             activeWorkoutRoute(),
             FakeSettingsRepository(),
             FakeBodyMeasurements(),
+            FakeDeloadRepository(),
         )
 
         val states = mutableListOf<ActiveWorkoutUiState>()

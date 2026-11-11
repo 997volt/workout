@@ -57,6 +57,9 @@ class RoomDeloadRepository @Inject constructor(
         deloadDao.observeDeloadsForWeek(weekStart.toEpochDay())
             .map { rows -> rows.map { it.programId }.toSet() }
 
+    override fun observeDeloadWorkout(templateId: String): Flow<Boolean> =
+        deloadDao.observeDeloadDayCount(templateId).map { it > 0 }
+
     override suspend fun findLastPlan(programId: String, beforeWeek: LocalDate): DeloadWeek? {
         val mark = deloadDao.findLatestDeloadBefore(programId, beforeWeek.toEpochDay()) ?: return null
         return deloadDao.findDeloadDaysForWeek(mark.weekStart)

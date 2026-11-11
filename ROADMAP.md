@@ -19,21 +19,8 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 The twelve commits after 2.28 were read against the decisions they claim to follow (N294, N299, N300,
 N301 and B358, B395–B398), and the rows below are what that read found. They are ordered by what they
-cost: the first should land before 2.29 cuts, the rest are independent, and the last section is the
-coverage that let these through plus one scope question. The review itself changed no code.
-
-### Before 2.29
-
-- **B400 — A deload workout earns a progression step.** N300 gave the creator a 6.0 effort
-  ([RoomDeloadRepository.kt](app/src/main/java/com/example/androidapp/data/RoomDeloadRepository.kt)) so
-  the session stopped opening on 9.0; the same number opens the N74 gate, and a deload set carries a
-  60 % load with a fixed rep target, so *Done* offers — and *Apply at done* writes — a heavier load on
-  the week's **lighter** plan (a hold deload gets +15 s the same way). Before this range the creator
-  left the effort unset, so nothing was offered. [DECISIONS.md](DECISIONS.md) still justifies the
-  deload boundary with "separate templates, no target RPE", which is now false. Fixed means the deload
-  template earns no step (the auto switch already cannot reach it, because no slot names it) and that
-  decision sentence is corrected; whether the 6.0 lives on the plan or on the session is this row's
-  decision.
+cost, the last section is the coverage that let them through plus one scope question, and the review
+itself changed no code.
 
 ### The rest of the review
 

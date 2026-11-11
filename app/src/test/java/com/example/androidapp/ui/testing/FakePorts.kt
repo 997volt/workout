@@ -48,6 +48,7 @@ import com.example.androidapp.domain.repository.WorkoutRepository
 import com.example.androidapp.platform.DocumentIo
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import java.time.DayOfWeek
 import java.time.Instant
@@ -460,12 +461,18 @@ internal class FakeDeloadRepository : DeloadRepository {
 
     val weeks = MutableStateFlow<List<DeloadWeek>>(emptyList())
     val markedPrograms = MutableStateFlow<Set<String>>(emptySet())
+
+    /** The templates a test says are days of a built deload week (B400). */
+    val deloadWorkouts = mutableSetOf<String>()
     var lastPlan: DeloadWeek? = null
     var lastMark: LocalDate? = null
 
     override fun observeWeekPlans(weekStart: LocalDate): Flow<List<DeloadWeek>> = weeks
 
     override fun observeMarkedPrograms(weekStart: LocalDate): Flow<Set<String>> = markedPrograms
+
+    override fun observeDeloadWorkout(templateId: String): Flow<Boolean> =
+        flowOf(templateId in deloadWorkouts)
 
     override suspend fun createDeload(
         programId: String,

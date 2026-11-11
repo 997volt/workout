@@ -34,6 +34,14 @@ internal data class Snapshot(
     val planned: List<TemplateExercise>,
     /** The app-wide unit, so a change to it re-resolves every row's own (ROADMAP N64). */
     val unit: WeightUnit,
+    /**
+     * Whether this session's workout is a day of a live deload week (ROADMAP B400).
+     *
+     * True means the workout earns no progression step: the lighter week is the point, and a step taken
+     * on it would make the deload heavier every time. A resume reads it from the session's template, so
+     * a workout opened before the flag was read still answers.
+     */
+    val isDeloadWorkout: Boolean = false,
 )
 
 /**
@@ -55,6 +63,7 @@ internal fun Snapshot.toUiState(
         isLoading = false,
         sessionId = session?.id,
         sessionTemplateId = session?.templateId,
+        isDeloadWorkout = isDeloadWorkout,
         startedAt = session?.let {
             WorkoutFormat.clockTime(it.startedAt, zone = it.zoneIdOrNull() ?: ZoneId.systemDefault())
         }.orEmpty(),

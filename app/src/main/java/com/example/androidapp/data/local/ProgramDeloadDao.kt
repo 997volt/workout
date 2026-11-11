@@ -29,6 +29,24 @@ interface ProgramDeloadDao {
     @Query("SELECT * FROM program_deloads WHERE weekStart = :weekStart AND deletedAt IS NULL")
     fun observeDeloadsForWeek(weekStart: Long): Flow<List<ProgramDeloadEntity>>
 
+    /**
+     * How many live deload weeks name this workout as a day (ROADMAP B400).
+     *
+     * A count rather than a boolean because Room reads a single-column integer flow without a
+     * converter, and the caller wants the yes/no it derives. The mark's own row must be live: unmarking
+     * a built week hides its days, and the template is then an ordinary workout again.
+     */
+    @Query(
+        """
+        SELECT COUNT(*) FROM program_deload_days d
+        JOIN program_deloads dl ON dl.id = d.deloadId
+        WHERE d.templateId = :templateId
+          AND d.deletedAt IS NULL
+          AND dl.deletedAt IS NULL
+        """,
+    )
+    fun observeDeloadDayCount(templateId: String): Flow<Int>
+
     @Query(
         """
         SELECT COUNT(*) FROM program_deloads

@@ -444,9 +444,11 @@ the rule; that one argues it.
   after, and undo is refused once the plan no longer holds that after. Enabling also shows a preflight from
   [ProgressionRule.kt](app/src/main/java/com/example/androidapp/domain/model/ProgressionRule.kt): what will
   move, what needs a target effort or reps, and which movements answer for themselves. **A built deload
-  week is outside the program** — separate templates, no target RPE — and writes nothing; an exempt week is
-  still the program's own training, so it does not suppress auto; the lifter's performance does. A
-  substituted row is never paired with a plan (B395), so a stand-in writes nothing.
+  week is outside the program** — separate templates, and a workout a live deload week names earns no
+  progression step at all (B400), so it writes nothing even though the 6.0 effort N300 writes would open
+  the N74 gate — an exempt week is still the program's own training, so it does not suppress auto; the
+  lifter's performance does. A substituted row is never paired with a plan (B395), so a stand-in writes
+  nothing.
 - **A superset is a group of exercises performed in rounds** (N24). The model is a
   nullable `supersetGroup: Int?` ordinal on `session_exercises` and `template_exercises`; a
   separate `superset_groups` table would need its own ordering and a join on every read and
@@ -1493,7 +1495,9 @@ the rule; that one argues it.
   a later build reuses the mark it finds. Home says *this week is not scored* rather than labelling the full workout a
   deload, and a calendar exemption is offered only for a weekly program — a block's days are its own weeks (B398). The
   creator writes the 6.0 effort, names each workout with its week, and a built week's unmarking asks first and says
-  both consequences: the week returns to the normal schedule and can read as missed, and the templates stay.
+  both consequences: the week returns to the normal schedule and can read as missed, and the templates stay. The
+  effort is the week's own number, not an invitation to progress: a workout a live deload week names earns no
+  step, which is B400's rule and the reason the effort can be written at all.
 - **A program with no end suggests a recovery week; it never schedules one** (N301). Settings offers a cadence
   — off (the default), every 4, 6 or 8 weeks — and the recovery screen says a lighter week may be due once the
   program has gone that many whole weeks since its last recovery week, or since it started when there has not
