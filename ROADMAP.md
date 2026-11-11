@@ -24,13 +24,6 @@ itself changed no code.
 
 ### The rest of the review
 
-- **B407 — Two new top bars bypass `TopBarTitle`.** Both new screens put a raw `Text` in the bar's
-  title ([ProgramProgressionScreen.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramProgressionScreen.kt),
-  [ProgramWeeksScreen.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramWeeksScreen.kt)),
-  while B369's component is what clamps the title, keeps it to one line and marks it as a heading — and
-  every sibling pushed screen uses it. The two titles therefore lose heading semantics for a screen
-  reader and can wrap. Fixed means the component.
-
 - **B408 — New dates bypass the one formatter, and a persisted deload name has no year.** B373 requires
   a visible date to go through `HistoryFormat`; the weeks screen hard-codes `"d MMM yyyy"` with
   `Locale.ENGLISH`, and the creator writes "Deload A · 12 Oct" into the workout's name

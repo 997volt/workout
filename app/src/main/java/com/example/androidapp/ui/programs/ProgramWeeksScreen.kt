@@ -41,6 +41,7 @@ import com.example.androidapp.ui.components.AppCard
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.TestTags
+import com.example.androidapp.ui.components.TopBarTitle
 import com.example.androidapp.ui.components.dataErrorMessage
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -96,7 +97,7 @@ fun ProgramWeeksScreen(
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.program_weeks_title)) },
+                title = { TopBarTitle(text = stringResource(R.string.program_weeks_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(

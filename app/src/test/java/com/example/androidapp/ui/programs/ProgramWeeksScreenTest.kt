@@ -125,7 +125,7 @@ class ProgramWeeksScreenTest {
         setScreen()
 
         composeTestRule.onNodeWithTag(TestTags.Programs.WEEKS_SCREEN).assertIsDisplayed()
-        composeTestRule.onNodeWithText("Recovery week").assertIsDisplayed()
+        composeTestRule.onNodeWithText("RECOVERY WEEK").assertIsDisplayed()
         composeTestRule.onNodeWithText("Exempt this week").assertIsDisplayed()
         composeTestRule.onNodeWithText("Exempt next week").assertIsDisplayed()
         composeTestRule.onNodeWithText("Build a deload week").assertIsDisplayed()

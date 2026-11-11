@@ -51,6 +51,9 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The auto-progression and recovery screens use the shared screen title** (B407). Both put a bare
+  `Text` in the top bar, so the title could wrap and was not a heading to a screen reader; every other
+  pushed screen uses the component that clamps it and marks it, and now these two do too.
 - **Home's exempt banner only speaks for a week that is really exempt** (B406). It was raised by any
   followed program's mark, so with two programs it claimed "This week is not scored" while one was still
   scored, and a block's mark — which has no scored calendar week (B398) — could raise it too. It now needs

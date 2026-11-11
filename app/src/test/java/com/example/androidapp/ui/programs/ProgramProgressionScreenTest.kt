@@ -31,6 +31,15 @@ class ProgramProgressionScreenTest {
     val composeTestRule = createComposeRule()
 
     @Test
+    fun theTitle_isSetAsAScreenTitle() {
+        // B407: every pushed screen's title goes through the component that clamps it and marks it as a
+        // heading (B369), which is why the rendered text is the eyebrow's uppercase.
+        setScreen()
+
+        composeTestRule.onNodeWithText("AUTO PROGRESSION").assertIsDisplayed()
+    }
+
+    @Test
     fun theSwitchReportsTheStateTheLifterAskedFor() {
         var requested: Boolean? = null
         setScreen(onSetAuto = { requested = it })

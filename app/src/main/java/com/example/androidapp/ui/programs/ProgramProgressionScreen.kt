@@ -46,6 +46,7 @@ import com.example.androidapp.domain.model.ProgressionRule
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.TestTags
+import com.example.androidapp.ui.components.TopBarTitle
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.theme.IndigoLink
 import java.time.Instant
@@ -170,7 +171,7 @@ fun ProgramProgressionScreen(
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.program_progression_title)) },
+                title = { TopBarTitle(text = stringResource(R.string.program_progression_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
