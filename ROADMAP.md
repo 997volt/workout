@@ -24,15 +24,6 @@ itself changed no code.
 
 ### The rest of the review
 
-- **B409 — Imported progression state skips the validator.** `progressionWrites` and
-  `progressionBaselines` are not checked by
-  [BackupValidator.kt](app/src/main/java/com/example/androidapp/data/transfer/BackupValidator.kt), and
-  `resetToBaseline`/`undo` write the stored targets straight into `template_sets`
-  ([RoomProgressionRepository.kt](app/src/main/java/com/example/androidapp/data/RoomProgressionRepository.kt))
-  without the plan's own `validate` or the value limits, so a hand-edited backup can install a plan the
-  editor and the import gate would both refuse. Fixed means validating the new collections, or the
-  values at the write, the way template sets already are.
-
 - **B410 — The PBKDF2 work factor is below the figure it cites.** `ITERATIONS = 210_000` is documented
   as OWASP's floor for PBKDF2-HMAC-SHA256
   ([EncryptedBackup.kt](app/src/main/java/com/example/androidapp/data/transfer/EncryptedBackup.kt)), but

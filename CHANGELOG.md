@@ -51,6 +51,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A backup's recorded progression targets are validated on import** (B409). The write log and the
+  baseline are what *undo* and *reset* copy straight into a planned set, but the import gate did not look at
+  them, so a hand-edited file could install a negative load or a set stating both reps and a hold — shapes
+  the plan editor and the import gate both refuse. Both collections now pass the planned set's rules.
 - **A deload's name and the recovery screen's dates use the one history formatter** (B408). The weeks
   screen hard-coded `d MMM yyyy`, and the creator wrote "Deload A · 12 Oct" into the workout's name — so the
   date ignored the device locale and, the very reason it was added, next October's deload would get the same

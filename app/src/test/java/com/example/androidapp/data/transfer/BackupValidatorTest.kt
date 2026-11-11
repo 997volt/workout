@@ -103,6 +103,58 @@ class BackupValidatorTest {
     }
 
     @Test
+    fun aStoredProgressionTarget_isHeldToThePlannedSetRules() {
+        // B409: a baseline is what a reset writes into a planned set and a write's before is what an
+        // undo writes there, so the import has to refuse the values a plan editor never stores.
+        val baseline = ProgressionBaselineDto(
+            programId = "program-1",
+            templateSetId = "ts-1",
+            weightGrams = -1L,
+            capturedAt = 0L,
+        )
+        assertThat(BackupValidator.problems(valid().copy(progressionBaselines = listOf(baseline))).messages())
+            .contains("A load must be between 0 and the app's maximum.")
+
+        val zeroReps = baseline.copy(weightGrams = null, repsCurrent = 0)
+        assertThat(BackupValidator.problems(valid().copy(progressionBaselines = listOf(zeroReps))).messages())
+            .contains("Stored reps must be between 1 and 10000.")
+
+        val both = ProgressionWriteDto(
+            id = "write-1",
+            templateSetId = "ts-1",
+            sessionExerciseId = "se-1",
+            afterRepsCurrent = 5,
+            afterDurationSeconds = 30,
+            appliedAt = 0L,
+        )
+        assertThat(BackupValidator.problems(valid().copy(progressionWrites = listOf(both))).messages())
+            .contains("A target cannot state reps and a hold together.")
+    }
+
+    @Test
+    fun aValidProgressionRow_hasNoProblems() {
+        val write = ProgressionWriteDto(
+            id = "write-1",
+            templateSetId = "ts-1",
+            sessionExerciseId = "se-1",
+            afterWeightGrams = 102_500L,
+            afterRepsCurrent = 5,
+            appliedAt = 0L,
+        )
+        val baseline = ProgressionBaselineDto(
+            programId = "program-1",
+            templateSetId = "ts-1",
+            weightGrams = 100_000L,
+            repsCurrent = 8,
+            capturedAt = 0L,
+        )
+
+        val file = valid().copy(progressionWrites = listOf(write), progressionBaselines = listOf(baseline))
+
+        assertThat(BackupValidator.problems(file)).isEmpty()
+    }
+
+    @Test
     fun aPhasedProgramDay_isAnOrdinaryRow() {
         // N292: the backup carries the authored week like any other field, so an ordinary phased file
         // has nothing to say about it.

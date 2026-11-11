@@ -46,6 +46,7 @@ internal object BackupValidator {
         validateTemplateExercises(file.templateExercises, this, strict)
         validateTemplateSets(file.templateSets, this, strict)
         validatePrograms(file, this)
+        validateProgression(file, this, strict)
         validateRetired(file.retiredMovements, this)
     }
 
@@ -390,6 +391,61 @@ internal object BackupValidator {
             validateWeek(row.weekStart, "Substitution ${index + 1}", out)
             row.slotId.required(out, "Substitution ${index + 1}")
             row.templateId.required(out, "Substitution ${index + 1}")
+        }
+    }
+
+    /**
+     * The two tables auto progression keeps beside the plan (ROADMAP B409).
+     *
+     * A baseline is what a reset writes into a planned set, and a write's *before* is what an undo
+     * writes there, so both have to pass the rules a planned set passes. This gate is their only
+     * chance: [RoomProgressionRepository] writes the stored triple straight through, and the plan's
+     * own validation is a repository write's, not this one's.
+     */
+    private fun validateProgression(
+        file: BackupFile,
+        out: MutableList<BackupProblem>,
+        strict: Boolean,
+    ) {
+        file.progressionWrites.forEachIndexed { index, row ->
+            val where = "Progression write ${index + 1}"
+            row.id.required(out, where)
+            row.templateSetId.required(out, where)
+            row.sessionExerciseId.required(out, where)
+            row.beforeWeightGrams?.load(out, where, strict)
+            row.afterWeightGrams?.load(out, where, strict)
+            validateStoredTarget(row.beforeRepsCurrent, row.beforeDurationSeconds, where, out, strict)
+            validateStoredTarget(row.afterRepsCurrent, row.afterDurationSeconds, where, out, strict)
+        }
+        file.progressionBaselines.forEachIndexed { index, row ->
+            val where = "Progression baseline ${index + 1}"
+            row.programId.required(out, where)
+            row.templateSetId.required(out, where)
+            row.weightGrams?.load(out, where, strict)
+            validateStoredTarget(row.repsCurrent, row.durationSeconds, where, out, strict)
+        }
+    }
+
+    /** One stored target: reps in range, a hold legal, and never the two at once (B409). */
+    private fun validateStoredTarget(
+        reps: Int?,
+        durationSeconds: Int?,
+        where: String,
+        out: MutableList<BackupProblem>,
+        strict: Boolean,
+    ) {
+        reps?.let {
+            if (it < 1 || (strict && it > MAX_REPS)) {
+                out += BackupProblem(where, "Stored reps must be between 1 and $MAX_REPS.")
+            }
+        }
+        durationSeconds?.let {
+            if (it < 1 || (strict && it > MAX_SET_SECONDS)) {
+                out += BackupProblem(where, "A hold must be between 1 second and a day.")
+            }
+            if (reps != null) {
+                out += BackupProblem(where, "A target cannot state reps and a hold together.")
+            }
         }
     }
 
