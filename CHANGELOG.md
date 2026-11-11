@@ -51,6 +51,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **Home's exempt banner only speaks for a week that is really exempt** (B406). It was raised by any
+  followed program's mark, so with two programs it claimed "This week is not scored" while one was still
+  scored, and a block's mark — which has no scored calendar week (B398) — could raise it too. It now needs
+  every followed weekly program marked, and its hint says the week's workouts stay as they are, which is
+  true of an exempt and a built week alike.
 - **An exempt week with no plan no longer hides *Use last deload*** (B405). The reuse action read the
   newest mark and gave up when that week had no days; since N300 exempting a week is one tap, so a marked
   week could hide an older built plan. It now reads the newest *built* week in one query.

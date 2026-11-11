@@ -4,6 +4,8 @@ import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.ZoneSource
+import com.example.androidapp.domain.model.ProgramKind
+import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.WorkoutSession
 import com.example.androidapp.ui.testing.FakeDeloadRepository
 import com.example.androidapp.ui.testing.FakeMeasurementRepository
@@ -13,7 +15,9 @@ import com.example.androidapp.ui.testing.FakeWorkoutRepository
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -53,11 +57,11 @@ class WorkoutsHomeViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun viewModel() = WorkoutsHomeViewModel(
+    private fun viewModel(deloads: FakeDeloadRepository = FakeDeloadRepository()) = WorkoutsHomeViewModel(
         workoutRepository = workouts,
         templateRepository = FakeTemplateRepository(),
         programRepository = programs,
-        deloadRepository = FakeDeloadRepository(),
+        deloadRepository = deloads,
         measurementRepository = FakeMeasurementRepository(),
         timeSource = TimeSource { now },
         zoneSource = ZoneSource { ZoneId.of("UTC") },
@@ -111,4 +115,45 @@ class WorkoutsHomeViewModelTest {
         assertThat(programs.substitutions.last())
             .isEqualTo(Triple("slot-1", LocalDate.of(2026, 10, 5), null))
     }
+
+    @Test
+    fun theExemptBanner_isRaisedOnlyWhenEveryWeeklyProgramIsExempt() = runTest(dispatcher) {
+        // B406: the banner speaks for the whole screen, so one exempt program beside a scored one must not
+        // say "this week is not scored" — and a block never raises it, because a block has no scored week.
+        val week = LocalDate.of(2026, 10, 5)
+        programs.activePrograms.value = listOf(
+            weekly(id = "a"),
+            weekly(id = "b"),
+            WorkoutProgram(id = "block", name = "Base", isActive = true, kind = ProgramKind.SEQUENCE),
+        )
+        val deloads = FakeDeloadRepository()
+        deloads.marksByWeek.value = mapOf(week to setOf("a", "block"))
+        val viewModel = viewModel(deloads)
+        backgroundScope.launch { viewModel.uiState.collect {} }
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.isExemptWeek).isFalse()
+
+        deloads.marksByWeek.value = mapOf(week to setOf("a", "b"))
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.isExemptWeek).isTrue()
+    }
+
+    @Test
+    fun aBlocksMark_neverRaisesTheExemptBanner() = runTest(dispatcher) {
+        val week = LocalDate.of(2026, 10, 5)
+        programs.activePrograms.value = listOf(
+            WorkoutProgram(id = "block", name = "Base", isActive = true, kind = ProgramKind.SEQUENCE),
+        )
+        val deloads = FakeDeloadRepository()
+        deloads.marksByWeek.value = mapOf(week to setOf("block"))
+        val viewModel = viewModel(deloads)
+        backgroundScope.launch { viewModel.uiState.collect {} }
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.isExemptWeek).isFalse()
+    }
+
+    private fun weekly(id: String) = WorkoutProgram(id = id, name = id.uppercase(), isActive = true)
 }

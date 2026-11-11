@@ -24,15 +24,6 @@ itself changed no code.
 
 ### The rest of the review
 
-- **B406 — Home's exempt banner speaks for the whole app.** `isExemptWeek` is true when *any* followed
-  program's week is marked and is not filtered to weekly programs
-  ([WorkoutsHomeViewModel.kt](app/src/main/java/com/example/androidapp/ui/home/WorkoutsHomeViewModel.kt)),
-  so with two programs "This week is not scored" claims a program that is still scored, and a block's
-  mark can raise it although a block has no scored calendar week (B398). Its hint "workouts are still
-  planned" is also false for a **built** week, whose slots are replaced. Fixed means the weekly filter,
-  a sentence that names the program or requires every weekly program to be marked, and a hint true for
-  both actions.
-
 - **B407 — Two new top bars bypass `TopBarTitle`.** Both new screens put a raw `Text` in the bar's
   title ([ProgramProgressionScreen.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramProgressionScreen.kt),
   [ProgramWeeksScreen.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramWeeksScreen.kt)),

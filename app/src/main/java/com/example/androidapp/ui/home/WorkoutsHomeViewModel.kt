@@ -410,19 +410,25 @@ class WorkoutsHomeViewModel @Inject constructor(
             }
 
     /**
-     * Whether one of the followed programs' current weeks is marked (ROADMAP N300).
+     * Whether this week is exempt for **every** followed weekly program (ROADMAP N300, B406).
      *
-     * A mark without a plan is P3.10's original exemption, and home used to have no way to say so;
-     * the banner is that sentence, not a second schedule.
+     * The banner speaks for the whole screen, so it may only say "this week is not scored" when that is
+     * true of every program that has a scored calendar — a block's days are its own weeks (B398), and a
+     * block's mark says nothing about the calendar. One program exempt beside one still scored would
+     * make the sentence false, so home stays quiet rather than overclaiming.
+     *
+     * A mark without a plan is P3.10's original exemption, and home used to have no way to say so; the
+     * banner is that sentence, not a second schedule.
      */
     private val exemptWeek: Flow<Boolean> =
         combine(activePrograms, screenDay) { programs, screen -> programs to screen }
             .flatMapLatest { (programs, screen) ->
-                if (programs.isEmpty()) {
+                val weekly = programs.filter { it.kind == ProgramKind.WEEKLY }
+                if (weekly.isEmpty()) {
                     flowOf(false)
                 } else {
                     deloadRepository.observeMarkedPrograms(ProgramSchedule.weekStartOf(screen.date))
-                        .map { marked -> programs.any { it.id in marked } }
+                        .map { marked -> weekly.all { it.id in marked } }
                 }
             }
 

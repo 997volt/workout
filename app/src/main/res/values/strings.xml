@@ -700,7 +700,7 @@
          because "nothing is followed" and "followed, and today is rest" are different facts — and a
          weekday-less program is the second one on every day, never scheduled and never missed. -->
     <string name="home_exempt_week_title">This week is not scored</string>
-    <string name="home_exempt_week_hint">Your program’s workouts are still planned. The calendar leaves this week out of done, skipped and missed.</string>
+    <string name="home_exempt_week_hint">The week’s workouts stay as they are. The calendar leaves this week out of done, skipped and missed.</string>
     <string name="home_no_plan">No workout planned today</string>
     <string name="home_no_plan_hint">Follow a program to schedule your week.</string>
     <string name="home_plan_sequence_day">Day %1$d of %2$d</string>
