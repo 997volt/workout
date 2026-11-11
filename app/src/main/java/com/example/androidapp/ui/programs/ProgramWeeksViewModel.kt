@@ -17,10 +17,12 @@ import com.example.androidapp.domain.repository.ProgramRepository
 import com.example.androidapp.domain.repository.SettingsRepository
 import com.example.androidapp.ui.navigation.ProgramWeeks
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -53,6 +55,7 @@ data class ProgramWeeksUiState(
  * offers **next** week as well as this one because a vacation is known before it starts; the creator
  * already builds next week, and a later build reuses the mark it finds.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class ProgramWeeksViewModel @Inject constructor(
     private val programs: ProgramRepository,
@@ -60,34 +63,51 @@ class ProgramWeeksViewModel @Inject constructor(
     private val deloads: DeloadRepository,
     private val settings: SettingsRepository,
     savedStateHandle: SavedStateHandle,
-    timeSource: TimeSource,
+    private val timeSource: TimeSource,
     zoneSource: ZoneSource = ZoneSource { ZoneId.systemDefault() },
 ) : ViewModel() {
 
     private val programId: String = savedStateHandle.toRoute<ProgramWeeks>().programId
 
     private val zone = zoneSource.zone()
-    private val thisWeek: LocalDate = ProgramSchedule.weekStartOf(
-        timeSource.now().atZone(zone).toLocalDate(),
+
+    /**
+     * The Monday this screen is showing, recomputed on resume (B415).
+     *
+     * A screen left open over Sunday night used to keep calling last week "this week", and then exempt
+     * the wrong one; the pair follows the device rather than the composition. The balance screen solved
+     * the same shape the same way (N286).
+     */
+    private val thisWeek = MutableStateFlow(
+        ProgramSchedule.weekStartOf(timeSource.now().atZone(zone).toLocalDate()),
     )
-    private val nextWeek: LocalDate = thisWeek.plusWeeks(1)
+
+    /** Reads the clock again, as the screen is resumed; a week that has not turned over changes nothing. */
+    fun onResume() {
+        thisWeek.value = ProgramSchedule.weekStartOf(timeSource.now().atZone(zone).toLocalDate())
+    }
 
     private val writing = MutableStateFlow(false)
     private val error = MutableStateFlow<DataError?>(null)
     private val suggestion = MutableStateFlow<DeloadSuggestion?>(null)
 
-    private val marks: kotlinx.coroutines.flow.Flow<Weeks> = combine(
-        deloads.observeMarkedPrograms(thisWeek),
-        deloads.observeMarkedPrograms(nextWeek),
-        deloads.observeWeekPlans(thisWeek),
-        deloads.observeWeekPlans(nextWeek),
-    ) { thisMarked, nextMarked, thisPlans, nextPlans ->
-        Weeks(
-            thisExempt = programId in thisMarked,
-            nextExempt = programId in nextMarked,
-            thisPlan = thisPlans.any { it.programId == programId && it.days.isNotEmpty() },
-            nextPlan = nextPlans.any { it.programId == programId && it.days.isNotEmpty() },
-        )
+    private val marks: kotlinx.coroutines.flow.Flow<Weeks> = thisWeek.flatMapLatest { week ->
+        val next = week.plusWeeks(1)
+        combine(
+            deloads.observeMarkedPrograms(week),
+            deloads.observeMarkedPrograms(next),
+            deloads.observeWeekPlans(week),
+            deloads.observeWeekPlans(next),
+        ) { thisMarked, nextMarked, thisPlans, nextPlans ->
+            Weeks(
+                week = week,
+                next = next,
+                thisExempt = programId in thisMarked,
+                nextExempt = programId in nextMarked,
+                thisPlan = thisPlans.any { it.programId == programId && it.days.isNotEmpty() },
+                nextPlan = nextPlans.any { it.programId == programId && it.days.isNotEmpty() },
+            )
+        }
     }
 
     init {
@@ -107,8 +127,8 @@ class ProgramWeeksViewModel @Inject constructor(
             isLoading = false,
             programName = program?.name.orEmpty(),
             notFound = program == null,
-            thisWeek = thisWeek,
-            nextWeek = nextWeek,
+            thisWeek = weeks.week,
+            nextWeek = weeks.next,
             thisWeekExempt = weeks.thisExempt,
             nextWeekExempt = weeks.nextExempt,
             thisWeekHasPlan = weeks.thisPlan,
@@ -157,17 +177,20 @@ class ProgramWeeksViewModel @Inject constructor(
         val started = program.startDate
             ?: program.createdAtMillis.takeIf { it > 0L }
                 ?.let { Instant.ofEpochMilli(it).atZone(zone).toLocalDate() }
-            ?: thisWeek
-        val last = deloads.findLastMark(programId, thisWeek.plusWeeks(2))
+            ?: thisWeek.value
+        val week = thisWeek.value
+        val last = deloads.findLastMark(programId, week.plusWeeks(2))
         suggestion.value = deloadSuggestion(
             cadenceWeeks = cadence,
             lastDeloadWeek = last,
             programStartedWeek = ProgramSchedule.weekStartOf(started),
-            thisWeek = thisWeek,
+            thisWeek = week,
         )
     }
 
     private data class Weeks(
+        val week: LocalDate,
+        val next: LocalDate,
         val thisExempt: Boolean,
         val nextExempt: Boolean,
         val thisPlan: Boolean,

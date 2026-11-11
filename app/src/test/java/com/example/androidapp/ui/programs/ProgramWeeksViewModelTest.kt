@@ -59,7 +59,7 @@ class ProgramWeeksViewModelTest {
     private val adherence = FakeAdherence()
 
     /** A Wednesday, so the week under the screen is the one that started on Monday. */
-    private val now: Instant = Instant.parse("2026-11-11T09:00:00Z")
+    private var now: Instant = Instant.parse("2026-11-11T09:00:00Z")
     private val thisWeek = LocalDate.of(2026, 11, 9)
     private val nextWeek = thisWeek.plusWeeks(1)
 
@@ -170,6 +170,20 @@ class ProgramWeeksViewModelTest {
         assertThat(drawn.thisWeekHasPlan).isTrue()
         assertThat(drawn.nextWeekExempt).isFalse()
         assertThat(drawn.nextWeekHasPlan).isFalse()
+    }
+
+    @Test
+    fun aScreenKeptAcrossTheWeekBoundary_followsTheNewWeek() = runTest(dispatcher) {
+        // B415: a screen left open over Sunday night used to label last week "This week" — and exempt it.
+        val viewModel = state()
+        assertThat(viewModel.uiState.value.thisWeek).isEqualTo(thisWeek)
+
+        now = Instant.parse("2026-11-18T09:00:00Z")
+        viewModel.onResume()
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.thisWeek).isEqualTo(thisWeek.plusWeeks(1))
+        assertThat(viewModel.uiState.value.nextWeek).isEqualTo(thisWeek.plusWeeks(2))
     }
 
     @Test

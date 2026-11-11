@@ -24,11 +24,6 @@ itself changed no code.
 
 ### The rest of the review
 
-- **B415 — The recovery screen's "this week" is frozen at construction.** `thisWeek`/`nextWeek` are
-  constructor values ([ProgramWeeksViewModel.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramWeeksViewModel.kt)),
-  so a screen kept across Sunday→Monday labels the previous week "This week" and exempts it. The balance
-  screen solved the same shape with a resume read (N286). Fixed means recomputing the pair on resume.
-
 - **B416 — A dead test tag.** `TestTags.Programs.DELOAD` has had no reference since the editor's menu
   moved to `WEEKS_MENU`
   ([ProgramsTags.kt](app/src/main/java/com/example/androidapp/ui/components/ProgramsTags.kt)); the rule
