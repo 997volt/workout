@@ -51,6 +51,9 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A new encrypted backup derives its key at OWASP's current work factor** (B410). The envelope's
+  210,000 PBKDF2 iterations were the table's SHA-512 figure, not the SHA-256 one this app uses; new files
+  use 600,000 and keep carrying their own count, so a file written before this still opens.
 - **A backup's recorded progression targets are validated on import** (B409). The write log and the
   baseline are what *undo* and *reset* copy straight into a planned set, but the import gate did not look at
   them, so a hand-edited file could install a negative load or a set stating both reps and a hold — shapes
@@ -84,7 +87,7 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   takes its place.
 - **An encrypted import cannot preview a password question it just dismissed** (B401). The key derivation
   runs off the main thread, so *Cancel* could arrive while it worked and the import preview still opened
-  behind it; a second tap also stacked a second 210,000-iteration derivation. The prompt disables both
+  behind it; a second tap also stacked a second PBKDF2 derivation. The prompt disables both
   buttons while it works, the ViewModel refuses a second call, and the answer is used only while the same
   file is still the one being asked about.
 - **A deload workout no longer earns a progression step** (B400). The 6.0 effort N300 writes opened the N74

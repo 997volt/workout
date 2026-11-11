@@ -346,7 +346,7 @@ the rule; that one argues it.
 
 - **An encrypted export is a password-derived container, not a Keystore key** (N294). The Data section offers
   a second export beside the plain one: the ordinary backup JSON is wrapped in a self-describing JSON envelope
-  (version, KDF, iteration count, salt, nonce, ciphertext), and PBKDF2-HMAC-SHA256 with 210,000 iterations and
+  (version, KDF, iteration count, salt, nonce, ciphertext), and PBKDF2-HMAC-SHA256 with 600,000 iterations and
   a 16-byte salt derives the AES-256-GCM key (12-byte nonce, 128-bit tag). The password is never stored, and
   the envelope's version and KDF are checked before the cipher runs; a wrong password and an edited ciphertext
   are one refusal because GCM cannot tell them apart. **Android Keystore was rejected**: a Keystore key cannot

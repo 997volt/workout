@@ -5,6 +5,11 @@ import com.google.common.truth.Truth.assertThat
 import kotlinx.serialization.json.Json
 import org.junit.Test
 import java.util.Base64
+import javax.crypto.Cipher
+import javax.crypto.SecretKeyFactory
+import javax.crypto.spec.GCMParameterSpec
+import javax.crypto.spec.PBEKeySpec
+import javax.crypto.spec.SecretKeySpec
 
 /**
  * The password-protected backup container (ROADMAP N294).
@@ -59,6 +64,25 @@ class EncryptedBackupTest {
     }
 
     @Test
+    fun aNewFile_carriesTheOwaspWorkFactor() {
+        // B410: the count travels in the envelope, so the file itself says how hard it is to guess.
+        val envelope = (EncryptedBackup.encrypt(plaintext, password) as DataResult.Success).data
+        val parsed = Json.decodeFromString(EncryptedBackupEnvelope.serializer(), envelope)
+
+        assertThat(parsed.iterations).isAtLeast(600_000)
+    }
+
+    @Test
+    fun aFileFromTheCheaperWorkFactor_stillOpens() {
+        // B410 raised the count; the cheap number was what earlier builds wrote, and a backup whose
+        // reader demanded today's count would be unreadable exactly when it is needed.
+        val legacy = envelopeAt(plaintext, password, iterations = 210_000)
+
+        assertThat((EncryptedBackup.decrypt(legacy, password) as DataResult.Success).data)
+            .isEqualTo(plaintext)
+    }
+
+    @Test
     fun anUnknownEnvelopeVersion_isRefused() {
         val envelope = (EncryptedBackup.encrypt(plaintext, password) as DataResult.Success).data
         val parsed = Json.decodeFromString(EncryptedBackupEnvelope.serializer(), envelope)
@@ -70,8 +94,32 @@ class EncryptedBackupTest {
                     EncryptedBackupEnvelope.serializer(),
                     parsed.copy(version = 2),
                 ),
-                password
-            )
+                password,
+            ),
         ).isInstanceOf(DataResult.Failure::class.java)
+    }
+
+    /** An envelope as the earlier build wrote one, at whatever count it used then. */
+    private fun envelopeAt(plaintext: String, password: String, iterations: Int): String {
+        val salt = ByteArray(16) { it.toByte() }
+        val iv = ByteArray(12) { (it + 1).toByte() }
+        val key = SecretKeySpec(
+            SecretKeyFactory.getInstance(EncryptedBackup.KDF).generateSecret(
+                PBEKeySpec(password.toCharArray(), salt, iterations, 256),
+            ).encoded,
+            "AES",
+        )
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        cipher.init(Cipher.ENCRYPT_MODE, key, GCMParameterSpec(128, iv))
+        val ciphertext = cipher.doFinal(plaintext.toByteArray(Charsets.UTF_8))
+        return Json.encodeToString(
+            EncryptedBackupEnvelope.serializer(),
+            EncryptedBackupEnvelope(
+                iterations = iterations,
+                salt = Base64.getEncoder().encodeToString(salt),
+                iv = Base64.getEncoder().encodeToString(iv),
+                ciphertext = Base64.getEncoder().encodeToString(ciphertext),
+            ),
+        )
     }
 }

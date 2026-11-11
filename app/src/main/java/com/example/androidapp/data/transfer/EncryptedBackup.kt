@@ -54,8 +54,14 @@ object EncryptedBackup {
     /** A short password is a lock with the key in it; the dialog enforces this too. */
     const val MIN_PASSWORD_LENGTH = 8
 
-    /** OWASP's 2023 floor for PBKDF2-HMAC-SHA256; the number travels in the envelope. */
-    const val ITERATIONS = 210_000
+    /**
+     * OWASP's floor for PBKDF2-HMAC-SHA256; the number travels in the envelope (B410).
+     *
+     * The table gives 600,000 for SHA-256 and 220,000 for SHA-512 — the cheaper figure is the one
+     * this constant used to carry, which is why it is stated with its hash. Raising it is a write
+     * change only: a file keeps the count it was written with, and [MIN_ITERATIONS] still opens it.
+     */
+    const val ITERATIONS = 600_000
 
     /** Refuse a file that asks for an absurd work factor rather than hanging the import. */
     private const val MIN_ITERATIONS = 10_000

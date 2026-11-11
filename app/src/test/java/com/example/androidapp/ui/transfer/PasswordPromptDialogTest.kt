@@ -59,7 +59,7 @@ class PasswordPromptDialogTest {
 
     @Test
     fun aBusyDialog_leavesNeitherButtonAbleToStartAgain() {
-        // B401: 210,000 PBKDF2 iterations are a visible pause, and a second tap would stack another pass.
+        // B401: 600,000 PBKDF2 iterations are a visible pause, and a second tap would stack another pass.
         setDialog(busy = true)
 
         composeTestRule.onNodeWithTag(TestTags.PASSWORD_CONFIRM).assertIsNotEnabled()

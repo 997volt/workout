@@ -24,13 +24,6 @@ itself changed no code.
 
 ### The rest of the review
 
-- **B410 — The PBKDF2 work factor is below the figure it cites.** `ITERATIONS = 210_000` is documented
-  as OWASP's floor for PBKDF2-HMAC-SHA256
-  ([EncryptedBackup.kt](app/src/main/java/com/example/androidapp/data/transfer/EncryptedBackup.kt)), but
-  that table puts HMAC-SHA256 at 600,000 and 210,000 is its SHA-512 figure. The envelope carries the
-  count and the reader accepts a range, so raising it is backward-compatible. Fixed means 600,000,
-  measured on a phone, or a corrected comment — not both a wrong note and the cheaper number.
-
 - **B411 — Detecting an encrypted file parses the whole backup on the main thread.** `isEncrypted`
   builds a full `JsonElement` tree of the file just to read one field
   ([EncryptedBackup.kt](app/src/main/java/com/example/androidapp/data/transfer/EncryptedBackup.kt)) and
