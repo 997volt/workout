@@ -22,15 +22,6 @@ N301 and B358, B395–B398), and the rows below are what that read found. They a
 cost, the last section is the coverage that let them through plus one scope question, and the review
 itself changed no code.
 
-### The rest of the review
-
-- **B420 — Two small consistency nits the review found.** `ProgramWeeksRoute` omits the `modifier`
-  parameter every sibling route carries
-  ([ProgramWeeksScreen.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramWeeksScreen.kt)),
-  and the cadence card's spacing differs from the other settings cards — no top padding on the hint and
-  no row gap when the four chips wrap
-  ([DeloadSuggestionSection.kt](app/src/main/java/com/example/androidapp/ui/settings/DeloadSuggestionSection.kt)).
-
 ### Coverage and one open question
 
 - **N302 — The tests the review found missing.** The program-document half of "importing a program never

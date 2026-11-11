@@ -54,6 +54,7 @@ import java.time.ZoneId
 fun ProgramWeeksRoute(
     onBack: () -> Unit,
     onBuild: () -> Unit,
+    modifier: Modifier = Modifier,
     viewModel: ProgramWeeksViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -65,6 +66,7 @@ fun ProgramWeeksRoute(
         onBuild = onBuild,
         onSetExempt = viewModel::onSetExempt,
         onDismissError = viewModel::onErrorShown,
+        modifier = modifier,
     )
 }
 

@@ -3,6 +3,7 @@ package com.example.androidapp.ui.settings
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -40,8 +41,14 @@ internal fun DeloadSuggestionSection(
             text = stringResource(R.string.settings_deload_suggestion_hint),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 4.dp),
         )
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FlowRow(
+            modifier = Modifier.padding(top = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            // The four chips wrap on a phone; the rows need the same gap the columns have.
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
             SettingsRepository.DELOAD_SUGGESTION_WEEKS.sorted().forEach { weeks ->
                 FilterChip(
                     selected = state.deloadSuggestionWeeks == weeks,

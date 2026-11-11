@@ -48,11 +48,10 @@ import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.TopBarTitle
 import com.example.androidapp.ui.components.dataErrorMessage
+import com.example.androidapp.ui.history.HistoryFormat
 import com.example.androidapp.ui.theme.IndigoLink
 import java.time.Instant
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 
 /**
  * Auto progression's one switch, its preflight and its baseline (ROADMAP N299).
@@ -317,7 +316,7 @@ private fun AutoProgressionBaseline(
         Text(
             text = stringResource(
                 R.string.program_progression_baseline,
-                BASELINE_DATE.format(baselineAt.atZone(ZoneId.systemDefault()).toLocalDate()),
+                HistoryFormat.date(baselineAt, ZoneId.systemDefault()),
             ),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -413,4 +412,3 @@ private fun blockedHint(rule: ProgressionRule): Int? = when (rule) {
     else -> null
 }
 
-private val BASELINE_DATE: DateTimeFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
