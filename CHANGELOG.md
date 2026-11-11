@@ -51,6 +51,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The encrypted export's password survives the document picker** (B412). It was held by the screen,
+  so a rotation while the picker was open lost it and the callback returned silently — a file was chosen
+  and nothing was written or said. The ViewModel that performs the write now holds it until the picker
+  answers; a process death (where a secret must not be saved) reports that the write did not happen
+  rather than falling back to an unencrypted file.
 - **A plain backup import no longer parses the file twice on the main thread** (B411). Encrypted-file
   detection built a full JSON tree of every imported document just to read one key, so the ordinary — and
   largest — case paid a second parse and a stall that grew with the backup. Detection now scans for the

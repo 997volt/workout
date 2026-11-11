@@ -105,6 +105,48 @@ class DataTransferViewModelTest {
     }
 
     @Test
+    fun theEncryptedExportPassword_survivesThePickersRoundTrip() = runTest(dispatcher) {
+        // B412: the picker is another activity, so a rotation recreates this screen while it is open.
+        // The password is the ViewModel's and the write happens when the picker answers.
+        repository.exportResult = DataResult.Success("{\"schemaVersion\":9}")
+        val viewModel = viewModel()
+
+        viewModel.onExportPasswordChosen("correct horse battery")
+        viewModel.writeEncryptedBackup(context, uri)
+        advanceUntilIdle()
+
+        assertThat(EncryptedBackup.isEncrypted(io.written!!)).isTrue()
+        assertThat(viewModel.outcome.value).isEqualTo(TransferOutcome.Exported)
+    }
+
+    @Test
+    fun aCancelledPicker_forgetsTheExportPassword() = runTest(dispatcher) {
+        repository.exportResult = DataResult.Success("{\"schemaVersion\":9}")
+        val viewModel = viewModel()
+
+        viewModel.onExportPasswordChosen("correct horse battery")
+        viewModel.writeEncryptedBackup(context, null)
+        advanceUntilIdle()
+
+        assertThat(io.written).isNull()
+        assertThat(viewModel.outcome.value).isNull()
+    }
+
+    @Test
+    fun aLostExportPassword_isReported_andNeverFallsBackToPlaintext() = runTest(dispatcher) {
+        // The process can die with the picker up. The password is deliberately not saved to disk, so
+        // the write says it did not happen rather than writing an unencrypted file.
+        repository.exportResult = DataResult.Success("{\"schemaVersion\":9}")
+        val viewModel = viewModel()
+
+        viewModel.writeEncryptedBackup(context, uri)
+        advanceUntilIdle()
+
+        assertThat(io.written).isNull()
+        assertThat(viewModel.outcome.value).isEqualTo(TransferOutcome.StorageFailure)
+    }
+
+    @Test
     fun anEncryptedImport_asksForItsPassword_andRetriesAfterAWrongOne() = runTest(dispatcher) {
         val plain = "{\"schemaVersion\":9}"
         val envelope = (EncryptedBackup.encrypt(plain, "correct horse battery") as DataResult.Success).data

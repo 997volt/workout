@@ -24,14 +24,6 @@ itself changed no code.
 
 ### The rest of the review
 
-- **B412 — The encrypted export can lose its password while the file picker is open.**
-  `pendingExportPassword` is composition-held
-  ([DataTransferActions.kt](app/src/main/java/com/example/androidapp/ui/transfer/DataTransferActions.kt)),
-  and the activity handles no configuration change itself, so a rotation while the document picker is
-  in front recreates the screen, the callback sees a null password and returns silently — a file was
-  chosen and nothing was written or said. Fixed means holding the password in the ViewModel that owns
-  the write, or reporting the cancellation.
-
 - **B413 — The password prompt does not survive a rotation.** The dialog's two fields and the export
   prompt's open flag are plain `remember`
   ([PasswordPromptDialog.kt](app/src/main/java/com/example/androidapp/ui/transfer/PasswordPromptDialog.kt),

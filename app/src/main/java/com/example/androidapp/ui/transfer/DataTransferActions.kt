@@ -56,10 +56,6 @@ fun rememberDataTransferActions(
     // by the outcome that transfer publishes.
     var transferIsAnExport by remember { mutableStateOf(true) }
 
-    // The password for the encrypted document the picker is about to return. Held in composition because the
-    // picker answers after this call returns; cleared as soon as the write starts.
-    var pendingExportPassword by remember { mutableStateOf<String?>(null) }
-
     val createDocument = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument(JSON_MIME_TYPE),
     ) { uri ->
@@ -68,14 +64,13 @@ fun rememberDataTransferActions(
         viewModel.writeBackup(context, uri)
     }
 
+    // The password itself is the ViewModel's (B412): the picker answers after this call returns, and a
+    // rotation while it is open would lose anything held here.
     val createEncryptedDocument = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument(JSON_MIME_TYPE),
     ) { uri ->
-        val password = pendingExportPassword
-        pendingExportPassword = null
-        if (uri == null || password == null) return@rememberLauncherForActivityResult
         transferIsAnExport = true
-        viewModel.writeBackup(context, uri, password)
+        viewModel.writeEncryptedBackup(context, uri)
     }
 
     val openDocument = rememberLauncherForActivityResult(
@@ -111,7 +106,7 @@ fun rememberDataTransferActions(
         DataTransferActions(
             export = { createDocument.launch(DEFAULT_FILE_NAME) },
             exportEncrypted = { password ->
-                pendingExportPassword = password
+                viewModel.onExportPasswordChosen(password)
                 createEncryptedDocument.launch(ENCRYPTED_FILE_NAME)
             },
             import = { openDocument.launch(arrayOf(JSON_MIME_TYPE, "text/plain")) },

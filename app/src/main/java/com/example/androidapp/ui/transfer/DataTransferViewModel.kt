@@ -149,6 +149,39 @@ class DataTransferViewModel @Inject constructor(
         _pendingImport.value = null
     }
 
+    /**
+     * The password for the encrypted document the picker is about to return (N294, B412).
+     *
+     * Held here rather than in the composition that launched the picker: the picker is another app's
+     * activity, a rotation recreates this screen, and a password held in composition was lost — the
+     * callback then returned silently and the file the lifter chose was never written. It lives only
+     * until the picker answers, and is cleared by that answer either way.
+     */
+    private var pendingExportPassword: String? = null
+
+    /** Remembers the password across the document picker's round trip (B412). */
+    fun onExportPasswordChosen(password: String) {
+        pendingExportPassword = password
+    }
+
+    /**
+     * Writes the encrypted backup to the document the picker returned, or says it could not.
+     *
+     * A null [uri] is the lifter backing out: the password is forgotten and nothing is said. A null
+     * password means the process was recreated while the picker was up — secrets are deliberately not
+     * saved, so the only honest answer is that the write did not happen (B412).
+     */
+    fun writeEncryptedBackup(context: Context, uri: Uri?) {
+        val password = pendingExportPassword
+        pendingExportPassword = null
+        if (uri == null) return
+        if (password == null) {
+            _outcome.value = TransferOutcome.StorageFailure
+            return
+        }
+        writeBackup(context, uri, password)
+    }
+
     /** Writes the backup to the document the picker returned, and reports what happened. */
     fun writeBackup(context: Context, uri: Uri, password: String? = null) {
         viewModelScope.launch {
