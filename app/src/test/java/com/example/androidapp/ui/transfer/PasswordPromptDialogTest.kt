@@ -37,10 +37,19 @@ class PasswordPromptDialogTest {
         var confirmed = false
         setDialog(onConfirm = { confirmed = true })
 
+        composeTestRule.onNodeWithTag(TestTags.PASSWORD_DIALOG).assertExists()
         composeTestRule.onNodeWithTag(TestTags.PASSWORD_FIELD).performTextInput("correct horse battery")
         composeTestRule.onNodeWithTag(TestTags.PASSWORD_CONFIRM).performClick()
 
         assertThat(confirmed).isTrue()
+    }
+
+    @Test
+    fun anExport_asksForTheConfirmation() {
+        setDialog(confirmWithSecondField = true)
+
+        composeTestRule.onNodeWithTag(TestTags.PASSWORD_CONFIRM_FIELD).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.PASSWORD_CONFIRM_FIELD).performTextInput("correct horse battery")
     }
 
     @Test
