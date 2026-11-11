@@ -24,12 +24,6 @@ itself changed no code.
 
 ### The rest of the review
 
-- **B419 — A logged step's *before* is not checked against the plan.** `requireWriteMatches` compares
-  only `after` to the edit
-  ([RoomTemplateRepository.kt](app/src/main/java/com/example/androidapp/data/RoomTemplateRepository.kt)),
-  so a caller racing the plan could record a `before` that never was and the undo would restore it.
-  Fixed means comparing both targets against the row read inside the transaction.
-
 - **B420 — Two small consistency nits the review found.** `ProgramWeeksRoute` omits the `modifier`
   parameter every sibling route carries
   ([ProgramWeeksScreen.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramWeeksScreen.kt)),

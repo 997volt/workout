@@ -130,6 +130,23 @@ class ProgressionRepositoryTest {
         assertTrue(database.progressionDao().allWrites().isEmpty())
     }
 
+    @Test
+    fun aStepWhoseBeforeIsNotThePlan_isRefused() = runTest {
+        // B419: the after was checked against the edit and the before was not, so a step computed from a
+        // stale prompt could log a record whose undo restores a target the plan never held.
+        val write = stepWrite(afterWeight = 102_500L).copy(
+            before = ProgressionTargets(weightGrams = 90_000L, repsCurrent = 8),
+        )
+
+        assertTrue(templates.applyProgression(SET_ID, stepEdit(), write) is DataResult.Failure)
+        assertEquals(
+            "nothing was written",
+            100_000L,
+            database.templateSetDao().findTemplateSet(SET_ID)!!.targetWeightGrams,
+        )
+        assertTrue(database.progressionDao().allWrites().isEmpty())
+    }
+
     private suspend fun applyStep(): DataResult<String> =
         templates.applyProgression(SET_ID, stepEdit(), stepWrite(afterWeight = 102_500L))
 

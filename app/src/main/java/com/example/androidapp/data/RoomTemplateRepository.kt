@@ -374,6 +374,9 @@ class RoomTemplateRepository @Inject constructor(
         requireWriteMatches(write, edit)
         val now = timeSource.nowEpochMillis()
         database.withTransaction {
+            val stored = setDao.findTemplateSet(templateSetId)
+                ?: throw NotFoundException("template set $templateSetId")
+            requireBeforeMatches(write, stored)
             updateSetRow(templateSetId, edit)
             val id = UUID.randomUUID().toString()
             progressionDao.insertWrite(
@@ -844,6 +847,22 @@ private suspend fun copyExerciseInto(
             ),
         )
     }
+}
+
+/**
+ * Refuses a log whose *before* is not the plan's own target (ROADMAP B419).
+ *
+ * The `after` is checked against the edit; this is the other half, and it is the half an undo trusts:
+ * restoring a `before` the plan never held would write a target nobody authored. The comparison runs
+ * inside the transaction against the row just read, so a step computed from a stale prompt is refused
+ * rather than logged.
+ */
+private fun requireBeforeMatches(write: ProgressionSetWrite, stored: TemplateSetEntity) {
+    val before = write.before
+    val matches = before.weightGrams == stored.targetWeightGrams &&
+        before.repsCurrent == stored.targetRepsCurrent &&
+        before.durationSeconds == stored.targetDurationSeconds
+    if (!matches) throw InvalidInputException("the recorded step does not start from the plan")
 }
 
 /**

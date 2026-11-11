@@ -51,6 +51,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A recorded progression step's starting target is checked against the plan** (B419). The log's
+  *after* was compared with the edit but its *before* was not, so a step computed from a stale prompt could
+  keep a starting target the plan never held — and an undo would then write it. The comparison now runs
+  against the row read inside the write's own transaction.
 - **Three sentences that still described the pre-2.28 shape are corrected** (B418). The deload
   creator's explanation now mentions a timed movement's hold and the 6.0 effort it writes, the Adherence
   unmark dialog is titled "Remove this exemption?" rather than naming the mark a deload, and the adherence
