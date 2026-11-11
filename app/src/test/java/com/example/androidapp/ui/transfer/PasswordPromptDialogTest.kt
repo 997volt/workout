@@ -1,10 +1,14 @@
 package com.example.androidapp.ui.transfer
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.ui.components.TestTags
@@ -15,10 +19,12 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * The password prompt (ROADMAP N294).
+ * The password prompt (ROADMAP N294, B413).
  *
- * The prompt is the only place a password is typed, and the two rules it enforces are the ones a stored
- * file cannot recover from: a minimum length, and a matching confirmation on an export.
+ * The dialog is **controlled**: its text and its refusal are the transfer ViewModel's, so this test
+ * drives a local stand-in for that state and asserts what a lifter sees — the sentence a refusal prints
+ * and the fact that neither button starts a second derivation while one runs. The validation itself is
+ * tested where it lives, in [DataTransferViewModelTest].
  */
 @RunWith(AndroidJUnit4::class)
 class PasswordPromptDialogTest {
@@ -27,34 +33,28 @@ class PasswordPromptDialogTest {
     val composeTestRule = createComposeRule()
 
     @Test
-    fun aShortPassword_isRefusedBeforeTheCallback() {
-        var confirmed: String? = null
-        setDialog(onConfirm = { confirmed = it })
+    fun theConfirmButton_reportsTheQuestionWasAnswered() {
+        var confirmed = false
+        setDialog(onConfirm = { confirmed = true })
 
-        composeTestRule.onNodeWithTag(TestTags.PASSWORD_FIELD).performTextInput("short")
+        composeTestRule.onNodeWithTag(TestTags.PASSWORD_FIELD).performTextInput("correct horse battery")
         composeTestRule.onNodeWithTag(TestTags.PASSWORD_CONFIRM).performClick()
 
-        assertThat(confirmed).isNull()
-        composeTestRule.onNodeWithTag(TestTags.PASSWORD_DIALOG).assertExists()
-        composeTestRule.onNodeWithTag(TestTags.PASSWORD_CANCEL).performClick()
+        assertThat(confirmed).isTrue()
     }
 
     @Test
-    fun anExport_needsTheConfirmationToMatch() {
-        var confirmed: String? = null
-        setDialog(confirmWithSecondField = true, onConfirm = { confirmed = it })
+    fun aShortPassword_showsItsSentence() {
+        setDialog(issue = PasswordIssue.TOO_SHORT)
 
-        composeTestRule.onNodeWithTag(TestTags.PASSWORD_FIELD).performTextInput("correct horse")
-        composeTestRule.onNodeWithTag(TestTags.PASSWORD_CONFIRM_FIELD).performTextInput("correct horsf")
-        composeTestRule.onNodeWithTag(TestTags.PASSWORD_CONFIRM).performClick()
+        composeTestRule.onNodeWithText("Use a password of at least 8 characters.").assertExists()
+    }
 
-        assertThat(confirmed).isNull()
+    @Test
+    fun aMismatch_showsItsSentence() {
+        setDialog(issue = PasswordIssue.MISMATCH)
 
-        composeTestRule.onNodeWithTag(TestTags.PASSWORD_CONFIRM_FIELD).performTextClearance()
-        composeTestRule.onNodeWithTag(TestTags.PASSWORD_CONFIRM_FIELD).performTextInput("correct horse")
-        composeTestRule.onNodeWithTag(TestTags.PASSWORD_CONFIRM).performClick()
-
-        assertThat(confirmed).isEqualTo("correct horse")
+        composeTestRule.onNodeWithText("The passwords do not match.").assertExists()
     }
 
     @Test
@@ -69,15 +69,24 @@ class PasswordPromptDialogTest {
     private fun setDialog(
         confirmWithSecondField: Boolean = false,
         busy: Boolean = false,
-        onConfirm: (String) -> Unit = {},
+        issue: PasswordIssue? = null,
+        onConfirm: () -> Unit = {},
     ) {
         composeTestRule.setContent {
+            // The stand-in for the ViewModel's draft: the dialog owns nothing itself.
+            var password by remember { mutableStateOf("") }
+            var confirmation by remember { mutableStateOf("") }
             AndroidAppTheme {
                 PasswordPromptDialog(
                     title = "Open encrypted backup",
                     description = "Enter the password.",
                     confirmLabel = "Open",
                     confirmWithSecondField = confirmWithSecondField,
+                    password = password,
+                    confirmation = confirmation,
+                    onPasswordChange = { password = it },
+                    onConfirmationChange = { confirmation = it },
+                    issue = issue,
                     onConfirm = onConfirm,
                     onDismiss = {},
                     busy = busy,

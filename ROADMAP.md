@@ -24,14 +24,6 @@ itself changed no code.
 
 ### The rest of the review
 
-- **B413 — The password prompt does not survive a rotation.** The dialog's two fields and the export
-  prompt's open flag are plain `remember`
-  ([PasswordPromptDialog.kt](app/src/main/java/com/example/androidapp/ui/transfer/PasswordPromptDialog.kt),
-  [SettingsTransferDialogs.kt](app/src/main/java/com/example/androidapp/ui/settings/SettingsTransferDialogs.kt)):
-  an import reopens with empty fields, an export prompt closes and drops what was typed. The precedent
-  is the bodyweight prompt held in its ViewModel (B283); `rememberSaveable` is the wrong fix because it
-  would put a password in the saved state.
-
 - **B414 — Reset is not guarded while it writes.** The baseline's button takes no `enabled` and neither
   reset action checks `writing`, though the switch does
   ([ProgramProgressionScreen.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramProgressionScreen.kt),

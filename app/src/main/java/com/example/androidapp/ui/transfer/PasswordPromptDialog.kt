@@ -7,10 +7,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
@@ -66,11 +62,12 @@ private fun PasswordFields(
 }
 
 /**
- * A password for an encrypted backup (ROADMAP N294).
+ * A password for an encrypted backup (ROADMAP N294, B413).
  *
- * The password is never stored or remembered; the dialog hands it to the caller and forgets it. An export
- * asks twice because a typo in a password nobody stored makes the file unreadable; an import asks once and
- * keeps the caller's error (a wrong password) visible until the next try.
+ * **Controlled**: the text, the confirmation and the refusal are the caller's state, held by the
+ * transfer ViewModel so a rotation cannot empty them. The dialog's only job is to draw them and report
+ * what was typed; the validation that used to live here is the ViewModel's, because a check that lives
+ * in `remember` is a check a rebuilt dialog has forgotten.
  */
 @Composable
 fun PasswordPromptDialog(
@@ -78,31 +75,27 @@ fun PasswordPromptDialog(
     description: String,
     confirmLabel: String,
     confirmWithSecondField: Boolean,
-    onConfirm: (String) -> Unit,
+    password: String,
+    confirmation: String,
+    onPasswordChange: (String) -> Unit,
+    onConfirmationChange: (String) -> Unit,
+    issue: PasswordIssue?,
+    onConfirm: () -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     error: String? = null,
     /** True while the answer is being used (a key derived), so neither button starts it twice (B401). */
     busy: Boolean = false,
 ) {
-    var password by remember { mutableStateOf("") }
-    var confirmation by remember { mutableStateOf("") }
-    var localError by remember { mutableStateOf<String?>(null) }
-    val tooShort = pluralStringResource(
-        R.plurals.transfer_password_too_short,
-        EncryptedBackup.MIN_PASSWORD_LENGTH,
-        EncryptedBackup.MIN_PASSWORD_LENGTH,
-    )
-    val mismatch = stringResource(R.string.transfer_password_mismatch)
-    val shownError = localError ?: error
+    val issueText = when (issue) {
+        PasswordIssue.TOO_SHORT -> pluralStringResource(
+            R.plurals.transfer_password_too_short,
+            EncryptedBackup.MIN_PASSWORD_LENGTH,
+            EncryptedBackup.MIN_PASSWORD_LENGTH,
+        )
 
-    fun submit() {
-        localError = when {
-            password.length < EncryptedBackup.MIN_PASSWORD_LENGTH -> tooShort
-            confirmWithSecondField && password != confirmation -> mismatch
-            else -> null
-        }
-        if (localError == null) onConfirm(password)
+        PasswordIssue.MISMATCH -> stringResource(R.string.transfer_password_mismatch)
+        null -> null
     }
 
     AlertDialog(
@@ -112,23 +105,17 @@ fun PasswordPromptDialog(
         text = {
             PasswordFields(
                 password = password,
-                onPasswordChange = {
-                    password = it
-                    localError = null
-                },
+                onPasswordChange = onPasswordChange,
                 confirmation = confirmation,
-                onConfirmationChange = {
-                    confirmation = it
-                    localError = null
-                },
+                onConfirmationChange = onConfirmationChange,
                 showConfirmation = confirmWithSecondField,
-                error = shownError,
+                error = issueText ?: error,
                 description = description,
             )
         },
         confirmButton = {
             AppTextButton(
-                onClick = { submit() },
+                onClick = onConfirm,
                 enabled = !busy,
                 modifier = Modifier.testTag(TestTags.PASSWORD_CONFIRM),
             ) {

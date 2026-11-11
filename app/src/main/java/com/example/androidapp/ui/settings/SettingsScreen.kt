@@ -91,7 +91,7 @@ fun SettingsRoute(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val pendingImport by transferViewModel.pendingImport.collectAsStateWithLifecycle()
-    val pendingEncryptedImport by transferViewModel.pendingEncryptedImport.collectAsStateWithLifecycle()
+    val passwordDraft by transferViewModel.passwordDraft.collectAsStateWithLifecycle()
     val encryptedImportError by transferViewModel.encryptedImportError.collectAsStateWithLifecycle()
     val decrypting by transferViewModel.decrypting.collectAsStateWithLifecycle()
 
@@ -101,16 +101,17 @@ fun SettingsRoute(
     var message by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val transferActions = rememberDataTransferActions(transferViewModel) { message = it }
-    val requestEncryptedExport = rememberEncryptedExport(transferActions.exportEncrypted)
     SettingsTransferDialogs(
         pendingImport = pendingImport,
-        pendingEncryptedImport = pendingEncryptedImport,
+        passwordDraft = passwordDraft,
         encryptedImportError = encryptedImportError,
         decrypting = decrypting,
         onConfirmImport = transferViewModel::confirmImport,
         onCancelImport = transferViewModel::cancelImport,
-        onSubmitEncryptedPassword = transferViewModel::submitEncryptedImport,
-        onCancelEncryptedImport = transferViewModel::cancelEncryptedImport,
+        onPasswordChange = transferViewModel::onPasswordChanged,
+        onConfirmationChange = transferViewModel::onConfirmationChanged,
+        onConfirmPassword = { transferViewModel.onConfirmPassword(transferActions.exportEncrypted) },
+        onDismissPassword = transferViewModel::onDismissPassword,
     )
     val clearedText = stringResource(R.string.clear_done)
     var failure by remember { mutableStateOf<DataError?>(null) }
@@ -134,7 +135,7 @@ fun SettingsRoute(
         onChooseBackupFolder = chooseBackupFolder,
         onBackupNow = viewModel::onBackupNow,
         onExportData = transferActions.export,
-        onEncryptExport = requestEncryptedExport,
+        onEncryptExport = transferViewModel::onRequestExportPassword,
         onImportData = transferActions.import,
         onOpenDiagnostics = onOpenDiagnostics,
         onClearData = {

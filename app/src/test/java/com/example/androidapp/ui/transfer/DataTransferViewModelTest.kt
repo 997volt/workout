@@ -219,6 +219,100 @@ class DataTransferViewModelTest {
     }
 
     @Test
+    fun aShortExportPassword_isRefused_andTheQuestionStaysOpen() = runTest(dispatcher) {
+        // B413: validation moved to the ViewModel with the text, so a rotation cannot lose the check
+        // with the dialog that used to own it.
+        val viewModel = viewModel()
+        viewModel.onRequestExportPassword()
+        viewModel.onPasswordChanged("short")
+        var handedOn: String? = null
+
+        viewModel.onConfirmPassword { handedOn = it }
+
+        assertThat(handedOn).isNull()
+        assertThat(viewModel.passwordDraft.value?.issue).isEqualTo(PasswordIssue.TOO_SHORT)
+        assertThat(viewModel.passwordDraft.value?.kind).isEqualTo(PasswordPromptKind.EXPORT)
+    }
+
+    @Test
+    fun anExportWhoseConfirmationDiffers_isRefused() = runTest(dispatcher) {
+        val viewModel = viewModel()
+        viewModel.onRequestExportPassword()
+        viewModel.onPasswordChanged("correct horse battery")
+        viewModel.onConfirmationChanged("correct horse batterf")
+
+        viewModel.onConfirmPassword { }
+
+        assertThat(viewModel.passwordDraft.value?.issue).isEqualTo(PasswordIssue.MISMATCH)
+    }
+
+    @Test
+    fun aValidExportPassword_isHandedOn_andTheQuestionCloses() = runTest(dispatcher) {
+        val viewModel = viewModel()
+        viewModel.onRequestExportPassword()
+        viewModel.onPasswordChanged("correct horse battery")
+        viewModel.onConfirmationChanged("correct horse battery")
+        var handedOn: String? = null
+
+        viewModel.onConfirmPassword { handedOn = it }
+
+        assertThat(handedOn).isEqualTo("correct horse battery")
+        assertThat(viewModel.passwordDraft.value).isNull()
+    }
+
+    @Test
+    fun theImportQuestion_opensOnAnEnvelope_andClosesWhenItOpens() = runTest(dispatcher) {
+        val plain = "{\"schemaVersion\":9}"
+        val envelope = (EncryptedBackup.encrypt(plain, "correct horse battery") as DataResult.Success).data
+        io.readText = envelope
+        repository.previewResult = DataResult.Success(preview())
+        val viewModel = viewModel()
+        viewModel.readBackup(context, uri)
+        advanceUntilIdle()
+
+        assertThat(viewModel.passwordDraft.value?.kind).isEqualTo(PasswordPromptKind.IMPORT)
+
+        viewModel.onPasswordChanged("correct horse battery")
+        viewModel.onConfirmPassword { }
+        advanceUntilIdle()
+
+        assertThat(viewModel.passwordDraft.value).isNull()
+        assertThat(viewModel.pendingImport.value?.text).isEqualTo(plain)
+    }
+
+    @Test
+    fun aWrongImportPassword_keepsTheQuestionOpen_withTheRefusal() = runTest(dispatcher) {
+        val envelope = (EncryptedBackup.encrypt("{}", "correct horse battery") as DataResult.Success).data
+        io.readText = envelope
+        val viewModel = viewModel()
+        viewModel.readBackup(context, uri)
+        advanceUntilIdle()
+
+        viewModel.onPasswordChanged("not the password")
+        viewModel.onConfirmPassword { }
+        advanceUntilIdle()
+
+        assertThat(viewModel.passwordDraft.value?.kind).isEqualTo(PasswordPromptKind.IMPORT)
+        assertThat(viewModel.encryptedImportError.value).isNotNull()
+        assertThat(viewModel.pendingImport.value).isNull()
+    }
+
+    @Test
+    fun dismissingAnImportQuestion_forgetsItsFile() = runTest(dispatcher) {
+        val envelope = (EncryptedBackup.encrypt("{}", "correct horse battery") as DataResult.Success).data
+        io.readText = envelope
+        val viewModel = viewModel()
+        viewModel.readBackup(context, uri)
+        advanceUntilIdle()
+
+        viewModel.onDismissPassword()
+        advanceUntilIdle()
+
+        assertThat(viewModel.passwordDraft.value).isNull()
+        assertThat(viewModel.pendingEncryptedImport.value).isNull()
+    }
+
+    @Test
     fun aReadBackup_waitsForConfirmation_andThenMerges() = runTest(dispatcher) {
         io.readText = "{\"schemaVersion\":8}"
         repository.previewResult = DataResult.Success(preview())

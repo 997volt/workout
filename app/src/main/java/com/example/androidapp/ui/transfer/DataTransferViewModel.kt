@@ -17,6 +17,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -124,6 +125,65 @@ class DataTransferViewModel @Inject constructor(
 
     /** True while the password is being turned into a key, so the dialog can refuse a second tap (B401). */
     val decrypting: StateFlow<Boolean> = _decrypting.asStateFlow()
+
+    private val _passwordDraft = MutableStateFlow<PasswordDraft?>(null)
+
+    /**
+     * The password question as it stands, or null while none is open (N294).
+     *
+     * Held here rather than in the dialog's own `remember` (B413): a rotation recreates the composition
+     * and used to empty both fields — or close the export question outright — while the ViewModel's own
+     * state survived. Deliberately **not** `rememberSaveable`: the saved-state bundle is exactly the
+     * place a password must not end up, and a ViewModel is the one holder a rotation keeps for free.
+     */
+    val passwordDraft: StateFlow<PasswordDraft?> = _passwordDraft.asStateFlow()
+
+    /** Opens the export question; the import one is opened by [readBackup] finding an envelope (B413). */
+    fun onRequestExportPassword() {
+        _passwordDraft.value = PasswordDraft(PasswordPromptKind.EXPORT)
+    }
+
+    fun onPasswordChanged(text: String) {
+        _passwordDraft.update { it?.copy(password = text, issue = null) }
+        // A refusal belongs to the password it was about; typing a new one clears it.
+        if (_passwordDraft.value?.kind == PasswordPromptKind.IMPORT) _encryptedImportError.value = null
+    }
+
+    fun onConfirmationChanged(text: String) {
+        _passwordDraft.update { it?.copy(confirmation = text, issue = null) }
+    }
+
+    /**
+     * Checks the typed password and, when it passes, uses it.
+     *
+     * The check is here rather than in the dialog so it survives the dialog being rebuilt (B413). An
+     * export closes the question and hands the password to [onExportReady]; an import submits it and
+     * keeps the question open, because a wrong password is answered by the same question with the
+     * refusal in it.
+     */
+    fun onConfirmPassword(onExportReady: (String) -> Unit) {
+        val draft = _passwordDraft.value ?: return
+        val issue = passwordIssueOf(draft)
+        if (issue != null) {
+            _passwordDraft.update { it?.copy(issue = issue) }
+            return
+        }
+        when (draft.kind) {
+            PasswordPromptKind.EXPORT -> {
+                _passwordDraft.value = null
+                onExportReady(draft.password)
+            }
+
+            PasswordPromptKind.IMPORT -> submitEncryptedImport(draft.password)
+        }
+    }
+
+    /** Backs out of whichever question is open, forgetting an import's file with it. */
+    fun onDismissPassword() {
+        val kind = _passwordDraft.value?.kind ?: return
+        _passwordDraft.value = null
+        if (kind == PasswordPromptKind.IMPORT) cancelEncryptedImport()
+    }
 
     /** Merges the file that was previewed, after the lifter confirmed what it holds. */
     fun confirmImport() {
@@ -235,6 +295,7 @@ class DataTransferViewModel @Inject constructor(
             if (encrypted) {
                 _encryptedImportError.value = null
                 _pendingEncryptedImport.value = text
+                _passwordDraft.value = PasswordDraft(PasswordPromptKind.IMPORT)
                 return@launch
             }
             preview(text)
@@ -263,9 +324,11 @@ class DataTransferViewModel @Inject constructor(
                 is DataResult.Success -> {
                     _encryptedImportError.value = null
                     _pendingEncryptedImport.value = null
+                    _passwordDraft.value = null
                     preview(opened.data)
                 }
 
+                // The question stays open with the refusal in it, so the typo can be corrected (B413).
                 is DataResult.Failure -> _encryptedImportError.value = opened.error
             }
         }
@@ -275,6 +338,7 @@ class DataTransferViewModel @Inject constructor(
     fun cancelEncryptedImport() {
         _pendingEncryptedImport.value = null
         _encryptedImportError.value = null
+        if (_passwordDraft.value?.kind == PasswordPromptKind.IMPORT) _passwordDraft.value = null
     }
 
     private suspend fun preview(text: String) {
@@ -290,9 +354,34 @@ class DataTransferViewModel @Inject constructor(
     }
 }
 
+/** Which password question is open (N294, B413). */
+enum class PasswordPromptKind { EXPORT, IMPORT }
+
+/** Why a typed password was refused before it was used; the dialog turns it into a sentence (B413). */
+enum class PasswordIssue { TOO_SHORT, MISMATCH }
+
+/**
+ * The password question as it stands, held by the ViewModel so a rotation cannot empty it (B413).
+ *
+ * [confirmation] is only used by the export question, which asks twice because a typo in a password
+ * nobody stored makes the file unreadable.
+ */
+data class PasswordDraft(
+    val kind: PasswordPromptKind,
+    val password: String = "",
+    val confirmation: String = "",
+    val issue: PasswordIssue? = null,
+)
+
+/** The refusal a draft earns, or null when it could be used (B413). */
+private fun passwordIssueOf(draft: PasswordDraft): PasswordIssue? = when {
+    draft.password.length < EncryptedBackup.MIN_PASSWORD_LENGTH -> PasswordIssue.TOO_SHORT
+    draft.kind == PasswordPromptKind.EXPORT && draft.password != draft.confirmation -> PasswordIssue.MISMATCH
+    else -> null
+}
+
 /** The backup document, or the reason there isn't one. */
-sealed interface ExportOutcome {
-    data class Ready(val json: String) : ExportOutcome
+sealed interface ExportOutcome {    data class Ready(val json: String) : ExportOutcome
     data class Failed(val error: DataError) : ExportOutcome
 }
 

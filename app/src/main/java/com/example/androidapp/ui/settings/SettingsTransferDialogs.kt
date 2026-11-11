@@ -1,70 +1,61 @@
 package com.example.androidapp.ui.settings
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import com.example.androidapp.R
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.transfer.DataTransferViewModel
 import com.example.androidapp.ui.transfer.ImportPreviewDialog
+import com.example.androidapp.ui.transfer.PasswordDraft
 import com.example.androidapp.ui.transfer.PasswordPromptDialog
-
-/**
- * The encrypted export's password question, as a trigger the data row can call (ROADMAP N294).
- *
- * The dialog owns its open state so the settings route does not have to; the returned lambda is what the
- * row's callback runs, and the export starts only after a password was chosen.
- */
-@Composable
-internal fun rememberEncryptedExport(onExport: (String) -> Unit): () -> Unit {
-    var show by remember { mutableStateOf(false) }
-    if (show) {
-        PasswordPromptDialog(
-            title = stringResource(R.string.transfer_password_export_title),
-            description = stringResource(R.string.transfer_password_export_hint),
-            confirmLabel = stringResource(R.string.transfer_password_export_confirm),
-            confirmWithSecondField = true,
-            onConfirm = { password ->
-                show = false
-                onExport(password)
-            },
-            onDismiss = { show = false },
-        )
-    }
-    return { show = true }
-}
+import com.example.androidapp.ui.transfer.PasswordPromptKind
 
 /**
  * The transfer questions the settings screen can have open (ROADMAP N246, N294).
  *
  * One composable because they are one shape — a sheet over the same screen, at most one at a time — and
- * because the route around them had grown past the length this project allows.
+ * because the route around them had grown past the length this project allows. The password question is
+ * driven entirely by the draft the transfer ViewModel holds (B413), so its two forms are one dialog and a
+ * rotation neither empties it nor closes it.
  */
 @Composable
 internal fun SettingsTransferDialogs(
     pendingImport: DataTransferViewModel.PendingImport?,
-    pendingEncryptedImport: String?,
+    passwordDraft: PasswordDraft?,
     encryptedImportError: DataError?,
     decrypting: Boolean,
     onConfirmImport: () -> Unit,
     onCancelImport: () -> Unit,
-    onSubmitEncryptedPassword: (String) -> Unit,
-    onCancelEncryptedImport: () -> Unit,
+    onPasswordChange: (String) -> Unit,
+    onConfirmationChange: (String) -> Unit,
+    onConfirmPassword: () -> Unit,
+    onDismissPassword: () -> Unit,
 ) {
-    pendingEncryptedImport?.let {
+    passwordDraft?.let { draft ->
+        val isExport = draft.kind == PasswordPromptKind.EXPORT
         PasswordPromptDialog(
-            title = stringResource(R.string.transfer_password_import_title),
-            description = stringResource(R.string.transfer_password_import_hint),
-            confirmLabel = stringResource(R.string.transfer_password_import_confirm),
-            confirmWithSecondField = false,
-            error = encryptedImportError?.let { dataErrorMessage(it) },
-            onConfirm = onSubmitEncryptedPassword,
-            onDismiss = onCancelEncryptedImport,
-            busy = decrypting,
+            title = stringResource(
+                if (isExport) R.string.transfer_password_export_title else R.string.transfer_password_import_title,
+            ),
+            description = stringResource(
+                if (isExport) R.string.transfer_password_export_hint else R.string.transfer_password_import_hint,
+            ),
+            confirmLabel = stringResource(
+                if (isExport) R.string.transfer_password_export_confirm else R.string.transfer_password_import_confirm,
+            ),
+            confirmWithSecondField = isExport,
+            password = draft.password,
+            confirmation = draft.confirmation,
+            onPasswordChange = onPasswordChange,
+            onConfirmationChange = onConfirmationChange,
+            issue = draft.issue,
+            // A refused import is the file's own answer and is said in the same dialog; an export has
+            // nothing beyond what the fields state.
+            error = if (isExport) null else encryptedImportError?.let { dataErrorMessage(it) },
+            onConfirm = onConfirmPassword,
+            onDismiss = onDismissPassword,
+            busy = !isExport && decrypting,
         )
     }
     pendingImport?.let { pending ->

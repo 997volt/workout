@@ -51,6 +51,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The password question survives a rotation** (B413). Its fields and its open state were the dialog's
+  own `remember`, so rotating the screen emptied an import's fields or closed the export's question and
+  dropped what was typed. The transfer ViewModel now holds the draft — text, confirmation and any refusal —
+  and validates it; the dialog only draws it. Deliberately not `rememberSaveable`, which would put a
+  password in the saved-state bundle.
 - **The encrypted export's password survives the document picker** (B412). It was held by the screen,
   so a rotation while the picker was open lost it and the callback returned silently — a file was chosen
   and nothing was written or said. The ViewModel that performs the write now holds it until the picker
