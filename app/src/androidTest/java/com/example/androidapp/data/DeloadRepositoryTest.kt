@@ -208,6 +208,21 @@ class DeloadRepositoryTest {
     }
 
     @Test
+    fun aMarkWithNoPlan_doesNotHideAnOlderBuild() = runTest {
+        // B405: N300 makes exempting a week one tap, and that week has no days. The reuse action reads
+        // the newest *built* week, so the earlier plan is still the last one.
+        createDay("Heavy lower — deload", DayOfWeek.MONDAY)
+
+        val next = monday.plusWeeks(1)
+        adherence.setDeloadWeek(program, next, marked = true)
+
+        val last = deloads.findLastPlan(program, monday.plusWeeks(2))!!
+
+        assertEquals(monday, last.weekStart)
+        assertEquals("Heavy lower — deload", last.days.single().templateName)
+    }
+
+    @Test
     fun aNextWeekPlan_isAccepted_butTheFollowingWeekIsRefused() = runTest {
         // N158: the creator plans the next week, so the window is current-or-next and no further.
         val next = monday.plusWeeks(1)

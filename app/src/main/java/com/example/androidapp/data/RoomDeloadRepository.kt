@@ -61,15 +61,17 @@ class RoomDeloadRepository @Inject constructor(
         deloadDao.observeDeloadDayCount(templateId).map { it > 0 }
 
     override suspend fun findLastPlan(programId: String, beforeWeek: LocalDate): DeloadWeek? {
-        val mark = deloadDao.findLatestDeloadBefore(programId, beforeWeek.toEpochDay()) ?: return null
-        return deloadDao.findDeloadDaysForWeek(mark.weekStart)
+        // The newest **built** week, not the newest mark (B405): a week exempted in one tap has no days
+        // and must not hide the plan before it.
+        val week = deloadDao.findLatestPlanWeek(programId, beforeWeek.toEpochDay()) ?: return null
+        return deloadDao.findDeloadDaysForWeek(week)
             // The one-week read returns every program's days for the week; the last plan is this program's.
             .filter { it.programId == programId }
             .takeIf { it.isNotEmpty() }
             ?.let { rows ->
                 DeloadWeek(
                     programId = programId,
-                    weekStart = LocalDate.ofEpochDay(mark.weekStart),
+                    weekStart = LocalDate.ofEpochDay(week),
                     days = rows.map { row ->
                         DeloadDay(
                             id = row.id,

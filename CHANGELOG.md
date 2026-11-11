@@ -51,6 +51,9 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **An exempt week with no plan no longer hides *Use last deload*** (B405). The reuse action read the
+  newest mark and gave up when that week had no days; since N300 exempting a week is one tap, so a marked
+  week could hide an older built plan. It now reads the newest *built* week in one query.
 - **The recovery suggestion follows a deload built while its screen is open** (B404). The cadence suggestion
   was read once when the recovery screen opened, so building a week from that screen and coming back left
   "A recovery week may be due" up even though the week was now marked and built. It re-reads whenever this

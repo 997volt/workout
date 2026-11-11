@@ -84,6 +84,31 @@ interface ProgramDeloadDao {
     )
     suspend fun findLatestDeloadBefore(programId: String, before: Long): ProgramDeloadEntity?
 
+    /**
+     * The most recent week before [before] that has a plan this program can recall (ROADMAP B405).
+     *
+     * A mark and a plan are not the same row: N300 lets the lifter exempt a week in one tap, and that
+     * week carries no days. Asking for the newest *mark* and giving up when it has no days loses an
+     * older built plan, so the walk happens here — one query with the days' own live-template rule
+     * baked in, rather than a read per mark.
+     */
+    @Query(
+        """
+        SELECT dl.weekStart FROM program_deloads dl
+        WHERE dl.programId = :programId
+          AND dl.weekStart < :before
+          AND dl.deletedAt IS NULL
+          AND EXISTS (
+              SELECT 1 FROM program_deload_days d
+              JOIN templates t ON t.id = d.templateId
+              WHERE d.deloadId = dl.id AND d.deletedAt IS NULL AND t.deletedAt IS NULL
+          )
+        ORDER BY dl.weekStart DESC
+        LIMIT 1
+        """,
+    )
+    suspend fun findLatestPlanWeek(programId: String, before: Long): Long?
+
     /** Moves the mark's own timestamp when its plan is rewritten (N147). */
     @Query("UPDATE program_deloads SET updatedAt = :at WHERE id = :id AND deletedAt IS NULL")
     suspend fun touchDeload(id: String, at: Long): Int

@@ -24,13 +24,6 @@ itself changed no code.
 
 ### The rest of the review
 
-- **B405 — *Use last deload* is shadowed by an exempt-only mark.** `findLastPlan` reads only this
-  program's newest mark and gives up when that week has no days
-  ([RoomDeloadRepository.kt](app/src/main/java/com/example/androidapp/data/RoomDeloadRepository.kt));
-  with N300's one-tap exemption such a mark is routine, and an older built plan can then no longer be
-  recalled. Fixed means walking the marks back until one has days for this program (one query with an
-  `EXISTS`, rather than a read per mark).
-
 - **B406 — Home's exempt banner speaks for the whole app.** `isExemptWeek` is true when *any* followed
   program's week is marked and is not filtered to weekly programs
   ([WorkoutsHomeViewModel.kt](app/src/main/java/com/example/androidapp/ui/home/WorkoutsHomeViewModel.kt)),
