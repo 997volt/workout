@@ -24,14 +24,6 @@ itself changed no code.
 
 ### The rest of the review
 
-- **B411 — Detecting an encrypted file parses the whole backup on the main thread.** `isEncrypted`
-  builds a full `JsonElement` tree of the file just to read one field
-  ([EncryptedBackup.kt](app/src/main/java/com/example/androidapp/data/transfer/EncryptedBackup.kt)) and
-  is called from the import coroutine on Main
-  ([DataTransferViewModel.kt](app/src/main/java/com/example/androidapp/ui/transfer/DataTransferViewModel.kt)),
-  so every **plain** import pays a second full parse and a stall that grows with the backup. Fixed means
-  a cheap prefix or lookup, or the check off the main thread.
-
 - **B412 — The encrypted export can lose its password while the file picker is open.**
   `pendingExportPassword` is composition-held
   ([DataTransferActions.kt](app/src/main/java/com/example/androidapp/ui/transfer/DataTransferActions.kt)),

@@ -196,7 +196,10 @@ class DataTransferViewModel @Inject constructor(
                 _outcome.value = TransferOutcome.StorageFailure
                 return@launch
             }
-            if (EncryptedBackup.isEncrypted(text)) {
+            // Detection scans a real backup's whole text and may parse it; neither belongs on Main
+            // (B411), and an envelope is as large as the base64 of the document it carries.
+            val encrypted = withContext(cryptoDispatcher) { EncryptedBackup.isEncrypted(text) }
+            if (encrypted) {
                 _encryptedImportError.value = null
                 _pendingEncryptedImport.value = text
                 return@launch

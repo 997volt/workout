@@ -75,11 +75,21 @@ object EncryptedBackup {
 
     private val json = Json { encodeDefaults = true }
 
-    /** Whether [text] is this envelope rather than a plain backup. A malformed file is not one. */
-    fun isEncrypted(text: String): Boolean = runCatching {
-        val root = json.parseToJsonElement(text).jsonObject
-        root["format"]?.jsonPrimitive?.contentOrNull == FORMAT
-    }.getOrDefault(false)
+    /**
+     * Whether [text] is this envelope rather than a plain backup. A malformed file is not one.
+     *
+     * The marker is looked for before anything is parsed (B411): a plain import is the large document,
+     * and building a `JsonElement` tree of it just to read one key was the expensive half of detecting
+     * a file that is not encrypted. Only a file that mentions the marker pays the parse, and the parse
+     * is what keeps a note that merely quotes the name from being taken for an envelope.
+     */
+    fun isEncrypted(text: String): Boolean {
+        if (!text.contains(FORMAT)) return false
+        return runCatching {
+            val root = json.parseToJsonElement(text).jsonObject
+            root["format"]?.jsonPrimitive?.contentOrNull == FORMAT
+        }.getOrDefault(false)
+    }
 
     /** Encrypts the ordinary backup [plaintext] with [password], returning the envelope JSON. */
     fun encrypt(plaintext: String, password: String): DataResult<String> {

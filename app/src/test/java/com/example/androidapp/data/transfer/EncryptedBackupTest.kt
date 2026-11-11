@@ -34,6 +34,15 @@ class EncryptedBackupTest {
     }
 
     @Test
+    fun aPlainBackupThatQuotesTheMarker_isNotAnEnvelope() {
+        // B411: the cheap scan is what lets an ordinary file skip the parse, and the parse is what
+        // keeps a note that merely names the format from being taken for an envelope.
+        val quoting = """{"schemaVersion":9,"sessions":[],"notes":["workout-encrypted-backup"]}"""
+
+        assertThat(EncryptedBackup.isEncrypted(quoting)).isFalse()
+    }
+
+    @Test
     fun aWrongPassword_isRefused() {
         val envelope = (EncryptedBackup.encrypt(plaintext, password) as DataResult.Success).data
 

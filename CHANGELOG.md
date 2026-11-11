@@ -51,6 +51,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A plain backup import no longer parses the file twice on the main thread** (B411). Encrypted-file
+  detection built a full JSON tree of every imported document just to read one key, so the ordinary — and
+  largest — case paid a second parse and a stall that grew with the backup. Detection now scans for the
+  format marker first and runs off the main thread; only a file that mentions the marker is parsed.
 - **A new encrypted backup derives its key at OWASP's current work factor** (B410). The envelope's
   210,000 PBKDF2 iterations were the table's SHA-512 figure, not the SHA-256 one this app uses; new files
   use 600,000 and keep carrying their own count, so a file written before this still opens.
