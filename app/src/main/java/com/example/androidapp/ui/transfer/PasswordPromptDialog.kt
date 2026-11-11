@@ -82,6 +82,8 @@ fun PasswordPromptDialog(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     error: String? = null,
+    /** True while the answer is being used (a key derived), so neither button starts it twice (B401). */
+    busy: Boolean = false,
 ) {
     var password by remember { mutableStateOf("") }
     var confirmation by remember { mutableStateOf("") }
@@ -127,6 +129,7 @@ fun PasswordPromptDialog(
         confirmButton = {
             AppTextButton(
                 onClick = { submit() },
+                enabled = !busy,
                 modifier = Modifier.testTag(TestTags.PASSWORD_CONFIRM),
             ) {
                 Text(confirmLabel)
@@ -135,6 +138,7 @@ fun PasswordPromptDialog(
         dismissButton = {
             AppTextButton(
                 onClick = onDismiss,
+                enabled = !busy,
                 modifier = Modifier.testTag(TestTags.PASSWORD_CANCEL),
             ) {
                 Text(stringResource(R.string.action_cancel))

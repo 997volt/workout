@@ -120,6 +120,11 @@ class DataTransferViewModel @Inject constructor(
     /** Why the last password did not open the pending file; the dialog stays open on it. */
     val encryptedImportError: StateFlow<DataError?> = _encryptedImportError.asStateFlow()
 
+    private val _decrypting = MutableStateFlow(false)
+
+    /** True while the password is being turned into a key, so the dialog can refuse a second tap (B401). */
+    val decrypting: StateFlow<Boolean> = _decrypting.asStateFlow()
+
     /** Merges the file that was previewed, after the lifter confirmed what it holds. */
     fun confirmImport() {
         val pending = _pendingImport.value ?: return
@@ -200,15 +205,25 @@ class DataTransferViewModel @Inject constructor(
         }
     }
 
-    /** Opens the pending encrypted file with [password], or keeps it for another try (N294). */
+    /**
+     * Opens the pending encrypted file with [password], or keeps it for another try (N294).
+     *
+     * One derivation at a time (B401): the dialog's buttons are disabled while it runs, and a second call
+     * that arrives anyway is dropped rather than stacking a second PBKDF2 pass. The answer is only used
+     * while the same file is still pending — a question dismissed during the derivation must not open the
+     * import preview behind the lifter's back.
+     */
     fun submitEncryptedImport(password: String) {
+        if (_decrypting.value) return
         val text = _pendingEncryptedImport.value ?: return
+        _decrypting.value = true
         viewModelScope.launch {
-            when (
-                val opened = withContext(cryptoDispatcher) {
-                    EncryptedBackup.decrypt(text, password)
-                }
-            ) {
+            val opened = withContext(cryptoDispatcher) {
+                EncryptedBackup.decrypt(text, password)
+            }
+            _decrypting.value = false
+            if (_pendingEncryptedImport.value != text) return@launch
+            when (opened) {
                 is DataResult.Success -> {
                     _encryptedImportError.value = null
                     _pendingEncryptedImport.value = null

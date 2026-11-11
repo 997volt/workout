@@ -1,5 +1,6 @@
 package com.example.androidapp.ui.transfer
 
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -56,9 +57,19 @@ class PasswordPromptDialogTest {
         assertThat(confirmed).isEqualTo("correct horse")
     }
 
+    @Test
+    fun aBusyDialog_leavesNeitherButtonAbleToStartAgain() {
+        // B401: 210,000 PBKDF2 iterations are a visible pause, and a second tap would stack another pass.
+        setDialog(busy = true)
+
+        composeTestRule.onNodeWithTag(TestTags.PASSWORD_CONFIRM).assertIsNotEnabled()
+        composeTestRule.onNodeWithTag(TestTags.PASSWORD_CANCEL).assertIsNotEnabled()
+    }
+
     private fun setDialog(
         confirmWithSecondField: Boolean = false,
-        onConfirm: (String) -> Unit,
+        busy: Boolean = false,
+        onConfirm: (String) -> Unit = {},
     ) {
         composeTestRule.setContent {
             AndroidAppTheme {
@@ -69,6 +80,7 @@ class PasswordPromptDialogTest {
                     confirmWithSecondField = confirmWithSecondField,
                     onConfirm = onConfirm,
                     onDismiss = {},
+                    busy = busy,
                 )
             }
         }

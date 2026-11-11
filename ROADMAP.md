@@ -24,14 +24,6 @@ itself changed no code.
 
 ### The rest of the review
 
-- **B401 — An encrypted import can preview after the password was dismissed.**
-  `submitEncryptedImport` decrypts on a background dispatcher and then calls `preview`
-  unconditionally ([DataTransferViewModel.kt](app/src/main/java/com/example/androidapp/ui/transfer/DataTransferViewModel.kt)),
-  so `cancelEncryptedImport` cannot stop it and the preview sheet appears after the user backed out.
-  The dialog also has no in-flight state ([PasswordPromptDialog.kt](app/src/main/java/com/example/androidapp/ui/transfer/PasswordPromptDialog.kt)),
-  so a second tap stacks a second PBKDF2 derivation. Fixed means a decrypting flag that disables both
-  buttons and a pending-file check (or a cancelled job) before previewing.
-
 - **B402 — A second auto step forgets the first one's undo.** `_autoStep` is a single slot replaced by
   the next exercise's moment
   ([ActiveWorkoutViewModel.kt](app/src/main/java/com/example/androidapp/ui/workout/ActiveWorkoutViewModel.kt)),

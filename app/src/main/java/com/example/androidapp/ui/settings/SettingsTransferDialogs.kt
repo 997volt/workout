@@ -49,6 +49,7 @@ internal fun SettingsTransferDialogs(
     pendingImport: DataTransferViewModel.PendingImport?,
     pendingEncryptedImport: String?,
     encryptedImportError: DataError?,
+    decrypting: Boolean,
     onConfirmImport: () -> Unit,
     onCancelImport: () -> Unit,
     onSubmitEncryptedPassword: (String) -> Unit,
@@ -63,6 +64,7 @@ internal fun SettingsTransferDialogs(
             error = encryptedImportError?.let { dataErrorMessage(it) },
             onConfirm = onSubmitEncryptedPassword,
             onDismiss = onCancelEncryptedImport,
+            busy = decrypting,
         )
     }
     pendingImport?.let { pending ->

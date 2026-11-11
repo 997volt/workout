@@ -51,6 +51,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **An encrypted import cannot preview a password question it just dismissed** (B401). The key derivation
+  runs off the main thread, so *Cancel* could arrive while it worked and the import preview still opened
+  behind it; a second tap also stacked a second 210,000-iteration derivation. The prompt disables both
+  buttons while it works, the ViewModel refuses a second call, and the answer is used only while the same
+  file is still the one being asked about.
 - **A deload workout no longer earns a progression step** (B400). The 6.0 effort N300 writes opened the N74
   gate, and a deload set's fixed reps at a 60% load made *Done* offer — and *Apply at done* write — a heavier
   load on the week that is meant to be lighter (a hold got +15 s the same way). A workout a live deload week

@@ -134,6 +134,49 @@ class DataTransferViewModelTest {
     }
 
     @Test
+    fun aDismissedPasswordQuestion_doesNotPreviewTheDecryptedFile() = runTest(dispatcher) {
+        // B401: the derivation runs off the main thread, so *Cancel* can arrive while it is working.
+        // The answer is only used while the same file is still the pending one.
+        val plain = "{\"schemaVersion\":9}"
+        val envelope = (EncryptedBackup.encrypt(plain, "correct horse battery") as DataResult.Success).data
+        io.readText = envelope
+        repository.previewResult = DataResult.Success(preview())
+        val viewModel = viewModel()
+        viewModel.readBackup(context, uri)
+        advanceUntilIdle()
+
+        viewModel.submitEncryptedImport("correct horse battery")
+        viewModel.cancelEncryptedImport()
+        advanceUntilIdle()
+
+        assertThat(viewModel.pendingImport.value).isNull()
+        assertThat(viewModel.pendingEncryptedImport.value).isNull()
+    }
+
+    @Test
+    fun aSecondTap_whileTheKeyIsDerived_isIgnored() = runTest(dispatcher) {
+        // B401: the dialog disables its buttons, and the ViewModel refuses the call anyway — one
+        // derivation per file, not a stack of them.
+        val plain = "{\"schemaVersion\":9}"
+        val envelope = (EncryptedBackup.encrypt(plain, "correct horse battery") as DataResult.Success).data
+        io.readText = envelope
+        repository.previewResult = DataResult.Success(preview())
+        val viewModel = viewModel()
+        viewModel.readBackup(context, uri)
+        advanceUntilIdle()
+
+        viewModel.submitEncryptedImport("not the password")
+        assertThat(viewModel.decrypting.value).isTrue()
+        viewModel.submitEncryptedImport("correct horse battery")
+        advanceUntilIdle()
+
+        // The first answer is the one used: the wrong password's refusal, not a second derivation.
+        assertThat(viewModel.encryptedImportError.value).isNotNull()
+        assertThat(viewModel.pendingImport.value).isNull()
+        assertThat(viewModel.decrypting.value).isFalse()
+    }
+
+    @Test
     fun aReadBackup_waitsForConfirmation_andThenMerges() = runTest(dispatcher) {
         io.readText = "{\"schemaVersion\":8}"
         repository.previewResult = DataResult.Success(preview())

@@ -93,6 +93,7 @@ fun SettingsRoute(
     val pendingImport by transferViewModel.pendingImport.collectAsStateWithLifecycle()
     val pendingEncryptedImport by transferViewModel.pendingEncryptedImport.collectAsStateWithLifecycle()
     val encryptedImportError by transferViewModel.encryptedImportError.collectAsStateWithLifecycle()
+    val decrypting by transferViewModel.decrypting.collectAsStateWithLifecycle()
 
     // The data actions report into a snackbar and a held failure, the shape the home screen used
     // before they moved (F7, F8). The clear is suspending and its sentence is a resource, so it
@@ -105,6 +106,7 @@ fun SettingsRoute(
         pendingImport = pendingImport,
         pendingEncryptedImport = pendingEncryptedImport,
         encryptedImportError = encryptedImportError,
+        decrypting = decrypting,
         onConfirmImport = transferViewModel::confirmImport,
         onCancelImport = transferViewModel::cancelImport,
         onSubmitEncryptedPassword = transferViewModel::submitEncryptedImport,
