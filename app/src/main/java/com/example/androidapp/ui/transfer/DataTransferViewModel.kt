@@ -381,7 +381,8 @@ private fun passwordIssueOf(draft: PasswordDraft): PasswordIssue? = when {
 }
 
 /** The backup document, or the reason there isn't one. */
-sealed interface ExportOutcome {    data class Ready(val json: String) : ExportOutcome
+sealed interface ExportOutcome {
+    data class Ready(val json: String) : ExportOutcome
     data class Failed(val error: DataError) : ExportOutcome
 }
 
