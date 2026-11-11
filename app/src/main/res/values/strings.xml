@@ -1302,6 +1302,7 @@
     <string name="program_progression_reset_text">Every planned set in this program goes back to the target it held when auto progression was turned on. Sets you have deleted stay deleted.</string>
     <string name="program_progression_reset_confirm">Reset</string>
     <string name="program_progression_empty">This program has no planned exercises, so there is nothing to adjust.</string>
+    <string name="program_progression_all_overridden">Every movement here answers for itself, so this switch has nothing to decide.</string>
     <string name="program_progression_none_will">Nothing in this program can progress yet. Fix the plans below.</string>
     <string name="program_progression_blocked_no_rpe">Set a target effort on this exercise.</string>
     <string name="program_progression_blocked_no_reps">Give this exercise reps or a hold.</string>

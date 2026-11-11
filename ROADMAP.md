@@ -24,15 +24,6 @@ itself changed no code.
 
 ### The rest of the review
 
-- **B417 — The preflight tells the lifter to fix plans that are not broken.** The "Nothing in this
-  program can progress yet. Fix the plans below." line is gated only on `willProgress` being empty
-  ([ProgramProgressionScreen.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramProgressionScreen.kt)),
-  so a program whose movements all answer for themselves — `blocked` empty, only "Answers for
-  themselves" listed — is told to fix a list that has nothing wrong in it.
-  `AutoProgressionPreflight.hasNothing` models the distinction but has no production caller. Fixed means
-  branching on `blocked` versus `overridden`, a sentence for the all-overridden state, and either using
-  `hasNothing` or deleting it.
-
 - **B418 — Three sentences still describe the pre-N300 shape.** `ProgramSchedule.monthAdherence` still
   says the missed-day question is unaffected
   ([ProgramSchedule.kt](app/src/main/java/com/example/androidapp/domain/model/ProgramSchedule.kt))

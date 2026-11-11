@@ -51,6 +51,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A program whose movements answer for themselves is not told to fix its plans** (B417). The screen
+  printed one warning whenever nothing would be adjusted, so a program where every movement had its own
+  answer was told to fix plans that were not broken. It now separates the two facts: a plan to fix keeps
+  the warning, and movements that answer for themselves get their own sentence.
 - **The recovery screen follows the device's week across a resume** (B415). "This week" and "Next week"
   were captured when the ViewModel was built, so a screen left open over Sunday night kept labelling — and
   exempting — the previous week. The pair is re-read on resume, the pattern N286 established.

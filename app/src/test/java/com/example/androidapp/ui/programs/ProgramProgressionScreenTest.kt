@@ -8,6 +8,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.model.AutoProgressionCheck
+import com.example.androidapp.domain.model.ProgressionMode
 import com.example.androidapp.domain.model.ProgressionRule
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.theme.AndroidAppTheme
@@ -76,6 +77,46 @@ class ProgramProgressionScreenTest {
         composeTestRule.onNodeWithText("Day A · Reps, then load").assertIsDisplayed()
         composeTestRule.onNodeWithText("Curl").assertIsDisplayed()
         composeTestRule.onNodeWithText("Set a target effort on this exercise.").assertIsDisplayed()
+    }
+
+    @Test
+    fun aProgramWhoseMovementsAnswerForThemselves_saysTheSwitchHasNothingToDecide() {
+        // B417: the old line told the lifter to fix "the plans below" while the only list below was
+        // "answers for themselves" — nothing was broken.
+        setScreen(
+            state = state(
+                checks = listOf(
+                    AutoProgressionCheck(
+                        "Day A",
+                        "Bench Press",
+                        ProgressionRule.LOAD_ONLY,
+                        ProgressionMode.OFF,
+                    ),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithText(
+            "Every movement here answers for itself, so this switch has nothing to decide.",
+        ).assertIsDisplayed()
+        composeTestRule.onNodeWithText(
+            "Nothing in this program can progress yet. Fix the plans below.",
+        ).assertDoesNotExist()
+    }
+
+    @Test
+    fun aProgramWithAPlanToFix_isToldToFixIt() {
+        setScreen(
+            state = state(
+                checks = listOf(
+                    AutoProgressionCheck("Day A", "Curl", ProgressionRule.NO_TARGET_RPE),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithText(
+            "Nothing in this program can progress yet. Fix the plans below.",
+        ).assertIsDisplayed()
     }
 
     @Test

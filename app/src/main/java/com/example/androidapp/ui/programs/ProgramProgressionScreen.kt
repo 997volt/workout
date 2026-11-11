@@ -252,14 +252,8 @@ private fun ProgramProgressionContent(
                 )
             }
         } else {
-            if (state.preflight.willProgress.isEmpty()) {
-                item {
-                    Text(
-                        text = stringResource(R.string.program_progression_none_will),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
+            if (state.preflight.hasNothing) {
+                item { NothingToProgress(fixable = state.preflight.blocked.isNotEmpty()) }
             }
             preflightSection(R.string.program_progression_will, state.preflight.willProgress) {
                 stringResource(ruleLabel(it.rule))
@@ -337,6 +331,24 @@ private fun AutoProgressionBaseline(
             Text(stringResource(R.string.program_progression_reset))
         }
     }
+}
+
+/**
+ * What the screen says when the switch has nothing to do (B417).
+ *
+ * Two different facts share the empty "will adjust" list: a plan that needs fixing, and movements that
+ * answer for themselves so the switch was never theirs to decide. Telling the second lifter to fix plans
+ * that are not broken is the bug this split answers.
+ */
+@Composable
+private fun NothingToProgress(fixable: Boolean) {
+    Text(
+        text = stringResource(
+            if (fixable) R.string.program_progression_none_will else R.string.program_progression_all_overridden,
+        ),
+        style = MaterialTheme.typography.bodyMedium,
+        color = if (fixable) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }
 
 /** One named group of preflight rows, kept out of the list body. */
