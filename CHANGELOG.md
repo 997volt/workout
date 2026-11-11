@@ -51,6 +51,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **An exempt week no longer reads as a deload where its days are drawn** (B403). The calendar's day state
+  and the weekly review said "Deload week — not scored" and "Deload", but a mark with no plan keeps the
+  program's own workouts, so a full normal session was still relabelled on two surfaces. Both now say
+  *Recovery week*, the one wording true of an exemption and of a built plan.
 - **Each auto-progression batch keeps its own undo** (B402). The banner is the only place a write can be
   taken back, and a second exercise's steps replaced the first batch's banner, so its undo was lost as soon
   as another exercise was finished. The batches now queue: the visible one is read or undone, then the next

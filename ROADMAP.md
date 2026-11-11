@@ -24,16 +24,6 @@ itself changed no code.
 
 ### The rest of the review
 
-- **B403 — An exempt week still reads *Deload* where its days are drawn.** Any mark raises
-  `OccurrenceState.DELOAD` ([ProgramSchedule.kt](app/src/main/java/com/example/androidapp/domain/model/ProgramSchedule.kt)),
-  and the calendar and the weekly review render it as "Deload week — not scored" and "Deload"
-  ([strings.xml](app/src/main/res/values/strings.xml),
-  [AdherenceScreen.kt](app/src/main/java/com/example/androidapp/ui/adherence/AdherenceScreen.kt),
-  [WeeklyReviewScreen.kt](app/src/main/java/com/example/androidapp/ui/weekly/WeeklyReviewScreen.kt)).
-  A mark with no plan keeps the program's own workouts (N300), so a full normal session is still
-  labelled a deload on two surfaces — the relabelling Home was fixed not to do. Fixed means a wording
-  true of both actions ("Recovery week — not scored") or two occurrence states.
-
 - **B404 — The cadence suggestion does not notice the deload it just sent the lifter to build.**
   The suggestion is a one-shot filled in `init` and after a mark
   ([ProgramWeeksViewModel.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramWeeksViewModel.kt)),

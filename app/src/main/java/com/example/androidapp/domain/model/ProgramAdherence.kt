@@ -31,7 +31,9 @@ data class AdherenceSession(
  * What one scheduled occurrence reads as (ROADMAP P3.13), by P3.5's same definitions.
  *
  * [DELOAD] is not one of the ratio's outcomes: a deload week is exempt from the ratio (P3.10), so
- * the row says so rather than reading as a miss the lifter never earned.
+ * the row says so rather than reading as a miss the lifter never earned. It covers both actions N300
+ * separated — an exempt week with the program's own workouts, and a built deload week — which is why
+ * the labels it drives say *recovery week* rather than naming either one (B403).
  */
 enum class OccurrenceState {
     DONE,

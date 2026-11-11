@@ -157,6 +157,24 @@ class WeeklyReviewScreenTest {
         composeTestRule.onNodeWithText("No lift moved this week.").performScrollTo().assertExists()
     }
 
+    @Test
+    fun aMarkedWeek_readsAsARecoveryWeek_ratherThanADeload() {
+        // B403: the mark is the exemption and a built plan is the deload, so the day's state cannot call
+        // a full normal workout a deload — *recovery week* is the one wording true of both.
+        show(
+            WeeklyReviewUiState(
+                isLoading = false,
+                weekStart = monday,
+                weekEnd = monday.plusDays(6),
+                days = listOf(ReviewDay(monday, listOf(occurrence(OccurrenceState.DELOAD)))),
+                hasActivePlan = true,
+            ),
+        )
+
+        composeTestRule.onNodeWithText("Squat day · Recovery week").performScrollTo().assertExists()
+        composeTestRule.onNodeWithText("Squat day · Deload").assertDoesNotExist()
+    }
+
     private fun occurrence(state: OccurrenceState) = DayOccurrence(
         slotId = "slot",
         templateId = "template",
