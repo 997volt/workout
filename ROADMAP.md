@@ -18,19 +18,10 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 ## Next — the 2.28 review
 
 The twelve commits after 2.28 were read against the decisions they claim to follow (N294, N299, N300,
-N301 and B358, B395–B398), and the rows below are what that read found. They are ordered by what they
-cost, the last section is the coverage that let them through plus one scope question, and the review
-itself changed no code.
+N301 and B358, B395–B398). What is left is one question the read could not answer by fixing code: whether
+a block may be auto-adjusted.
 
-### Coverage and one open question
-
-- **N302 — The tests the review found missing.** The program-document half of "importing a program never
-  starts writing" — the switch dropped by the `:shared` mapping
-  ([SharedProgramDocument.kt](app/src/main/java/com/example/androidapp/data/transfer/SharedProgramDocument.kt)) —
-  is untested. And `PlanEntriesTest.substitutingBackRestoresThePlan` builds a row whose origin is already
-  cleared ([PlanEntriesTest.kt](app/src/test/java/com/example/androidapp/ui/workout/PlanEntriesTest.kt)),
-  so the clearing it names, which lives in `RoomWorkoutRepository`, has no test at all. Fixed means those
-  two tests, not a coverage number.
+### One open question
 
 - **N303 — Decide whether a block may be auto-adjusted.** The auto switch is offered for a sequence
   ([ProgramEditorScreen.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramEditorScreen.kt))

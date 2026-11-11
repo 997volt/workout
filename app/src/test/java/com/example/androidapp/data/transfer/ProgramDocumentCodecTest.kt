@@ -47,6 +47,17 @@ class ProgramDocumentCodecTest {
     }
 
     @Test
+    fun aProgramDocument_dropsTheAutoProgressionSwitch() {
+        // N302 (N299): the switch is device state that travels in the backup, not part of a program's
+        // definition — importing a program must not start writing on the recipient's device.
+        val withAuto = document().copy(program = document().program.copy(autoProgression = true))
+
+        val decoded = ProgramDocumentCodec.decode(ProgramDocumentCodec.encode(withAuto))
+
+        assertThat(decoded.program.autoProgression).isFalse()
+    }
+
+    @Test
     fun aPlannedFailure_survivesTheFormat() {
         // B276: the shared role enum listed five of the app's six, so exporting a program whose plan
         // held a failure set threw and was reported as a generic storage failure, while a document

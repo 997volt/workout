@@ -165,6 +165,28 @@ class RoomWorkoutSessionTest {
     }
 
     @Test
+    fun substitutingBackToTheOriginalMovement_clearsTheOrigin() = runTest {
+        // N302 (B395): the pairing test pins that a cleared origin pairs the row with its plan again;
+        // this is the write that clears it, which no JVM test can reach.
+        seedTemplate("t1", listOf("back-squat"))
+        val started = start("t1")
+        val row = repository.observeSessionExercises(started.id).first().single()
+
+        assertTrue(repository.substituteExercise(row.id, "bench-press") is DataResult.Success)
+        assertEquals(
+            "the stand-in records the plan's movement",
+            "back-squat",
+            repository.observeSessionExercises(started.id).first().single().substitutedFromExerciseId,
+        )
+
+        assertTrue(repository.substituteExercise(row.id, "back-squat") is DataResult.Success)
+
+        val back = repository.observeSessionExercises(started.id).first().single()
+        assertEquals("back-squat", back.exerciseId)
+        assertNull("the row is the plan's again", back.substitutedFromExerciseId)
+    }
+
+    @Test
     fun anActivity_storesAndClearsItsOptionalNumbers() = runTest {
         // N293: duration and distance are the activity's own facts, not a workout's.
         val started = start()
