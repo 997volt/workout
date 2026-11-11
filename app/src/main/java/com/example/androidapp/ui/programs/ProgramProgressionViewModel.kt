@@ -134,10 +134,14 @@ class ProgramProgressionViewModel @Inject constructor(
     }
 
     fun onResetToBaseline() {
+        // One write at a time (B414): the button is disabled while it runs, and the action refuses a
+        // second start even if a stale composition still offers it.
+        if (_state.value.writing) return
         _state.update { it.copy(confirmReset = true) }
     }
 
     fun onConfirmReset() {
+        if (_state.value.writing) return
         _state.update { it.copy(confirmReset = false, writing = true) }
         viewModelScope.launch {
             when (val result = progression.resetToBaseline(programId)) {

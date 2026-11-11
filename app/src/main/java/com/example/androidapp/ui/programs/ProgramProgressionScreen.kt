@@ -242,7 +242,7 @@ private fun ProgramProgressionContent(
             )
         }
         if (state.autoProgression && state.baselineAt != null) {
-            item { AutoProgressionBaseline(baselineAt = state.baselineAt, onReset = onReset) }
+            item { AutoProgressionBaseline(state.baselineAt, !state.writing, onReset) }
         }
         if (state.preflight.checks.isEmpty()) {
             item {
@@ -310,7 +310,11 @@ private fun AutoProgressionSwitchCard(
 
 /** Where the baseline started, and the one action that puts it back. */
 @Composable
-private fun AutoProgressionBaseline(baselineAt: Instant, onReset: () -> Unit) {
+private fun AutoProgressionBaseline(
+    baselineAt: Instant,
+    enabled: Boolean,
+    onReset: () -> Unit,
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -327,6 +331,7 @@ private fun AutoProgressionBaseline(baselineAt: Instant, onReset: () -> Unit) {
         )
         AppTextButton(
             onClick = onReset,
+            enabled = enabled,
             modifier = Modifier.testTag(TestTags.Programs.AUTO_RESET),
         ) {
             Text(stringResource(R.string.program_progression_reset))

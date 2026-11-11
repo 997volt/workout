@@ -51,6 +51,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The auto-progression reset cannot start twice** (B414). The reset button stayed live and neither reset
+  action checked the in-flight flag, so a second confirm ran a concurrent reset and the first completion
+  cleared the flag while the second was still writing. The button is disabled while it writes and both
+  actions return early.
 - **The password question survives a rotation** (B413). Its fields and its open state were the dialog's
   own `remember`, so rotating the screen emptied an import's fields or closed the export's question and
   dropped what was typed. The transfer ViewModel now holds the draft — text, confirmation and any refusal —

@@ -24,13 +24,6 @@ itself changed no code.
 
 ### The rest of the review
 
-- **B414 — Reset is not guarded while it writes.** The baseline's button takes no `enabled` and neither
-  reset action checks `writing`, though the switch does
-  ([ProgramProgressionScreen.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramProgressionScreen.kt),
-  [ProgramProgressionViewModel.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramProgressionViewModel.kt)),
-  so a second confirm runs a concurrent reset and the first completion clears the flag while the second
-  is in flight. Fixed means disabling the button and returning early from both actions.
-
 - **B415 — The recovery screen's "this week" is frozen at construction.** `thisWeek`/`nextWeek` are
   constructor values ([ProgramWeeksViewModel.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramWeeksViewModel.kt)),
   so a screen kept across Sunday→Monday labels the previous week "This week" and exempts it. The balance
@@ -74,17 +67,13 @@ itself changed no code.
 
 ### Coverage and one open question
 
-- **N302 — The tests the review found missing.** `ProgramProgressionViewModel` has no unit test, although
-  every sibling program ViewModel does, so the consent-before-enable path and the reset are only exercised
-  through hand-built screen state (the recovery screen's own wiring now has a
-  [test](app/src/test/java/com/example/androidapp/ui/programs/ProgramWeeksViewModelTest.kt)). The
-  program-document half of "importing a program never starts writing" — the
-  switch dropped by the `:shared` mapping
+- **N302 — The tests the review found missing.** The program-document half of "importing a program never
+  starts writing" — the switch dropped by the `:shared` mapping
   ([SharedProgramDocument.kt](app/src/main/java/com/example/androidapp/data/transfer/SharedProgramDocument.kt)) —
   is untested. And `PlanEntriesTest.substitutingBackRestoresThePlan` builds a row whose origin is already
   cleared ([PlanEntriesTest.kt](app/src/test/java/com/example/androidapp/ui/workout/PlanEntriesTest.kt)),
   so the clearing it names, which lives in `RoomWorkoutRepository`, has no test at all. Fixed means those
-  three tests, not a coverage number.
+  two tests, not a coverage number.
 
 - **N303 — Decide whether a block may be auto-adjusted.** The auto switch is offered for a sequence
   ([ProgramEditorScreen.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramEditorScreen.kt))

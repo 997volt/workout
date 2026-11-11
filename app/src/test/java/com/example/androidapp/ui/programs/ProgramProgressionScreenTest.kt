@@ -1,6 +1,7 @@
 package com.example.androidapp.ui.programs
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -91,6 +92,20 @@ class ProgramProgressionScreenTest {
     }
 
     @Test
+    fun resetIsDisabled_whileAResetWrites() {
+        // B414: the button used to stay live, so a second confirm started a second reset.
+        setScreen(
+            state = state(
+                auto = true,
+                baselineAt = Instant.ofEpochMilli(1_700_000_000_000L),
+                writing = true,
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.AUTO_RESET).assertIsNotEnabled()
+    }
+
+    @Test
     fun theResetConfirmationIsTheWrite() {
         var confirmed = false
         setScreen(
@@ -136,6 +151,7 @@ class ProgramProgressionScreenTest {
         baselineAt: Instant? = null,
         confirmEnable: Boolean = false,
         confirmReset: Boolean = false,
+        writing: Boolean = false,
     ) = ProgramProgressionUiState(
         isLoading = false,
         programName = "Upper/Lower",
@@ -144,5 +160,6 @@ class ProgramProgressionScreenTest {
         baselineAt = baselineAt,
         confirmEnable = confirmEnable,
         confirmReset = confirmReset,
+        writing = writing,
     )
 }
