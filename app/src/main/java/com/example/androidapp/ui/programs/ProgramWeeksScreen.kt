@@ -37,13 +37,13 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
 import com.example.androidapp.domain.model.DeloadSuggestion
-import com.example.androidapp.ui.history.HistoryFormat
 import com.example.androidapp.ui.components.AppCard
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.TopBarTitle
 import com.example.androidapp.ui.components.dataErrorMessage
+import com.example.androidapp.ui.history.HistoryFormat
 import java.time.LocalDate
 import java.time.ZoneId
 
