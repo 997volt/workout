@@ -169,6 +169,7 @@ class RoomWorkoutSessionTest {
         // N302 (B395): the pairing test pins that a cleared origin pairs the row with its plan again;
         // this is the write that clears it, which no JVM test can reach.
         seedTemplate("t1", listOf("back-squat"))
+        seedExercise("bench-press")
         val started = start("t1")
         val row = repository.observeSessionExercises(started.id).first().single()
 
@@ -345,23 +346,7 @@ class RoomWorkoutSessionTest {
             ),
         )
         exerciseIds.forEachIndexed { index, exerciseId ->
-            database.exerciseDao().insertAll(
-                listOf(
-                    ExerciseEntity(
-                        id = exerciseId,
-                        name = exerciseId.split("-").joinToString(" ") { part ->
-                            part.replaceFirstChar { it.uppercase() }
-                        },
-                        primaryMuscle = MuscleGroup.QUADS,
-                        secondaryMuscles = emptyList(),
-                        equipment = Equipment.BARBELL,
-                        movementPattern = MovementPattern.SQUAT,
-                        createdAt = 0L,
-                        updatedAt = 0L,
-                        deletedAt = null,
-                    ),
-                ),
-            )
+            seedExercise(exerciseId)
             database.templateDao().insertTemplateExercise(
                 TemplateExerciseEntity(
                     id = "$templateId-$exerciseId",
@@ -376,6 +361,32 @@ class RoomWorkoutSessionTest {
                 ),
             )
         }
+    }
+
+    /**
+     * One movement in the library, so a session row has a workout to point at.
+     *
+     * `session_exercises.exerciseId` is a foreign key, so a substitution's target has to exist even
+     * when no template names it.
+     */
+    private suspend fun seedExercise(exerciseId: String) {
+        database.exerciseDao().insertAll(
+            listOf(
+                ExerciseEntity(
+                    id = exerciseId,
+                    name = exerciseId.split("-").joinToString(" ") { part ->
+                        part.replaceFirstChar { it.uppercase() }
+                    },
+                    primaryMuscle = MuscleGroup.QUADS,
+                    secondaryMuscles = emptyList(),
+                    equipment = Equipment.BARBELL,
+                    movementPattern = MovementPattern.SQUAT,
+                    createdAt = 0L,
+                    updatedAt = 0L,
+                    deletedAt = null,
+                ),
+            ),
+        )
     }
 
     private suspend fun start(templateId: String? = null): StartedSession =
