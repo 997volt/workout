@@ -3,6 +3,21 @@ package com.example.androidapp.domain.model
 import com.example.androidapp.domain.WeightUnit
 
 /**
+ * One performed set, reduced to what the record rule asks (ROADMAP N23).
+ *
+ * The comparison this type used to feed was deleted with the finish review (N305); records were its second
+ * reader, and this is the shape they need: the role, the load, and the reps or the hold.
+ */
+data class PerformedSetSpec(
+    val role: SetType,
+    val weightGrams: Long,
+    val assistanceGrams: Long = 0,
+    val reps: Int,
+    /** How long the set was held, or null for a counted set (ROADMAP N220, B243). */
+    val durationSeconds: Int? = null,
+)
+
+/**
  * The best lift at each rep count (ROADMAP N23).
  *
  * A "rep max" is the honest shape of a record for this app: one number per rep count, so

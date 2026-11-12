@@ -210,6 +210,9 @@ class ProgramsViewModelTest {
         /** Every text the merge was asked to write, in order. */
         val importedTexts = mutableListOf<String>()
 
+        override suspend fun activeWeeklyProgramForTemplate(templateId: String): DataResult<String?> =
+            DataResult.Success(null)
+
         override suspend fun previewProgramDocument(text: String): DataResult<ProgramDocumentPreview> =
             preview
 

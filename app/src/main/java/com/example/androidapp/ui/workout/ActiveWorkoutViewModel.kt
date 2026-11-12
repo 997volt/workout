@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
+import com.example.androidapp.domain.PlanStallFinder
 import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.WeightUnit
@@ -16,9 +17,11 @@ import com.example.androidapp.domain.model.PendingProgression
 import com.example.androidapp.domain.model.PerformedSetSpec
 import com.example.androidapp.domain.model.PersonalRecordMoment
 import com.example.androidapp.domain.model.PersonalRecords
+import com.example.androidapp.domain.model.PlanStall
 import com.example.androidapp.domain.model.PreviousPerformance
 import com.example.androidapp.domain.model.ProgressionDirection
 import com.example.androidapp.domain.model.ProgressionMode
+import com.example.androidapp.domain.model.STALL_SESSIONS
 import com.example.androidapp.domain.model.SessionExercise
 import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.domain.model.SetType
@@ -81,6 +84,7 @@ class ActiveWorkoutViewModel @Inject constructor(
     private val timeSource: TimeSource,
     private val templateRepository: TemplateRepository,
     private val programRepository: ProgramRepository,
+    private val stallFinder: PlanStallFinder,
     private val progressionRepository: ProgressionRepository,
     savedStateHandle: SavedStateHandle,
     private val settingsRepository: SettingsRepository,
@@ -219,26 +223,17 @@ class ActiveWorkoutViewModel @Inject constructor(
     val bodyweightPrompt: StateFlow<PendingBodyweight?> = _bodyweightPrompt.asStateFlow()
 
     /**
-     * The review of the workout that just finished, published instead of closing the
-     * screen outright (ROADMAP N20).
+     * The stalled lifts of a workout that has just finished (ROADMAP N305).
      *
-     * Finish used to be a dead end: the ratings, the readiness note and the totals went
-     * nowhere, and a plan was never compared with what was actually lifted. The summary is
-     * built from state this screen already holds, so it costs no reads and needs no schema
-     * — but it also means it is a *moment*, not something to come back to.
+     * Not a review: what a session did is read back in history, and the only fact the finish still states
+     * is the one a lifter cannot see from the screen — a lift that has stopped moving. Null when there is
+     * nothing to say.
      */
-    private val _summary = MutableStateFlow<WorkoutReview?>(null)
-    val summary: StateFlow<WorkoutReview?> = _summary.asStateFlow()
+    private val _stallNotice = MutableStateFlow<List<PlanStall>?>(null)
+    val stallNotice: StateFlow<List<PlanStall>?> = _stallNotice.asStateFlow()
 
     private val pendingUndo = MutableStateFlow<SetEntry?>(null)
     private val previousByExercise = MutableStateFlow<Map<String, PreviousPerformance>>(emptyMap())
-
-    /**
-     * The app-wide unit, for the one place that needs it without a row in hand: the review's
-     * planned side, which comes from the template rather than from the session (ROADMAP N64).
-     */
-    private val appWeightUnit: StateFlow<WeightUnit> = settingsRepository.observeWeightUnit()
-        .stateIn(viewModelScope, SharingStarted.Eagerly, WeightUnit.KILOGRAMS)
 
     /** The exercise just marked done, awaiting the snackbar's undo (ROADMAP N7). */
     private val pendingFinishedExercise = MutableStateFlow<String?>(null)
@@ -1216,21 +1211,17 @@ class ActiveWorkoutViewModel @Inject constructor(
                     return@launch
                 }
             }
-            // Captured *before* finishing, and this is the bug a device found: the state
-            // describes the *live* session, so the moment the workout is stored its
-            // exercises and sets leave the flow — a review built afterwards read
-            // "Sets 0 · reps 0 · 0 kg" and called a set that was just logged "not
-            // performed". The review is about work that exists only until this call
-            // returns, so it is taken here.
-            val finishedState = uiState.value
-            val plan = plannedExercises.first()
+            // Read *before* finishing: the state describes the live session, so once the workout is
+            // stored its rows leave the flow. The notice is about the workout that was just trained.
+            val templateId = uiState.value.sessionTemplateId
 
             when (val result = workoutRepository.finishSession(sessionId)) {
                 is DataResult.Success -> {
                     lastError.value = null
-                    // The workout is over and stored; the review is what the user sees
-                    // next, and dismissing it is what closes the screen (N20).
-                    _summary.value = buildSummary(finishedState, plan, note, appWeightUnit.value)
+                    // The workout is over and stored. The one thing the finish still says is a lift that
+                    // has stopped moving; otherwise closing the screen is the whole of it (N305).
+                    val notice = finishStallNotice(templateId)
+                    if (notice.isNullOrEmpty()) closeSession() else _stallNotice.value = notice
                 }
 
                 is DataResult.Failure -> lastError.value = result.error
@@ -1265,10 +1256,29 @@ class ActiveWorkoutViewModel @Inject constructor(
         }
     }
 
-    /** Dismisses the review, which is what actually closes the screen (ROADMAP N20). */
-    fun onDismissSummary() {
-        _summary.value = null
+    /** Dismisses the stall notice, which is what actually closes the screen (ROADMAP N305). */
+    fun onDismissStallNotice() {
+        _stallNotice.value = null
         closeSession()
+    }
+
+    /**
+     * The stalled lifts a just-finished workout should say, or null when it should say nothing (ROADMAP N305).
+     *
+     * Only a workout of an **active weekly** program is told: the notice is for a plan being followed, and
+     * the deload it points at belongs to a program the lifter runs. Only a run that **just** reached three is
+     * told, so the dialog does not become a popup after every session it stays stuck; the program screen and
+     * the weekly review carry it from there. A failed read answers null for the same reason: the workout is
+     * finished and stored, and an advisory notice must not strand it — the durable surfaces report the error.
+     */
+    private suspend fun finishStallNotice(templateId: String?): List<PlanStall>? {
+        val program = templateId
+            ?.let { programRepository.activeWeeklyProgramForTemplate(it) }
+            ?.getOrNull()
+        val stalls = templateId
+            ?.takeIf { program != null }
+            ?.let { stallFinder.stallsForTemplate(it).getOrNull() }
+        return stalls?.filter { it.sessions == STALL_SESSIONS }
     }
 
     /**

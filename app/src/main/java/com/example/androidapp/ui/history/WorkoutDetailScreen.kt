@@ -77,7 +77,6 @@ import com.example.androidapp.ui.theme.AndroidAppTheme
 import com.example.androidapp.ui.workout.SetWrite
 import com.example.androidapp.ui.workout.WorkoutFormat
 import com.example.androidapp.ui.workout.activityLabel
-import com.example.androidapp.ui.workout.declinedStepText
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate

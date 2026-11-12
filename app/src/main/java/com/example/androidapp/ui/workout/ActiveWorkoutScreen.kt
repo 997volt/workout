@@ -36,6 +36,7 @@ import com.example.androidapp.domain.model.Activity
 import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.PendingProgression
 import com.example.androidapp.domain.model.PersonalRecordMoment
+import com.example.androidapp.domain.model.PlanStall
 import com.example.androidapp.domain.model.ProgressionDirection
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.ui.components.CenteredMessage
@@ -58,8 +59,8 @@ fun ActiveWorkoutRoute(
     viewModel: ActiveWorkoutViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    // Finishing closes the session; the review still has to be read, so this is what leaves the screen
-    // once it is dismissed (N20).
+    // Finishing closes the session; a stall notice still has to be read, so this is what leaves the
+    // screen once it is dismissed (N305).
     LeaveWhenClosed(closed = viewModel.closed.collectAsStateWithLifecycle().value, onLeave = onDone)
 
     // A State object rather than unwrapped with `by`: reading it here would recompose everything below
@@ -71,7 +72,7 @@ fun ActiveWorkoutRoute(
     val defaultRestSeconds by viewModel.defaultRestSeconds.collectAsStateWithLifecycle()
     val pendingProgression by viewModel.pendingProgression.collectAsStateWithLifecycle()
     RestCueAndScreenOn(clock, restCueEnabled, keepScreenOn, restTimerEnabled)
-    val summary by viewModel.summary.collectAsStateWithLifecycle()
+    val stallNotice by viewModel.stallNotice.collectAsStateWithLifecycle()
     val personalRecord by viewModel.personalRecord.collectAsStateWithLifecycle()
     val autoStep by viewModel.autoStep.collectAsStateWithLifecycle()
     val setWriteOutcome by viewModel.setWriteOutcome.collectAsStateWithLifecycle()
@@ -85,8 +86,8 @@ fun ActiveWorkoutRoute(
         onSetActivityMetrics = viewModel::onSetActivityMetrics,
         onLogSet = viewModel::onLogSet,
         onToggleSuperset = viewModel::onToggleSuperset,
-        summary = summary,
-        onDismissSummary = viewModel::onDismissSummary,
+        stallNotice = stallNotice,
+        onDismissStallNotice = viewModel::onDismissStallNotice,
         personalRecord = personalRecord,
         autoStep = autoStep,
         onUndoAutoStep = viewModel::onUndoAutoStep,
@@ -164,7 +165,7 @@ fun ActiveWorkoutScreen(
     /** Moves one exercise one place in the session's own order (ROADMAP N54). */
     onMoveExercise: (String, Int) -> Unit,
     onToggleSuperset: (String) -> Unit,
-    onDismissSummary: () -> Unit,
+    onDismissStallNotice: () -> Unit,
     onEnterBodyweight: (Long) -> Unit,
     onDismissBodyweight: () -> Unit,
     /** Picks one set's step, or takes the pick back when it is already there (ROADMAP N74). */
@@ -191,7 +192,8 @@ fun ActiveWorkoutScreen(
     restTimerEnabled: Boolean = true,
     /** The fallback the static prescription label uses when an exercise prescribes no rest (N44). */
     defaultRestSeconds: Int = RestTimer.DEFAULT_SECONDS,
-    summary: WorkoutReview? = null,
+    /** The stalled lifts a just-finished workout says, or null (ROADMAP N305). */
+    stallNotice: List<PlanStall>? = null,
     personalRecord: PersonalRecordMoment? = null,
     /** The steps auto progression just wrote, or null when there is nothing to read back (N299). */
     autoStep: AutoProgressionMoment? = null,
@@ -217,7 +219,7 @@ fun ActiveWorkoutScreen(
     var editingSetId by rememberSaveable { mutableStateOf<String?>(null) }
     val editing = state.exercises.flatMap { it.sets }.firstOrNull { it.id == editingSetId }
 
-    if (summary != null) WorkoutReviewDialog(summary = summary, onDismiss = onDismissSummary)
+    if (stallNotice != null) WorkoutStallDialog(stalls = stallNotice, onDone = onDismissStallNotice)
     BodyweightPrompt(prompt = bodyweightPrompt, onSave = onEnterBodyweight, onDismiss = onDismissBodyweight)
 
     UndoOffers(state, snackbarHostState, onUndoDelete, onDismissUndo, onUndoFinishExercise, onDismissFinishUndo)
@@ -550,7 +552,7 @@ private fun ActiveWorkoutScreenPreview() {
             onBack = {},
             onMoveExercise = { _, _ -> },
             onToggleSuperset = { _ -> },
-            onDismissSummary = {},
+            onDismissStallNotice = {},
             onEnterBodyweight = { _ -> },
             onDismissBodyweight = {},
             onToggleProgression = { _, _ -> },

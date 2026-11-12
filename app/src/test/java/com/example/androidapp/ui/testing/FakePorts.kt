@@ -25,6 +25,7 @@ import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.StatisticsRange
 import com.example.androidapp.domain.model.TemplateExercise
+import com.example.androidapp.domain.model.TemplateSession
 import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.WorkoutSession
@@ -234,6 +235,12 @@ internal class FakeProgramRepository : ProgramRepository {
     override fun observeProgram(programId: String): Flow<WorkoutProgram?> = program
 
     override fun observeActivePrograms(): Flow<List<WorkoutProgram>> = activePrograms
+
+    /** What the finish's activity lookup answers: the first active weekly program naming a template. */
+    var activeWeeklyForTemplate: String? = null
+
+    override suspend fun activeWeeklyProgramForTemplate(templateId: String): DataResult<String?> =
+        DataResult.Success(activeWeeklyForTemplate)
 
     override fun observeSlots(programId: String): Flow<List<ProgramSlot>> = slots
 
@@ -564,10 +571,13 @@ internal class FakeTrendsRepository : com.example.androidapp.domain.repository.T
         limit: Int,
     ): Flow<DataResult<List<com.example.androidapp.domain.model.TrendPoint>>> = unused()
 
+    /** What the stall rule reads, or null when this test never asks (N305). */
+    var templateSessions: DataResult<List<TemplateSession>>? = null
+
     override suspend fun templateSessions(
         templateId: String,
         limit: Int,
-    ): DataResult<List<com.example.androidapp.domain.model.TemplateSession>> = unused()
+    ): DataResult<List<TemplateSession>> = templateSessions ?: unused()
 }
 
 /** The document port, proving a write without a content resolver. */

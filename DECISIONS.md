@@ -269,7 +269,7 @@ the rule; that one argues it.
   follow at either end of the list.
 - **An exercise says when the plan's work is done, and the control goes on logging** (N52). Past the
   last planned set the exercise kept accepting sets with nothing to say the plan had been answered;
-  `comparePlanToActual` said so only in the review, after *Finish*. The plan is the template the
+  the answer that existed was the finish's review, after the workout, and that is gone (N305). The plan is the template the
   workout was started from, so the moment its last set is written *Log set* becomes **Log extra set**
   beside a notice. Nothing closes — logging another set is still what the control does, and ending the
   exercise is the **Done** already in its header (N7) — because the extra set is stated by the same
@@ -324,26 +324,20 @@ the rule; that one argues it.
   action predicate was rejected: it is what produced a control that reported success over no change.
   ([evidence](DECISIONS-EVIDENCE.md#b50))
 
-- **A plan is compared against the work, not the warm-ups** (N20). Warm-ups are excluded
-  from both sides for N17's reason; a plan naming no weight leaves the delta *null*, not
-  zero, because zero claims the lifter matched a plan that never said.
-- **The review is a moment, not a screen** (N20). It is built from state the workout
-  screen already holds, so no reads and no schema; the accepted cost is that it is not
-  revisitable from history, and the honest fix for that is storing the plan with the
-  session rather than re-deriving it.
-- **The plan's effort is compared to the working sets' mean** (N131). The plan names **one effort per
-  exercise** (N59) and the log holds **one rating per set** (N6), so unlike weight and reps this
-  comparison has to reduce the sets to one number — and the reduction is the decision. It is the
-  **mean of the working sets that recorded one**, because N59's target is carried onto *every*
-  prescribed set: the question is whether the work landed where the plan put it. The **heaviest set's
-  rating was rejected**: it answers what the top set felt like, and a session with one on-target top
-  set and three off-target back-offs would read as matched. A mean is **rounded to half a point**,
-  the app's own RPE resolution — `8.3` is not a rating anybody gave, the same reason
-  `estimatedOneRepMax` rounds to the nearest 500 g. **Null stays null**: a plan naming no effort says
-  nothing about it, and nothing rated reads "no RPE recorded" rather than silence, because silence
-  there reads as *matched*. What did not travel: the prefill and the progression use of the target.
-  ([evidence](DECISIONS-EVIDENCE.md#n131))
-
+- **The finish reports only a stall, and the review is gone** (N305, amending N20 and deleting N131's
+  comparison). The review read back totals, ratings, readiness and a comment that history already shows, and
+  the one number it existed for compared the session to a living plan — with auto progression (N299) the
+  prescribed side could already be the next target, so the comparison was not only the least useful moment
+  but the least reliable number. It was **deleted rather than moved to history**: keeping it honest would
+  mean storing the prescription with the session — the fix N20's second rule named — and that schema buys a
+  number that changes nothing about the next session; history compares against what was actually done
+  instead (N306), not against what a plan says today. What the finish still says is the one fact the session
+  cannot show — a lift that has stopped moving (N304) — in a compact dialog in the review's place. It is
+  shown only for a workout of an **active weekly** program, only when a run **just** reaches three (so it is
+  not a popup after every session a stall persists — the program editor and weekly review carry it from
+  there), and it lists every stalled lift of that workout as information, not a decision: the deload creator
+  stays on the program's card (N237). **The note prompt stays** — it is input, and the finish is the only
+  place a workout comment is written.
 - **An encrypted export is a password-derived container, not a Keystore key** (N294). The Data section offers
   a second export beside the plain one: the ordinary backup JSON is wrapped in a self-describing JSON envelope
   (version, KDF, iteration count, salt, nonce, ciphertext), and PBKDF2-HMAC-SHA256 with 600,000 iterations and
@@ -385,7 +379,7 @@ the rule; that one argues it.
   app is a log, not a coach — so the default is unchanged. Auto progression is one program's switch,
   the same N74 step the lifter is already offered, and every write is a row that can be read back
   and undone. The exception is the lifter's, not the app's.
-- **Warm-ups are excluded from progression too** (N17, N20, N22) — a warm-up is not the
+- **Warm-ups are excluded from progression too** (N17, N22) — a warm-up is not the
   work a target is measured against.
 - **The progression is asked at *Done*, and the plan's own target RPE is what earns it** (N50). A plan's
   working set carries a target RPE (N14, N59), and where **every** prescribed working set was performed
@@ -937,8 +931,8 @@ the rule; that one argues it.
   plan's next set; a null plan stays null rather than reading zero, because "nothing was planned" and
   "all of it is done" are different statements. **What that rule counts is the working sets on both
   sides** (N112): a plan's ramp is preparation the plan did not ask to be finished, so four warm-ups and
-  three working sets are a plan of three — which is how the plan is compared with the work everywhere
-  else too (N20).
+  three working sets are a plan of three — the same working-set count the plan's own numbering uses
+  (N112).
 - **A set's number, and the plan's remainder, count only the sets that stand on their own** (N112). The
   three lists that number sets — the plan's own, the workout's logged rows and the history detail's —
   read one rule, because they are three readings of one sequence: a **warm-up takes no number**, so an

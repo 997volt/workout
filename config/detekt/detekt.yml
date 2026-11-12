@@ -165,8 +165,12 @@ complexity:
     # `RoomWorkoutRepository` the interface override that uses it. Neither is a helper that
     # could move to file level, the write is a session's own rather than a new surface, and
     # the split named above is still the real fix and still bigger than this feature.
+    # The class ceiling moved 31 -> 32 at N305, for `RoomProgramRepository`: the finish's notice asks
+    # which active weekly program names the workout that just finished, and the answer is one indexed
+    # query rather than a walk over every program's slots. An interface override, not a helper that
+    # could move out of the type, and the split named above is still the real fix.
     thresholdInInterfaces: 32
-    thresholdInClasses: 31
+    thresholdInClasses: 32
     thresholdInFiles: 20
     # The workout logger is the one type the notes above describe: every action the workout screen has,
     # sharing one session, one exercise list and one error channel. It has been at the ceiling since N10 and

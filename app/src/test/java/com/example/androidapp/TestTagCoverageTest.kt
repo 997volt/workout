@@ -90,7 +90,6 @@ class TestTagCoverageTest {
             "SETTINGS_REST_CURRENT",
             "SETTINGS_SCREEN",
             "SET_INCREASE_REPS",
-            "SUMMARY_DIALOG",
             "TAB_BAR",
             "TEMPLATES_TITLE",
             "TEMPLATE_EDIT_TITLE",

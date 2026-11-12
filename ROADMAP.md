@@ -17,30 +17,9 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next — running one program for years
 
-The 2.29 work made one program usable indefinitely; what is left is what the app says *around* each
-session. Finishing currently ends on a review that repeats what history already reads back, and the one
-number it exists for compares the session to a plan that auto progression may already have moved — the
-least reliable number at the least useful moment. The one thing a lifter cannot see from the session
-itself is a lift that has stopped moving, so that is what the finish should say.
-
-The rows are one shift of emphasis: the finish says less, history says more, and the stall names
-the exercise rather than one of its sets.
-
-- **N305 — The finish says only what stalled.** The review dialog goes. Totals, ratings, readiness and
-  the comment are already read back in the workout detail, and the plan-vs-actual comparison it exists
-  for is deleted with it rather than moved to history: keeping it honest would mean storing the
-  prescription with the session, and that schema was judged not worth a number that changes nothing
-  about the next session. The **note prompt stays** — it is the one input the finish owns. When the
-  workout came from an **active weekly** program's template and that template has a stalled exercise
-  after this session, a compact dialog takes the review's place: the stalled lifts in workout order,
-  one line each, and a single *Done*. It appears when the run **just reaches three**, not after every
-  session it stays stuck — the program screen and weekly review already carry it. Otherwise finishing
-  closes the screen. [WorkoutReviewDialog.kt](app/src/main/java/com/example/androidapp/ui/workout/WorkoutReviewDialog.kt),
-  `WorkoutReview`/`buildSummary`, [PlanComparison.kt](app/src/main/java/com/example/androidapp/domain/model/PlanComparison.kt)
-  and `comparePlanToActual` are deleted with their tests, and DECISIONS' N20 ("the review is a moment")
-  and N131 (the mean-effort comparison) are amended in this change rather than left describing code
-  that no longer exists. The finish needs two reads it does not have: the active weekly program naming
-  the finished template, and a template-scoped stall list instead of the program's first one.
+The 2.29 work made one program usable indefinitely. The finish now says only what stalled, and the stall
+names the exercise rather than one of its sets (N304, N305); what is left of the batch is the comparison
+history should keep — against what was actually done, not against what a living plan says today.
 
 - **N306 — History compares the session to the last one, not to the plan.** The workout detail keeps the
   performed sets and gains, per exercise, the **previous session that trained the movement** with a
@@ -51,8 +30,7 @@ the exercise rather than one of its sets.
   movement with no earlier session says nothing rather than zero, a set with no counterpart in the
   previous session is not compared, and the delta is stated in the set's own unit and shape (a hold in
   seconds); because history is editable, it is re-derived when a set changes. It replaces the
-  comparison N305 removes, and is the only comparison the app makes — against what was actually done,
-  not against what a living plan says today.
+  comparison deleted with the finish's review (N305), and is the only comparison the app makes.
 
 ## Parked — deliberately not planned
 

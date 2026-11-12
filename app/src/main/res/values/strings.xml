@@ -802,7 +802,9 @@
          "Not now" writes none, and the rating stays reachable behind it (N8, N10). -->
     <!-- A step that was offered and not taken (ROADMAP N236). Stated rather than judged: declining is a
          decision, and nothing about it says the work was short. -->
-    <string name="summary_step_declined">Step offered, not taken: %1$s</string>
+    <!-- A step that was offered and not taken (ROADMAP N236). Stated rather than judged: declining is a
+         decision, and nothing about it says the work was short. -->
+    <string name="step_declined">Step offered, not taken: %1$s</string>
     <string name="progression_direction_load">load</string>
     <string name="progression_direction_reps">reps</string>
     <string name="progression_direction_seconds">seconds</string>
@@ -998,30 +1000,11 @@
     <string name="clear_menu">Delete everything…</string>
     <string name="clear_done">Everything deleted</string>
     <!-- The review a finished workout gets (ROADMAP N20). -->
-    <string name="summary_title">Workout complete</string>
-    <string name="summary_totals">Sets %1$d · reps %2$d · %3$s %4$s</string>
     <!-- A session of holds is counted in holds, not in zero reps (B243); a mixed one says both. -->
-    <string name="summary_totals_holds">Sets %1$d · holds %2$d · %3$s %4$s</string>
-    <string name="summary_totals_mixed">Sets %1$d · reps %2$d · holds %3$d · %4$s %5$s</string>
-    <string name="summary_readiness">Readiness: %1$s</string>
-    <string name="summary_note">Note: %1$s</string>
-    <string name="summary_ratings_title">How it felt</string>
-    <string name="summary_rating_feel">felt %1$d/10</string>
     <!-- The picked list's half (ROADMAP N63): the worst joint that exercise reported, named. -->
-    <string name="summary_rating_joint">%1$s %2$d/10</string>
-    <string name="summary_plan_title">Plan vs actual</string>
-    <string name="summary_warmup_note">Warm-up sets are not counted.</string>
-    <string name="summary_prescribed">prescribed %1$s</string>
-    <string name="summary_performed">performed %1$s</string>
-    <string name="summary_shape">%1$d×%2$d</string>
     <!-- Sets × hold, for a movement that is timed rather than counted (B243). -->
-    <string name="summary_shape_hold">%1$d×%2$s</string>
-    <string name="summary_shape_weight">%1$s at %2$s %3$s</string>
     <!-- N144: a prescribed load with no rep target is still a load, and its unit is what says whether it is
          kilograms or pounds. "at" is left out because there is no shape to be at. -->
-    <string name="summary_weight_value">%1$s %2$s</string>
-    <string name="summary_sets_only">Sets: %1$d</string>
-    <string name="summary_not_performed">not performed</string>
     <!-- N130: the picker's headings. Two series can share a label across groups now — "Left knee" is a
          workout series and a per-lift one — so the list says which is which. -->
     <string name="statistics_group_workout">Workout</string>
@@ -1032,19 +1015,6 @@
     <string name="statistics_group_soreness">Soreness</string>
     <!-- N131: the plan names one effort per exercise, the log one per set, so the review compares
          the working sets' mean against the target. -->
-    <string name="summary_rpe">RPE %1$s</string>
-    <string name="summary_effort_matched">RPE as prescribed</string>
-    <string name="summary_effort_over">RPE %1$s over plan</string>
-    <string name="summary_effort_under">RPE %1$s under plan</string>
-    <string name="summary_no_rpe">no RPE recorded</string>
-    <string name="summary_not_planned">not in the plan</string>
-    <string name="summary_substituted">Substituted with %1$s</string>
-    <string name="summary_skipped">skipped — the plan asked for it</string>
-    <string name="summary_no_weight_to_compare">no planned weight to compare</string>
-    <string name="summary_matched">as planned</string>
-    <string name="summary_over">%1$s %2$s over plan</string>
-    <string name="summary_under">%1$s %2$s under plan</string>
-    <string name="summary_done">Done</string>
     <!-- The app's settings (ROADMAP N21). -->
     <string name="settings_title">Settings</string>
     <!-- Whether Done asks about the plan's next step (ROADMAP N66). On by default: it is what the
@@ -1425,6 +1395,9 @@
         <item quantity="other">No progress in %1$d sessions running.</item>
     </plurals>
     <string name="program_stall_deload">Plan a deload</string>
+    <!-- What a finished workout is told when a lift has just stopped moving (ROADMAP N305). -->
+    <string name="finish_stall_title">What stalled</string>
+    <string name="finish_stall_done">Done</string>
     <string name="program_no_slots">No workouts yet</string>
     <string name="program_no_slots_hint">Add the workouts you train, in order, and give each one a day.</string>
     <string name="program_add_slot">Add workout</string>

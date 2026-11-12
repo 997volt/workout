@@ -318,6 +318,28 @@ interface ProgramDao {
     suspend fun findAutoProgramForTemplate(templateId: String): String?
 
     /**
+     * The first active weekly program naming this workout's template, or null (ROADMAP N305).
+     *
+     * The finish's stall notice asks this before saying anything: a stall belongs to a program the lifter is
+     * running, only a weekly one qualifies — a block's weeks are the creator's own (N174, N303) — and an
+     * inactive program is not a plan being followed. A workout trained outside one answers null.
+     */
+    @Query(
+        """
+        SELECT p.id FROM programs p
+        JOIN program_slots ps ON ps.programId = p.id
+        WHERE ps.templateId = :templateId
+          AND p.isActive = 1
+          AND p.kind = 'WEEKLY'
+          AND p.deletedAt IS NULL
+          AND ps.deletedAt IS NULL
+        ORDER BY p.position ASC, p.name ASC
+        LIMIT 1
+        """,
+    )
+    suspend fun findActiveWeeklyProgramForTemplate(templateId: String): String?
+
+    /**
      * Every live planned set of the workouts this program schedules (ROADMAP N299).
      *
      * The baseline is one row per set across every day the program names; `DISTINCT` keeps a workout

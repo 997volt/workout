@@ -26,6 +26,14 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   (no target effort, no reps, nothing to move are out), and a movement whose own answer is Off is never counted
   — while the device-wide setting is not an exclusion. The card says how many sessions it has been, and keeps
   growing past three.
+- **The finish's review is gone; it says only what stalled** (N305). Finishing used to open a review of the
+  session — totals, ratings, readiness, and a plan-vs-actual comparison — most of which history already reads
+  back. The comparison was against the plan as it stands *now*, so with auto progression on it could already
+  be showing the next target rather than the one that was trained. The note prompt stays; after the session is
+  stored, a compact dialog takes the review's place and names the lifts of an active weekly program's workout
+  that have just gone three sessions without moving, and only at that moment — not after every session a stall
+  persists. The comparison, its model, its tests and the review's totals are deleted with it; the workout
+  detail already shows everything else the review used to say.
 
 ## [2.29] — 2026-11-11 (versionCode 50)
 

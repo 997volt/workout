@@ -5,7 +5,6 @@ import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.Activity
 import com.example.androidapp.domain.model.JointPain
-import com.example.androidapp.domain.model.PlanComparison
 import com.example.androidapp.domain.model.ProgressionDirection
 import com.example.androidapp.domain.model.ProgressionMode
 import com.example.androidapp.domain.model.ProgressionPrompt
@@ -278,26 +277,3 @@ data class ActiveWorkoutUiState(
     /** No open session at all: finished, discarded, or never started. */
     val hasNoSession: Boolean get() = !isLoading && sessionId == null
 }
-
-/** What the screen shows once a workout is finished (ROADMAP N20). */
-data class WorkoutReview(
-    val note: String?,
-    val readinessNote: String?,
-    val totalSets: Int,
-    /** How many of them were holds rather than counted sets (ROADMAP N220, B243). */
-    val totalHolds: Int = 0,
-    val totalReps: Int,
-    val totalVolumeGrams: Long,
-    /** Only the exercises that were rated — an unrated one is not a zero. */
-    val ratings: List<ExerciseRating>,
-    /** The plan next to the performance; empty when the workout came from no plan. */
-    val comparisons: List<PlanComparison>,
-)
-
-/** How one exercise felt, as the summary reads it back. */
-data class ExerciseRating(
-    val name: String,
-    val muscleFeel: Int?,
-    /** The joints that hurt, each with its side and score (ROADMAP N63), or empty. */
-    val joints: List<JointPain>,
-)

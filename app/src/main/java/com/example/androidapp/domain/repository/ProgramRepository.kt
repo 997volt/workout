@@ -37,6 +37,15 @@ interface ProgramRepository {
      */
     fun observeActivePrograms(): Flow<List<WorkoutProgram>>
 
+    /**
+     * The first active weekly program that schedules this workout, or null (ROADMAP N305).
+     *
+     * The finish's stall notice is for a plan being followed: an inactive program is not being run, and a
+     * block never answers — its weeks are the creator's own order (N174, N303). A workout trained outside
+     * any program answers null.
+     */
+    suspend fun activeWeeklyProgramForTemplate(templateId: String): DataResult<String?>
+
     /** A program's slots in its own order, each carrying its template's name. */
     fun observeSlots(programId: String): Flow<List<ProgramSlot>>
 

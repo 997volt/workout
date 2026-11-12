@@ -49,7 +49,6 @@ internal interface HistoryTags {
     val DETAIL_OPEN_NEW_PLAN: String get() = "detail_open_new_plan"
 
     /** The review's line about a step offered and not taken (ROADMAP N236). */
-    val REVIEW_STEP_DECLINED: String get() = "review_step_declined"
 
     val HISTORY_STEP_DECLINED: String get() = "history_step_declined"
 

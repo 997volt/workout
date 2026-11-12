@@ -13,18 +13,20 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * The first stopped prescription in a program (ROADMAP N237, B351).
+ * The stopped prescriptions in a plan (ROADMAP N237, N304, B351).
  *
  * The rule is the domain's ([stall]); this is the read it needs: each slot's plan, and the sessions that
  * trained each of its movements. Extracted from the program editor so the weekly review can ask the same
- * question of the same rules rather than a second copy (N247).
+ * question of the same rules rather than a second copy (N247), and asked per template by the finish's notice
+ * (N305).
  *
  * **A failed read is a failure, not "no stall."** The first cut swallowed the trends error into an empty
  * session list, so a storage fault made the editor and the week review say the plan was moving. The result
  * is a [DataResult] now, and the callers show the error rather than inventing an answer.
  *
- * One stall, not a list: the app is suggesting a week off, and a screen of diagnoses is not the suggestion it
- * set out to make.
+ * The program's read answers with **one** stall, not a list: the app is suggesting a week off, and a screen of
+ * diagnoses is not the suggestion it set out to make. A single plan's read answers with all of them, because
+ * the finish's notice is about what the session showed, and one sentence per stuck lift is still one dialog.
  */
 @Singleton
 class PlanStallFinder @Inject constructor(
@@ -48,28 +50,40 @@ class PlanStallFinder @Inject constructor(
             .firstNotNullOfOrNull { it.data }
     }
 
-    private suspend fun firstStallInTemplate(templateId: String): DataResult<PlanStall?> = dataResultOf {
+    /**
+     * Every stall in one workout's plan, in the plan's exercise order (N304, N305).
+     *
+     * Empty is a normal answer: a plan with fewer sessions than the rule needs cannot have one, and a plan
+     * with no eligible exercise has nothing to report.
+     */
+    suspend fun stallsForTemplate(templateId: String): DataResult<List<PlanStall>> = dataResultOf {
         val planned = templates.observeExercises(templateId).first()
         val sessions = when (val read = trends.templateSessions(templateId)) {
             is DataResult.Failure -> throw read.error.asThrowable()
             is DataResult.Success -> read.data
         }
         // Three sessions is the rule's own threshold (N237), and a plan with fewer cannot have one yet.
-        planned.takeIf { it.isNotEmpty() && sessions.size >= STALL_SESSIONS }
-            ?.firstNotNullOfOrNull { exercise ->
-                // One entry per session that **trained** the movement: absence is not a failure.
-                val performed = sessions.mapNotNull { session ->
-                    session.performed
-                        .firstOrNull { it.exerciseId == exercise.exerciseId }
-                        ?.sets
-                }
-                PrescriptionHistory(
-                    exerciseName = exercise.exerciseName,
-                    planned = exercise.progressionSets(),
-                    performedBySession = performed,
-                    // The movement's own answer (N235): Off is never counted (N304).
-                    progressionMode = exercise.progressionMode,
-                ).stall()
+        if (planned.isEmpty() || sessions.size < STALL_SESSIONS) return@dataResultOf emptyList()
+        planned.mapNotNull { exercise ->
+            // One entry per session that **trained** the movement: absence is not a failure.
+            val performed = sessions.mapNotNull { session ->
+                session.performed
+                    .firstOrNull { it.exerciseId == exercise.exerciseId }
+                    ?.sets
             }
+            PrescriptionHistory(
+                exerciseName = exercise.exerciseName,
+                planned = exercise.progressionSets(),
+                performedBySession = performed,
+                // The movement's own answer (N235): Off is never counted (N304).
+                progressionMode = exercise.progressionMode,
+            ).stall()
+        }
     }
+
+    private suspend fun firstStallInTemplate(templateId: String): DataResult<PlanStall?> =
+        when (val read = stallsForTemplate(templateId)) {
+            is DataResult.Failure -> read
+            is DataResult.Success -> DataResult.Success(read.data.firstOrNull())
+        }
 }

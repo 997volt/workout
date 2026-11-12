@@ -232,10 +232,10 @@ internal interface WorkoutTags {
     /** Joining or leaving the superset above (ROADMAP N24). */
     fun supersetToggle(id: String) = "superset_toggle_$id"
 
-    /** The review a finished workout gets (ROADMAP N20). */
-    val SUMMARY_DIALOG: String get() = "summary_dialog"
+    /** The stalled lifts a finished workout is told about (ROADMAP N305). */
+    val STALL_DIALOG: String get() = "workout_stall_dialog"
 
-    val SUMMARY_DONE: String get() = "summary_done"
+    val STALL_DONE: String get() = "workout_stall_done"
 
     /**
      * The button that writes the next set (ROADMAP N59).

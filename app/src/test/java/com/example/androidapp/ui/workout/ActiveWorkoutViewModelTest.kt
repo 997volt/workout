@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
+import com.example.androidapp.domain.PlanStallFinder
 import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.Weight
@@ -20,6 +21,7 @@ import com.example.androidapp.domain.model.LatestWeight
 import com.example.androidapp.domain.model.MeasurementKind
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.PendingOccurrence
+import com.example.androidapp.domain.model.PerformedExercise
 import com.example.androidapp.domain.model.PersonalRecords
 import com.example.androidapp.domain.model.PreviousPerformance
 import com.example.androidapp.domain.model.ProgramKind
@@ -28,6 +30,7 @@ import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.ProgressionDirection
 import com.example.androidapp.domain.model.ProgressionMiss
 import com.example.androidapp.domain.model.ProgressionMode
+import com.example.androidapp.domain.model.ProgressionPerformance
 import com.example.androidapp.domain.model.ProgressionStep
 import com.example.androidapp.domain.model.SequenceSchedule
 import com.example.androidapp.domain.model.SessionExercise
@@ -36,6 +39,7 @@ import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.Side
 import com.example.androidapp.domain.model.StatisticsRange
 import com.example.androidapp.domain.model.TemplateExercise
+import com.example.androidapp.domain.model.TemplateSession
 import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.WorkoutSession
@@ -56,6 +60,7 @@ import com.example.androidapp.ui.components.SetEdit
 import com.example.androidapp.ui.components.WriteOutcome
 import com.example.androidapp.ui.testing.FakeDeloadRepository
 import com.example.androidapp.ui.testing.FakeProgressionRepository
+import com.example.androidapp.ui.testing.FakeTrendsRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -158,11 +163,13 @@ class ActiveWorkoutViewModelTest {
         slotId: String? = null,
         measurements: FakeBodyMeasurements = FakeBodyMeasurements(),
         deloads: FakeDeloadRepository = FakeDeloadRepository(),
+        trends: FakeTrendsRepository = FakeTrendsRepository(),
     ) = ActiveWorkoutViewModel(
         repository,
         clock,
         templates,
         programs,
+        PlanStallFinder(programs, templates, trends),
         progression,
         activeWorkoutRoute(templateId, repeatSessionId, slotId),
         settings,
@@ -1441,16 +1448,95 @@ class ActiveWorkoutViewModelTest {
         viewModel.onFinish()
         settle()
 
-        assertTrue("finishing publishes the review (N20)", viewModel.summary.value != null)
-        assertFalse("and does not leave yet — the review is what the user reads", viewModel.closed.value)
-
-        viewModel.onDismissSummary()
-        settle()
-
-        assertTrue("the screen should leave after the review is dismissed", viewModel.closed.value)
+        assertNull("nothing stalled, so there is nothing to say (N305)", viewModel.stallNotice.value)
+        assertTrue("finishing closes the screen", viewModel.closed.value)
         assertEquals(null, viewModel.uiState.value.sessionId)
         // Asserted here because the code path that does it was rewritten once and the
         // cancel was lost: a finished workout must not leave a rest alarm armed.
+    }
+
+    @Test
+    fun aStallThatHasJustReachedThree_isSaidAfterFinishing() = runTest(dispatcher) {
+        // ROADMAP N305: the finish says only what stalled, in the place the review used to be, and only
+        // when the run reached three with the session that was just stored.
+        val repository = FakeWorkoutRepository()
+        val programs = FakeProgramRepository().apply { activeWeeklyForTemplate = "p1" }
+        val trends = FakeTrendsRepository().apply {
+            templateSessions = DataResult.Success(List(3) { aSessionThatMissed() })
+        }
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = answeredPlan(),
+            programs = programs,
+            trends = trends,
+        )
+        observe(viewModel)
+        settle()
+
+        viewModel.onFinish()
+        settle()
+
+        assertEquals("Back Squat", viewModel.stallNotice.value?.single()?.exerciseName)
+        assertEquals(3, viewModel.stallNotice.value?.single()?.sessions)
+        assertFalse("the notice holds the screen while it is read", viewModel.closed.value)
+
+        viewModel.onDismissStallNotice()
+        settle()
+
+        assertTrue("dismissing it closes the workout", viewModel.closed.value)
+    }
+
+    @Test
+    fun aStallThatHasRunPastThree_isNotSaidAgain() = runTest(dispatcher) {
+        // It is already on the program's screen and the weekly review; the finish only announces the
+        // moment the run reaches three, so it does not become a popup after every later session.
+        val repository = FakeWorkoutRepository()
+        val programs = FakeProgramRepository().apply { activeWeeklyForTemplate = "p1" }
+        val trends = FakeTrendsRepository().apply {
+            templateSessions = DataResult.Success(List(4) { aSessionThatMissed() })
+        }
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = answeredPlan(),
+            programs = programs,
+            trends = trends,
+        )
+        observe(viewModel)
+        settle()
+
+        viewModel.onFinish()
+        settle()
+
+        assertNull(viewModel.stallNotice.value)
+        assertTrue("so the finish closes as it did before", viewModel.closed.value)
+    }
+
+    @Test
+    fun aFailedStallRead_doesNotStrandTheFinish() = runTest(dispatcher) {
+        // The workout is stored by then; an advisory notice must not be a wall in front of the exit, and
+        // the program screen and weekly review are where the read's error is shown.
+        val repository = FakeWorkoutRepository()
+        val programs = FakeProgramRepository().apply { activeWeeklyForTemplate = "p1" }
+        val trends = FakeTrendsRepository().apply {
+            templateSessions = DataResult.Failure(DataError.Storage(IOException("the read failed")))
+        }
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = answeredPlan(),
+            programs = programs,
+            trends = trends,
+        )
+        observe(viewModel)
+        settle()
+
+        viewModel.onFinish()
+        settle()
+
+        assertNull(viewModel.stallNotice.value)
+        assertTrue(viewModel.closed.value)
     }
 
     @Test
@@ -1471,28 +1557,6 @@ class ActiveWorkoutViewModelTest {
         assertEquals(listOf(75_000L), repository.loggedBodyweights)
         assertEquals(listOf(75_000L), repository.sets.value.map { it.bodyweightGrams })
         assertNull("no prompt is needed when the weight is known", viewModel.bodyweightPrompt.value)
-    }
-
-    @Test
-    fun theReview_countsTheLoadABodyweightSetCarries() = runTest(dispatcher) {
-        // B241: the finish summary used the added weight alone, so an all-bodyweight session ended on
-        // "0 kg" while history, the trend and the workout's own SQL counted the lifter.
-        val repository = FakeWorkoutRepository()
-        repository.isBodyweightForNextExercise = true
-        val measurements = FakeBodyMeasurements(latest = 75_000L)
-        val viewModel = viewModelFor(repository, measurements = measurements)
-        observe(viewModel)
-        settle()
-        viewModel.onAddExercise("pull-up")
-        settle()
-
-        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, offeredSet(viewModel, weightGrams = 0L))
-        settle()
-        viewModel.onFinish()
-        settle()
-
-        val summary = requireNotNull(viewModel.summary.value)
-        assertEquals("the lifter's own weight is the load", 75_000L * 8, summary.totalVolumeGrams)
     }
 
     @Test
@@ -1669,10 +1733,9 @@ class ActiveWorkoutViewModelTest {
 
         viewModel.onFinish(note = "Good session")
         settle()
-        viewModel.onDismissSummary()
-        settle()
 
         assertEquals("the comment reaches the session", "Good session", repository.lastWorkoutNotes)
+        assertTrue("finishing closes the screen", viewModel.closed.value)
     }
 
     @Test
@@ -2220,38 +2283,6 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
-    fun theReview_carriesThePlansTargetEffort_andWhatTheSetsWereRated() = runTest(dispatcher) {
-        // ROADMAP N131, and the wiring only a test through the ViewModel can hold: the plan's target
-        // lives on the *exercise* (N59) while the ratings are on the sets (N6), so the review is built
-        // from two different levels of the state. The plan asks for RPE 8 (16 halves) and the set is
-        // answered at RPE 7 (14 halves), so the effort came in half a point under plan.
-        val repository = FakeWorkoutRepository()
-        val templates = FakeTemplateRepository(
-            planned = listOf(
-                plannedExercise(
-                    position = 0,
-                    targetRpeHalves = 16,
-                    sets = listOf(plannedSet(index = 0, reps = 5, weightGrams = 100_000L)),
-                ),
-            ),
-        )
-        val viewModel = viewModelFor(repository, templateId = "t1", templates = templates)
-        observe(viewModel)
-        settle()
-        viewModel.onAddExercise("back-squat")
-        settle()
-        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 14)
-
-        viewModel.onFinish()
-        settle()
-
-        val comparison = viewModel.summary.value!!.comparisons.single()
-        assertEquals("the plan's one number for the exercise", 16, comparison.prescribedRpeHalves)
-        assertEquals("the set was logged at RPE 7, which is 14 halves", 14, comparison.performedAverageRpeHalves)
-        assertEquals("and the delta is in halves, like both sides", -2, comparison.rpeDeltaHalves)
-    }
-
-    @Test
     fun finishingWithAComment_writesIt_thenClosesTheWorkout() = runTest(dispatcher) {
         // ROADMAP N11: the moment of finishing is when the reason is remembered.
         val repository = FakeWorkoutRepository()
@@ -2267,15 +2298,6 @@ class ActiveWorkoutViewModelTest {
         settle()
 
         assertEquals("Slept badly, but the squats moved", repository.lastWorkoutNotes)
-        assertEquals(
-            "the comment is the review's, so it is readable there (N20)",
-            "Slept badly, but the squats moved",
-            viewModel.summary.value?.note,
-        )
-
-        viewModel.onDismissSummary()
-        settle()
-
         assertTrue("finishing still finishes", viewModel.closed.value)
     }
 
@@ -2294,11 +2316,6 @@ class ActiveWorkoutViewModelTest {
         settle()
 
         assertNull("skipping must not invent a comment", repository.lastWorkoutNotes)
-        assertNotNull(viewModel.summary.value)
-
-        viewModel.onDismissSummary()
-        settle()
-
         assertTrue(viewModel.closed.value)
     }
 
@@ -2335,6 +2352,7 @@ class ActiveWorkoutViewModelTest {
             tickingClock,
             FakeTemplateRepository(),
             FakeProgramRepository(),
+            PlanStallFinder(FakeProgramRepository(), FakeTemplateRepository(), FakeTrendsRepository()),
             FakeProgressionRepository(),
             activeWorkoutRoute(),
             FakeSettingsRepository(),
@@ -2924,6 +2942,18 @@ class ActiveWorkoutViewModelTest {
         sets = sets,
     )
 
+    /** One finished session of the plan above in which its only working set came up short (N304). */
+    private fun aSessionThatMissed() = TemplateSession(
+        sessionId = "s1",
+        startedAt = Instant.parse("2026-09-28T07:00:00Z"),
+        performed = listOf(
+            PerformedExercise(
+                exerciseId = "back-squat",
+                sets = listOf(ProgressionPerformance(reps = 3, weightGrams = 100_000L, rpeHalves = 7)),
+            ),
+        ),
+    )
+
     private fun plannedSet(index: Int, reps: Int, weightGrams: Long) = TemplateSet(
         id = "ts-$index",
         templateExerciseId = "te-0",
@@ -3095,37 +3125,6 @@ class ActiveWorkoutViewModelTest {
             "an undone set comes back as it was",
             20_000L,
             repository.sets.value.single().assistanceGrams,
-        )
-    }
-
-    @Test
-    fun theReview_countsTheWorkThatWasJustDone() = runTest(dispatcher) {
-        // A device found this, and only a device could: the review was built *after*
-        // finishing, and a stored session is no longer the live one — so the totals read
-        // "Sets 0 · reps 0 · 0 kg" and the set that had just been logged was reported as
-        // not performed. The fake clears the active session exactly as the real repository
-        // does, so this test holds the fix.
-        val repository = FakeWorkoutRepository()
-        val viewModel = viewModelFor(repository)
-        observe(viewModel)
-        settle()
-        viewModel.onAddExercise("back-squat")
-        settle()
-        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, offeredSet(viewModel))
-        settle()
-
-        viewModel.onFinish()
-        settle()
-
-        val summary = viewModel.summary.value
-        assertNotNull(summary)
-        assertEquals("the set that was logged", 1, summary!!.totalSets)
-        assertEquals(8, summary.totalReps)
-        assertEquals("20 kg × 8", 160_000L, summary.totalVolumeGrams)
-        assertEquals(
-            "and it is not reported as never performed",
-            1,
-            summary.comparisons.single().performedSets,
         )
     }
 
@@ -3777,6 +3776,12 @@ private class FakeProgramRepository : ProgramRepository {
     override fun observeProgram(programId: String): Flow<WorkoutProgram?> = flowOf(null)
 
     override fun observeActivePrograms(): Flow<List<WorkoutProgram>> = flowOf(emptyList())
+
+    /** What the finish's activity lookup answers (N305). */
+    var activeWeeklyForTemplate: String? = null
+
+    override suspend fun activeWeeklyProgramForTemplate(templateId: String): DataResult<String?> =
+        DataResult.Success(activeWeeklyForTemplate)
 
     override fun observeSlots(programId: String): Flow<List<ProgramSlot>> = flowOf(emptyList())
 

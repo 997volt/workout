@@ -208,6 +208,9 @@ class ProgramStartGateViewModelTest {
 
         override fun observeActivePrograms(): Flow<List<WorkoutProgram>> = flowOf(emptyList())
 
+        override suspend fun activeWeeklyProgramForTemplate(templateId: String): DataResult<String?> =
+            DataResult.Success(null)
+
         override fun observeSlots(programId: String): Flow<List<ProgramSlot>> = flowOf(emptyList())
 
         override fun observeProgramRun(programId: String): Flow<ProgramRun?> = flowOf(null)
