@@ -34,6 +34,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   that have just gone three sessions without moving, and only at that moment — not after every session a stall
   persists. The comparison, its model, its tests and the review's totals are deleted with it; the workout
   detail already shows everything else the review used to say.
+- **History compares each set to the same place last time** (N306). The workout detail names the previous session
+  that trained each movement and says, per set, what moved: the load in the set's own unit, the reps, or a hold
+  in seconds. An unchanged set says "same as last time" rather than showing zeroes, a set with no counterpart
+  says nothing, and a movement never trained before has no comparison line. It is a read, not a stored copy, and
+  it replaces the plan-vs-actual comparison the finish's review used to make.
 
 ## [2.29] — 2026-11-11 (versionCode 50)
 

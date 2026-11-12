@@ -357,6 +357,56 @@ class WorkoutDetailScreenTest {
         composeTestRule.onNodeWithText(expected).assertExists()
     }
 
+    @Test
+    fun thePreviousTraining_isDated_andEachSetSaysWhatMoved() {
+        // N306: the date is stated once per exercise, and the set says only its own change.
+        setScreen(
+            uiState = state.copy(
+                exercises = state.exercises.map {
+                    it.copy(
+                        sets = listOf(HistorySet(id = "set1", reps = 6, weightGrams = 102_500L)),
+                        previous = HistoryPrevious(
+                            sets = listOf(PastSet(reps = 5, weightGrams = 100_000L)),
+                            startedAt = Instant.parse("2026-09-20T07:00:00Z"),
+                        ),
+                    )
+                },
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.HISTORY_VS_LAST_TIME).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.HISTORY_VS_LAST_TIME)
+            .assertTextContains("vs last time", substring = true)
+        composeTestRule.onNodeWithTag(TestTags.HISTORY_SET_DELTA).assertTextContains("+2.5 kg · +1 rep")
+    }
+
+    @Test
+    fun anUnchangedSet_saysSameAsLastTime_ratherThanZeroes() {
+        setScreen(
+            uiState = state.copy(
+                exercises = state.exercises.map {
+                    it.copy(
+                        previous = HistoryPrevious(
+                            sets = listOf(PastSet(reps = 5, weightGrams = 100_000L)),
+                            startedAt = Instant.parse("2026-09-20T07:00:00Z"),
+                        ),
+                    )
+                },
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.HISTORY_SET_DELTA)
+            .assertTextContains("same as last time")
+    }
+
+    @Test
+    fun withoutAPreviousTraining_thereIsNoComparison() {
+        setScreen(uiState = state)
+
+        composeTestRule.onNodeWithTag(TestTags.HISTORY_VS_LAST_TIME).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.HISTORY_SET_DELTA).assertDoesNotExist()
+    }
+
     private fun setScreen(
         uiState: WorkoutDetailUiState = state,
         onUpdateSet: (String, Int, Long, Int?, String?, SetType, Long, Int?) -> Unit =

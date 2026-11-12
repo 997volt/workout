@@ -52,6 +52,12 @@ internal interface HistoryTags {
 
     val HISTORY_STEP_DECLINED: String get() = "history_step_declined"
 
+    /** The previous training the detail compares each set with (ROADMAP N306). */
+    val HISTORY_VS_LAST_TIME: String get() = "history_vs_last_time"
+
+    /** One set's change from the same place in it (N306). */
+    val HISTORY_SET_DELTA: String get() = "history_set_delta"
+
     /**
      * Repeating one finished workout from a History row (ROADMAP N48).
      *

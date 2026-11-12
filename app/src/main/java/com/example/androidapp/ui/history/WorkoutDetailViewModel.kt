@@ -8,6 +8,7 @@ import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.JointPain
+import com.example.androidapp.domain.model.PreviousPerformance
 import com.example.androidapp.domain.model.ProgressionDirection
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.WorkoutProgram
@@ -32,9 +33,11 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.Duration
+import java.time.Instant
 import java.time.LocalDate
 import javax.inject.Inject
 
@@ -96,6 +99,60 @@ data class HistoryExercise(
     val joints: List<JointPain> = emptyList(),
     /** The directions of a step offered and not taken (ROADMAP N236), or empty. */
     val declinedDirections: Set<ProgressionDirection> = emptySet(),
+    /** The last session that trained the movement, for the by-place deltas (N306), or null. */
+    val previous: HistoryPrevious? = null,
+)
+
+/** One set as the previous session logged it, for the detail's by-place comparison (ROADMAP N306). */
+data class PastSet(
+    val reps: Int,
+    val weightGrams: Long,
+    val durationSeconds: Int? = null,
+)
+
+/** What a movement did the last time it was trained, or why there is nothing to compare (N306). */
+data class HistoryPrevious(
+    /** Its sets in the order they were logged: the counterpart of this session's set at the same place. */
+    val sets: List<PastSet>,
+    /** When that session started, or null when the read did not carry it. */
+    val startedAt: Instant? = null,
+)
+
+/**
+ * What changed from the previous session's set in the same place (N306).
+ *
+ * [weightGrams] is the change in the number the set's own field states, **not** the bodyweight-composed load
+ * a bodyweight row displays: a change in the lifter's weight is not a change in what they did. [holdSeconds]
+ * is null unless both sides were holds, because a counted set and a hold have no duration to subtract.
+ */
+data class SetDelta(
+    val weightGrams: Long,
+    val reps: Int,
+    val holdSeconds: Int? = null,
+) {
+    val unchanged: Boolean get() = weightGrams == 0L && reps == 0 && (holdSeconds ?: 0) == 0
+}
+
+/** The delta from [previous] to [set], or null when there is no counterpart in the previous session (N306). */
+fun setDelta(set: HistorySet, previous: PastSet?): SetDelta? {
+    if (previous == null) return null
+    return SetDelta(
+        weightGrams = set.weightGrams - previous.weightGrams,
+        reps = set.reps - previous.reps,
+        holdSeconds = if (set.durationSeconds != null && previous.durationSeconds != null) {
+            set.durationSeconds - previous.durationSeconds
+        } else {
+            null
+        },
+    )
+}
+
+/** What the previous session looked like, reduced to the place a delta needs (N306). */
+private fun PreviousPerformance.toHistoryPrevious(): HistoryPrevious = HistoryPrevious(
+    sets = sets.sortedBy { it.setIndex }.map {
+        PastSet(reps = it.reps, weightGrams = it.weightGrams, durationSeconds = it.durationSeconds)
+    },
+    startedAt = sessionStartedAt,
 )
 
 data class WorkoutDetailUiState(
@@ -257,8 +314,48 @@ class WorkoutDetailViewModel @Inject constructor(
             }
         }
 
+    /**
+     * What each movement did the last time it was trained (ROADMAP N306), read once per exercise.
+     *
+     * Null means "nothing to compare" — no earlier session, or a read that failed. The comparison is
+     * advisory, so a failure is not turned into a claim that the lift was never trained; it simply says
+     * nothing, and the reads around it report their own errors.
+     */
+    private val previousByExercise = MutableStateFlow<Map<String, PreviousPerformance?>>(emptyMap())
+
+    init {
+        viewModelScope.launch {
+            exercises
+                .map { rows -> rows.map { it.exerciseId }.distinct() }
+                .distinctUntilChanged()
+                .collect { exerciseIds ->
+                    exerciseIds
+                        .filterNot { it in previousByExercise.value }
+                        .forEach { exerciseId ->
+                            previousByExercise.update {
+                                it + (exerciseId to readPrevious(exerciseId))
+                            }
+                        }
+                }
+        }
+    }
+
+    /** The movement's previous training, or null when there is none to compare (N306). */
+    private suspend fun readPrevious(exerciseId: String): PreviousPerformance? =
+        when (val read = workoutRepository.previousPerformance(exerciseId, sessionId)) {
+            is DataResult.Success -> read.data.takeIf { it.sets.isNotEmpty() }
+            is DataResult.Failure -> null
+        }
+
     val uiState: StateFlow<WorkoutDetailUiState> =
-        combine(session, exercises, sets, lastError, templateName) { current, exerciseRows, logged, error, name ->
+        combine(
+            session,
+            exercises,
+            sets,
+            combine(lastError, templateName, previousByExercise) { error, name, previous ->
+                Triple(error, name, previous)
+            },
+        ) { current, exerciseRows, logged, (error, name, previous) ->
             WorkoutDetailUiState(
                 isLoading = false,
                 session = current,
@@ -272,6 +369,7 @@ class WorkoutDetailViewModel @Inject constructor(
                         muscleFeel = row.muscleFeel,
                         joints = row.joints,
                         declinedDirections = row.declinedDirections,
+                        previous = previous[row.exerciseId]?.toHistoryPrevious(),
                         sets = logged
                             .filter { it.sessionExerciseId == row.id }
                             .sortedBy { it.setIndex }

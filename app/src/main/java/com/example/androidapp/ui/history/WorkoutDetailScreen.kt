@@ -502,46 +502,52 @@ private fun DetailContent(
             modifier = modifier,
         )
 
-        else -> LazyColumn(
-            modifier = modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 16.dp),
-        ) {
-            item(key = "totals") {
-                Totals(state)
-                HorizontalDivider()
-            }
-            // The readiness the workout opened with rides through history (ROADMAP N4, N62): its
-            // free-text note and the muscles it named sore. Only shown when there is one of the
-            // two — an empty block on every past workout would be noise, not information.
-            val readinessNote = state.session?.readinessNote
-            val soreMuscles = state.session?.soreMuscles.orEmpty()
-            if (readinessNote != null || soreMuscles.isNotEmpty()) {
-                item(key = "readiness") {
-                    ReadinessBlock(note = readinessNote, soreMuscles = soreMuscles)
+        else -> {
+            // The session's own zone, the frame the header prints the date in (B38): the "vs last time"
+            // dates below are the same reading (N306).
+            val zone = state.session?.zoneIdOrNull() ?: ZoneId.systemDefault()
+            LazyColumn(
+                modifier = modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 16.dp),
+            ) {
+                item(key = "totals") {
+                    Totals(state)
                     HorizontalDivider()
                 }
-            }
-            // The workout's own comment (ROADMAP N11), on the same terms as the
-            // readiness note: shown only when there is one.
-            state.session?.notes?.let { comment ->
-                item(key = "comment") {
-                    NoteBlock(
-                        title = stringResource(R.string.workout_note_row),
-                        note = comment,
+                // The readiness the workout opened with rides through history (ROADMAP N4, N62): its
+                // free-text note and the muscles it named sore. Only shown when there is one of the
+                // two — an empty block on every past workout would be noise, not information.
+                val readinessNote = state.session?.readinessNote
+                val soreMuscles = state.session?.soreMuscles.orEmpty()
+                if (readinessNote != null || soreMuscles.isNotEmpty()) {
+                    item(key = "readiness") {
+                        ReadinessBlock(note = readinessNote, soreMuscles = soreMuscles)
+                        HorizontalDivider()
+                    }
+                }
+                // The workout's own comment (ROADMAP N11), on the same terms as the
+                // readiness note: shown only when there is one.
+                state.session?.notes?.let { comment ->
+                    item(key = "comment") {
+                        NoteBlock(
+                            title = stringResource(R.string.workout_note_row),
+                            note = comment,
+                        )
+                        HorizontalDivider()
+                    }
+                }
+                items(items = state.exercises, key = { it.id }) { exercise ->
+                    ExerciseBlock(
+                        onOpenTrends = onOpenExerciseTrends,
+                        exercise = exercise,
+                        editing = editing,
+                        zone = zone,
+                        onEditSet = onEditSet,
+                        onDeleteSet = { onDeleteSet(it.id) },
+                        onRate = onRate,
                     )
                     HorizontalDivider()
                 }
-            }
-            items(items = state.exercises, key = { it.id }) { exercise ->
-                ExerciseBlock(
-                    onOpenTrends = onOpenExerciseTrends,
-                    exercise = exercise,
-                    editing = editing,
-                    onEditSet = onEditSet,
-                    onDeleteSet = { onDeleteSet(it.id) },
-                    onRate = onRate,
-                )
-                HorizontalDivider()
             }
         }
     }
@@ -655,6 +661,8 @@ private fun ExerciseBlock(
     exercise: HistoryExercise,
     /** Whether this block's sets and rating can be written, or are only being read (N84). */
     editing: Boolean,
+    /** The session's own zone, so the previous training is dated the way the header is (B38). */
+    zone: ZoneId,
     onEditSet: (HistorySet) -> Unit,
     onDeleteSet: (HistorySet) -> Unit,
     onRate: (String, Int?, List<JointPain>) -> Unit,
@@ -672,6 +680,19 @@ private fun ExerciseBlock(
                 .clickable(onClickLabel = trendsLabel) { onOpenTrends(exercise.exerciseId) },
         )
 
+        // What the movement did the last time it was trained (N306). The date is stated once per
+        // exercise; each set below carries only its own change.
+        exercise.previous?.let { previous ->
+            Text(
+                text = previous.startedAt?.let { startedAt ->
+                    stringResource(R.string.history_vs_last_time, HistoryFormat.date(startedAt, zone))
+                } ?: stringResource(R.string.history_vs_last_time_unknown),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.testTag(TestTags.HISTORY_VS_LAST_TIME),
+            )
+        }
+
         // Numbered by the same rule the workout screen numbers by, so one session does not read two
         // ways: a warm-up takes no number (N112).
         val numbers = exercise.sets.setNumbers { it.setType }
@@ -679,6 +700,8 @@ private fun ExerciseBlock(
             HistorySetRow(
                 set = set,
                 number = numbers[index],
+                // The by-place counterpart in the previous session, if its order reached this far (N306).
+                previous = exercise.previous?.sets?.getOrNull(index),
                 editLabel = editLabel,
                 editable = editing,
                 onEditSet = onEditSet,
@@ -718,6 +741,8 @@ private fun HistorySetRow(
     set: HistorySet,
     /** The set's place among the sets that stand on their own, or null for a warm-up (N112). */
     number: Int?,
+    /** The same place in the previous session, or null when it has no counterpart (N306). */
+    previous: PastSet?,
     editLabel: String,
     /** False while the workout is only being read: the row stops being tappable (N84). */
     editable: Boolean,
@@ -732,6 +757,7 @@ private fun HistorySetRow(
         HistorySetNumbers(
             set = set,
             number = number,
+            previous = previous,
             modifier = Modifier
                 .weight(1f)
                 .testTag(TestTags.SET_ROW)
@@ -766,7 +792,13 @@ private fun HistorySetRow(
  * other half.
  */
 @Composable
-private fun HistorySetNumbers(set: HistorySet, number: Int?, modifier: Modifier = Modifier) {
+private fun HistorySetNumbers(
+    set: HistorySet,
+    number: Int?,
+    /** The same place last time, or null when the previous session had no set there (N306). */
+    previous: PastSet?,
+    modifier: Modifier = Modifier,
+) {
     Column(modifier = modifier) {
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             // A warm-up leaves this column blank rather than taking a number (N112).
@@ -820,6 +852,8 @@ private fun HistorySetNumbers(set: HistorySet, number: Int?, modifier: Modifier 
                 )
             }
         }
+        // The change from the same place last time (N306).
+        SetDeltaLine(set = set, previous = previous)
         set.note?.let { comment ->
             Text(
                 text = comment,

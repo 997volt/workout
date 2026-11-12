@@ -756,6 +756,19 @@
     <string name="workout_note_title">How did it go?</string>
     <string name="workout_note_body">Optional — why it went well or badly. You can add it later from the workout.</string>
     <string name="workout_note_label">Comment</string>
+    <!-- The detail's comparison with the previous training (ROADMAP N306). The date is the previous
+         session's own, and each set states what moved: a load in its unit, reps, or a hold in seconds. -->
+    <string name="history_vs_last_time">vs last time · %1$s</string>
+    <string name="history_vs_last_time_unknown">vs last time</string>
+    <string name="history_same_as_last_time">same as last time</string>
+    <plurals name="history_delta_reps">
+        <item quantity="one">%1$s rep</item>
+        <item quantity="other">%1$s reps</item>
+    </plurals>
+    <plurals name="history_delta_seconds">
+        <item quantity="one">%1$s s</item>
+        <item quantity="other">%1$s s</item>
+    </plurals>
     <string name="workout_note_row">Comment</string>
     <!-- "with a rating" matters: a finished workout that recorded nothing is not in
          the window, so a bare "last 2 workouts" would misstate what is on screen. -->

@@ -338,6 +338,19 @@ the rule; that one argues it.
   there), and it lists every stalled lift of that workout as information, not a decision: the deload creator
   stays on the program's card (N237). **The note prompt stays** — it is input, and the finish is the only
   place a workout comment is written.
+- **History compares a session to the last one, by place, and stores no copy** (N306). The review's
+  comparison was against the plan, which is a living thing (N16) and may already have moved (N299); what a
+  past session can honestly be measured against is what was actually done the time before. Each of this
+  session's sets reads the previous session's set in the same position — ordered by the stored index, because
+  a query's order is not an order — through `previousPerformance(exerciseId, currentSessionId)`, the same read
+  the workout prefill makes, with the viewed session excluded. **No schema**: a snapshot of every past
+  performance would add a table whose only reader is a line of text, and the read is already there. A movement
+  with no earlier session says nothing rather than zero, a set with no counterpart in the previous session is
+  not compared, and an unchanged set says "same as last time" instead of three zeroes. **The load compared is
+  the number the set's own field states**, not the bodyweight-composed load a bodyweight row displays: the
+  lifter's weight changing is not the lifter doing more on the bar. The delta is derived from the state rather
+  than stored with the row, because history is editable and a corrected set must disagree with last time by
+  the corrected amount.
 - **An encrypted export is a password-derived container, not a Keystore key** (N294). The Data section offers
   a second export beside the plain one: the ordinary backup JSON is wrapped in a self-describing JSON envelope
   (version, KDF, iteration count, salt, nonce, ciphertext), and PBKDF2-HMAC-SHA256 with 600,000 iterations and

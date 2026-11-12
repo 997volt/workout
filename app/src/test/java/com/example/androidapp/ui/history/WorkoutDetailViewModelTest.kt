@@ -93,6 +93,60 @@ class WorkoutDetailViewModelTest {
     }
 
     @Test
+    fun thePreviousTraining_isAttachedInTheSessionsOwnOrder() = runTest(dispatcher) {
+        // N306: the comparison is by place, so the sets are read in the order they were logged — the stored
+        // order is not guaranteed, and a delta against the wrong set is worse than none.
+        repository.previousByExercise = mapOf(
+            "back-squat" to PreviousPerformance(
+                sets = listOf(
+                    SetEntry(id = "p1", sessionExerciseId = "old", setIndex = 1, reps = 5, weightGrams = 100_000L),
+                    SetEntry(id = "p0", sessionExerciseId = "old", setIndex = 0, reps = 8, weightGrams = 90_000L),
+                ),
+                sessionStartedAt = Instant.parse("2026-09-20T07:00:00Z"),
+            ),
+        )
+        val viewModel = viewModelFor()
+        observe(viewModel)
+        advanceUntilIdle()
+
+        val previous = viewModel.uiState.value.exercises.single().previous
+        assertEquals(listOf(8, 5), previous?.sets?.map { it.reps })
+        assertEquals(Instant.parse("2026-09-20T07:00:00Z"), previous?.startedAt)
+    }
+
+    @Test
+    fun aMovementWithNoEarlierTraining_hasNothingToCompare() = runTest(dispatcher) {
+        val viewModel = viewModelFor()
+        observe(viewModel)
+        advanceUntilIdle()
+
+        assertNull(viewModel.uiState.value.exercises.single().previous)
+    }
+
+    @Test
+    fun theDelta_readsTheLoadTheRepsAndAHold() {
+        val set = HistorySet(id = "s", reps = 6, weightGrams = 102_500L)
+        val delta = setDelta(set, PastSet(reps = 5, weightGrams = 100_000L))
+
+        assertEquals(2_500L, delta?.weightGrams)
+        assertEquals(1, delta?.reps)
+        assertNull("a counted set has no duration to subtract", delta?.holdSeconds)
+    }
+
+    @Test
+    fun theDelta_ofAHold_isInSeconds() {
+        val set = HistorySet(id = "s", reps = 0, weightGrams = 0L, durationSeconds = 50)
+        val delta = setDelta(set, PastSet(reps = 0, weightGrams = 0L, durationSeconds = 45))
+
+        assertEquals(5, delta?.holdSeconds)
+    }
+
+    @Test
+    fun theDelta_hasNoCounterpart_withoutAPreviousSet() {
+        assertNull(setDelta(HistorySet(id = "s", reps = 5, weightGrams = 0L), null))
+    }
+
+    @Test
     fun aSetEdit_answersWritten_onSuccess_andRefused_onFailure() = runTest(dispatcher) {
         // B350: the dialog closes on this answer rather than the tap, so a refusal keeps the correction.
         val viewModel = viewModelFor()
@@ -346,6 +400,9 @@ class WorkoutDetailViewModelTest {
         /** What the record read answers with; empty means no records yet. */
         var records: PersonalRecords = PersonalRecords()
 
+        /** What the previous-training read answers per movement, keyed by the library exercise (N306). */
+        var previousByExercise: Map<String, PreviousPerformance> = emptyMap()
+
         override suspend fun setSupersetGroup(
             sessionExerciseIds: List<String>,
             group: Int?,
@@ -414,7 +471,7 @@ class WorkoutDetailViewModelTest {
             exerciseId: String,
             currentSessionId: String?,
         ): DataResult<PreviousPerformance> =
-            DataResult.Success(PreviousPerformance(emptyList()))
+            DataResult.Success(previousByExercise[exerciseId] ?: PreviousPerformance(emptyList()))
 
         override suspend fun startRest(seconds: Int) = unused()
         override suspend fun adjustRest(deltaSeconds: Int) = unused()

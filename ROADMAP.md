@@ -15,23 +15,6 @@ work was planned, so they do not always run in order — and an id this file doe
 shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 [CHANGELOG-1.x.md](CHANGELOG-1.x.md) for the 1.x releases.
 
-## Next — running one program for years
-
-The 2.29 work made one program usable indefinitely. The finish now says only what stalled, and the stall
-names the exercise rather than one of its sets (N304, N305); what is left of the batch is the comparison
-history should keep — against what was actually done, not against what a living plan says today.
-
-- **N306 — History compares the session to the last one, not to the plan.** The workout detail keeps the
-  performed sets and gains, per exercise, the **previous session that trained the movement** with a
-  per-set delta against the same place in it — the by-place rule the workout prefill already uses
-  (N168), read through
-  [WorkoutRepository.previousPerformance](app/src/main/java/com/example/androidapp/domain/repository/WorkoutRepository.kt)
-  with the viewed session excluded. No schema: the previous session is a read, not a snapshot. A
-  movement with no earlier session says nothing rather than zero, a set with no counterpart in the
-  previous session is not compared, and the delta is stated in the set's own unit and shape (a hold in
-  seconds); because history is editable, it is re-derived when a set changes. It replaces the
-  comparison deleted with the finish's review (N305), and is the only comparison the app makes.
-
 ## Parked — deliberately not planned
 
 Each row is a product in its own right, contradicts "local-only", or both. Parking is a
