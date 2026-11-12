@@ -17,6 +17,7 @@ import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.OccurrenceState
+import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.SetType
@@ -230,6 +231,23 @@ class ProgramRepositoryTest {
         repository.deactivateProgram(program)
 
         assertTrue(repository.observeActivePrograms().first().isEmpty())
+    }
+
+    @Test
+    fun theActiveWeeklyProgramNamingATemplate_isFound_onlyWhenItIsRunningAndWeekly() = runTest {
+        // N305: the finish's stall notice asks this before it says anything, so a block — whose weeks
+        // are the creator's own order (N174, N303) — and an inactive program must both answer null.
+        val program = create("Upper/Lower")
+        val template = createTemplate("Push")
+        repository.addSlot(program, template, DayOfWeek.MONDAY)
+
+        assertNull("nothing is running yet", activeProgramFor(template))
+
+        repository.activateProgram(program)
+        assertEquals(program, activeProgramFor(template))
+
+        repository.setProgramKind(program, ProgramKind.SEQUENCE)
+        assertNull("a block is not a weekly program", activeProgramFor(template))
     }
 
     @Test
@@ -922,6 +940,10 @@ class ProgramRepositoryTest {
             ),
         )
     }
+
+    /** Which active weekly program names this workout, or null (N305). */
+    private suspend fun activeProgramFor(templateId: String): String? =
+        (repository.activeWeeklyProgramForTemplate(templateId) as DataResult.Success).data
 
     private suspend fun create(name: String): String =
         (repository.createProgram(name) as DataResult.Success).data
