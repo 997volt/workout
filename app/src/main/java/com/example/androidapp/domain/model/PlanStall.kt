@@ -3,21 +3,21 @@ package com.example.androidapp.domain.model
 import java.time.Instant
 
 /**
- * A prescription that has stopped moving, told as one sentence about one set (ROADMAP N237).
+ * A prescription that has stopped moving, told about the exercise rather than one of its sets (N237, N304).
  *
  * The app can already say what each set missed and why; this is the first thing it says about the *pattern*.
- * Three sessions in a row where the same set missed for the same measurable reason is a stall, and the answer
- * to a stall is a deload rather than another attempt at the same number — which is why the suggestion is worth
- * making, and why it only ever *suggests*: a deload is a decision about a week of training.
+ * Three sessions in a row in which nothing moved is a stall, and the answer to a stall is a deload rather than
+ * another attempt at the same number — which is why the suggestion is worth making, and why it only ever
+ * *suggests*: a deload is a decision about a week of training.
+ *
+ * **The unit is the exercise** (N304): which set missed and how is a detail that changes session to session —
+ * one set short this week, the load short the next — so a rule keyed on the set and the reason never added up
+ * for a lift that kept failing. The deload it suggests is addressed to the lift, not to one of its sets.
  */
 data class PlanStall(
     /** The movement whose prescription stalled, as the library names it today. */
     val exerciseName: String,
-    /** Which of the plan's working sets, counting the way the block numbers them — 1 is the first. */
-    val setNumber: Int,
-    /** The reason that repeated, as one of the kinds the rule can measure. */
-    val kind: ProgressionMiss,
-    /** How many sessions in a row it repeated for. */
+    /** How many consecutive sessions in which nothing moved: [STALL_SESSIONS] or more. */
     val sessions: Int,
 )
 
@@ -44,11 +44,15 @@ data class TemplateSession(
  * [performedBySession] is **oldest first**, one entry per finished session that trained the movement, and the
  * sets in each are that session's own rows. A session that did not train it at all is simply absent: absence is
  * not a failure, and a session that was skipped cannot break a streak it was never part of.
+ *
+ * [progressionMode] is the movement's own answer to what *Done* does (N235), nullable as it is stored. Only
+ * `OFF` excludes the movement from the rule (N304); the device-wide setting is not read here.
  */
 data class PrescriptionHistory(
     val exerciseName: String,
     val planned: List<ProgressionPlanSet>,
     val performedBySession: List<List<ProgressionPerformance>>,
+    val progressionMode: ProgressionMode? = null,
 )
 
 /**
@@ -100,77 +104,53 @@ private fun overEffort(planned: ProgressionPlanSet, done: ProgressionPerformance
 }
 
 /**
- * The stall one exercise's plan is in, or null when it is still moving (ROADMAP N237).
+ * The stall one exercise's plan is in, or null when it is still moving (ROADMAP N237, N304).
  *
- * The walk is per **prescription**: the plan's sets are paired with the session's by class, warm-ups removed from
- * both sides, through the offer's own helper (N17, N74, N79) — so a logged rung is extra rather than the stand-in
- * for a work set the session skipped (B305), and a plan whose second set is always the one that fails says
- * *that* rather than saying the exercise is stuck. A set nobody logged is absence and does not count; an answered
- * set ends that kind's run, because the prescription moved. **A run the newest session no longer carries is
- * gone**: the card asks about the plan as it stands, not about a streak it used to have (B303).
+ * The walk is by **session**. A session counts when the exercise logged at least one prescribed working set,
+ * and it is a *no-progress* session when **every** logged prescribed set missed for a measurable reason
+ * ([measurableKinds]) — which set failed and why no longer has to repeat, because the exercise is the unit. A
+ * session with any logged set that met the plan is progress and ends the run, **including a set that topped
+ * out**: the plan has nothing left to raise there, and a lifter doing exactly what it asks must not be told to
+ * deload for ever. A session that trained the exercise without logging a prescribed working set is absence: it
+ * neither counts nor breaks the run (B304). The plan's sets are paired with the session's by class through the
+ * offer's own helper, so a logged rung is extra rather than the stand-in for a work set the session skipped
+ * (B305).
  *
- * [threshold] is three by the rule, and a parameter because the number is a judgement rather than a fact about
- * the data: it is the point where "the same thing keeps happening" stops being a coincidence.
+ * **Only a plan that can progress is judged** ([ProgressionRule.progresses]): a plan with no target effort, no
+ * reps, or nothing to move never earns a step, so calling it stalled would ask for a deload a plan could not
+ * have prevented. **A movement whose own answer is Off is never counted** (N235): the app was told not to touch
+ * this lift's plan, and that is a different answer from the device-wide setting.
+ *
+ * The count is the run still open at the newest session (B303), and it keeps growing past [threshold]; the card
+ * says how many sessions it has been. [threshold] is three by the rule, and a parameter because the number is a
+ * judgement rather than a fact about the data: it is the point where "nothing is moving" stops being a
+ * coincidence.
  */
 fun PrescriptionHistory.stall(threshold: Int = STALL_SESSIONS): PlanStall? {
     val plannedWork = planned.filterNot { it.role == SetType.WARMUP }.sortedBy { it.setIndex }
-    if (plannedWork.isEmpty()) return null
+    // The exercise's effort is carried onto every prescribed set (N59), so any work set answers for the plan.
+    val eligible = progressionMode != ProgressionMode.OFF &&
+        plannedWork.isNotEmpty() &&
+        progressionRuleFor(plannedWork.first().targetRpeHalves, planned).progresses
+    if (!eligible) return null
 
-    // One run per (set position, kind). **Only a run still open at the newest session is a stall** (B303): a
-    // run a later session answered was the prescription moving, and reporting it would tell a lifter to back
-    // off a plan that is working today. A plan can stall in two places at once, and the longest open run wins,
-    // with the earlier position and the kind order breaking a tie so the sentence never depends on map order.
-    val run = mutableMapOf<Pair<Int, ProgressionMiss>, Int>()
-
+    var run = 0
     performedBySession.forEach { session ->
         // The offer's own pairing (B305): a logged rung is extra, never the stand-in for a work set the
         // session did not log, so the two surfaces cannot disagree about which set was answered.
         val paired = pairedPerformances(planned, session)
-        plannedWork.forEachIndexed { index, plannedSet ->
-            // A set nobody logged is absence, not a miss: it can neither start nor break a run (B304). A
-            // session that trained the movement but logged fewer sets arrives as a null pair, and the read
-            // emits an entry with no sets at all for an exercise row that was never filled.
-            val done = paired.bySetId[plannedSet.setId] ?: return@forEachIndexed
-            val kinds = measurableKinds(plannedSet, done)
-            MEASURABLE_KINDS.forEach { kind ->
-                val key = index to kind
-                run[key] = if (kind in kinds) (run[key] ?: 0) + 1 else 0
-            }
+        val logged = plannedWork.mapNotNull { plannedSet ->
+            paired.bySetId[plannedSet.setId]?.let { done -> plannedSet to done }
         }
+        // A session that logged no prescribed work set says nothing either way (B304): it can neither start
+        // nor break a run it was never part of.
+        if (logged.isEmpty()) return@forEach
+        val missedEverywhere = logged.all { (plannedSet, done) -> measurableKinds(plannedSet, done).isNotEmpty() }
+        run = if (missedEverywhere) run + 1 else 0
     }
 
-    var longest: Triple<Int, ProgressionMiss, Int>? = null
-    plannedWork.forEachIndexed { index, _ ->
-        MEASURABLE_KINDS.forEach { kind ->
-            val count = run[index to kind] ?: 0
-            if (count >= threshold && count > (longest?.third ?: 0)) {
-                longest = Triple(index, kind, count)
-            }
-        }
-    }
-
-    return longest?.let { found ->
-        PlanStall(
-            exerciseName = exerciseName,
-            setNumber = found.first + 1,
-            kind = found.second,
-            sessions = found.third,
-        )
-    }
+    return run.takeIf { it >= threshold }?.let { PlanStall(exerciseName = exerciseName, sessions = it) }
 }
 
-/**
- * The kinds a stall is counted by, in the order a sentence would name them (ROADMAP N237).
- *
- * Exactly the four the rule allows. The list is here rather than derived from the enum so that adding a reason
- * to the offer cannot quietly start counting a lifter's absence as a failure.
- */
-val MEASURABLE_KINDS: List<ProgressionMiss> = listOf(
-    ProgressionMiss.REPS_SHORT,
-    ProgressionMiss.OVER_TARGET_RPE,
-    ProgressionMiss.LOAD_SHORT,
-    ProgressionMiss.HOLD_SHORT,
-)
-
-/** How many sessions in a row make a stall: three, the rule the roadmap sets (N237). */
+/** How many sessions in a row make a stall: three, the rule the roadmap sets (N237, N304). */
 const val STALL_SESSIONS: Int = 3

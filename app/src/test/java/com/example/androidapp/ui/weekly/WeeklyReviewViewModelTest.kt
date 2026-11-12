@@ -11,7 +11,6 @@ import com.example.androidapp.domain.model.OccurrenceState
 import com.example.androidapp.domain.model.PlanStall
 import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.model.ProgramSchedule
-import com.example.androidapp.domain.model.ProgressionMiss
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.WorkoutSummary
 import com.example.androidapp.domain.repository.WeeklyReviewRepository
@@ -101,12 +100,7 @@ class WeeklyReviewViewModelTest {
             ),
             programs = listOf(program()),
             blocks = listOf(BlockProgress(name = "Push Pull Legs", position = 3, length = 9, complete = false)),
-            stall = PlanStall(
-                exerciseName = "Back Squat",
-                setNumber = 2,
-                kind = ProgressionMiss.NOT_DONE,
-                sessions = 3,
-            ),
+            stall = PlanStall(exerciseName = "Back Squat", sessions = 3),
         )
         val viewModel = WeeklyReviewViewModel(weekly = fake, timeSource = TimeSource { now })
 

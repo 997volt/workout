@@ -23,28 +23,8 @@ number it exists for compares the session to a plan that auto progression may al
 least reliable number at the least useful moment. The one thing a lifter cannot see from the session
 itself is a lift that has stopped moving, so that is what the finish should say.
 
-The three rows are one shift of emphasis: the finish says less, history says more, and the stall names
+The rows are one shift of emphasis: the finish says less, history says more, and the stall names
 the exercise rather than one of its sets.
-
-- **N304 — A stall is an exercise, not a set.** A prescription that has not moved for three sessions is
-  the fact worth telling; which set missed and why is a detail that changes session to session, and
-  today it is what the rule keys on — one set missing one way, while a different set fails each week,
-  never adds up. The rule becomes: an exercise is stalled when, in each of three consecutive finished
-  sessions of its workout, it logged at least one prescribed working set and **every** logged
-  prescribed set missed for a measurable reason (reps short, over the target effort, under the plan's
-  load, a hold short). The existing pairing and absence rules stay (B304, B305) — a session the
-  exercise was not in neither counts nor breaks the run — and a set that met the plan, including one
-  topped out with nothing left to raise, ends it, or a lifter doing exactly what the plan asks would be
-  told to deload for ever. **Only a plan that can progress is judged**
-  ([ProgressionRule.kt](app/src/main/java/com/example/androidapp/domain/model/ProgressionRule.kt), the
-  `progresses` predicate), and **a movement whose own answer is Off is never counted**
-  ([ProgressionMode.kt](app/src/main/java/com/example/androidapp/domain/model/ProgressionMode.kt),
-  N235): the device-wide setting is not an exclusion, because the stall is about the plan and the body
-  rather than about whether the app offers steps. [PlanStall.kt](app/src/main/java/com/example/androidapp/domain/model/PlanStall.kt)
-  loses `setNumber` and `kind` and becomes `(exerciseName, sessions)`, the per-set/per-kind run map and
-  its "why" line go, and the program editor's and weekly review's cards say the exercise-level sentence.
-  The count keeps growing past three; the card says how many. DECISIONS records the unit it is judged
-  in — the exercise, not the set — and why the Off exclusion sits with the movement.
 
 - **N305 — The finish says only what stalled.** The review dialog goes. Totals, ratings, readiness and
   the comment are already read back in the workout detail, and the plan-vs-actual comparison it exists

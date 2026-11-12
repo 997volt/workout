@@ -452,6 +452,22 @@ the rule; that one argues it.
   the N74 gate — an exempt week is still the program's own training, so it does not suppress auto; the
   lifter's performance does. A substituted row is never paired with a plan (B395), so a stand-in writes
   nothing.
+- **A stall is an exercise, not one of its sets** (N304, amending N237). The prescription that has stopped
+  moving is the fact a deload answers; which set missed and how is a detail that changes session to session —
+  one set short this week, the load short the next — so a rule keyed on the set *and* the reason never added up
+  for a lift that kept failing. The unit is the exercise. A session counts when the exercise logged at least
+  one prescribed working set, and it is a **no-progress** session when *every* logged prescribed set missed for
+  a measurable reason (reps, effort, load, hold); a session with any logged set that met the plan is progress
+  and ends the run, **including a set that topped out** — the plan has nothing left to raise there, and a lifter
+  doing exactly what it asks must not be told to deload for ever. The pairing is still the offer's (B305), so a
+  logged rung is extra rather than the stand-in for a work set; a session that logged no prescribed set is
+  absence and neither counts nor breaks the run (B304). **Only a plan that can progress is judged** — no target
+  effort, no reps, or nothing to move are `ProgressionRule.progresses == false`, and the fix for those is a
+  plan, not a deload. **A movement whose own answer is Off is never counted** (N235): the app was told not to
+  touch this lift's plan, and that is a different statement from the device-wide setting, which is a preference
+  about offers rather than a decision about this lift. Rejected: keeping the reason on the card — with several
+  sets and reasons the sentence would have to pick one, and the deload it suggests is addressed to the exercise.
+  The count keeps growing past three, so a card can say a lift has gone five sessions without moving.
 - **A superset is a group of exercises performed in rounds** (N24). The model is a
   nullable `supersetGroup: Int?` ordinal on `session_exercises` and `template_exercises`; a
   separate `superset_groups` table would need its own ordering and a join on every read and

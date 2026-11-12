@@ -67,6 +67,8 @@ class PlanStallFinder @Inject constructor(
                     exerciseName = exercise.exerciseName,
                     planned = exercise.progressionSets(),
                     performedBySession = performed,
+                    // The movement's own answer (N235): Off is never counted (N304).
+                    progressionMode = exercise.progressionMode,
                 ).stall()
             }
     }

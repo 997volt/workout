@@ -13,6 +13,20 @@ repeated here.
 **1.0–1.18 live in [CHANGELOG-1.x.md](CHANGELOG-1.x.md)**, kept whole rather than deleted because the
 id a 1.x commit names is still looked up by it. This file carries the current release.
 
+## [Unreleased]
+
+### Changed
+
+- **A stall is an exercise, not one of its sets** (N304). The deload card used to need the same set to miss for
+  the same measurable reason three sessions running, so a lift that kept failing differently — short one week,
+  the load the next — never added up, and the card named a set number rather than the exercise the deload is
+  for. A session now counts as no progress when every prescribed working set that was logged missed, whatever
+  set or reason; the run ends with any session where a set met the plan, including one topped out with nothing
+  left to raise, and a skipped set is neither a miss nor a break. Only plans that can earn a step are judged
+  (no target effort, no reps, nothing to move are out), and a movement whose own answer is Off is never counted
+  — while the device-wide setting is not an exclusion. The card says how many sessions it has been, and keeps
+  growing past three.
+
 ## [2.29] — 2026-11-11 (versionCode 50)
 
 ### Added

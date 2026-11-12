@@ -1418,23 +1418,11 @@
     <string name="program_active">Active program</string>
     <string name="program_next_up">Next up</string>
     <string name="program_active_hint">Home follows this program’s days. More than one can be active at once; with none active, nothing is scheduled.</string>
-    <!-- A plan that stopped moving (ROADMAP N237). A suggestion: the number is how many sessions the same
-         set missed for the same measurable reason. -->
-    <plurals name="program_stall_reps">
-        <item quantity="one">Set %1$d came up short %2$d session running.</item>
-        <item quantity="other">Set %1$d came up short %2$d sessions running.</item>
-    </plurals>
-    <plurals name="program_stall_effort">
-        <item quantity="one">Set %1$d went over the plan\'s effort %2$d session running.</item>
-        <item quantity="other">Set %1$d went over the plan\'s effort %2$d sessions running.</item>
-    </plurals>
-    <plurals name="program_stall_load">
-        <item quantity="one">Set %1$d was under the plan\'s load %2$d session running.</item>
-        <item quantity="other">Set %1$d was under the plan\'s load %2$d sessions running.</item>
-    </plurals>
-    <plurals name="program_stall_hold">
-        <item quantity="one">Set %1$d was held short of the plan %2$d session running.</item>
-        <item quantity="other">Set %1$d was held short of the plan %2$d sessions running.</item>
+    <!-- A plan that stopped moving (ROADMAP N237, N304). A suggestion: the number is how many sessions in a
+         row nothing moved, whatever the set or the reason. -->
+    <plurals name="program_stall_sessions">
+        <item quantity="one">No progress in %1$d session running.</item>
+        <item quantity="other">No progress in %1$d sessions running.</item>
     </plurals>
     <string name="program_stall_deload">Plan a deload</string>
     <string name="program_no_slots">No workouts yet</string>

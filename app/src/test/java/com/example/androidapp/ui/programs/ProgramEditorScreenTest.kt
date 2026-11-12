@@ -15,7 +15,6 @@ import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.PlanStall
 import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.model.ProgramSlot
-import com.example.androidapp.domain.model.ProgressionMiss
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.WorkoutProgram
@@ -103,18 +102,13 @@ class ProgramEditorScreenTest {
         var deload = false
         setScreen(
             state = twoSlots.copy(
-                stall = PlanStall(
-                    exerciseName = "Back Squat",
-                    setNumber = 2,
-                    kind = ProgressionMiss.REPS_SHORT,
-                    sessions = 3,
-                ),
+                stall = PlanStall(exerciseName = "Back Squat", sessions = 3),
             ),
             onOpenDeload = { deload = true },
         )
 
         composeTestRule.onNodeWithTag(TestTags.Programs.STALL).assertExists()
-        composeTestRule.onNodeWithText("Set 2 came up short 3 sessions running.", substring = true)
+        composeTestRule.onNodeWithText("No progress in 3 sessions running.", substring = true)
             .assertExists()
 
         composeTestRule.onNodeWithTag(TestTags.Programs.STALL_DELOAD).performClick()

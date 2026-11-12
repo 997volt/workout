@@ -10,7 +10,6 @@ import com.example.androidapp.domain.model.DayOccurrence
 import com.example.androidapp.domain.model.MovementGain
 import com.example.androidapp.domain.model.OccurrenceState
 import com.example.androidapp.domain.model.PlanStall
-import com.example.androidapp.domain.model.ProgressionMiss
 import com.example.androidapp.domain.model.ReviewDay
 import com.example.androidapp.domain.model.WeekPlan
 import com.example.androidapp.domain.model.WeekTotals
@@ -84,12 +83,7 @@ class WeeklyReviewScreenTest {
                         firstTime = false,
                     ),
                 ),
-                stall = PlanStall(
-                    exerciseName = "Back Squat",
-                    setNumber = 2,
-                    kind = ProgressionMiss.NOT_DONE,
-                    sessions = 3,
-                ),
+                stall = PlanStall(exerciseName = "Back Squat", sessions = 3),
                 stallProgramId = "p1",
             ),
         )
