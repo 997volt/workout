@@ -15,6 +15,94 @@ work was planned, so they do not always run in order — and an id this file doe
 shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 [CHANGELOG-1.x.md](CHANGELOG-1.x.md) for the 1.x releases.
 
+## Next — a stalled lift gets a decision
+
+The stall rule is exercise-level (N304) and the finish already says which lifts have just stopped moving
+(N305), but the only answer on offer is the week-level deload creator (N147) — a whole lighter week for a
+lift that may need a lighter *lift*, not a lighter week. These rows give the three answers a lifter
+actually has: **leave it**, **deload that lift**, **replace it**. Each is a **plan edit**, so the stall
+disappears because the plan changed rather than because the app hid it, and none of them stores a
+"resolved" state. The three are offered on both surfaces the stall already has: the finish dialog and the
+stall card the program editor and weekly review share
+([PlanStallCard.kt](app/src/main/java/com/example/androidapp/ui/programs/PlanStallCard.kt)).
+
+**The existing Auto progression switch, its baseline and *Reset to starting targets* are untouched.**
+These actions never read or write `progression_baselines`; the reset stays the switch's memory of where the
+plan started, not a log of plan edits. Its existing behaviour after one of these edits — a reset restores
+its own captured targets on the sets that still exist — is unchanged and not special-cased here.
+
+- **N307 — Deload this lift.** A plan edit, not a one-session override: the plan's targets change, the plan
+  is the new baseline, and next week progresses from it. The set count follows one arithmetic, shared with
+  the replace: N = the plan's stand-alone working sets; keep the first
+  `min(N, max(2, N − round(0.3 × N)))` (round half up), which is `1, 2, 2, 3, 3, 4, 5, 6, 6, 7, 8, 8` for
+  N = 1…12; drop the later working sets and the rungs that belong to them. Warm-ups are untouched — not
+  removed, no target changes — and the rungs of kept anchors stay. Every kept working set loses **three of
+  the movement's own load steps** (N77), clamped at zero; an assisted set instead gains **three steps of
+  assistance** (more help is lighter), and a set that states both moves its assistance; a bodyweight set
+  with neither is unchanged, a hold keeps its seconds, and a warm-up is unchanged. Reps are unchanged
+  except a counted set whose plan has a range: its current target moves to the range's lowest. One
+  transactional write, the before → after shown (e.g. *"Bench Press: 5×5 @100 kg → 3×5 @95 kg"*), snackbar
+  undo. The stall clears because the old sessions now meet the lower target (B303); the week-level deload
+  (N147) stays a separate, secondary answer. The per-lift deload action joins the current stall card in
+  this row; the finish sheet and the all-stalls card are N310.
+
+- **N308 — Replace this lift.** A plan **edit**, not a session substitution (N291): the template's
+  exercise row changes for every future session, the old movement's history, trends and records stay, and
+  the stall clears because the plan no longer names it. The set rows are trimmed by the same rule as N307
+  — the first kept working sets survive, the later ones and their rungs are dropped, warm-ups stay with
+  their targets cleared, kept rungs stay. The kept working sets are seeded **by place** from the new
+  movement's last finished session — weight, assistance and fixed reps (or the duration for a timed
+  movement), the same shape the picker's add-to-template fill writes
+  ([ExercisePickerViewModel.kt](app/src/main/java/com/example/androidapp/ui/workout/ExercisePickerViewModel.kt))
+  — and where there is no counterpart the target is cleared; the old plan's rep range is not carried on a
+  seed. **Empty** (N309) keeps the plan's reps and target effort and clears the loads instead. The exercise
+  id changes; name, muscle, equipment, unit and step come from the library; position, rest, superset group
+  and the target effort stay; the cue is cleared, because it was the old movement's. The replace sheet
+  suggests the other movements **filed under the same category** (the old movement's `parentId`, the
+  library's own taxonomy, N95/N110), movements only, excluding the old movement and any already in the
+  plan; a different family is one *Browse all movements* away; an unfiled movement has no suggestions, and
+  no category is inferred. The confirm shows old → new, the set-count change, the seeded targets or
+  "targets to be found", and the programs that also name the plan (`otherProgramNamesUsingTemplates`);
+  choosing a movement already in the plan from browse warns. One transaction, snackbar undo (the inverse
+  restores the dropped sets, the kept targets and the exercise/cue). The picker gains a replace intent and
+  the action joins the stall card; the finish sheet and the all-stalls list are N310. No baseline work.
+
+- **N309 — Find the weight.** When the load is not known, the plan can say so: **Empty** clears the working
+  sets' weight and assistance (and the warm-ups' targets), keeps the plan's reps and target effort, and
+  sets a **one-shot marker** on the plan's exercise — a column on `template_exercises`, a migration, an
+  additive defaulted backup field, **not** the shared program document, because it is a one-session
+  transition like the auto switch rather than a prescription. The next session for that exercise starts
+  with the weight field **empty**, ignoring history and the 20 kg default, with the plan's rep range and
+  target RPE as the guide ([SetSuggestion.kt](app/src/main/java/com/example/androidapp/ui/workout/SetSuggestion.kt));
+  *Log set* waits for a number, and the following sets fill from "what you just did". The marker is
+  consumed at the finish, not at the start, so an abandoned session tries again. At the finish, one line
+  per calibration exercise — *"Use today's weights for Bench Press? 3 sets, top 65 kg"* — **Use** /
+  **Not now**: Use writes **every logged working set's** weight and assistance into the plan's work sets by
+  place, with no "answered the plan" gate, leaving reps, target effort and warm-ups alone and in one
+  transaction; Not now leaves the plan weightless; either clears the marker. The plan then has a load, so
+  the next session prefills from it and load progression can run. A plan-editor toggle offers the same
+  weightless prescription outside the replace flow. No baseline work.
+
+- **N310 — The decision on both surfaces.** The finish dialog
+  ([WorkoutStallDialog.kt](app/src/main/java/com/example/androidapp/ui/workout/WorkoutStallDialog.kt))
+  stops being information-only: for the workout's just-stalled lifts (the run just reached three) of an
+  active weekly program, each gets **Deload** and **Replace**; *Done* is do nothing. The deload writes in
+  place; the replace closes the workout, opens the plan's replace sheet, and returns to the plan. The stall
+  card, shared by the program editor and the weekly review, lists **every** stalled lift of the program
+  rather than the first — the finder gains a program-wide list — each with the same actions and its run
+  length, with the week-level "lighter week" kept as a secondary link. The calibration prompt from N309
+  runs before the stall sheet. This row also amends N305's "information, not a decision" rule, changes the
+  screen states from one stall to a list, and carries the tags and the announcements.
+
+**Docs for the batch.** DECISIONS records the deload rule (amending P3.10's "never computed" to "the lifter
+chooses, the arithmetic is shown"), the replace rule (the shared trim, the seed, the category suggestions,
+the cue, the shared-plan warning), the calibration (the marker, the blank first session, the prompt, the
+20 kg default exception), and the surfaces (amending N305). N299 is unchanged: the per-lift deload is the
+"separate rule" it names, and the auto switch, baseline and Reset are untouched. N16/B303 say why a plan
+edit clears the stall; N95/N110 are the suggestion source. Each row lands with its CHANGELOG entry under
+`[Unreleased]`, its tests (unit, and instrumented for the plan writes and the marker/migration), and its
+roadmap row deleted.
+
 ## Parked — deliberately not planned
 
 Each row is a product in its own right, contradicts "local-only", or both. Parking is a
