@@ -15,7 +15,7 @@ work was planned, so they do not always run in order — and an id this file doe
 shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 [CHANGELOG-1.x.md](CHANGELOG-1.x.md) for the 1.x releases.
 
-## Next — a stalled lift gets a decision
+## Next — the stall decision, and the plan earning its volume
 
 The stall rule is exercise-level (N304) and the finish already says which lifts have just stopped moving
 (N305), but the only answer on offer is the week-level deload creator (N147) — a whole lighter week for a
@@ -25,6 +25,11 @@ disappears because the plan changed rather than because the app hid it, and none
 "resolved" state. The three are offered on both surfaces the stall already has: the finish dialog and the
 stall card the program editor and weekly review share
 ([PlanStallCard.kt](app/src/main/java/com/example/androidapp/ui/programs/PlanStallCard.kt)).
+
+The trim those answers apply needs a counterweight: a plan that has lost sets should be able to earn them
+back, and a plan the lifter keeps over-performing deserves to catch up. **N311** is the mirror — the same
+three-session evidence, the same one-tap plan edit, the same undo — and it is a suggestion, never an
+automatic step: the Auto progression switch is unchanged.
 
 **The existing Auto progression switch, its baseline and *Reset to starting targets* are untouched.**
 These actions never read or write `progression_baselines`; the reset stays the switch's memory of where the
@@ -94,11 +99,37 @@ its own captured targets on the sets that still exist — is unchanged and not s
   runs before the stall sheet. This row also amends N305's "information, not a decision" rule, changes the
   screen states from one stall to a list, and carries the tags and the announcements.
 
+- **N311 — The plan earns a set back.** The counterweight to the trim: a plan edit that **adds** a working
+  set, offered from evidence and never automatic. Two triggers, one action. **The extra set you keep
+  logging**: the plan prescribes N working sets and the session logged N+1, in each of the last two
+  finished sessions of that workout and in the one just done; the suggestion fires when the pattern
+  **reaches** three, as a
+  **Done snackbar** — *"Bench Press: a fourth set logged in each of the last 3 sessions. Add it to the
+  plan?"* — after the step dialog or the auto-progression banner, with **Add** and the usual undo, and it
+  stays on the plan card while it holds if the snackbar is missed. **The plan is comfortable**: every
+  working set of the last three sessions met the plan — reps in the range, effort at or under the target —
+  with no stall open; that one lives on the plan card and the weekly review rather than at Done, because it
+  is a slower judgement than the session just finished. The write appends one NORMAL working set after the
+  exercise's last set: for the extra-set trigger, from the logged extra set's weight, assistance and reps;
+  for the comfortable trigger, from the last kept set's target
+  ([TemplateRepository.kt](app/src/main/java/com/example/androidapp/domain/repository/TemplateRepository.kt)
+  `addSet`). The plan's effort stays; one transaction; snackbar undo; the plan takes effect the next
+  session. The gates: no open stall, not a deload week's template, and the plan's work-set count below
+  **five** — the suggestion's cap, while the editor can still add more by hand. One suggestion at a time,
+  no stored "dismissed" state: the snackbar fires once at the threshold and the card carries the rest. The
+  read is the same `templateSessions` the stall uses
+  ([TrendsRepository.kt](app/src/main/java/com/example/androidapp/domain/repository/TrendsRepository.kt))
+  plus the current session's work sets, the plan's count, the cap and the stall check; no schema. **No auto
+  volume**: the auto switch stays exactly as it is, and an automatic volume step would be its own opt-in
+  later.
+
 **Docs for the batch.** DECISIONS records the deload rule (amending P3.10's "never computed" to "the lifter
 chooses, the arithmetic is shown"), the replace rule (the shared trim, the seed, the category suggestions,
 the cue, the shared-plan warning), the calibration (the marker, the blank first session, the prompt, the
-20 kg default exception), and the surfaces (amending N305). N299 is unchanged: the per-lift deload is the
-"separate rule" it names, and the auto switch, baseline and Reset are untouched. N16/B303 say why a plan
+20 kg default exception), the surfaces (amending N305), and the volume rule (N311: the two triggers, the
+three-session threshold, the five-set cap, the Done snackbar and the card, and no automatic volume). N299
+is unchanged: the per-lift deload is the "separate rule" it names, and the auto switch, baseline and Reset
+are untouched. N16/B303 say why a plan
 edit clears the stall; N95/N110 are the suggestion source. Each row lands with its CHANGELOG entry under
 `[Unreleased]`, its tests (unit, and instrumented for the plan writes and the marker/migration), and its
 roadmap row deleted.
