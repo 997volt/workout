@@ -185,6 +185,8 @@ data class SessionExerciseRow(
      * plan — the rating is behind the same prompt — and it says "no plan" rather than inventing one.
      */
     val progression: ProgressionPrompt = ProgressionPrompt(),
+    /** The plan row this occurrence follows, or null for a movement the plan does not name (B428). */
+    val planEntryId: String? = null,
 )
 
 /**

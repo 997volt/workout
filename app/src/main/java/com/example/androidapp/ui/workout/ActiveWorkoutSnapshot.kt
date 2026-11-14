@@ -212,6 +212,7 @@ private fun SessionExercise.toRow(
 
     return SessionExerciseRow(
         id = id,
+        planEntryId = plan.plannedEntry?.id,
         exerciseId = exerciseId,
         substitutedFromExerciseId = substitutedFromExerciseId,
         name = exerciseName,

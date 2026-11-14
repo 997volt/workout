@@ -79,11 +79,13 @@ class PlanVolumeFinder @Inject constructor(
      */
     suspend fun doneSuggestion(
         templateId: String,
-        exerciseId: String,
+        templateExerciseId: String,
         current: ProgressionPrompt,
     ): DataResult<VolumeSuggestion?> = dataResultOf {
         val plan = templates.observeExercises(templateId).first()
-        val exercise = plan.firstOrNull { it.exerciseId == exerciseId } ?: return@dataResultOf null
+        // The resolved plan row, not the first movement of that name (B428): a plan may name the same
+        // movement twice (N54's duplicate shape), and the suggestion must belong to the row performed.
+        val exercise = plan.firstOrNull { it.id == templateExerciseId } ?: return@dataResultOf null
         val sessions = when (val read = trends.templateSessions(templateId)) {
             is DataResult.Failure -> throw read.error.asThrowable()
             is DataResult.Success -> read.data

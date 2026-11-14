@@ -23,13 +23,6 @@ rows below are the fixes, ordered as the review ranked them: the must-fix group 
 findings after it, and the missing tests last as **N312**. Each row names the finding, the path and the
 fix; when a row lands, its finding is gone from this file.
 
-- **B428 — A plan naming the same movement twice resolves to the wrong row (must fix).** The N54 duplicate
-  shape is supported, but [ActiveWorkoutViewModel.kt](app/src/main/java/com/example/androidapp/ui/workout/ActiveWorkoutViewModel.kt)
-  matches a marked plan entry by `exerciseId` with no occurrence, and
-  [PlanVolumeFinder.kt](app/src/main/java/com/example/androidapp/domain/PlanVolumeFinder.kt) returns the
-  first plan row. The second occurrence's calibration can adopt the first row's performed numbers, and a
-  volume Add can append to the first plan row. Resolve by occurrence like `planEntriesFor`, and pass the
-  resolved entry id.
 - **B429 — The volume finder rebuilds the stall history from prompt pairs (must fix).** The prompt pairs
   drop extra performed sets and compact missing ones before `PrescriptionHistory.stall()` re-pairs them,
   so the volume gate can disagree with the stall card about which set was answered. It also counts sessions

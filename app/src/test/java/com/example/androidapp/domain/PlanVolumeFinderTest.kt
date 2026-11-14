@@ -1,5 +1,9 @@
 package com.example.androidapp.domain
 
+import com.example.androidapp.domain.model.PerformedExercise
+import com.example.androidapp.domain.model.TemplateSession
+import java.time.Instant
+import kotlinx.coroutines.test.runTest
 import com.example.androidapp.domain.model.ProgressionPerformance
 import com.example.androidapp.domain.model.ProgressionPrompt
 import com.example.androidapp.domain.model.SetType
@@ -116,6 +120,37 @@ class PlanVolumeFinderTest {
 
         assertThat(finder.doneSuggestion(exercise, current, previous)).isNull()
     }
+
+    @Test
+    fun theDoneSuggestion_usesTheResolvedRow_ofADuplicateMovement() = runTest {
+        // B428: a plan may name the same movement twice (the N54 duplicate shape). The suggestion must
+        // belong to the row that was performed, not the first row with that movement id.
+        val first = exercise().copy(id = "te1", exerciseName = "Squat A")
+        val second = exercise().copy(id = "te2", exerciseName = "Squat B")
+        val templates = FakeTemplateRepository().apply { exercises.value = mapOf("t1" to listOf(first, second)) }
+        val trends = FakeTrendsRepository().apply {
+            templateSessions = DataResult.Success(
+                listOf(
+                    session(List(3) { performed() }),
+                    session(List(4) { performed() }),
+                ),
+            )
+        }
+        val finder = PlanVolumeFinder(FakeProgramRepository(), templates, trends)
+        val current = prompt(second, List(4) { performed() })
+
+        val suggestion = finder.doneSuggestion("t1", "te2", current).getOrNull()
+
+        assertThat(suggestion?.templateExerciseId).isEqualTo("te2")
+        assertThat(suggestion?.exerciseName).isEqualTo("Squat B")
+    }
+
+    private fun session(sets: List<com.example.androidapp.domain.model.ProgressionPerformance>) =
+        TemplateSession(
+            sessionId = "s-${sets.size}-${System.identityHashCode(sets)}",
+            startedAt = Instant.parse("2026-09-01T07:00:00Z"),
+            performed = listOf(PerformedExercise(exerciseId = "squat", sets = sets)),
+        )
 
     private fun exercise(sets: Int = 3) = TemplateExercise(
         id = "te1",

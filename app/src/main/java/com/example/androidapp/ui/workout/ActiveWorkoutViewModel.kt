@@ -830,10 +830,11 @@ class ActiveWorkoutViewModel @Inject constructor(
     private suspend fun suggestVolume(sessionExerciseId: String) {
         val templateId = uiState.value.sessionTemplateId
         val row = uiState.value.exercises.firstOrNull { it.id == sessionExerciseId }
-        val suggestion = if (uiState.value.isDeloadWorkout || templateId == null || row == null) {
+        val planEntryId = row?.planEntryId
+        val suggestion = if (uiState.value.isDeloadWorkout || templateId == null || planEntryId == null) {
             null
         } else {
-            planVolumeFinder.doneSuggestion(templateId, row.exerciseId, row.progression).getOrNull()
+            planVolumeFinder.doneSuggestion(templateId, planEntryId, row.progression).getOrNull()
         }
         if (suggestion != null) _volumeSuggestion.value = suggestion
     }
@@ -1405,11 +1406,15 @@ class ActiveWorkoutViewModel @Inject constructor(
         val read = dataResultOf {
             val plan = templateRepository.observeExercises(templateId).first()
             val sets = templateRepository.observeSets(templateId).first()
+            // Resolve each plan row to the session row it follows, by occurrence (B428): a plan that names
+            // the same movement twice must not pair both entries with the first row's performed sets.
+            val planEntries = planEntriesFor(sessionExercises.first(), plan)
+            val entryToSession = planEntries.entries.associate { (sessionId, entry) -> entry.id to sessionId }
             plan.filter { it.calibrationPending }.mapNotNull { exercise ->
                 // A substituted row did not train the plan's movement (decision 6a); it says nothing here.
-                val row = uiState.value.exercises.firstOrNull {
-                    it.exerciseId == exercise.exerciseId && it.substitutedFromExerciseId == null
-                } ?: return@mapNotNull null
+                val rowId = entryToSession[exercise.id] ?: return@mapNotNull null
+                val row = uiState.value.exercises.firstOrNull { it.id == rowId }
+                    ?: return@mapNotNull null
                 val performed = row.sets.filter { it.setType.recordsEffort }
                 val planned = sets.filter {
                     it.templateExerciseId == exercise.id && it.role.recordsEffort
