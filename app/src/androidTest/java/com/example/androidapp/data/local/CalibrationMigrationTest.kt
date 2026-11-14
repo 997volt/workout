@@ -11,11 +11,16 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * The find-the-weight marker (ROADMAP N309, schema 25).
+ * The find-the-weight marker (ROADMAP N309, schema 25, B431).
  *
  * One column on a plan's exercise. Every plan already on disk was never marked, because the app had no way
  * to ask for a weightless plan before this; a migration that marked one would make the next session start
  * blank for a reason nobody chose.
+ *
+ * The old shape is spelled out, not made by dropping a column (B431): `ALTER TABLE … DROP COLUMN` needs
+ * SQLite 3.35 (API 31+) while the app supports API 26, and the raw child row needs the foreign keys off
+ * because the parent template is not what this test is about. This is the [MeasurementMigrationTest]
+ * pattern — the old table as the schema-24 JSON gives it, real rows, then the migration.
  */
 @RunWith(AndroidJUnit4::class)
 class CalibrationMigrationTest {
@@ -38,10 +43,31 @@ class CalibrationMigrationTest {
     @Test
     fun aPlanThatExistedBeforeTheMarker_isNotMarked() = runTest {
         val db = database.openHelper.writableDatabase
-        db.execSQL("ALTER TABLE template_exercises DROP COLUMN calibrationPending")
+        db.execSQL("PRAGMA foreign_keys = OFF")
+        db.execSQL("DROP TABLE template_exercises")
         db.execSQL(
-            "INSERT INTO template_exercises (id, templateId, exerciseId, position, createdAt, updatedAt, deletedAt) " +
-                "VALUES ('te1', 't1', 'back-squat', 0, 1, 1, NULL)",
+            """
+            CREATE TABLE template_exercises (
+                id TEXT NOT NULL,
+                templateId TEXT NOT NULL,
+                exerciseId TEXT NOT NULL,
+                position INTEGER NOT NULL,
+                restSeconds INTEGER,
+                techniqueNote TEXT,
+                targetRpeHalves INTEGER,
+                supersetGroup INTEGER,
+                createdAt INTEGER NOT NULL,
+                updatedAt INTEGER NOT NULL,
+                deletedAt INTEGER,
+                PRIMARY KEY(id),
+                FOREIGN KEY(templateId) REFERENCES templates(id) ON UPDATE NO ACTION ON DELETE CASCADE,
+                FOREIGN KEY(exerciseId) REFERENCES exercises(id) ON UPDATE NO ACTION ON DELETE RESTRICT
+            )
+            """.trimIndent(),
+        )
+        db.execSQL(
+            "INSERT INTO template_exercises (id, templateId, exerciseId, position, createdAt, updatedAt) " +
+                "VALUES ('te1', 't1', 'back-squat', 0, 1, 1)",
         )
 
         MIGRATION_24_25.migrate(db)

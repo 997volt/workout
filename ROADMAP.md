@@ -23,13 +23,6 @@ rows below are the fixes, ordered as the review ranked them: the must-fix group 
 findings after it, and the missing tests last as **N312**. Each row names the finding, the path and the
 fix; when a row lands, its finding is gone from this file.
 
-- **B431 — The new migration test should fail the instrumented job (must fix, instrumented).**
-  [CalibrationMigrationTest.kt](app/src/androidTest/java/com/example/androidapp/data/local/CalibrationMigrationTest.kt)
-  inserts a `template_exercises` row with no `templates`/`exercises` parents while Room runs
-  `PRAGMA foreign_keys = ON`, so the insert throws before the default is checked; its
-  `ALTER TABLE … DROP COLUMN` also needs SQLite 3.35 (API 31+), so an API 26–30 device fails. Create the
-  parents or use `MigrationTestHelper` with the committed schema 24; avoid `DROP COLUMN` for portability.
-  The per-change gate never runs this; the nightly/dispatch instrumented job is where it bites.
 - **B432 — The deload undo is not one transaction (minor).** The plan screen restores the removed sets and
   then writes each kept target separately, with the undo handle dropped first; a failure or process death
   between them leaves a partial undo. Add a repository `undoDeload(removedIds, before)` in one transaction.
