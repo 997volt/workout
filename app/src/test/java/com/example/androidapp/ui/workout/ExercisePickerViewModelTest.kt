@@ -664,10 +664,10 @@ class ExercisePickerViewModelTest {
         override suspend fun addSet(
             templateExerciseId: String,
             edit: TemplateSetEdit,
-        ): DataResult<Unit> {
+        ): DataResult<String> {
             if (failSets) return DataResult.Failure(DataError.Storage(IOException("disk full")))
             prefilled += templateExerciseId to edit
-            return DataResult.Success(Unit)
+            return DataResult.Success("set")
         }
 
         override suspend fun updateSet(

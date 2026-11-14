@@ -3120,7 +3120,7 @@ class ActiveWorkoutViewModelTest {
         override suspend fun addSet(
             templateExerciseId: String,
             edit: TemplateSetEdit,
-        ): DataResult<Unit> = notUsed()
+        ): DataResult<String> = notUsed()
 
         override suspend fun updateSet(
             templateSetId: String,

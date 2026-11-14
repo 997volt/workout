@@ -179,7 +179,8 @@ interface TemplateRepository {
     suspend fun prependSets(templateExerciseId: String, edits: List<TemplateSetEdit>): DataResult<Unit>
 
 /** Appends a planned set to a template exercise (ROADMAP N14). */
-    suspend fun addSet(templateExerciseId: String, edit: TemplateSetEdit): DataResult<Unit>
+    /** Appends a planned set and returns its new row id, which the volume undo needs (B436). */
+    suspend fun addSet(templateExerciseId: String, edit: TemplateSetEdit): DataResult<String>
 
     /** Overwrites a planned set's targets. */
     suspend fun updateSet(templateSetId: String, edit: TemplateSetEdit): DataResult<Unit>

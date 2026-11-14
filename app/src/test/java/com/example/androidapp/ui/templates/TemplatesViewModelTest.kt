@@ -388,7 +388,7 @@ class TemplatesViewModelTest {
         override suspend fun addSet(
             templateExerciseId: String,
             edit: TemplateSetEdit,
-        ): DataResult<Unit> {
+        ): DataResult<String> {
             error("these tests do not write a plan")
         }
 

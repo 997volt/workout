@@ -228,7 +228,7 @@ class WeeklyReviewViewModel @Inject constructor(
         viewModelScope.launch {
             when (val write = templateRepository.addSet(suggestion.templateExerciseId, suggestion.edit)) {
                 is DataResult.Success -> {
-                    _volumeUndo.value = addedSetId(suggestion)
+                    _volumeUndo.value = write.data
                     _state.update { state ->
                         state.copy(
                             volumes = state.volumes.filterNot {
@@ -260,14 +260,6 @@ class WeeklyReviewViewModel @Inject constructor(
     fun onDismissVolumeUndo() {
         _volumeUndo.value = null
     }
-
-    private suspend fun addedSetId(suggestion: VolumeSuggestion): String? =
-        templateRepository.observeExercises(suggestion.templateId)
-            .first()
-            .firstOrNull { it.id == suggestion.templateExerciseId }
-            ?.sets
-            ?.maxByOrNull { it.setIndex }
-            ?.id
 
     /** The first followed program with any stall, and all of that program's stalls (N310). */
     private suspend fun firstStalledProgram(

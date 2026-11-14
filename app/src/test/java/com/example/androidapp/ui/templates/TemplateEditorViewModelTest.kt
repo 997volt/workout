@@ -604,9 +604,9 @@ class TemplateEditorViewModelTest {
         override suspend fun addSet(
             templateExerciseId: String,
             edit: TemplateSetEdit,
-        ): DataResult<Unit> {
+        ): DataResult<String> {
             addedSets += templateExerciseId to edit
-            return DataResult.Success(Unit)
+            return DataResult.Success("added")
         }
 
         override suspend fun updateSet(

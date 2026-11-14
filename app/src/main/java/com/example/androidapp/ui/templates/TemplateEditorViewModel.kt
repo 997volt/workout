@@ -180,13 +180,13 @@ class TemplateEditorViewModel @Inject constructor(
      * three by hand and the third fails.
      */
     fun onAddSets(templateExerciseId: String, count: Int, edit: TemplateSetEdit) = write {
-        var result: DataResult<Unit> = DataResult.Success(Unit)
+        var failure: DataError? = null
         repeat(count.coerceIn(1, MAX_QUICK_SETS)) {
-            if (result is DataResult.Success) {
-                result = repository.addSet(templateExerciseId, edit)
+            if (failure == null) {
+                failure = (repository.addSet(templateExerciseId, edit) as? DataResult.Failure)?.error
             }
         }
-        result
+        if (failure != null) DataResult.Failure(failure) else DataResult.Success(Unit)
     }
 
     /**
@@ -432,7 +432,7 @@ class TemplateEditorViewModel @Inject constructor(
         setSave.value = null
     }
 
-    private fun writeSet(setId: String, action: suspend () -> DataResult<Unit>) {
+    private fun writeSet(setId: String, action: suspend () -> DataResult<*>) {
         viewModelScope.launch {
             // Clear first, like the workout's set edit: an equal id must be a new emission (B352).
             setSave.value = null

@@ -589,7 +589,7 @@ class ProgramEditorViewModel @Inject constructor(
                 is DataResult.Success -> {
                     error.value = null
                     stallRefresh.update { it + 1 }
-                    _volumeUndo.value = addedSetId(suggestion)
+                    _volumeUndo.value = write.data
                 }
 
                 is DataResult.Failure -> error.value = write.error
@@ -614,14 +614,6 @@ class ProgramEditorViewModel @Inject constructor(
     fun onDismissVolumeUndo() {
         _volumeUndo.value = null
     }
-
-    private suspend fun addedSetId(suggestion: VolumeSuggestion): String? =
-        templateRepository.observeExercises(suggestion.templateId)
-            .first()
-            .firstOrNull { it.id == suggestion.templateExerciseId }
-            ?.sets
-            ?.maxByOrNull { it.setIndex }
-            ?.id
 
     private fun write(action: suspend () -> DataResult<Unit>) {
         viewModelScope.launch {

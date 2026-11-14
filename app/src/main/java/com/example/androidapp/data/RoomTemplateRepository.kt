@@ -331,7 +331,7 @@ class RoomTemplateRepository @Inject constructor(
     override suspend fun addSet(
         templateExerciseId: String,
         edit: TemplateSetEdit,
-    ): DataResult<Unit> = dataResultOf {
+    ): DataResult<String> = dataResultOf {
         validate(edit)
         val exercise = dao.findTemplateExercise(templateExerciseId)
             ?: throw NotFoundException("template exercise $templateExerciseId")
@@ -360,6 +360,7 @@ class RoomTemplateRepository @Inject constructor(
         val sets = plannedSetsOf(exercise)
         validateRun(stored = sets, after = sets + row.toDomain())
         setDao.insertTemplateSet(row)
+        row.id
     }
 
     override suspend fun updateSet(templateSetId: String, edit: TemplateSetEdit): DataResult<Unit> =

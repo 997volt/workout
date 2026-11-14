@@ -23,10 +23,6 @@ rows below are the fixes, ordered as the review ranked them: the must-fix group 
 findings after it, and the missing tests last as **N312**. Each row names the finding, the path and the
 fix; when a row lands, its finding is gone from this file.
 
-- **B436 — The appended-set lookup is a race and is triplicated (minor).** The three VMs read the plan back
-  via `maxBy(setIndex)` after `addSet`; two Adds in flight can both resolve to the second set (undo removes
-  the wrong one), a failed/null read silently drops the undo, and the same ten lines live in three places.
-  Return the inserted id from `addSet` in its transaction and delete the lookups.
 - **B437 — The Done's "current" prompt is rebuilt after the progression write (minor).** `suggestVolume`
   runs after the step/auto write and passes `row.progression` rebuilt from the moved plan; a load step makes
   the performed set LOAD_SHORT, so the comfortable trigger can be lost. Capture the prompt at Done and pass

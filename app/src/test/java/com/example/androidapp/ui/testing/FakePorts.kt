@@ -432,8 +432,11 @@ internal class FakeTemplateRepository : TemplateRepository {
         edits: List<TemplateSetEdit>,
     ): DataResult<Unit> = unused()
 
-    override suspend fun addSet(templateExerciseId: String, edit: TemplateSetEdit): DataResult<Unit> =
-        unused()
+    /** Every set removal, so a volume undo can be checked (B436). */
+    val removedSets = mutableListOf<String>()
+
+    override suspend fun addSet(templateExerciseId: String, edit: TemplateSetEdit): DataResult<String> =
+        DataResult.Success("new-set")
 
     override suspend fun updateSet(templateSetId: String, edit: TemplateSetEdit): DataResult<Unit> {
         updatedSets += templateSetId to edit
@@ -446,7 +449,10 @@ internal class FakeTemplateRepository : TemplateRepository {
         write: com.example.androidapp.domain.repository.ProgressionSetWrite,
     ): DataResult<String> = unused()
 
-    override suspend fun removeSet(templateSetId: String): DataResult<Unit> = unused()
+    override suspend fun removeSet(templateSetId: String): DataResult<Unit> {
+        removedSets += templateSetId
+        return DataResult.Success(Unit)
+    }
 
     override suspend fun deloadExercise(
         templateExerciseId: String,

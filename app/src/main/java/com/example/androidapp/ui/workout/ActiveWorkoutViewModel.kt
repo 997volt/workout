@@ -852,10 +852,9 @@ class ActiveWorkoutViewModel @Inject constructor(
         viewModelScope.launch {
             when (val write = templateRepository.addSet(suggestion.templateExerciseId, suggestion.edit)) {
                 is DataResult.Success -> {
-                    val added = addedSetId(suggestion)
                     _volumeSuggestion.value = null
                     lastError.value = null
-                    _volumeUndo.value = added
+                    _volumeUndo.value = write.data
                 }
 
                 is DataResult.Failure -> lastError.value = write.error
@@ -885,14 +884,6 @@ class ActiveWorkoutViewModel @Inject constructor(
         _volumeUndo.value = null
     }
 
-    /** The appended set's row, read back by the plan's highest index (the append's contract). */
-    private suspend fun addedSetId(suggestion: VolumeSuggestion): String? =
-        templateRepository.observeExercises(suggestion.templateId)
-            .first()
-            .firstOrNull { it.id == suggestion.templateExerciseId }
-            ?.sets
-            ?.maxByOrNull { it.setIndex }
-            ?.id
 
     /**
      * Writes how an exercise felt, at any time (ROADMAP N10).

@@ -547,7 +547,7 @@ private class FakeTemplateRepository(
         edits: List<TemplateSetEdit>,
     ): DataResult<Unit> = unused()
 
-    override suspend fun addSet(templateExerciseId: String, edit: TemplateSetEdit): DataResult<Unit> =
+    override suspend fun addSet(templateExerciseId: String, edit: TemplateSetEdit): DataResult<String> =
         unused()
 
     override suspend fun updateSet(templateSetId: String, edit: TemplateSetEdit): DataResult<Unit> =

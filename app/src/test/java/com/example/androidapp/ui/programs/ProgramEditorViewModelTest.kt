@@ -9,6 +9,10 @@ import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.PlanStallFinder
 import com.example.androidapp.domain.PlanVolumeFinder
+import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.domain.model.VolumeReason
+import com.example.androidapp.domain.model.VolumeSuggestion
+import com.example.androidapp.domain.repository.TemplateSetEdit
 import com.example.androidapp.domain.model.PlanStall
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSet
@@ -324,5 +328,33 @@ class ProgramEditorViewModelTest {
         assertThat(handle.get<String>("replaceTemplateExerciseId")).isNull()
         viewModel.onReplaceTargetHandled()
         assertThat(viewModel.replaceTarget.value).isNull()
+    }
+
+    @Test
+    fun theVolumeAdd_usesTheRepositorysNewId_andUndoesIt() = runTest(dispatcher) {
+        // B436: the undo id comes from the add's transaction, not a max-index read-back that can race.
+        val viewModel = viewModel()
+        val suggestion = VolumeSuggestion(
+            templateId = "t1",
+            templateExerciseId = "te1",
+            exerciseId = "squat",
+            exerciseName = "Back Squat",
+            reason = VolumeReason.EXTRA_SET,
+            plannedSets = 3,
+            edit = TemplateSetEdit(
+                role = SetType.NORMAL,
+                targetWeightGrams = 100_000L,
+                targetRepsMin = 5,
+                targetRepsMax = 5,
+            ),
+        )
+
+        viewModel.onAddVolume(suggestion)
+        advanceUntilIdle()
+        assertThat(viewModel.volumeUndo.value).isEqualTo("new-set")
+
+        viewModel.onUndoVolume()
+        advanceUntilIdle()
+        assertThat(templates.removedSets).containsExactly("new-set")
     }
 }
