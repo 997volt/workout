@@ -24,6 +24,7 @@ import com.example.androidapp.domain.model.PlanStall
 import com.example.androidapp.domain.model.PreviousPerformance
 import com.example.androidapp.domain.model.ProgressionDirection
 import com.example.androidapp.domain.model.ProgressionMode
+import com.example.androidapp.domain.model.ProgressionPrompt
 import com.example.androidapp.domain.model.STALL_SESSIONS
 import com.example.androidapp.domain.model.SessionExercise
 import com.example.androidapp.domain.model.SetEntry
@@ -571,10 +572,14 @@ class ActiveWorkoutViewModel @Inject constructor(
                 // *Not now* finishes the exercise, and **records what was offered** (ROADMAP N236): the
                 // offer was frozen from the plan as it stood, so nothing can recompute it once the plan
                 // moves on.
-                val declined = _pendingProgression.value?.sets
+                val pending = _pendingProgression.value
+                val declined = pending?.sets
                     .orEmpty()
                     .flatMap { it.prompt.offer?.directions.orEmpty() }
                     .toSet()
+                // The volume rule judges the same prompt the question did, before any accepted step moves
+                // the plan (B437).
+                val prompt = pending?.let { ProgressionPrompt(sets = it.sets) }
                 _pendingProgression.value = null
                 viewModelScope.launch {
                     // A failed record does not stop the finish: the lifter declined, and the exercise is
@@ -587,16 +592,16 @@ class ActiveWorkoutViewModel @Inject constructor(
                     } else {
                         null
                     }
-                    finishExercise(sessionExerciseId)
+                    finishExercise(sessionExerciseId, prompt)
                     if (declineError != null && lastError.value == null) lastError.value = declineError
                 }
             }
 
-            isDeload -> viewModelScope.launch { finishExercise(sessionExerciseId) }
+            isDeload -> viewModelScope.launch { finishExercise(sessionExerciseId, row?.progression) }
 
             movementMode != null -> finishWithMode(sessionExerciseId, row, movementMode)
             row?.progression?.hasPlan != true ->
-                viewModelScope.launch { finishExercise(sessionExerciseId) }
+                viewModelScope.launch { finishExercise(sessionExerciseId, row?.progression) }
 
             else -> viewModelScope.launch { resolveAutoAndFinish(sessionExerciseId, row) }
         }
@@ -654,7 +659,7 @@ class ActiveWorkoutViewModel @Inject constructor(
                 question
             }
         } else {
-            viewModelScope.launch { finishExercise(sessionExerciseId) }
+            viewModelScope.launch { finishExercise(sessionExerciseId, row?.progression) }
         }
     }
 
@@ -677,7 +682,7 @@ class ActiveWorkoutViewModel @Inject constructor(
             prompt = row.progression,
         ).chooseEveryOffer()
         if (question.chosen.isEmpty()) {
-            finishExercise(sessionExerciseId)
+            finishExercise(sessionExerciseId, row.progression)
             return
         }
         val steps = mutableListOf<AutoProgressionStep>()
@@ -701,7 +706,7 @@ class ActiveWorkoutViewModel @Inject constructor(
                 ),
             )
         }
-        finishExercise(sessionExerciseId)
+        finishExercise(sessionExerciseId, row.progression)
         // A step was taken, so an earlier *Not now* no longer describes this exercise (B310).
         val cleared = workoutRepository.declineProgression(sessionExerciseId, emptySet())
         if (cleared is DataResult.Failure && lastError.value == null) lastError.value = cleared.error
@@ -783,7 +788,10 @@ class ActiveWorkoutViewModel @Inject constructor(
             }
             _pendingProgression.value = null
             val tookAStep = pending.chosen.isNotEmpty()
-            finishExercise(pending.sessionExerciseId)
+            finishExercise(
+                pending.sessionExerciseId,
+                ProgressionPrompt(sets = pending.sets),
+            )
             if (tookAStep) {
                 // The step was taken, so an earlier *Not now* no longer describes this exercise (B310). A
                 // failure here is said rather than hidden, but it cannot undo the accepted steps.
@@ -794,14 +802,17 @@ class ActiveWorkoutViewModel @Inject constructor(
     }
 
     /** Closes one exercise and offers the undo every finish offers (ROADMAP N7). */
-    private suspend fun finishExercise(sessionExerciseId: String) {
+    private suspend fun finishExercise(
+        sessionExerciseId: String,
+        prompt: ProgressionPrompt?,
+    ) {
         when (val result = workoutRepository.finishExercise(sessionExerciseId)) {
             is DataResult.Success -> {
                 lastError.value = null
                 pendingFinishedExercise.value = sessionExerciseId
                 // The plan's earned set is said after the exercise is stored, so the card and the snackbar
                 // cannot disagree about whether the session that earned it counts (N311).
-                suggestVolume(sessionExerciseId)
+                suggestVolume(sessionExerciseId, prompt)
             }
 
             is DataResult.Failure -> lastError.value = result.error
@@ -827,9 +838,10 @@ class ActiveWorkoutViewModel @Inject constructor(
      * the session the same way. A deload workout earns no set (the week is the point), and a failed read is
      * silent: the finish is stored, and the card on the plan screen reports the durable answer.
      */
-    private suspend fun suggestVolume(sessionExerciseId: String) {
+    private suspend fun suggestVolume(sessionExerciseId: String, prompt: ProgressionPrompt?) {
         val templateId = uiState.value.sessionTemplateId
         val row = uiState.value.exercises.firstOrNull { it.id == sessionExerciseId }
+        val current = prompt ?: row?.progression
         val planEntryId = row?.planEntryId
         val suggestion = if (uiState.value.isDeloadWorkout || templateId == null || planEntryId == null) {
             null
@@ -838,7 +850,7 @@ class ActiveWorkoutViewModel @Inject constructor(
                 .doneSuggestion(
                     templateId,
                     planEntryId,
-                    row.progression,
+                    current,
                     row.sets.map { it.toProgressionPerformance() },
                 )
                 .getOrNull()

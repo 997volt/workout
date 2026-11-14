@@ -23,10 +23,6 @@ rows below are the fixes, ordered as the review ranked them: the must-fix group 
 findings after it, and the missing tests last as **N312**. Each row names the finding, the path and the
 fix; when a row lands, its finding is gone from this file.
 
-- **B437 — The Done's "current" prompt is rebuilt after the progression write (minor).** `suggestVolume`
-  runs after the step/auto write and passes `row.progression` rebuilt from the moved plan; a load step makes
-  the performed set LOAD_SHORT, so the comfortable trigger can be lost. Capture the prompt at Done and pass
-  it through.
 - **B438 — Add/undo state races (minor).** The volume suggestion is cleared unconditionally on completion (a
   suggestion that arrived meanwhile is dropped), with no in-flight guard (a config change re-arms the effect
   and a second Add appends twice while the undo tracks only the last), and a failed `addSet` leaves the
