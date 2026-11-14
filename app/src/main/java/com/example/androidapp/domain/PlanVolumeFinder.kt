@@ -106,7 +106,10 @@ class PlanVolumeFinder @Inject constructor(
     ): VolumeSuggestion? {
         val planned = exercise.progressionSets()
         val work = planned.workSets()
-        if (!isOpen(work, exercise, previous)) return null
+        // The session just ended is part of the history the gate reads (B427): if it is the third missed
+        // one, the plan has just stalled and must not be offered more work; the card, read after the
+        // finish, includes it and the two surfaces must agree.
+        if (!isOpen(work, exercise, previous + current)) return null
 
         // The current makes the pair/trio; the session behind it must not have held, or the threshold
         // was reached on an earlier Done and the card carries it instead.

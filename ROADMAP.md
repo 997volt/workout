@@ -23,13 +23,6 @@ rows below are the fixes, ordered as the review ranked them: the must-fix group 
 findings after it, and the missing tests last as **N312**. Each row names the finding, the path and the
 fix; when a row lands, its finding is gone from this file.
 
-- **B427 — The finish's volume gate cannot see the session that completes a stall (must fix).**
-  [PlanVolumeFinder.kt](app/src/main/java/com/example/androidapp/domain/PlanVolumeFinder.kt) builds the
-  Done history from finished sessions only and `isOpen` excludes the current session, so a third missed
-  session can be offered "Add a set" while the stall sheet says it stalled; the card, read after finish,
-  disagrees. Pass `previous + current` to `isOpen`. The stall gate test
-  ([PlanVolumeFinderTest.kt](app/src/test/java/com/example/androidapp/domain/PlanVolumeFinderTest.kt)) is
-  vacuous today (its all-missed case has no trigger); rebuild it with a trigger so deleting the gate fails.
 - **B428 — A plan naming the same movement twice resolves to the wrong row (must fix).** The N54 duplicate
   shape is supported, but [ActiveWorkoutViewModel.kt](app/src/main/java/com/example/androidapp/ui/workout/ActiveWorkoutViewModel.kt)
   matches a marked plan entry by `exerciseId` with no occurrence, and

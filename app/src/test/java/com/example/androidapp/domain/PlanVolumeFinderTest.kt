@@ -91,11 +91,16 @@ class PlanVolumeFinderTest {
     }
 
     @Test
-    fun nothingIsOffered_whileThePlanIsStalled() {
+    fun nothingIsOffered_whenTheCurrentSessionCompletesTheStall() {
+        // B427: the old case had no trigger, so it stayed green with the gate deleted. Here the current
+        // session has the extra-set trigger, and the gate must see it as the third missed session too.
         val exercise = exercise()
         val missed = List(3) { performed(reps = 3) }
-        val current = prompt(exercise, missed)
-        val previous = listOf(prompt(exercise, missed), prompt(exercise, missed))
+        val current = prompt(exercise, missed + performed())
+        val previous = listOf(
+            prompt(exercise, missed),
+            prompt(exercise, missed + performed()),
+        )
 
         assertThat(finder.doneSuggestion(exercise, current, previous)).isNull()
     }
