@@ -69,6 +69,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -1527,6 +1528,59 @@ class ActiveWorkoutViewModelTest {
         settle()
 
         assertTrue("dismissing it closes the workout", viewModel.closed.value)
+    }
+
+
+    @Test
+    fun aMarkedPlan_isAskedAtTheFinish_beforeAnyStall() = runTest(dispatcher) {
+        // N312: the calibration notice, its Use/Skip answer and the calibration-before-stall ordering.
+        val repository = FakeWorkoutRepository()
+        val programs = FakeProgramRepository().apply { activeWeeklyForTemplate = "p1" }
+        val trends = FakeTrendsRepository().apply {
+            templateSessions = DataResult.Success(List(3) { aSessionThatMissed() })
+        }
+        repository.exercises.value = listOf(aSessionExercise("back-squat"))
+        repository.sets.value = listOf(
+            SetEntry(
+                id = "e1",
+                sessionExerciseId = "se-back-squat",
+                setIndex = 0,
+                reps = 5,
+                weightGrams = 100_000L,
+            ),
+        )
+        val marked = FakeTemplateRepository(
+            planned = listOf(
+                plannedExercise(
+                    position = 0,
+                    sets = listOf(plannedSet(index = 0, reps = 5, weightGrams = 100_000L)),
+                ).copy(calibrationPending = true),
+            ),
+        )
+        marked.sets.value = mapOf(
+            "t1" to listOf(plannedSet(index = 0, reps = 5, weightGrams = 100_000L)),
+        )
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = marked,
+            programs = programs,
+            trends = trends,
+        )
+        observe(viewModel)
+        settle()
+
+        viewModel.onFinish()
+        settle()
+
+        val notice = viewModel.calibrationNotice.value!!.single()
+        assertNull("the stall waits for the calibration answer", viewModel.stallNotice.value)
+        assertFalse("the screen holds while the question is up", viewModel.closed.value)
+
+        viewModel.onUseCalibration(notice)
+        settle()
+
+        assertNull("one answer clears the prompt", viewModel.calibrationNotice.value)
     }
 
     @Test
@@ -3100,7 +3154,10 @@ class ActiveWorkoutViewModelTest {
         override fun observeExercises(templateId: String): Flow<List<TemplateExercise>> =
             flowOf(planned)
 
-        override fun observeSets(templateId: String): Flow<List<TemplateSet>> = flowOf(emptyList())
+        val sets = MutableStateFlow<Map<String, List<TemplateSet>>>(emptyMap())
+
+        override fun observeSets(templateId: String): Flow<List<TemplateSet>> =
+            sets.map { it[templateId].orEmpty() }
         override suspend fun makeWeightless(templateExerciseId: String): DataResult<Unit> {
             return notUsed()
         }
@@ -3113,9 +3170,7 @@ class ActiveWorkoutViewModelTest {
         override suspend fun calibrateExercise(
             templateExerciseId: String,
             targets: List<com.example.androidapp.domain.model.CalibrationTarget>,
-        ): DataResult<Unit> {
-            return notUsed()
-        }
+        ): DataResult<Unit> = DataResult.Success(Unit)
         override suspend fun replaceExercise(
             templateExerciseId: String,
             newExerciseId: String,
