@@ -316,9 +316,17 @@ private class ProgramEditWriter(
         }
         val updated = document.templateExercises
             .filter { it.id in ids(ChangeKind.TEMPLATE_EXERCISE_UPDATED) && it.exerciseId in liveExercises }
-        if (updated.isNotEmpty()) {
-            editDao.updateTemplateExercises(
-                updated.map { it.toEntity().copy(updatedAt = now, deletedAt = null) },
+        updated.forEach { row ->
+            editDao.updateTemplateExercisePlan(
+                id = row.id,
+                templateId = row.templateId,
+                exerciseId = row.exerciseId,
+                position = row.position,
+                restSeconds = row.restSeconds,
+                techniqueNote = row.techniqueNote,
+                targetRpeHalves = row.targetRpeHalves,
+                supersetGroup = row.supersetGroup,
+                updatedAt = now,
             )
         }
         val removed = ids(ChangeKind.TEMPLATE_EXERCISE_REMOVED).toList()

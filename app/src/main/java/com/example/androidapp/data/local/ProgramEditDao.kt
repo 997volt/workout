@@ -70,8 +70,38 @@ interface ProgramEditDao {
     )
     suspend fun updateTemplatePlan(id: String, name: String, versionOf: String?, at: Long): Int
 
-    @Update
-    suspend fun updateTemplateExercises(rows: List<TemplateExerciseEntity>): Int
+    /**
+     * Writes a document-edited exercise's plan without touching what the document does not carry (B440):
+     * the find-the-weight marker and the row's creation time stay as the device has them. The full-row
+     * `@Update` read the document's false marker default as "clear it".
+     */
+    @Suppress("LongParameterList")
+    @Query(
+        """
+        UPDATE template_exercises SET
+            templateId = :templateId,
+            exerciseId = :exerciseId,
+            position = :position,
+            restSeconds = :restSeconds,
+            techniqueNote = :techniqueNote,
+            targetRpeHalves = :targetRpeHalves,
+            supersetGroup = :supersetGroup,
+            updatedAt = :updatedAt,
+            deletedAt = NULL
+        WHERE id = :id
+        """,
+    )
+    suspend fun updateTemplateExercisePlan(
+        id: String,
+        templateId: String,
+        exerciseId: String,
+        position: Int,
+        restSeconds: Int?,
+        techniqueNote: String?,
+        targetRpeHalves: Int?,
+        supersetGroup: Int?,
+        updatedAt: Long,
+    ): Int
 
     @Update
     suspend fun updateTemplateSets(rows: List<TemplateSetEntity>): Int

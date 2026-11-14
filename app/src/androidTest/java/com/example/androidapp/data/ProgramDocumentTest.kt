@@ -425,6 +425,35 @@ class ProgramDocumentTest {
     /** Back to a bare database, which is what "another device" means for this feature. */
     private suspend fun wipe() = withContext(Dispatchers.IO) { database.clearAllTables() }
 
+
+    @Test
+    fun aDocumentEdit_keepsTheFindTheWeightMarker() = runTest {
+        // B440: the document has no marker, and a full-row update read its false default as "clear it".
+        val programId = seedProgram()
+        val template = templates.observeTemplates().first().single()
+        val planned = templates.observeExercises(template.id).first().single()
+        templates.setExercisePlan(
+            planned.id,
+            restSeconds = null,
+            techniqueNote = null,
+            targetRpeHalves = null,
+            findWeight = true,
+        )
+        val file = (programs.exportProgramDocument(programId) as DataResult.Success).data
+        val document = ProgramDocumentCodec.decode(file)
+        val edited = document.copy(
+            templateExercises = document.templateExercises.map {
+                if (it.id == planned.id) it.copy(techniqueNote = "brace") else it
+            },
+        )
+
+        programs.importProgramDocument(ProgramDocumentCodec.encode(edited))
+
+        val after = templates.observeExercises(template.id).first().single()
+        assertTrue("an edit that says nothing about the marker leaves it", after.calibrationPending)
+        assertEquals("brace", after.techniqueNote)
+    }
+
     private fun exercise(
         id: String,
         name: String = id,

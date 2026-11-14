@@ -23,11 +23,6 @@ rows below are the fixes, ordered as the review ranked them: the must-fix group 
 findings after it, and the missing tests last as **N312**. Each row names the finding, the path and the
 fix; when a row lands, its finding is gone from this file.
 
-- **B440 — A program-document edit silently clears the marker (minor).** The import applies edited rows with
-  a full-row update from a DTO defaulting the marker to false
-  ([ProgramImportWrite.kt](app/src/main/java/com/example/androidapp/data/ProgramImportWrite.kt)), so
-  changing a plan through a document leaves the loads null but drops the marker — the next session prefills
-  from history instead of asking. Exclude the column or merge the live value; test it.
 - **B441 — Migration 24→25's SQL default disagrees with the entity and schema (minor).**
   [CalibrationMigrations.kt](app/src/main/java/com/example/androidapp/data/local/CalibrationMigrations.kt)
   adds `DEFAULT 0`; [TemplateExerciseEntity.kt](app/src/main/java/com/example/androidapp/data/local/TemplateExerciseEntity.kt)
