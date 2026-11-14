@@ -23,13 +23,6 @@ rows below are the fixes, ordered as the review ranked them: the must-fix group 
 findings after it, and the missing tests last as **N312**. Each row names the finding, the path and the
 fix; when a row lands, its finding is gone from this file.
 
-- **B421 — Find-the-weight cannot mark a plan with a drop run, and the deload can fail the same
-  validation (must fix).** [RoomTemplateRepository.kt](app/src/main/java/com/example/androidapp/data/RoomTemplateRepository.kt)
-  writes `makeWeightless` through `updateSetRow`, which re-runs `validateRun`; nulling the anchor makes
-  `hasSomethingToTakeOff` false and the untouched rung reports "nothing to take off", rolling the whole
-  write back. The plan editor's switch is unusable for any plan with a ladder. The same re-validation can
-  refuse a deload whose three steps take a kept anchor to 0/below its drop value. Write the deliberate
-  transition without the stranded-run check (or allow it there), and test both.
 - **B422 — A calibration write failure traps a finished workout (must fix).**
   [CalibrationDialog.kt](app/src/main/java/com/example/androidapp/ui/workout/CalibrationDialog.kt) has
   `onDismissRequest = {}` and no confirm/dismiss buttons; both answers are writes, and a Failure only sets

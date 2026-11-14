@@ -410,7 +410,16 @@ class RoomTemplateRepository @Inject constructor(
     // Three refusals are the contract: the set is gone, its exercise is gone, or the update wrote
     // no row. Each is a different NotFound for the screen, and flattening them would lose which.
     @Suppress("ThrowsCount")
-    private suspend fun updateSetRow(templateSetId: String, edit: TemplateSetEdit) {
+    private suspend fun updateSetRow(
+        templateSetId: String,
+        edit: TemplateSetEdit,
+        /**
+         * Whether the run rules may refuse this write. The deliberate weightless transitions (N309's
+         * makeWeightless, N307's deload) set it false: they can leave a kept rung with nothing to take off
+         * (B421), and the stored problem is then the editor's to show, not this transition's to refuse.
+         */
+        validate: Boolean = true,
+    ) {
         validate(edit)
         val stored = setDao.findTemplateSet(templateSetId)
             ?: throw NotFoundException("template set $templateSetId")
@@ -430,11 +439,13 @@ class RoomTemplateRepository @Inject constructor(
         )
         val exercise = dao.findTemplateExercise(stored.templateExerciseId)
             ?: throw NotFoundException("template exercise ${stored.templateExerciseId}")
-        val sets = plannedSetsOf(exercise)
-        validateRun(
-            stored = sets,
-            after = sets.map { if (it.id == templateSetId) edited.toDomain() else it },
-        )
+        if (validate) {
+            val sets = plannedSetsOf(exercise)
+            validateRun(
+                stored = sets,
+                after = sets.map { if (it.id == templateSetId) edited.toDomain() else it },
+            )
+        }
         val updated = setDao.updateTemplateSet(edited)
         if (updated == 0) throw NotFoundException("template set $templateSetId")
     }
@@ -536,6 +547,7 @@ class RoomTemplateRepository @Inject constructor(
                         targetDurationSeconds = before.targetDurationSeconds,
                         note = before.note,
                     ),
+                    validate = false,
                 )
             }
         }
@@ -636,6 +648,7 @@ class RoomTemplateRepository @Inject constructor(
                         targetDurationSeconds = if (set.role == SetType.WARMUP) null else set.targetDurationSeconds,
                         note = set.note,
                     ),
+                    validate = false,
                 )
             }
             if (dao.setCalibration(templateExerciseId, true, now) == 0) {

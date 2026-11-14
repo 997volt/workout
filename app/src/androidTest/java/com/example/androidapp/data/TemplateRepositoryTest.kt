@@ -787,6 +787,47 @@ class TemplateRepositoryTest {
         assertTrue(repository.observeExercises(template).first().single().calibrationPending)
     }
 
+    @Test
+    fun theWeightlessAndDeloadWrites_keepADropRun_thatTheAnchorsNewLoadCannotSupport() = runTest {
+        // B421: the deliberate transitions may strand a kept rung. Refusing the write made Find the
+        // weight unusable on a plan with a ladder and a deload of a light anchor fail.
+        val weights = create("Weights")
+        val lift = plannedExercise(weights)
+        repository.addSet(
+            lift,
+            TemplateSetEdit(
+                role = SetType.NORMAL,
+                targetWeightGrams = 5_000L,
+                targetRepsMin = 5,
+                targetRepsMax = 8,
+            ),
+        )
+        repository.addSet(lift, TemplateSetEdit(role = SetType.DROP, dropValueGrams = 1_000L))
+
+        assertTrue(repository.makeWeightless(lift) is DataResult.Success)
+        val weightless = repository.observeExercises(weights).first().single()
+        assertNull("the load is gone", weightless.sets.first().targetWeightGrams)
+        assertEquals("the ladder is kept", 1_000L, weightless.sets.last().dropValueGrams)
+
+        val light = create("Light")
+        val lightLift = plannedExercise(light)
+        repository.addSet(
+            lightLift,
+            TemplateSetEdit(
+                role = SetType.NORMAL,
+                targetWeightGrams = 5_000L,
+                targetRepsMin = 5,
+                targetRepsMax = 8,
+            ),
+        )
+        repository.addSet(lightLift, TemplateSetEdit(role = SetType.DROP, dropValueGrams = 1_000L))
+
+        assertTrue(repository.deloadExercise(lightLift, 2_500L) is DataResult.Success)
+        val deloaded = repository.observeExercises(light).first().single()
+        assertEquals("the anchor clamps at zero and the rung survives", 0L, deloaded.sets.first().targetWeightGrams)
+        assertEquals(1_000L, deloaded.sets.last().dropValueGrams)
+    }
+
     private fun TemplateSet.toEdit() = TemplateSetEdit(
         role = role,
         targetWeightGrams = targetWeightGrams,
