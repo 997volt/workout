@@ -23,10 +23,6 @@ rows below are the fixes, ordered as the review ranked them: the must-fix group 
 findings after it, and the missing tests last as **N312**. Each row names the finding, the path and the
 fix; when a row lands, its finding is gone from this file.
 
-- **B442 — The finish's "just reached three" notice can reappear (minor).** The filter is a count only;
-  because the stall rule skips sessions that trained no prescribed set, a run of three survives a skipped
-  lift and the next workout of that template (which does not train it) shows the notice again. Require the
-  finished session to have logged the movement, or carry the run's newest session id.
 - **B443 — The new controls miss the app's accessibility/UI conventions (minor).** The volume card prints
   the exercise name twice ([PlanVolumeCard.kt](app/src/main/java/com/example/androidapp/ui/programs/PlanVolumeCard.kt));
   the find-the-weight switch has no accessible name

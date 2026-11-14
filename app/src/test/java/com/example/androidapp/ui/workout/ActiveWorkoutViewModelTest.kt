@@ -1457,6 +1457,42 @@ class ActiveWorkoutViewModelTest {
         // cancel was lost: a finished workout must not leave a rest alarm armed.
     }
 
+
+    @Test
+    fun aStallForAMovementTheSessionDidNotTrain_isNotSaid() = runTest(dispatcher) {
+        // B442: a run of three survives a workout of the template that did not train the lift, so the
+        // finish must not claim it "just reached three" here.
+        val repository = FakeWorkoutRepository()
+        val programs = FakeProgramRepository().apply { activeWeeklyForTemplate = "p1" }
+        val trends = FakeTrendsRepository().apply {
+            templateSessions = DataResult.Success(List(3) { aSessionThatMissed() })
+        }
+        val benchPlan = FakeTemplateRepository(
+            planned = listOf(
+                plannedExercise(
+                    position = 0,
+                    exerciseId = "bench-press",
+                    sets = listOf(plannedSet(index = 0, reps = 5, weightGrams = 60_000L)),
+                ),
+            ),
+        )
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = benchPlan,
+            programs = programs,
+            trends = trends,
+        )
+        observe(viewModel)
+        settle()
+
+        viewModel.onFinish()
+        settle()
+
+        assertNull(viewModel.stallNotice.value)
+        assertTrue("no notice, so the finish closes immediately", viewModel.closed.value)
+    }
+
     @Test
     fun aStallThatHasJustReachedThree_isSaidAfterFinishing() = runTest(dispatcher) {
         // ROADMAP N305: the finish says only what stalled, in the place the review used to be, and only

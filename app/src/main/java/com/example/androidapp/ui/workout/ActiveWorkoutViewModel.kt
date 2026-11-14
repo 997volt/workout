@@ -1385,12 +1385,14 @@ class ActiveWorkoutViewModel @Inject constructor(
             // stored its rows leave the flow. Both notices are about the workout that was just trained.
             val templateId = uiState.value.sessionTemplateId
             val calibration = calibrationNotices()
+            // The movements this session trained, read before the finish empties the live rows (B442).
+            val trained = uiState.value.exercises.map { it.exerciseId }.toSet()
 
             when (val result = workoutRepository.finishSession(sessionId)) {
                 is DataResult.Success -> {
                     lastError.value = null
                     // The find-the-weight prompt comes first (N309); the stall is owed after it (N305).
-                    val notice = finishStallNotice(templateId)
+                    val notice = finishStallNotice(templateId, trained)
                     if (calibration.isEmpty()) {
                         if (notice == null) closeSession() else showStalls(notice)
                     } else {
@@ -1567,13 +1569,18 @@ class ActiveWorkoutViewModel @Inject constructor(
      * the weekly review carry it from there. A failed read answers null for the same reason: the workout is
      * finished and stored, and an advisory notice must not strand it — the durable surfaces report the error.
      */
-    private suspend fun finishStallNotice(templateId: String?): FinishStalls? {
+    private suspend fun finishStallNotice(
+        templateId: String?,
+        trained: Set<String>,
+    ): FinishStalls? {
         val program = templateId
             ?.let { programRepository.activeWeeklyProgramForTemplate(it) }
             ?.getOrNull()
         val stalls = templateId
             ?.let { stallFinder.stallsForTemplate(it).getOrNull() }
-            ?.filter { it.sessions == STALL_SESSIONS }
+            // Only a movement this session trained (B442): a run of three survives a workout of the
+            // template that did not train the lift, and the next one must not claim it just reached three.
+            ?.filter { it.sessions == STALL_SESSIONS && it.exerciseId in trained }
         return if (program == null || stalls.isNullOrEmpty()) {
             null
         } else {
