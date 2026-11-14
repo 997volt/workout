@@ -744,6 +744,37 @@ class RoomTemplateRepository @Inject constructor(
      * renumbered to 0 and 1, a block carrying the index 2 sorted last.
      */
     override suspend fun restoreSet(templateSetId: String): DataResult<Unit> = dataResultOf {
+        database.withTransaction { restoreSetBlock(templateSetId) }
+    }
+
+    override suspend fun undoDeload(
+        removedSetIds: List<String>,
+        keptBefore: List<TemplateSet>,
+    ): DataResult<Unit> = dataResultOf {
+        database.withTransaction {
+            // One removed id restores the whole removal: the deload's rows share one deletion timestamp.
+            removedSetIds.firstOrNull()?.let { restoreSetBlock(it) }
+            keptBefore.forEach { before ->
+                updateSetRow(
+                    before.id,
+                    TemplateSetEdit(
+                        role = before.role,
+                        targetWeightGrams = before.targetWeightGrams,
+                        targetAssistanceGrams = before.targetAssistanceGrams,
+                        targetRepsMin = before.targetRepsMin,
+                        targetRepsMax = before.targetRepsMax,
+                        targetRepsCurrent = before.targetRepsCurrent,
+                        dropValueGrams = before.dropValueGrams,
+                        targetDurationSeconds = before.targetDurationSeconds,
+                        note = before.note,
+                    ),
+                )
+            }
+        }
+    }
+
+    /** The restore's body, inside the caller's transaction (B432 extracted it from [restoreSet]). */
+    private suspend fun restoreSetBlock(templateSetId: String) {
         // The row the undo names may be hidden, so it is read through the one query that can see it — and
         // that query carries the plan too, because the rows to renumber are read back by template.
         val removed = setDao.findTemplateSetWithPlan(templateSetId)
@@ -752,35 +783,34 @@ class RoomTemplateRepository @Inject constructor(
             ?: throw InvalidInputException("That planned set was not removed")
 
         val now = timeSource.nowEpochMillis()
-        database.withTransaction {
-            val all = setDao.findTemplateSetsIncludingDeleted(removed.owningTemplateId)
-                .filter { it.templateExerciseId == removed.templateExerciseId }
-            val coming = all.filter { it.deletedAt == hiddenAt }
-            val live = all.filter { it.deletedAt == null }
+        val all = setDao.findTemplateSetsIncludingDeleted(removed.owningTemplateId)
+            .filter { it.templateExerciseId == removed.templateExerciseId }
+        val coming = all.filter { it.deletedAt == hiddenAt }
+        val live = all.filter { it.deletedAt == null }
 
-            val anchor = coming.firstNotNullOfOrNull { it.restoreAfterId }
-            // The anchor's current place is the splice point; if it was removed later, fall back to
-            // the old count, which is the best the legacy rows can answer (B364).
-            val above = anchor
-                ?.let { id -> live.indexOfFirst { it.id == id } }
-                ?.takeIf { it >= 0 }
-                ?.plus(1)
-                ?: live.count { it.setIndex < coming.minOf { row -> row.setIndex } }
-            (live.take(above) + coming.sortedBy { it.setIndex } + live.drop(above))
-                .forEachIndexed { position, set ->
-                    if (set.setIndex != position || set.deletedAt != null || set.restoreAfterId != null) {
-                        setDao.updateTemplateSet(
-                            set.copy(
-                                setIndex = position,
-                                deletedAt = null,
-                                restoreAfterId = null,
-                                updatedAt = now,
-                            ),
-                        )
-                    }
+        val anchor = coming.firstNotNullOfOrNull { it.restoreAfterId }
+        // The anchor's current place is the splice point; if it was removed later, fall back to
+        // the old count, which is the best the legacy rows can answer (B364).
+        val above = anchor
+            ?.let { id -> live.indexOfFirst { it.id == id } }
+            ?.takeIf { it >= 0 }
+            ?.plus(1)
+            ?: live.count { it.setIndex < coming.minOf { row -> row.setIndex } }
+        (live.take(above) + coming.sortedBy { it.setIndex } + live.drop(above))
+            .forEachIndexed { position, set ->
+                if (set.setIndex != position || set.deletedAt != null || set.restoreAfterId != null) {
+                    setDao.updateTemplateSet(
+                        set.copy(
+                            setIndex = position,
+                            deletedAt = null,
+                            restoreAfterId = null,
+                            updatedAt = now,
+                        ),
+                    )
                 }
-        }
+            }
     }
+
 
     override suspend fun setExercisePlan(
         templateExerciseId: String,

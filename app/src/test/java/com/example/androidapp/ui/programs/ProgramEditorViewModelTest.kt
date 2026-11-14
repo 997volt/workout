@@ -131,11 +131,12 @@ class ProgramEditorViewModelTest {
         viewModel.onUndoDeload()
         advanceUntilIdle()
 
-        assertWithMessage("one removed id restores the removal")
-            .that(templates.restoredSets).containsExactly("s3")
-        assertWithMessage("the kept targets are rewritten to their before-state")
-            .that(templates.updatedSets.map { it.first }).containsExactly("s0", "s1", "s2").inOrder()
-        assertThat(templates.updatedSets.first().second.targetWeightGrams).isEqualTo(100_000L)
+        assertWithMessage("the removal and the targets are one write (B432)")
+            .that(templates.undoDeloads).hasSize(1)
+        val undo = templates.undoDeloads.single()
+        assertThat(undo.first).containsExactly("s3", "s4").inOrder()
+        assertThat(undo.second.map { it.id }).containsExactly("s0", "s1", "s2").inOrder()
+        assertThat(undo.second.first().targetWeightGrams).isEqualTo(100_000L)
     }
 
     @Test

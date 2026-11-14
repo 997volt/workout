@@ -211,6 +211,13 @@ interface TemplateRepository {
     suspend fun deloadExercise(templateExerciseId: String, stepGrams: Long): DataResult<ExerciseDeload>
 
     /**
+     * Takes a deload back as **one** edit (B432): the removed rows return and the kept targets are rewritten
+     * in one transaction, so a failure or process death cannot leave the removal back but the targets still
+     * deloaded. [keptBefore] is the plan's before-state the confirm carried.
+     */
+    suspend fun undoDeload(removedSetIds: List<String>, keptBefore: List<TemplateSet>): DataResult<Unit>
+
+    /**
      * Replaces the movement a plan row names (ROADMAP N308): a **new exercise row at the old position with
      * new set ids**, the old row soft-deleted, and the trimmed plan written onto the new row.
      *

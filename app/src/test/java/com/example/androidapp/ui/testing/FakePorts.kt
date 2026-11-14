@@ -498,6 +498,17 @@ internal class FakeTemplateRepository : TemplateRepository {
         calibrations += templateExerciseId to targets
         return DataResult.Success(Unit)
     }
+    /** Every deload undo, as the removed ids and the kept before-state it was given (B432). */
+    val undoDeloads = mutableListOf<Pair<List<String>, List<com.example.androidapp.domain.model.TemplateSet>>>()
+
+    override suspend fun undoDeload(
+        removedSetIds: List<String>,
+        keptBefore: List<com.example.androidapp.domain.model.TemplateSet>,
+    ): DataResult<Unit> {
+        undoDeloads += removedSetIds to keptBefore
+        return DataResult.Success(Unit)
+    }
+
     override suspend fun restoreSet(templateSetId: String): DataResult<Unit> {
         restoredSets += templateSetId
         return DataResult.Success(Unit)

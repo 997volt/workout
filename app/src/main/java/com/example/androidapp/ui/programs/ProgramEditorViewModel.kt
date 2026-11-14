@@ -26,7 +26,6 @@ import com.example.androidapp.domain.model.WorkoutTemplate
 import com.example.androidapp.domain.model.deloadOf
 import com.example.androidapp.domain.repository.ProgramRepository
 import com.example.androidapp.domain.repository.TemplateRepository
-import com.example.androidapp.domain.repository.TemplateSetEdit
 import com.example.androidapp.platform.DocumentIo
 import com.example.androidapp.ui.navigation.ProgramEditor
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -571,41 +570,14 @@ class ProgramEditorViewModel @Inject constructor(
         val undo = _deloadUndo.value ?: return
         _deloadUndo.value = null
         viewModelScope.launch {
-            var failure: DataError? = null
-            // One removed id restores the whole removal: the deload's rows share one deletion timestamp.
-            undo.removedSetIds.firstOrNull()?.let { id ->
-                (templateRepository.restoreSet(id) as? DataResult.Failure)?.let { failure = it.error }
-            }
-            if (failure == null) {
-                for (before in undo.keptBefore) {
-                    when (val result = templateRepository.updateSet(before.id, before.asEdit())) {
-                        is DataResult.Success -> Unit
-                        is DataResult.Failure -> {
-                            failure = result.error
-                            break
-                        }
-                    }
-                }
-            }
+            // One write (B432): the restore and every kept target land together or not at all.
+            val failure = (
+                templateRepository.undoDeload(undo.removedSetIds, undo.keptBefore) as? DataResult.Failure
+                )?.error
             if (failure != null) error.value = failure else stallRefresh.update { it + 1 }
         }
     }
 
-    private fun TemplateSet.asEdit() = TemplateSetEdit(
-        role = role,
-        targetWeightGrams = targetWeightGrams,
-        targetAssistanceGrams = targetAssistanceGrams,
-        targetRepsMin = targetRepsMin,
-        targetRepsMax = targetRepsMax,
-        targetRepsCurrent = targetRepsCurrent,
-        dropValueGrams = dropValueGrams,
-        targetDurationSeconds = targetDurationSeconds,
-        note = note,
-    )
-
-    fun onErrorShown() {
-        error.value = null
-    }
 
     private val _volumeUndo = MutableStateFlow<String?>(null)
     val volumeUndo: StateFlow<String?> = _volumeUndo.asStateFlow()
@@ -659,5 +631,10 @@ class ProgramEditorViewModel @Inject constructor(
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L
+    }
+
+    /** A failure has been read: clear it so the snackbar can go (the B439 rework will make this one-shot). */
+    fun onErrorShown() {
+        error.value = null
     }
 }

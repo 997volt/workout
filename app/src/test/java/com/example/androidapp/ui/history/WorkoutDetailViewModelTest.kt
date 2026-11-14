@@ -560,6 +560,11 @@ private class FakeTemplateRepository(
     ): DataResult<String> = unused()
 
     override suspend fun removeSet(templateSetId: String): DataResult<Unit> = unused()
+    override suspend fun undoDeload(
+        removedSetIds: List<String>,
+        keptBefore: List<com.example.androidapp.domain.model.TemplateSet>,
+    ): DataResult<Unit> = unused()
+
     override suspend fun restoreSet(templateSetId: String): DataResult<Unit> = unused()
     override suspend fun moveExercise(templateExerciseId: String, delta: Int): DataResult<Unit> =
         unused()

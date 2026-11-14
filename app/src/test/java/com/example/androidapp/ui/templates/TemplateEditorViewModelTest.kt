@@ -629,6 +629,11 @@ class TemplateEditorViewModelTest {
             return DataResult.Success(Unit)
         }
 
+        override suspend fun undoDeload(
+            removedSetIds: List<String>,
+            keptBefore: List<com.example.androidapp.domain.model.TemplateSet>,
+        ): DataResult<Unit> = error("these tests do not undo a deload")
+
         override suspend fun restoreSet(templateSetId: String): DataResult<Unit> {
             if (failWrites) return failure()
             restoredSets += templateSetId

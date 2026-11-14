@@ -187,10 +187,11 @@ complexity:
     # Not helpers that could move out of the type; the split named above is still the real fix.
     # It moved 35 -> 37 at N309 for the calibration pair (the marker and the adopt-at-finish write), again
     # one override each on both sides of the port; the split named above is still the real fix. It moved
-    # 37 -> 38 for the plan editor's weightless toggle, the same pair's third write, and 38 -> 39 when
-    # the transaction shared its weightless-write helper (B426); the split named above is still the fix.
-    thresholdInInterfaces: 39
-    thresholdInClasses: 39
+    # 37 -> 38 for the plan editor's weightless toggle, the same pair's third write, 38 -> 39 when
+    # the transaction shared its weightless-write helper (B426), and 39 -> 41 for the deload undo's one
+    # transaction (its write plus the shared restore block, B432); the split named above is still the fix.
+    thresholdInInterfaces: 41
+    thresholdInClasses: 41
     thresholdInFiles: 20
     # The workout logger is the one type the notes above describe: every action the workout screen has,
     # sharing one session, one exercise list and one error channel. It has been at the ceiling since N10 and

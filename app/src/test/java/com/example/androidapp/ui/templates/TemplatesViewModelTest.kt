@@ -410,6 +410,11 @@ class TemplatesViewModelTest {
         override suspend fun removeSet(templateSetId: String): DataResult<Unit> {
             error("these tests do not write a plan")
         }
+        override suspend fun undoDeload(
+            removedSetIds: List<String>,
+            keptBefore: List<com.example.androidapp.domain.model.TemplateSet>,
+        ): DataResult<Unit> = error("these tests do not undo a deload")
+
         override suspend fun restoreSet(templateSetId: String): DataResult<Unit> {
             error("these tests do not write a plan")
         }
