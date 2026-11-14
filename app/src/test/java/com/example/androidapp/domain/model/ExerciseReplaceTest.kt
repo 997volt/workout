@@ -40,6 +40,15 @@ class ExerciseReplaceTest {
         ReplacementSeed(weightGrams = weight, assistanceGrams = 0L, reps = reps, durationSeconds = duration)
 
     @Test
+    fun aSeedWithNoAssistance_isStoredAsNone() {
+        // B425: a non-null 0 reads as an assisted set to the progression rule and disables the load step.
+        val old = listOf(set("s0", 0))
+        val plan = replacementOf(old, listOf(seed()), empty = false)
+
+        assertThat(plan.sets.single().assistanceGrams).isNull()
+    }
+
+    @Test
     fun theTrim_keepsTheFirstWorkSets_andDropsTheLaterAnchorsWithTheirRungs() {
         val old = listOf(
             set("w", 0, role = SetType.WARMUP, weight = 40_000L),

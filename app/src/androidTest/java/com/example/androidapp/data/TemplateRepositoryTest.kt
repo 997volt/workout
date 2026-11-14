@@ -781,6 +781,7 @@ class TemplateRepositoryTest {
 
         val used = repository.observeExercises(template).first().single()
         assertEquals("the number was found", 90_000L, used.sets.single().targetWeightGrams)
+        assertNull("no assistance is stored as none, not zero", used.sets.single().targetAssistanceGrams)
         assertFalse("the prompt is one-shot", used.calibrationPending)
 
         assertTrue(repository.setCalibration(exercise, true) is DataResult.Success)

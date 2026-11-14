@@ -23,12 +23,6 @@ rows below are the fixes, ordered as the review ranked them: the must-fix group 
 findings after it, and the missing tests last as **N312**. Each row names the finding, the path and the
 fix; when a row lands, its finding is gone from this file.
 
-- **B425 — Adopted/seeded assistance is stored as `0`, which disables load progression (must fix).**
-  `calibrateExercise` ([RoomTemplateRepository.kt](app/src/main/java/com/example/androidapp/data/RoomTemplateRepository.kt))
-  and the replace seed ([ExerciseReplace.kt](app/src/main/java/com/example/androidapp/domain/model/ExerciseReplace.kt))
-  copy the session's non-null `0`; `ProgressionPlanSet.addedWeightGrams` requires the assistance to be
-  null ([ProgressionOffer.kt](app/src/main/java/com/example/androidapp/domain/model/ProgressionOffer.kt)), so
-  after Use or a seeded replace auto progression stops raising the load. Normalize `0` to null and assert it.
 - **B426 — Find-the-weight behaves as a mode, so later plan saves wipe weights (must fix).**
   [TemplateEditorViewModel.kt](app/src/main/java/com/example/androidapp/ui/templates/TemplateEditorViewModel.kt)
   always re-runs `makeWeightless` while the switch is on, and `makeWeightless` clears every load: toggle on,

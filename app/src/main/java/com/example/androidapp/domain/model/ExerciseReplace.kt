@@ -119,7 +119,8 @@ private fun workSet(set: TemplateSet, seed: ReplacementSeed?, empty: Boolean): R
         ReplacementSet(
             role = set.role,
             weightGrams = seed.weightGrams,
-            assistanceGrams = seed.assistanceGrams,
+            // Zero is "none"; the plan's column is null for that (B425), and a 0 would read as assisted.
+            assistanceGrams = seed.assistanceGrams.takeIf { it > 0L },
             repsMin = if (held) null else seed.reps,
             repsMax = if (held) null else seed.reps,
             repsCurrent = null,

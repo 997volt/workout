@@ -539,7 +539,9 @@ class RoomTemplateRepository @Inject constructor(
                     TemplateSetEdit(
                         role = before.role,
                         targetWeightGrams = target.weightGrams,
-                        targetAssistanceGrams = target.assistanceGrams,
+                        // Zero is "no assistance", which the plan stores as null (B425): a non-null 0
+                        // reads as an assisted set to the progression rule and disables the load step.
+                        targetAssistanceGrams = target.assistanceGrams?.takeIf { it > 0L },
                         targetRepsMin = before.targetRepsMin,
                         targetRepsMax = before.targetRepsMax,
                         targetRepsCurrent = target.repsCurrent ?: before.targetRepsCurrent,
