@@ -21,6 +21,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -633,13 +634,33 @@ class TemplateEditorViewModelTest {
             restoredSets += templateSetId
             return DataResult.Success(Unit)
         }
+        val marked = mutableMapOf<String, Boolean>()
+
         override suspend fun setExercisePlan(
             templateExerciseId: String,
             restSeconds: Int?,
             techniqueNote: String?,
             targetRpeHalves: Int?,
+            findWeight: Boolean?,
         ): DataResult<Unit> {
             savedPlans += SavedExercisePlan(templateExerciseId, restSeconds, techniqueNote, targetRpeHalves)
+            if (findWeight != null) {
+                val current = marked[templateExerciseId]
+                    ?: exercises.value.firstOrNull { it.id == templateExerciseId }?.calibrationPending
+                if (findWeight != current) {
+                    marked[templateExerciseId] = findWeight
+                    if (findWeight) {
+                        weightless += templateExerciseId
+                    } else {
+                        calibrationMarks += templateExerciseId to false
+                    }
+                    exercises.update { list ->
+                        list.map {
+                            if (it.id == templateExerciseId) it.copy(calibrationPending = findWeight) else it
+                        }
+                    }
+                }
+            }
             return DataResult.Success(Unit)
         }
 
@@ -854,6 +875,24 @@ class TemplateEditorViewModelTest {
         advanceUntilIdle()
 
         assertThat(repository.weightless).containsExactly("te1")
+    }
+
+    @Test
+    fun aLaterPlanSave_doesNotClearTheLoadsAgain() = runTest(dispatcher) {
+        // B426: the switch is a state, not a command. The second save asks for the same weightless state
+        // the first one stored, so it must not wipe a weight entered in between.
+        val repository = FakeTemplateRepository()
+        val viewModel = viewModelFor(repository)
+        observe(viewModel)
+        advanceUntilIdle()
+
+        viewModel.onSaveExercisePlan("te1", null, null, null, findWeight = true)
+        advanceUntilIdle()
+        viewModel.onSaveExercisePlan("te1", 120, "Slow descent", null, findWeight = true)
+        advanceUntilIdle()
+
+        assertThat(repository.weightless).containsExactly("te1")
+        assertThat(repository.savedPlans).hasSize(2)
     }
 }
 

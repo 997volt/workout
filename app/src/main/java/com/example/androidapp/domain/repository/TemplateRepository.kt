@@ -268,6 +268,13 @@ interface TemplateRepository {
         restSeconds: Int?,
         techniqueNote: String?,
         targetRpeHalves: Int?,
+        /**
+         * The weightless state the save asks for, or null to leave it alone (ROADMAP N309, B426).
+         *
+         * It is written only when it differs from the stored marker, in the same transaction as the plan
+         * fields, so a later cue/rest/RPE save cannot clear loads the lifter has entered.
+         */
+        findWeight: Boolean? = null,
     ): DataResult<Unit>
 
     /**

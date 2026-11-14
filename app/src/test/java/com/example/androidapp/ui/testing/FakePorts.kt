@@ -508,6 +508,7 @@ internal class FakeTemplateRepository : TemplateRepository {
         restSeconds: Int?,
         techniqueNote: String?,
         targetRpeHalves: Int?,
+        findWeight: Boolean?,
     ): DataResult<Unit> = unused()
 
     override suspend fun moveExercise(templateExerciseId: String, delta: Int): DataResult<Unit> = unused()

@@ -275,21 +275,17 @@ class TemplateEditorViewModel @Inject constructor(
         findWeight: Boolean,
     ) {
         viewModelScope.launch {
-            // The weightless prescription is the mark **and** the cleared loads (N309): a plan that only
-            // dropped the number would prefill it again from the plan on the next session.
-            val weightless = if (findWeight) {
-                repository.makeWeightless(templateExerciseId)
-            } else {
-                repository.setCalibration(templateExerciseId, false)
-            }
-            val weightlessError = (weightless as? DataResult.Failure)?.error
-            if (weightlessError != null) {
-                error.value = weightlessError
-                return@launch
-            }
+            // One write for the fields and the weightless transition (N309, B426): the repository applies
+            // the mark only when it differs, so a later save cannot clear the loads, and a failure leaves
+            // neither half behind.
             error.value = (
-                repository.setExercisePlan(templateExerciseId, restSeconds, techniqueNote, targetRpeHalves)
-                    as? DataResult.Failure
+                repository.setExercisePlan(
+                    templateExerciseId,
+                    restSeconds,
+                    techniqueNote,
+                    targetRpeHalves,
+                    findWeight = findWeight,
+                ) as? DataResult.Failure
                 )?.error
         }
     }

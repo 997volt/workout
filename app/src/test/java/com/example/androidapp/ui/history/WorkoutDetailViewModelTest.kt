@@ -568,6 +568,7 @@ private class FakeTemplateRepository(
         restSeconds: Int?,
         techniqueNote: String?,
         targetRpeHalves: Int?,
+        findWeight: Boolean?,
     ): DataResult<Unit> = unused()
 
     override fun observeTemplates(includeHidden: Boolean): Flow<List<WorkoutTemplate>> = flowOf(emptyList())

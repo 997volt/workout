@@ -632,30 +632,32 @@ class RoomTemplateRepository @Inject constructor(
     override suspend fun makeWeightless(templateExerciseId: String): DataResult<Unit> = dataResultOf {
         val exercise = dao.findTemplateExercise(templateExerciseId)
             ?: throw NotFoundException("template exercise $templateExerciseId")
-        val sets = plannedSetsOf(exercise)
         val now = timeSource.nowEpochMillis()
-        database.withTransaction {
-            sets.forEach { set ->
-                val clearsReps = set.role == SetType.WARMUP || set.role.isRung
-                updateSetRow(
-                    set.id,
-                    TemplateSetEdit(
-                        role = set.role,
-                        targetWeightGrams = null,
-                        targetAssistanceGrams = null,
-                        targetRepsMin = if (clearsReps) null else set.targetRepsMin,
-                        targetRepsMax = if (clearsReps) null else set.targetRepsMax,
-                        targetRepsCurrent = if (clearsReps) null else set.targetRepsCurrent,
-                        dropValueGrams = set.dropValueGrams,
-                        targetDurationSeconds = if (set.role == SetType.WARMUP) null else set.targetDurationSeconds,
-                        note = set.note,
-                    ),
-                    validate = false,
-                )
-            }
-            if (dao.setCalibration(templateExerciseId, true, now) == 0) {
-                throw NotFoundException("template exercise $templateExerciseId")
-            }
+        database.withTransaction { writeWeightless(exercise, now) }
+    }
+
+    /** The weightless transition's writes, inside the caller's transaction (N309, B421, B426). */
+    private suspend fun writeWeightless(exercise: TemplateExerciseEntity, now: Long) {
+        plannedSetsOf(exercise).forEach { set ->
+            val clearsReps = set.role == SetType.WARMUP || set.role.isRung
+            updateSetRow(
+                set.id,
+                TemplateSetEdit(
+                    role = set.role,
+                    targetWeightGrams = null,
+                    targetAssistanceGrams = null,
+                    targetRepsMin = if (clearsReps) null else set.targetRepsMin,
+                    targetRepsMax = if (clearsReps) null else set.targetRepsMax,
+                    targetRepsCurrent = if (clearsReps) null else set.targetRepsCurrent,
+                    dropValueGrams = set.dropValueGrams,
+                    targetDurationSeconds = if (set.role == SetType.WARMUP) null else set.targetDurationSeconds,
+                    note = set.note,
+                ),
+                validate = false,
+            )
+        }
+        if (dao.setCalibration(exercise.id, true, now) == 0) {
+            throw NotFoundException("template exercise ${exercise.id}")
         }
     }
 
@@ -785,6 +787,7 @@ class RoomTemplateRepository @Inject constructor(
         restSeconds: Int?,
         techniqueNote: String?,
         targetRpeHalves: Int?,
+        findWeight: Boolean?,
     ): DataResult<Unit> = dataResultOf {
         // Zero is a value — "this exercise has no rest" — and leaving it unset is how "use the
         // library's" is expressed (the same rule N5 applies to the library itself, amended by N45).
@@ -795,8 +798,19 @@ class RoomTemplateRepository @Inject constructor(
         if (!Rpe.isValid(targetRpeHalves)) {
             throw InvalidInputException("Target RPE must be between 1 and 10, in half steps.")
         }
+        val exercise = dao.findTemplateExercise(templateExerciseId)
+            ?: throw NotFoundException("template exercise $templateExerciseId")
         val now = timeSource.nowEpochMillis()
         database.withTransaction {
+            // Only a change writes the weightless transition (B426): re-clearing on every save wiped a
+            // weight the lifter had entered after the switch, and a second failure could strand half.
+            if (findWeight != null && findWeight != exercise.calibrationPending) {
+                if (findWeight) {
+                    writeWeightless(exercise, now)
+                } else if (dao.setCalibration(templateExerciseId, false, now) == 0) {
+                    throw NotFoundException("template exercise $templateExerciseId")
+                }
+            }
             val updated = dao.setExercisePlan(
                 id = templateExerciseId,
                 restSeconds = restSeconds,

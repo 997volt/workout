@@ -21,6 +21,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -89,6 +90,11 @@ internal fun ExercisePlanFields(
         mutableStateOf(exercise.targetRpeHalves?.let(Rpe::format).orEmpty())
     }
     var findWeight by rememberSaveable(exercise.id) { mutableStateOf(exercise.calibrationPending) }
+    // Follow a change made outside this form (the finish adopting weights, another screen's save): the
+    // saved state alone would keep a stale ON and re-clear them on the next save (B426).
+    LaunchedEffect(exercise.calibrationPending) {
+        findWeight = exercise.calibrationPending
+    }
     val restSeconds = rest.trim().ifEmpty { null }?.toIntOrNull()
     val restIsValid = rest.isBlank() || (restSeconds?.let(RestTimer::isValidPrescription) == true)
     val rpeHalves = rpe.trim().ifEmpty { null }?.let(Rpe::parse)

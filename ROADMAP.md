@@ -23,13 +23,6 @@ rows below are the fixes, ordered as the review ranked them: the must-fix group 
 findings after it, and the missing tests last as **N312**. Each row names the finding, the path and the
 fix; when a row lands, its finding is gone from this file.
 
-- **B426 — Find-the-weight behaves as a mode, so later plan saves wipe weights (must fix).**
-  [TemplateEditorViewModel.kt](app/src/main/java/com/example/androidapp/ui/templates/TemplateEditorViewModel.kt)
-  always re-runs `makeWeightless` while the switch is on, and `makeWeightless` clears every load: toggle on,
-  save, add a weight, edit cue/rest/RPE, save — the weight is gone with no confirm or undo. The mark and the
-  plan fields are two transactions (a second failure leaves the loads gone), and the `rememberSaveable`
-  switch never re-syncs, so a stale ON can re-clear weights the finish adopted. Write the mark only when it
-  changes, fold both writes into one transaction, and re-sync the draft to the stored flag.
 - **B427 — The finish's volume gate cannot see the session that completes a stall (must fix).**
   [PlanVolumeFinder.kt](app/src/main/java/com/example/androidapp/domain/PlanVolumeFinder.kt) builds the
   Done history from finished sessions only and `isOpen` excludes the current session, so a third missed

@@ -418,6 +418,7 @@ class TemplatesViewModelTest {
             restSeconds: Int?,
             techniqueNote: String?,
             targetRpeHalves: Int?,
+        findWeight: Boolean?,
         ): DataResult<Unit> {
             error("these tests do not write a plan")
         }

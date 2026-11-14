@@ -3149,6 +3149,7 @@ class ActiveWorkoutViewModelTest {
             restSeconds: Int?,
             techniqueNote: String?,
             targetRpeHalves: Int?,
+        findWeight: Boolean?,
         ): DataResult<Unit> = notUsed()
 
         private fun notUsed(): Nothing = error("this test does not write a plan")
