@@ -23,10 +23,6 @@ rows below are the fixes, ordered as the review ranked them: the must-fix group 
 findings after it, and the missing tests last as **N312**. Each row names the finding, the path and the
 fix; when a row lands, its finding is gone from this file.
 
-- **B438 — Add/undo state races (minor).** The volume suggestion is cleared unconditionally on completion (a
-  suggestion that arrived meanwhile is dropped), with no in-flight guard (a config change re-arms the effect
-  and a second Add appends twice while the undo tracks only the last), and a failed `addSet` leaves the
-  suggestion live with no snackbar. Clear by identity, guard in flight, and clear on Failure.
 - **B439 — Advisory failures are handled as fatal on the plan surfaces (minor).** The weekly review replaces
   the whole week with the error view on a failed stall/volume read and on a failed Add; the program editor's
   finder failure is re-derived from the state combine, so `onErrorShown()` re-emits the same Failure and the

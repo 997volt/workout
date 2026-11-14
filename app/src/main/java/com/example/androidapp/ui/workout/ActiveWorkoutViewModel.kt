@@ -283,6 +283,10 @@ class ActiveWorkoutViewModel @Inject constructor(
     private val _volumeUndo = MutableStateFlow<String?>(null)
     val volumeUndo: StateFlow<String?> = _volumeUndo.asStateFlow()
 
+    /** One Add/Undo in flight at a time (B438): a second press would append twice or remove twice. */
+    private var volumeAddInFlight = false
+    private var volumeUndoInFlight = false
+
     /** The program the finish's stalls belong to, for the hand-off (N310). */
     private val _stallProgramId = MutableStateFlow<String?>(null)
 
@@ -865,29 +869,47 @@ class ActiveWorkoutViewModel @Inject constructor(
     /** Adds the offered set to the plan; undoable from the same snackbar (N311). */
     fun onAddVolume() {
         val suggestion = _volumeSuggestion.value ?: return
+        if (volumeAddInFlight) return
+        volumeAddInFlight = true
         viewModelScope.launch {
-            when (val write = templateRepository.addSet(suggestion.templateExerciseId, suggestion.edit)) {
-                is DataResult.Success -> {
-                    _volumeSuggestion.value = null
-                    lastError.value = null
-                    _volumeUndo.value = write.data
-                }
+            try {
+                when (val write = templateRepository.addSet(suggestion.templateExerciseId, suggestion.edit)) {
+                    is DataResult.Success -> {
+                        // Only this suggestion goes (B438): one that arrived meanwhile is the next decision.
+                        if (_volumeSuggestion.value === suggestion) _volumeSuggestion.value = null
+                        lastError.value = null
+                        _volumeUndo.value = write.data
+                    }
 
-                is DataResult.Failure -> lastError.value = write.error
+                    is DataResult.Failure -> {
+                        // The card goes too: retrying would need a second snackbar with the same text, and
+                        // the message-keyed effect coalesces it (B438). The next Done can offer it again.
+                        if (_volumeSuggestion.value === suggestion) _volumeSuggestion.value = null
+                        lastError.value = write.error
+                    }
+                }
+            } finally {
+                volumeAddInFlight = false
             }
         }
     }
 
     fun onUndoVolume() {
         val id = _volumeUndo.value ?: return
+        if (volumeUndoInFlight) return
+        volumeUndoInFlight = true
         viewModelScope.launch {
-            when (val write = templateRepository.removeSet(id)) {
-                is DataResult.Success -> {
-                    _volumeUndo.value = null
-                    lastError.value = null
-                }
+            try {
+                when (val write = templateRepository.removeSet(id)) {
+                    is DataResult.Success -> {
+                        if (_volumeUndo.value == id) _volumeUndo.value = null
+                        lastError.value = null
+                    }
 
-                is DataResult.Failure -> lastError.value = write.error
+                    is DataResult.Failure -> lastError.value = write.error
+                }
+            } finally {
+                volumeUndoInFlight = false
             }
         }
     }
