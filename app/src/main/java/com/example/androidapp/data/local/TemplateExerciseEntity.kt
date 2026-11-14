@@ -1,5 +1,6 @@
 package com.example.androidapp.data.local
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -63,6 +64,7 @@ data class TemplateExerciseEntity(
      * toggle. Defaulted, so every plan on disk before the marker was simply never marked; it is a
      * transition, not a prescription, and it is deliberately absent from the shared program document.
      */
+    @ColumnInfo(defaultValue = "0")
     val calibrationPending: Boolean = false,
     val createdAt: Long,
     val updatedAt: Long,

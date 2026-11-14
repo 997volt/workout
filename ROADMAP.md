@@ -23,11 +23,6 @@ rows below are the fixes, ordered as the review ranked them: the must-fix group 
 findings after it, and the missing tests last as **N312**. Each row names the finding, the path and the
 fix; when a row lands, its finding is gone from this file.
 
-- **B441 — Migration 24→25's SQL default disagrees with the entity and schema (minor).**
-  [CalibrationMigrations.kt](app/src/main/java/com/example/androidapp/data/local/CalibrationMigrations.kt)
-  adds `DEFAULT 0`; [TemplateExerciseEntity.kt](app/src/main/java/com/example/androidapp/data/local/TemplateExerciseEntity.kt)
-  and `25.json` declare none, so fresh and upgraded installs differ (B193). Add
-  `@ColumnInfo(defaultValue = "0")` and regenerate schema 25 (still unreleased).
 - **B442 — The finish's "just reached three" notice can reappear (minor).** The filter is a count only;
   because the stall rule skips sessions that trained no prescribed set, a run of three survives a skipped
   lift and the next workout of that template (which does not train it) shows the notice again. Require the
