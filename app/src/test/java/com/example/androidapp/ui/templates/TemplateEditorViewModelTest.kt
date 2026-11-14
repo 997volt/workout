@@ -16,6 +16,7 @@ import com.example.androidapp.domain.repository.SettingsRepository
 import com.example.androidapp.domain.repository.TemplateRepository
 import com.example.androidapp.domain.repository.TemplateSetEdit
 import com.example.androidapp.ui.EmptySettings
+import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -500,6 +501,10 @@ class TemplateEditorViewModelTest {
     }
 
     private class FakeTemplateRepository : TemplateRepository {
+
+        val weightless = mutableListOf<String>()
+        val calibrationMarks = mutableListOf<Pair<String, Boolean>>()
+
         val templates = MutableStateFlow<List<WorkoutTemplate>>(emptyList())
         val exercises = MutableStateFlow<List<TemplateExercise>>(emptyList())
         val renamed = mutableListOf<Pair<String, String>>()
@@ -548,6 +553,22 @@ class TemplateEditorViewModelTest {
 
         override fun observeExercises(templateId: String): Flow<List<TemplateExercise>> = exercises
         override fun observeSets(templateId: String): Flow<List<TemplateSet>> = flowOf(emptyList())
+        override suspend fun makeWeightless(templateExerciseId: String): DataResult<Unit> {
+            weightless += templateExerciseId
+            return DataResult.Success(Unit)
+        }
+
+        override suspend fun setCalibration(
+            templateExerciseId: String,
+            pending: Boolean,
+        ): DataResult<Unit> {
+            calibrationMarks += templateExerciseId to pending
+            return DataResult.Success(Unit)
+        }
+        override suspend fun calibrateExercise(
+            templateExerciseId: String,
+            targets: List<com.example.androidapp.domain.model.CalibrationTarget>,
+        ): DataResult<Unit> = DataResult.Success(Unit)
         override suspend fun replaceExercise(
             templateExerciseId: String,
             newExerciseId: String,
@@ -725,6 +746,7 @@ class TemplateEditorViewModelTest {
             restSeconds = 180,
             techniqueNote = "Slow descent",
             targetRpeHalves = 16,
+            findWeight = false,
         )
         advanceUntilIdle()
 
@@ -814,6 +836,25 @@ class TemplateEditorViewModelTest {
         targetRepsMin = 5,
         targetRepsMax = 5,
     )
+
+    @Test
+    fun savingTheFindWeightSwitch_makesThePlanWeightless() = runTest(dispatcher) {
+        val repository = FakeTemplateRepository()
+        val viewModel = viewModelFor(repository)
+        observe(viewModel)
+        advanceUntilIdle()
+
+        viewModel.onSaveExercisePlan(
+            "te1",
+            restSeconds = null,
+            techniqueNote = null,
+            targetRpeHalves = null,
+            findWeight = true,
+        )
+        advanceUntilIdle()
+
+        assertThat(repository.weightless).containsExactly("te1")
+    }
 }
 
 /** What [TemplateEditorViewModelTest]'s fake recorded for one exercise's plan write (N14, N59). */

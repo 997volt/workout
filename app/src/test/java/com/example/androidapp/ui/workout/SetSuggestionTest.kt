@@ -2,6 +2,7 @@ package com.example.androidapp.ui.workout
 
 import com.example.androidapp.domain.Load
 import com.example.androidapp.domain.Weight
+import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.PreviousPerformance
@@ -542,4 +543,29 @@ class SetSuggestionTest {
         weightGrams = 60_000L,
         setType = SetType.DROP,
     )
+
+    @Test
+    fun aMarkedPlan_startsTheFirstSetBlank_andTheNextComesFromWhatWasDone() {
+        val previous = PreviousPerformance(
+            listOf(SetEntry("s1", "se1", 0, reps = 6, weightGrams = 80_000L)),
+        )
+        val plan = PlannedTarget(reps = 5, weightGrams = null, rpeHalves = 16)
+
+        val first = suggestionForNextSet(emptyList(), previous, plan, calibrationPending = true)
+
+        assertFalse("the plan is finding its weight", first.weightKnown)
+        assertEquals(5, first.reps)
+        assertEquals(16, first.targetRpeHalves)
+        assertEquals("", first.initialDraft(WeightUnit.KILOGRAMS, timed = false).weightText)
+
+        val next = suggestionForNextSet(
+            listOf(SetRow(id = "x", number = 1, reps = 5, weightGrams = 75_000L)),
+            previous,
+            plan,
+            calibrationPending = true,
+        )
+
+        assertTrue("what was just done is a real number", next.weightKnown)
+        assertEquals(75_000L, next.weightGrams)
+    }
 }

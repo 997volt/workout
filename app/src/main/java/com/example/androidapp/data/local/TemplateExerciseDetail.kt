@@ -39,6 +39,8 @@ data class TemplateExerciseDetail(
     /** The movement's own answer to *Done* by name, or null to follow the app (ROADMAP N235). */
     val progressionMode: String?,
     val supersetGroup: Int?,
+    /** The one-shot find-the-weight marker (ROADMAP N309). */
+    val calibrationPending: Boolean,
 )
 
 internal fun TemplateExerciseDetail.toDomain(
@@ -58,6 +60,7 @@ internal fun TemplateExerciseDetail.toDomain(
     stepGrams = stepGrams,
     progressionMode = ProgressionMode.fromName(progressionMode),
     supersetGroup = supersetGroup,
+    calibrationPending = calibrationPending,
     sets = sets,
 )
 

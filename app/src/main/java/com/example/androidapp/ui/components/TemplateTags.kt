@@ -188,6 +188,7 @@ internal interface TemplateTags {
 
     /** The exercise's one target RPE, on the line the rest and the accept share (N59, N80, N116). */
     val TEMPLATE_EXERCISE_RPE: String get() = "template_exercise_rpe"
+    val TEMPLATE_FIND_WEIGHT: String get() = "template_find_weight"
 
     val TEMPLATE_EXERCISE_INCREASE_RPE: String get() = "template_exercise_increase_rpe"
 

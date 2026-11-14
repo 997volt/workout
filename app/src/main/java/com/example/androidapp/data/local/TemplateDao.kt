@@ -236,7 +236,8 @@ interface TemplateDao {
                e.weightUnit AS weightUnit,
                e.stepGrams AS stepGrams,
                e.progressionMode AS progressionMode,
-               te.supersetGroup AS supersetGroup
+               te.supersetGroup AS supersetGroup,
+               te.calibrationPending AS calibrationPending
         FROM template_exercises te
         JOIN exercises e ON e.id = te.exerciseId
         LEFT JOIN exercises parent ON parent.id = e.parentId
@@ -356,6 +357,16 @@ interface TemplateDao {
         """,
     )
     suspend fun restoreTemplateExercise(id: String, at: Long): Int
+
+    /** The N309 marker, set by Empty or the plan-editor toggle and cleared by the finish's answer. */
+    @Query(
+        """
+        UPDATE template_exercises
+        SET calibrationPending = :pending, updatedAt = :at
+        WHERE id = :id AND deletedAt IS NULL
+        """,
+    )
+    suspend fun setCalibration(id: String, pending: Boolean, at: Long): Int
 
     @Query(
         """

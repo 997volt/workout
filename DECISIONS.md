@@ -386,6 +386,23 @@ the rule; that one argues it.
   (decision 4a). The weekly review/finish hand-off goes through the program editor first (3a), so the undo
   lives on the plan screen.
 
+- **A plan can say "find the weight", one session at a time** (N309). The weightless prescription is a
+  one-shot marker on the plan's exercise, not a permanent "no load": the next session must start **blank**
+  — history and the 20 kg default are not the guide — and then the number is either found or abandoned. The
+  marker is a column on `template_exercises` (migration 24 -> 25) and an additive, defaulted backup field;
+  it is **not in the shared program document**, because it is a transition like the auto switch rather than a
+  prescription (7a), and a file written before it decodes as never marked. Empty (the replace) and the plan
+  editor's *Find the weight* switch both clear the working sets' load — and the warm-ups' targets — keep the
+  reps and target effort, and set the marker; the switch is the same prescription outside the replace flow.
+  The prefill reads the marker: the first set of the session has `weightKnown = false`, so the field opens
+  empty, the reason line names the plan alone, and *Log set* waits; once a set is logged, "what you just did"
+  is the source again. The finish asks per marked plan — *"Use today's weights for Bench Press? 3 sets, top
+  65 kg"* — and the plan edit is **Use**: the plan's own work sets by place take the performed weight and
+  assistance, a substituted row is skipped and extra sets truncated (decision 6a), reps, range, hold and
+  target effort stay, and the marker is cleared in the same transaction. **Not now** clears the marker and
+  leaves the plan weightless. The marker is consumed at the finish, not the start, so an abandoned session
+  tries again. No baseline work: the auto switch, its baseline and the reset are untouched.
+
 - **An encrypted export is a password-derived container, not a Keystore key** (N294). The Data section offers
   a second export beside the plain one: the ordinary backup JSON is wrapped in a self-describing JSON envelope
   (version, KDF, iteration count, salt, nonce, ciphertext), and PBKDF2-HMAC-SHA256 with 600,000 iterations and

@@ -1,6 +1,7 @@
 package com.example.androidapp.domain.repository
 
 import com.example.androidapp.domain.DataResult
+import com.example.androidapp.domain.model.CalibrationTarget
 import com.example.androidapp.domain.model.ExerciseDeload
 import com.example.androidapp.domain.model.ProgressionDirection
 import com.example.androidapp.domain.model.ProgressionTargets
@@ -227,6 +228,25 @@ interface TemplateRepository {
 
     /** Takes a replace back: the new row and its sets go, the old row comes back (N308, decision 4a). */
     suspend fun undoReplaceExercise(outcome: ReplaceOutcome): DataResult<Unit>
+
+    /** Marks or clears the one-shot find-the-weight state on a plan's exercise (ROADMAP N309). */
+    suspend fun setCalibration(templateExerciseId: String, pending: Boolean): DataResult<Unit>
+
+    /**
+     * The same weightless prescription Empty writes, for a plan that already exists (N309): the working
+     * sets lose their load, the warm-ups lose every target, the reps and target effort stay, and the marker
+     * is set. One transaction, so the plan and its marker cannot disagree.
+     */
+    suspend fun makeWeightless(templateExerciseId: String): DataResult<Unit>
+
+    /**
+     * Adopts the performed work sets' weights into the plan's own work sets and clears the marker, in one
+     * transaction (ROADMAP N309). Reps, range and target effort stay; unmatched plan sets stay empty.
+     */
+    suspend fun calibrateExercise(
+        templateExerciseId: String,
+        targets: List<CalibrationTarget>,
+    ): DataResult<Unit>
 
     /**
      * Takes a planned set's removal back, **at the position it held** (ROADMAP N90).

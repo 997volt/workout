@@ -509,7 +509,7 @@ internal fun SetSuggestion.initialDraft(unit: WeightUnit, timed: Boolean): SetEn
     // A hold opens on the last one, or on a minute where there is none — never on "reps" it does not have.
     durationText = if (timed) DurationFormat.ofSeconds((durationSeconds ?: DEFAULT_HOLD_SECONDS).toLong()) else "",
     timed = timed,
-    weightText = Weight.display(weightGrams, assistanceGrams, unit),
+    weightText = if (weightKnown) Weight.display(weightGrams, assistanceGrams, unit) else "",
     rpeText = if (setType.recordsEffort) {
         Rpe.format(targetRpeHalves ?: DEFAULT_RPE_HALVES)
     } else {

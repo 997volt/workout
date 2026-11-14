@@ -34,6 +34,15 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   movements* away. The confirm names another program only when the plan is shared, and the undo restores the
   old row.
 
+- **A plan can say "find the weight"** (N309). The replace's **Empty** or the plan editor's *Find the
+  weight* switch clears the plan's loads and marks it; the next session starts the weight field **blank**,
+  ignoring history and the 20 kg default, with the plan's reps and target effort as the guide, and *Log set*
+  waits for a number. The next sets fill from what was just done. At the finish the app asks *"Use today's
+  weights for Bench Press? 3 sets, top 65 kg"* — **Use** adopts every logged work set's load into the plan's
+  own work sets by place (a substituted row is skipped and extras truncated), **Not now** leaves the plan
+  weightless, and either clears the one-shot marker. The marker is in the backup and deliberately not in the
+  shared program document; Auto progression, its baseline and the reset are untouched.
+
 
 ### Changed
 

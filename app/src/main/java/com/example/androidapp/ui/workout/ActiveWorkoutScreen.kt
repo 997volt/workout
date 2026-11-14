@@ -73,6 +73,7 @@ fun ActiveWorkoutRoute(
     val pendingProgression by viewModel.pendingProgression.collectAsStateWithLifecycle()
     RestCueAndScreenOn(clock, restCueEnabled, keepScreenOn, restTimerEnabled)
     val stallNotice by viewModel.stallNotice.collectAsStateWithLifecycle()
+    val calibrationNotice by viewModel.calibrationNotice.collectAsStateWithLifecycle()
     val personalRecord by viewModel.personalRecord.collectAsStateWithLifecycle()
     val autoStep by viewModel.autoStep.collectAsStateWithLifecycle()
     val setWriteOutcome by viewModel.setWriteOutcome.collectAsStateWithLifecycle()
@@ -88,6 +89,9 @@ fun ActiveWorkoutRoute(
         onToggleSuperset = viewModel::onToggleSuperset,
         stallNotice = stallNotice,
         onDismissStallNotice = viewModel::onDismissStallNotice,
+        calibrationNotice = calibrationNotice,
+        onUseCalibration = viewModel::onUseCalibration,
+        onSkipCalibration = viewModel::onSkipCalibration,
         personalRecord = personalRecord,
         autoStep = autoStep,
         onUndoAutoStep = viewModel::onUndoAutoStep,
@@ -166,6 +170,10 @@ fun ActiveWorkoutScreen(
     onMoveExercise: (String, Int) -> Unit,
     onToggleSuperset: (String) -> Unit,
     onDismissStallNotice: () -> Unit,
+    /** The find-the-weight prompt at the finish, before the stall notice (N309). */
+    calibrationNotice: List<CalibrationNotice>?,
+    onUseCalibration: (CalibrationNotice) -> Unit,
+    onSkipCalibration: (CalibrationNotice) -> Unit,
     onEnterBodyweight: (Long) -> Unit,
     onDismissBodyweight: () -> Unit,
     /** Picks one set's step, or takes the pick back when it is already there (ROADMAP N74). */
@@ -219,6 +227,13 @@ fun ActiveWorkoutScreen(
     var editingSetId by rememberSaveable { mutableStateOf<String?>(null) }
     val editing = state.exercises.flatMap { it.sets }.firstOrNull { it.id == editingSetId }
 
+    if (calibrationNotice != null) {
+        CalibrationDialog(
+            notices = calibrationNotice,
+            onUse = onUseCalibration,
+            onSkip = onSkipCalibration,
+        )
+    }
     if (stallNotice != null) WorkoutStallDialog(stalls = stallNotice, onDone = onDismissStallNotice)
     BodyweightPrompt(prompt = bodyweightPrompt, onSave = onEnterBodyweight, onDismiss = onDismissBodyweight)
 
@@ -553,6 +568,9 @@ private fun ActiveWorkoutScreenPreview() {
             onMoveExercise = { _, _ -> },
             onToggleSuperset = { _ -> },
             onDismissStallNotice = {},
+            calibrationNotice = null,
+            onUseCalibration = {},
+            onSkipCalibration = {},
             onEnterBodyweight = { _ -> },
             onDismissBodyweight = {},
             onToggleProgression = { _, _ -> },

@@ -162,7 +162,7 @@ fun TemplateEditorScreen(
     onUndoRemoveSet: () -> Unit,
     onDismissUndo: () -> Unit,
     onToggleSuperset: (String) -> Unit,
-    onSaveExercisePlan: (String, Int?, String?, Int?) -> Unit,
+    onSaveExercisePlan: (String, Int?, String?, Int?, Boolean) -> Unit,
     /** Hiding: the action, the one-shot sentence, and nothing to say with null (ROADMAP N214). */
     onToggleHide: () -> Unit,
     onDismissHiddenNotice: () -> Unit,
@@ -357,7 +357,7 @@ private fun TemplateEditorBody(
     onAddSets: (String, Int, TemplateSetEdit) -> Unit,
     onUpdateSet: (String, TemplateSetEdit) -> Unit,
     onRemoveSet: (String) -> Unit,
-    onSaveExercisePlan: (String, Int?, String?, Int?) -> Unit,
+    onSaveExercisePlan: (String, Int?, String?, Int?, Boolean) -> Unit,
     onAddWarmUpSets: (String, Long) -> Unit,
     onToggleSuperset: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -417,7 +417,7 @@ private fun TemplateEditorBody(
                         onUpdateSet = onUpdateSet,
                         onRemoveSet = onRemoveSet,
                         onAddWarmUpSets = { step -> onAddWarmUpSets(exercise.id, step) },
-                        onSavePlan = { rest, cue, rpe -> onSaveExercisePlan(exercise.id, rest, cue, rpe) },
+                        onSavePlan = { rest, cue, rpe, find -> onSaveExercisePlan(exercise.id, rest, cue, rpe, find) },
                     )
                     HorizontalDivider()
                 }
@@ -538,7 +538,7 @@ private fun TemplateEditorScreenPreview() {
             onUndoRemoveSet = {},
             onDismissUndo = {},
             onToggleSuperset = {},
-            onSaveExercisePlan = { _, _, _, _ -> },
+            onSaveExercisePlan = { _, _, _, _, _ -> },
             onToggleHide = {},
             onDismissHiddenNotice = {},
         )

@@ -234,6 +234,9 @@ internal interface WorkoutTags {
 
     /** The stalled lifts a finished workout is told about (ROADMAP N305). */
     val STALL_DIALOG: String get() = "workout_stall_dialog"
+    val CALIBRATION_DIALOG: String get() = "workout_calibration_dialog"
+    val CALIBRATION_USE: String get() = "workout_calibration_use"
+    val CALIBRATION_SKIP: String get() = "workout_calibration_skip"
 
     val STALL_DONE: String get() = "workout_stall_done"
 

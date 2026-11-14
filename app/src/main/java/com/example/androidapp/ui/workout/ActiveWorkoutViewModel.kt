@@ -10,8 +10,10 @@ import com.example.androidapp.domain.PlanStallFinder
 import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.WeightUnit
+import com.example.androidapp.domain.dataResultOf
 import com.example.androidapp.domain.getOrNull
 import com.example.androidapp.domain.model.Activity
+import com.example.androidapp.domain.model.CalibrationTarget
 import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.PendingProgression
 import com.example.androidapp.domain.model.PerformedSetSpec
@@ -62,6 +64,22 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.time.Duration
 import javax.inject.Inject
+
+/**
+ * One marked plan's "use today's weights" line at the finish (ROADMAP N309).
+ *
+ * The targets are the plan's own work sets by place, carrying only the performed weight and assistance:
+ * reps, range, hold and target effort stay the plan's, and a place with no counterpart is not invented.
+ */
+data class CalibrationNotice(
+    val templateExerciseId: String,
+    val exerciseName: String,
+    val setCount: Int,
+    val topWeightGrams: Long,
+    val topAssistanceGrams: Long,
+    val weightUnit: WeightUnit,
+    val targets: List<CalibrationTarget>,
+)
 
 /**
  * Owns the active workout: its exercises, their sets, and the rest timer
@@ -231,6 +249,13 @@ class ActiveWorkoutViewModel @Inject constructor(
      */
     private val _stallNotice = MutableStateFlow<List<PlanStall>?>(null)
     val stallNotice: StateFlow<List<PlanStall>?> = _stallNotice.asStateFlow()
+
+    /** The find-the-weight prompt waiting at the finish, before the stall notice (ROADMAP N309). */
+    private val _calibrationNotice = MutableStateFlow<List<CalibrationNotice>?>(null)
+    val calibrationNotice: StateFlow<List<CalibrationNotice>?> = _calibrationNotice.asStateFlow()
+
+    /** The stall the finish owes once the calibration prompt has been answered (N305, N309). */
+    private val pendingStallNotice = MutableStateFlow<List<PlanStall>?>(null)
 
     private val pendingUndo = MutableStateFlow<SetEntry?>(null)
     private val previousByExercise = MutableStateFlow<Map<String, PreviousPerformance>>(emptyMap())
@@ -1212,16 +1237,21 @@ class ActiveWorkoutViewModel @Inject constructor(
                 }
             }
             // Read *before* finishing: the state describes the live session, so once the workout is
-            // stored its rows leave the flow. The notice is about the workout that was just trained.
+            // stored its rows leave the flow. Both notices are about the workout that was just trained.
             val templateId = uiState.value.sessionTemplateId
+            val calibration = calibrationNotices()
 
             when (val result = workoutRepository.finishSession(sessionId)) {
                 is DataResult.Success -> {
                     lastError.value = null
-                    // The workout is over and stored. The one thing the finish still says is a lift that
-                    // has stopped moving; otherwise closing the screen is the whole of it (N305).
+                    // The find-the-weight prompt comes first (N309); the stall is owed after it (N305).
                     val notice = finishStallNotice(templateId)
-                    if (notice.isNullOrEmpty()) closeSession() else _stallNotice.value = notice
+                    if (calibration.isEmpty()) {
+                        if (notice.isNullOrEmpty()) closeSession() else _stallNotice.value = notice
+                    } else {
+                        pendingStallNotice.value = notice
+                        _calibrationNotice.value = calibration
+                    }
                 }
 
                 is DataResult.Failure -> lastError.value = result.error
@@ -1260,6 +1290,82 @@ class ActiveWorkoutViewModel @Inject constructor(
     fun onDismissStallNotice() {
         _stallNotice.value = null
         closeSession()
+    }
+
+    /** The plan's marked exercises, with the session's performed work sets by place (N309). */
+    private suspend fun calibrationNotices(): List<CalibrationNotice> {
+        val templateId = uiState.value.sessionTemplateId ?: return emptyList()
+        val read = dataResultOf {
+            val plan = templateRepository.observeExercises(templateId).first()
+            val sets = templateRepository.observeSets(templateId).first()
+            plan.filter { it.calibrationPending }.mapNotNull { exercise ->
+                // A substituted row did not train the plan's movement (decision 6a); it says nothing here.
+                val row = uiState.value.exercises.firstOrNull {
+                    it.exerciseId == exercise.exerciseId && it.substitutedFromExerciseId == null
+                } ?: return@mapNotNull null
+                val performed = row.sets.filter { it.setType.recordsEffort }
+                val planned = sets.filter {
+                    it.templateExerciseId == exercise.id && it.role.recordsEffort
+                }
+                val count = minOf(performed.size, planned.size)
+                val top = performed.maxByOrNull { it.weightGrams } ?: return@mapNotNull null
+                if (count == 0) return@mapNotNull null
+                CalibrationNotice(
+                    templateExerciseId = exercise.id,
+                    exerciseName = row.name,
+                    setCount = count,
+                    topWeightGrams = top.weightGrams,
+                    topAssistanceGrams = top.assistanceGrams,
+                    weightUnit = row.weightUnit,
+                    // Extra sets are N311's business, not the calibration's: the plan's places only (6a).
+                    targets = (0 until count).map { index ->
+                        CalibrationTarget(
+                            setId = planned[index].id,
+                            weightGrams = performed[index].weightGrams,
+                            assistanceGrams = performed[index].assistanceGrams,
+                        )
+                    },
+                )
+            }
+        }
+        return when (read) {
+            is DataResult.Success -> read.data
+            is DataResult.Failure -> {
+                lastError.value = read.error
+                emptyList()
+            }
+        }
+    }
+
+    /** Adopts every logged work set's load and clears the marker (N309). */
+    fun onUseCalibration(notice: CalibrationNotice) {
+        viewModelScope.launch {
+            when (val read = templateRepository.calibrateExercise(notice.templateExerciseId, notice.targets)) {
+                is DataResult.Success -> removeCalibration(notice)
+                is DataResult.Failure -> lastError.value = read.error
+            }
+        }
+    }
+
+    /** Leaves the plan weightless and clears the marker (N309). */
+    fun onSkipCalibration(notice: CalibrationNotice) {
+        viewModelScope.launch {
+            when (val read = templateRepository.setCalibration(notice.templateExerciseId, false)) {
+                is DataResult.Success -> removeCalibration(notice)
+                is DataResult.Failure -> lastError.value = read.error
+            }
+        }
+    }
+
+    private fun removeCalibration(notice: CalibrationNotice) {
+        val remaining = _calibrationNotice.value.orEmpty()
+            .filterNot { it.templateExerciseId == notice.templateExerciseId }
+        _calibrationNotice.value = remaining.ifEmpty { null }
+        if (remaining.isEmpty()) {
+            val stall = pendingStallNotice.value
+            pendingStallNotice.value = null
+            if (stall.isNullOrEmpty()) closeSession() else _stallNotice.value = stall
+        }
     }
 
     /**

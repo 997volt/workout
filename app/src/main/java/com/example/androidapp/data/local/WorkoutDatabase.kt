@@ -116,7 +116,7 @@ import androidx.room.TypeConverters
         MetricGoalEntity::class,
         RetiredMovementEntity::class,
     ],
-    version = 24,
+    version = 25,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)

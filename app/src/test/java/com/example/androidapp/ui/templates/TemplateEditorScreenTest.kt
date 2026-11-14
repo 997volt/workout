@@ -69,7 +69,7 @@ class TemplateEditorScreenTest {
         val onAddExercise: () -> Unit = {},
         val onAddWarmUpSets: (String, Long) -> Unit = { _, _ -> },
         val onAddSets: (String, Int, TemplateSetEdit) -> Unit = { _, _, _ -> },
-        val onSaveExercisePlan: (String, Int?, String?, Int?) -> Unit = { _, _, _, _ -> },
+        val onSaveExercisePlan: (String, Int?, String?, Int?, Boolean) -> Unit = { _, _, _, _, _ -> },
         val onRemoveSet: (String) -> Unit = {},
         val onUndoRemoveSet: () -> Unit = {},
         /** Keeping a version, and reading one back (ROADMAP N134). */
@@ -424,7 +424,7 @@ class TemplateEditorScreenTest {
                 onDeleteTemplate = {},
                 onAddExercise = {},
                 onAddWarmUpSets = { _, _ -> },
-                onSaveExercisePlan = { _, _, _, _ -> },
+                onSaveExercisePlan = { _, _, _, _, _ -> },
                 onBack = {},
             )
         }
@@ -468,7 +468,7 @@ class TemplateEditorScreenTest {
                 onDeleteTemplate = {},
                 onAddExercise = {},
                 onAddWarmUpSets = { _, _ -> },
-                onSaveExercisePlan = { _, _, _, _ -> },
+                onSaveExercisePlan = { _, _, _, _, _ -> },
                 onBack = {},
             )
         }
@@ -962,7 +962,7 @@ class TemplateEditorScreenTest {
             state = twoExercises.copy(
                 exercises = listOf(twoExercises.exercises.first().copy(targetRpeHalves = 16)),
             ),
-            actions = Actions(onSaveExercisePlan = { _, rest, cue, rpe -> saved = Triple(rest, cue, rpe) }),
+            actions = Actions(onSaveExercisePlan = { _, rest, cue, rpe, _ -> saved = Triple(rest, cue, rpe) }),
         )
         openBlock("te1")
 
@@ -991,7 +991,7 @@ class TemplateEditorScreenTest {
             state = twoExercises.copy(
                 exercises = listOf(twoExercises.exercises.first().copy(targetRpeHalves = 18)),
             ),
-            actions = Actions(onSaveExercisePlan = { _, rest, cue, rpe -> saved = Triple(rest, cue, rpe) }),
+            actions = Actions(onSaveExercisePlan = { _, rest, cue, rpe, _ -> saved = Triple(rest, cue, rpe) }),
         )
         openBlock("te1")
 
@@ -1040,6 +1040,7 @@ class TemplateEditorScreenTest {
         )
         openBlock("te1")
 
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_FIND_WEIGHT).assertExists()
         val rest = composeTestRule.onNodeWithTag(TestTags.TEMPLATE_REST_FIELD).getUnclippedBoundsInRoot()
         val rpe = composeTestRule.onNodeWithTag(TestTags.TEMPLATE_EXERCISE_RPE).getUnclippedBoundsInRoot()
         val cue = composeTestRule.onNodeWithTag(TestTags.TEMPLATE_CUE_FIELD).getUnclippedBoundsInRoot()

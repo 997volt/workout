@@ -22,6 +22,13 @@ data class SetSuggestion(
     /** The assistance to prefill, or 0 for none (ROADMAP N15). */
     val assistanceGrams: Long = 0,
     /**
+     * Whether the weight is known (ROADMAP N309).
+     *
+     * False for the first set of a marked plan: the field opens empty, the history and the 20 kg
+     * default are ignored, and *Log set* waits for a number. The next set is "what you just did" again.
+     */
+    val weightKnown: Boolean = true,
+    /**
      * The hold to prefill for a timed movement, or null for a counted one (ROADMAP N220).
      *
      * "What I did" like reps: the last set of this movement, then last time's, then nothing — a plan cannot
@@ -152,6 +159,8 @@ fun suggestionForNextSet(
     /** Whether a set of this movement is held rather than counted (N220) — same reason, and a plank is
      * not a loaded lift either. */
     timed: Boolean = false,
+    /** True for a plan whose weight is being found (N309): the first set has no number to start from. */
+    calibrationPending: Boolean = false,
 ): SetSuggestion {
     // "What you just did" beats "what you did last time": within a session the set before is the best
     // evidence there is.
@@ -188,6 +197,11 @@ fun suggestionForNextSet(
     // there is one, and from what was just done where there is not (ROADMAP N79).
     val rungReps = if (planned?.role?.isRung == true) sameSetLastTime?.reps else null
 
+    // The plan is weightless on purpose, so the first set is not given history's number or the default:
+    // the field starts blank and Log set waits. Once a set is done, "what you just did" is the answer.
+    val blankWeight = calibrationPending && loggedSets.isEmpty()
+    val load = prefillLoad(plannedLoad, prefill, blankWeight)
+
     return SetSuggestion(
         // The upper bound is the one that matters in a written plan (`max 2`).
         reps = planned?.reps ?: rungReps ?: prefill.reps,
@@ -197,8 +211,9 @@ fun suggestionForNextSet(
         // anchor, and in a live session the lifter may have taken the plates off by hand: the number is
         // a starting point they edit, not a claim the app derived. The plan's own row says why it has
         // none; here the fields must hold something, because what is on screen is what *Log set* writes.
-        weightGrams = plannedLoad?.weightGrams ?: prefill.weightGrams,
-        assistanceGrams = plannedLoad?.assistanceGrams ?: prefill.assistanceGrams,
+        weightGrams = load.weightGrams,
+        assistanceGrams = load.assistanceGrams,
+        weightKnown = !blankWeight,
         // The armed role follows the plan, so a template's ramp is recorded as warm-ups without a
         // tap per set (B48); with no plan the pending set stays a working set.
         setType = planned?.role ?: prefill.setType,
@@ -208,6 +223,22 @@ fun suggestionForNextSet(
         durationSeconds = planned?.durationSeconds ?: prefill.durationSeconds,
     )
 }
+
+/**
+ * The load the next set opens with, or a blank one for a plan that is finding its weight (N309).
+ *
+ * The plan's half wins where it states one; otherwise the prefill's. A marked plan's first set has neither:
+ * zero is only the field's placeholder, and [SetSuggestion.weightKnown] is what keeps it from being a claim.
+ */
+private fun prefillLoad(planned: Load?, prefill: SetSuggestion, blank: Boolean): Load =
+    if (blank) {
+        Load(0L, 0L)
+    } else {
+        Load(
+            weightGrams = planned?.weightGrams ?: prefill.weightGrams,
+            assistanceGrams = planned?.assistanceGrams ?: prefill.assistanceGrams,
+        )
+    }
 
 /**
  * Which roles the next set may be logged as (ROADMAP N79, B63, B64).

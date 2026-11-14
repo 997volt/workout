@@ -81,7 +81,7 @@ internal fun TemplateExerciseBlock(
     onAddSet: (TemplateSetEdit) -> Unit,
     onUpdateSet: (String, TemplateSetEdit) -> Unit,
     onRemoveSet: (String) -> Unit,
-    onSavePlan: (Int?, String?, Int?) -> Unit,
+    onSavePlan: (Int?, String?, Int?, Boolean) -> Unit,
     onAddSets: (Int, TemplateSetEdit) -> Unit,
     modifier: Modifier = Modifier,
     onToggleSuperset: (() -> Unit)? = null,

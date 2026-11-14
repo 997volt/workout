@@ -18,6 +18,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -74,11 +75,12 @@ import com.example.androidapp.ui.components.steppedRpeText
  * beside the buttons, because every planned field is optional and a stepper alone could never put a
  * target back to none (N14).
  */
+@Suppress("LongMethod") // The plan's own form; the find-the-weight switch (N309) is the line at the ceiling.
 @Composable
 internal fun ExercisePlanFields(
     exercise: TemplateExercise,
     appProgressionMode: ProgressionMode,
-    onSave: (Int?, String?, Int?) -> Unit,
+    onSave: (Int?, String?, Int?, Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var rest by rememberSaveable(exercise.id) { mutableStateOf(exercise.restSeconds?.toString().orEmpty()) }
@@ -86,13 +88,15 @@ internal fun ExercisePlanFields(
     var rpe by rememberSaveable(exercise.id) {
         mutableStateOf(exercise.targetRpeHalves?.let(Rpe::format).orEmpty())
     }
+    var findWeight by rememberSaveable(exercise.id) { mutableStateOf(exercise.calibrationPending) }
     val restSeconds = rest.trim().ifEmpty { null }?.toIntOrNull()
     val restIsValid = rest.isBlank() || (restSeconds?.let(RestTimer::isValidPrescription) == true)
     val rpeHalves = rpe.trim().ifEmpty { null }?.let(Rpe::parse)
     val rpeIsValid = rpe.isBlank() || rpeHalves != null
     val changed = restSeconds != exercise.restSeconds ||
         cue.trim().ifEmpty { null } != exercise.techniqueNote ||
-        rpeHalves != exercise.targetRpeHalves
+        rpeHalves != exercise.targetRpeHalves ||
+        findWeight != exercise.calibrationPending
 
     Column(
         modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
@@ -100,6 +104,24 @@ internal fun ExercisePlanFields(
     ) {
         ProgressionStepNotice(exercise = exercise, appProgressionMode = appProgressionMode)
         PlanCueField(cue = cue, onCueChange = { cue = it })
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(stringResource(R.string.template_find_weight))
+                Text(
+                    text = stringResource(R.string.template_find_weight_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+            Switch(
+                checked = findWeight,
+                onCheckedChange = { findWeight = it },
+                modifier = Modifier.testTag(TestTags.TEMPLATE_FIND_WEIGHT),
+            )
+        }
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -136,7 +158,7 @@ internal fun ExercisePlanFields(
             // Last by construction now that there are three controls on the line, so the spacer that held
             // it at the right margin when the rest field was the only thing here (N80) is gone.
             IconButton(
-                onClick = { onSave(restSeconds, cue.trim().ifEmpty { null }, rpeHalves) },
+                onClick = { onSave(restSeconds, cue.trim().ifEmpty { null }, rpeHalves, findWeight) },
                 enabled = changed && restIsValid && rpeIsValid,
                 modifier = Modifier.testTag(TestTags.TEMPLATE_REST_CUE_SAVE),
             ) {

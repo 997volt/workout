@@ -18,6 +18,7 @@ import com.example.androidapp.domain.NotFoundException
 import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.dataResultOf
+import com.example.androidapp.domain.model.CalibrationTarget
 import com.example.androidapp.domain.model.ExerciseDeload
 import com.example.androidapp.domain.model.MAX_REPS
 import com.example.androidapp.domain.model.ReplaceOutcome
@@ -565,6 +566,9 @@ class RoomTemplateRepository @Inject constructor(
                     techniqueNote = null,
                     targetRpeHalves = old.targetRpeHalves,
                     supersetGroup = old.supersetGroup,
+                    // Empty is the deliberate "find the weight" case (N309): the marker is what makes the
+                    // next session start blank instead of prefilling a number from history.
+                    calibrationPending = empty,
                     createdAt = now,
                     updatedAt = now,
                     deletedAt = null,
@@ -600,6 +604,76 @@ class RoomTemplateRepository @Inject constructor(
             newTemplateExerciseId = newRowId,
             newSetIds = setIds,
         )
+    }
+
+    override suspend fun setCalibration(
+        templateExerciseId: String,
+        pending: Boolean,
+    ): DataResult<Unit> = dataResultOf {
+        if (dao.setCalibration(templateExerciseId, pending, timeSource.nowEpochMillis()) == 0) {
+            throw NotFoundException("template exercise $templateExerciseId")
+        }
+    }
+
+    override suspend fun makeWeightless(templateExerciseId: String): DataResult<Unit> = dataResultOf {
+        val exercise = dao.findTemplateExercise(templateExerciseId)
+            ?: throw NotFoundException("template exercise $templateExerciseId")
+        val sets = plannedSetsOf(exercise)
+        val now = timeSource.nowEpochMillis()
+        database.withTransaction {
+            sets.forEach { set ->
+                val clearsReps = set.role == SetType.WARMUP || set.role.isRung
+                updateSetRow(
+                    set.id,
+                    TemplateSetEdit(
+                        role = set.role,
+                        targetWeightGrams = null,
+                        targetAssistanceGrams = null,
+                        targetRepsMin = if (clearsReps) null else set.targetRepsMin,
+                        targetRepsMax = if (clearsReps) null else set.targetRepsMax,
+                        targetRepsCurrent = if (clearsReps) null else set.targetRepsCurrent,
+                        dropValueGrams = set.dropValueGrams,
+                        targetDurationSeconds = if (set.role == SetType.WARMUP) null else set.targetDurationSeconds,
+                        note = set.note,
+                    ),
+                )
+            }
+            if (dao.setCalibration(templateExerciseId, true, now) == 0) {
+                throw NotFoundException("template exercise $templateExerciseId")
+            }
+        }
+    }
+
+    override suspend fun calibrateExercise(
+        templateExerciseId: String,
+        targets: List<CalibrationTarget>,
+    ): DataResult<Unit> = dataResultOf {
+        val exercise = dao.findTemplateExercise(templateExerciseId)
+            ?: throw NotFoundException("template exercise $templateExerciseId")
+        val planned = plannedSetsOf(exercise).associateBy { it.id }
+        val now = timeSource.nowEpochMillis()
+        database.withTransaction {
+            targets.forEach { target ->
+                val stored = planned[target.setId] ?: return@forEach
+                updateSetRow(
+                    target.setId,
+                    TemplateSetEdit(
+                        role = stored.role,
+                        targetWeightGrams = target.weightGrams,
+                        targetAssistanceGrams = target.assistanceGrams,
+                        targetRepsMin = stored.targetRepsMin,
+                        targetRepsMax = stored.targetRepsMax,
+                        targetRepsCurrent = stored.targetRepsCurrent,
+                        dropValueGrams = stored.dropValueGrams,
+                        targetDurationSeconds = stored.targetDurationSeconds,
+                        note = stored.note,
+                    ),
+                )
+            }
+            if (dao.setCalibration(templateExerciseId, false, now) == 0) {
+                throw NotFoundException("template exercise $templateExerciseId")
+            }
+        }
     }
 
     override suspend fun undoReplaceExercise(outcome: ReplaceOutcome): DataResult<Unit> =

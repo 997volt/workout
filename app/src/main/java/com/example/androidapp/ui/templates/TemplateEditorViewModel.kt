@@ -272,8 +272,26 @@ class TemplateEditorViewModel @Inject constructor(
         restSeconds: Int?,
         techniqueNote: String?,
         targetRpeHalves: Int?,
-    ) = write {
-        repository.setExercisePlan(templateExerciseId, restSeconds, techniqueNote, targetRpeHalves)
+        findWeight: Boolean,
+    ) {
+        viewModelScope.launch {
+            // The weightless prescription is the mark **and** the cleared loads (N309): a plan that only
+            // dropped the number would prefill it again from the plan on the next session.
+            val weightless = if (findWeight) {
+                repository.makeWeightless(templateExerciseId)
+            } else {
+                repository.setCalibration(templateExerciseId, false)
+            }
+            val weightlessError = (weightless as? DataResult.Failure)?.error
+            if (weightlessError != null) {
+                error.value = weightlessError
+                return@launch
+            }
+            error.value = (
+                repository.setExercisePlan(templateExerciseId, restSeconds, techniqueNote, targetRpeHalves)
+                    as? DataResult.Failure
+                )?.error
+        }
     }
 
     /**

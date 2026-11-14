@@ -39,24 +39,6 @@ no baseline — a Reset cannot write the old movement's numbers onto the new mov
 The deload's surviving sets keep their baseline rows, so a Reset still restores the pre-deload targets on
 them; that is the reset's literal meaning and it is unchanged.
 
-- **N309 — Find the weight.** When the load is not known, the plan can say so: **Empty** clears the working
-  sets' weight and assistance (and the warm-ups' targets), keeps the plan's reps and target effort, and
-  sets a **one-shot marker** on the plan's exercise — a column on `template_exercises`, a migration, an
-  additive defaulted backup field, **not** the shared program document, because it is a one-session
-  transition like the auto switch rather than a prescription. The next session for that exercise starts
-  with the weight field **empty**, ignoring history and the 20 kg default, with the plan's rep range and
-  target RPE as the guide ([SetSuggestion.kt](app/src/main/java/com/example/androidapp/ui/workout/SetSuggestion.kt));
-  *Log set* waits for a number, and the following sets fill from "what you just did". The marker is
-  consumed at the finish, not at the start, so an abandoned session tries again. At the finish, one line
-  per calibration exercise — *"Use today's weights for Bench Press? 3 sets, top 65 kg"* — **Use** /
-  **Not now**: Use writes the **plan's own working sets**, by place, from the session's work sets — not
-  every logged set: a row that was **substituted** (N291) is skipped, because it did not train the plan's
-  movement, and a session with more work sets than the plan has its **extra sets truncated** (those are
-  N311's business); reps, target effort and warm-ups stay, unmatched plan sets stay empty, in one
-  transaction. Not now leaves the plan weightless; either clears the marker. The plan then has a load, so
-  the next session prefills from it and load progression can run. A plan-editor toggle offers the same
-  weightless prescription outside the replace flow. No baseline work.
-
 - **N310 — The decision on both surfaces.** The finish dialog
   ([WorkoutStallDialog.kt](app/src/main/java/com/example/androidapp/ui/workout/WorkoutStallDialog.kt))
   stops being information-only: for the workout's just-stalled lifts (the run just reached three) of an

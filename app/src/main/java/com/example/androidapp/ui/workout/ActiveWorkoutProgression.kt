@@ -148,6 +148,7 @@ internal fun SessionExercise.suggestionFor(
     // stored index (B157): a soft delete leaves a hole in the indices, while the list's own order is the
     // position the plan counts.
     val sameSetLastTime = previous?.sets?.getOrNull(loggedSets.size)
+    val calibration = plan.plannedEntry?.calibrationPending == true
     val suggestion = suggestionForNextSet(
         loggedSets = loggedSets,
         previous = previous,
@@ -157,9 +158,16 @@ internal fun SessionExercise.suggestionFor(
         // needs no load at all unless the plan or the history names one (B242).
         bodyweight = isBodyweight,
         timed = isTimed,
+        calibrationPending = calibration,
     )
-    // The line names the set the prefill read, which for a rung is its own place last time (N168).
-    return suggestion.copy(reason = suggestionReason(previous, planned, sameSetLastTime))
+    // The line names the set the prefill read, which for a rung is its own place last time (N168). A
+    // marked plan's first set reads the plan alone: its history is not the guide the field is asking from.
+    val reason = if (calibration && loggedSets.isEmpty()) {
+        suggestionReason(previous = null, planned = planned)
+    } else {
+        suggestionReason(previous, planned, sameSetLastTime)
+    }
+    return suggestion.copy(reason = reason)
 }
 
 /**

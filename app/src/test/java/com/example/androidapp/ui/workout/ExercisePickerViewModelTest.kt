@@ -622,6 +622,21 @@ class ExercisePickerViewModelTest {
         override fun observeExercises(templateId: String): Flow<List<TemplateExercise>> =
             flowOf(listOfNotNull(planned))
         override fun observeSets(templateId: String): Flow<List<TemplateSet>> = flowOf(emptyList())
+        override suspend fun makeWeightless(templateExerciseId: String): DataResult<Unit> {
+            error("these tests do not write a plan")
+        }
+        override suspend fun setCalibration(
+            templateExerciseId: String,
+            pending: Boolean,
+        ): DataResult<Unit> {
+            error("these tests do not write a plan")
+        }
+        override suspend fun calibrateExercise(
+            templateExerciseId: String,
+            targets: List<com.example.androidapp.domain.model.CalibrationTarget>,
+        ): DataResult<Unit> {
+            error("these tests do not write a plan")
+        }
         override suspend fun replaceExercise(
             templateExerciseId: String,
             newExerciseId: String,

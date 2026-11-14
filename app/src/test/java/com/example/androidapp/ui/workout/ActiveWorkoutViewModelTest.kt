@@ -2993,6 +2993,21 @@ class ActiveWorkoutViewModelTest {
             flowOf(planned)
 
         override fun observeSets(templateId: String): Flow<List<TemplateSet>> = flowOf(emptyList())
+        override suspend fun makeWeightless(templateExerciseId: String): DataResult<Unit> {
+            return notUsed()
+        }
+        override suspend fun setCalibration(
+            templateExerciseId: String,
+            pending: Boolean,
+        ): DataResult<Unit> {
+            return notUsed()
+        }
+        override suspend fun calibrateExercise(
+            templateExerciseId: String,
+            targets: List<com.example.androidapp.domain.model.CalibrationTarget>,
+        ): DataResult<Unit> {
+            return notUsed()
+        }
         override suspend fun replaceExercise(
             templateExerciseId: String,
             newExerciseId: String,

@@ -9,6 +9,7 @@ import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.Load
 import com.example.androidapp.domain.TimeSource
+import com.example.androidapp.domain.model.CalibrationTarget
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MAX_REPS
 import com.example.androidapp.domain.model.MovementPattern
@@ -25,6 +26,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -751,6 +753,38 @@ class TemplateRepositoryTest {
         val restored = repository.observeExercises(template).first().single()
         assertEquals(old, restored.id)
         assertEquals(5, restored.sets.size)
+    }
+
+    @Test
+    fun theCalibrationMarker_makesThePlanWeightless_andTheUseAdoptsAndClearsIt() = runTest {
+        val template = create("Legs")
+        val exercise = plannedExercise(template)
+        repository.addSet(
+            exercise,
+            TemplateSetEdit(
+                role = SetType.NORMAL,
+                targetWeightGrams = 100_000L,
+                targetRepsMin = 5,
+                targetRepsMax = 8,
+            ),
+        )
+
+        assertTrue(repository.makeWeightless(exercise) is DataResult.Success)
+
+        val weightless = repository.observeExercises(template).first().single()
+        assertTrue("the plan is finding its weight", weightless.calibrationPending)
+        assertNull("the load is cleared", weightless.sets.single().targetWeightGrams)
+        assertEquals("the reps stay", 5, weightless.sets.single().targetRepsMin)
+
+        val target = CalibrationTarget(weightless.sets.single().id, 90_000L, 0L)
+        assertTrue(repository.calibrateExercise(exercise, listOf(target)) is DataResult.Success)
+
+        val used = repository.observeExercises(template).first().single()
+        assertEquals("the number was found", 90_000L, used.sets.single().targetWeightGrams)
+        assertFalse("the prompt is one-shot", used.calibrationPending)
+
+        assertTrue(repository.setCalibration(exercise, true) is DataResult.Success)
+        assertTrue(repository.observeExercises(template).first().single().calibrationPending)
     }
 
     private fun TemplateSet.toEdit() = TemplateSetEdit(

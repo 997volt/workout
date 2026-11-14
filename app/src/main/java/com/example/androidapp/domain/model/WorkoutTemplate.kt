@@ -103,6 +103,14 @@ data class TemplateExercise(
      * be asked.
      */
     val progressionMode: ProgressionMode? = null,
+    /**
+     * The one-shot "find the weight" marker (ROADMAP N309).
+     *
+     * The plan is weightless on purpose and the next session must not prefill a number from history or the
+     * app's default. One session, then the finish's prompt resolves it; the marker is not a prescription,
+     * so it does not travel in the shared program document.
+     */
+    val calibrationPending: Boolean = false,
     /** The planned sets, in order (ROADMAP N14). Empty for a template with none. */
     val sets: List<TemplateSet> = emptyList(),
 )

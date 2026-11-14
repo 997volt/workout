@@ -377,6 +377,11 @@ internal class FakeTemplateRepository : TemplateRepository {
     /** Every replace the undo took back. */
     val undoneReplacements = mutableListOf<com.example.androidapp.domain.model.ReplaceOutcome>()
 
+    /** The marker writes and the calibration adoptions the plan asked for (N309). */
+    val calibrationMarks = mutableListOf<Pair<String, Boolean>>()
+    val calibrations = mutableListOf<Pair<String, List<com.example.androidapp.domain.model.CalibrationTarget>>>()
+    val weightless = mutableListOf<String>()
+
     var replaceResult: DataResult<com.example.androidapp.domain.model.ReplaceOutcome>? = null
 
     override fun observeTemplates(includeHidden: Boolean): Flow<List<WorkoutTemplate>> = templates
@@ -472,6 +477,24 @@ internal class FakeTemplateRepository : TemplateRepository {
         outcome: com.example.androidapp.domain.model.ReplaceOutcome,
     ): DataResult<Unit> {
         undoneReplacements += outcome
+        return DataResult.Success(Unit)
+    }
+    override suspend fun setCalibration(
+        templateExerciseId: String,
+        pending: Boolean,
+    ): DataResult<Unit> {
+        calibrationMarks += templateExerciseId to pending
+        return DataResult.Success(Unit)
+    }
+    override suspend fun makeWeightless(templateExerciseId: String): DataResult<Unit> {
+        weightless += templateExerciseId
+        return DataResult.Success(Unit)
+    }
+    override suspend fun calibrateExercise(
+        templateExerciseId: String,
+        targets: List<com.example.androidapp.domain.model.CalibrationTarget>,
+    ): DataResult<Unit> {
+        calibrations += templateExerciseId to targets
         return DataResult.Success(Unit)
     }
     override suspend fun restoreSet(templateSetId: String): DataResult<Unit> {

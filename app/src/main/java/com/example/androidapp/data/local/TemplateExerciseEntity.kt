@@ -56,6 +56,14 @@ data class TemplateExerciseEntity(
     val targetRpeHalves: Int? = null,
     /** The superset or circuit this exercise is planned in, or null (ROADMAP N24, B16). */
     val supersetGroup: Int? = null,
+    /**
+     * The one-shot "find the weight" marker (ROADMAP N309).
+     *
+     * True for the first session after a plan was made weightless, either by Empty or by the plan-editor
+     * toggle. Defaulted, so every plan on disk before the marker was simply never marked; it is a
+     * transition, not a prescription, and it is deliberately absent from the shared program document.
+     */
+    val calibrationPending: Boolean = false,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long?,

@@ -538,6 +538,15 @@ data class TemplateExerciseDto(
     val targetRpeHalves: Int? = null,
     /** The superset this exercise is planned in, or null (ROADMAP N24, B16). */
     val supersetGroup: Int? = null,
+    /**
+     * The one-shot find-the-weight marker (ROADMAP N309).
+     *
+     * Defaulted and the schema version deliberately unbumped: a file written before it existed decodes as
+     * "never marked", which is what every plan was. It is in the backup because the backup is the whole
+     * device's state; it is not in the shared program document, because it is a transition rather than a
+     * prescription.
+     */
+    val calibrationPending: Boolean = false,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,
