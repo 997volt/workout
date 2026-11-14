@@ -257,6 +257,20 @@ private fun NavGraphBuilder.workoutDestinations(navController: NavHostController
             // A **push**, so the session, its rest timer and the draft in the next set's fields are all
             // exactly as they were and one back tap returns to them (ROADMAP N234).
             onOpenExercise = { exerciseId -> navController.navigate(ExerciseDetail(exerciseId)) },
+            onOpenPlan = { handOff ->
+                // The plan editor owns the confirm/sheet and the undo; the workout screen is replaced (3a).
+                navController.navigate(
+                    ProgramEditor(
+                        programId = handOff.programId,
+                        deloadTemplateId = handOff.templateId.takeUnless { handOff.replace },
+                        deloadTemplateExerciseId = handOff.templateExerciseId.takeUnless { handOff.replace },
+                        replaceTemplateId = handOff.templateId.takeIf { handOff.replace },
+                        replaceTemplateExerciseId = handOff.templateExerciseId.takeIf { handOff.replace },
+                    ),
+                ) {
+                    popUpTo<ActiveWorkout> { inclusive = true }
+                }
+            },
         )
     }
 

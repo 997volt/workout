@@ -24,9 +24,9 @@ import javax.inject.Singleton
  * session list, so a storage fault made the editor and the week review say the plan was moving. The result
  * is a [DataResult] now, and the callers show the error rather than inventing an answer.
  *
- * The program's read answers with **one** stall, not a list: the app is suggesting a week off, and a screen of
- * diagnoses is not the suggestion it set out to make. A single plan's read answers with all of them, because
- * the finish's notice is about what the session showed, and one sentence per stuck lift is still one dialog.
+ * The program's read answers with **every** stall (N310), because each one is now a decision the card can
+ * offer; the finish's notice answers per template for the same reason, and the two surfaces cannot disagree
+ * about which lifts stopped.
  */
 @Singleton
 class PlanStallFinder @Inject constructor(
@@ -35,19 +35,27 @@ class PlanStallFinder @Inject constructor(
     private val trends: TrendsRepository,
 ) {
 
-    /** The first stall among [programId]'s plans, null when nothing has stopped moving, or the read's failure. */
-    suspend fun firstStall(programId: String): DataResult<PlanStall?> = dataResultOf {
+    /**
+     * Every stall in a program's plans, in the program's slot order and each plan's exercise order
+     * (ROADMAP N310, amending N237's "one stall, not a list").
+     *
+     * The stall card now lists them all: each is a decision the lifter can take, and hiding the second one
+     * behind the first made the screen say less than it knew. A template used by two slots answers once —
+     * the plan is the same plan — so the list is distinct by the plan's exercise row.
+     */
+    suspend fun stallsForProgram(programId: String): DataResult<List<PlanStall>> = dataResultOf {
         val templateIds = programs.observeSlots(programId).first()
             .mapNotNull { it.templateId }
             .distinct()
-        val reads = templateIds.map { firstStallInTemplate(it) }
+        val reads = templateIds.map { stallsForTemplate(it) }
         // Every plan is read before the answer is chosen: one failure is the answer, rather than a
         // short-circuit that would hide a later read's fault behind an earlier "no stall".
         reads.filterIsInstance<DataResult.Failure>()
             .firstOrNull()
             ?.let { throw it.error.asThrowable() }
-        reads.filterIsInstance<DataResult.Success<PlanStall?>>()
-            .firstNotNullOfOrNull { it.data }
+        reads.filterIsInstance<DataResult.Success<List<PlanStall>>>()
+            .flatMap { it.data }
+            .distinctBy { it.templateExerciseId }
     }
 
     /**
@@ -83,10 +91,4 @@ class PlanStallFinder @Inject constructor(
             ).stall()
         }
     }
-
-    private suspend fun firstStallInTemplate(templateId: String): DataResult<PlanStall?> =
-        when (val read = stallsForTemplate(templateId)) {
-            is DataResult.Failure -> read
-            is DataResult.Success -> DataResult.Success(read.data.firstOrNull())
-        }
 }

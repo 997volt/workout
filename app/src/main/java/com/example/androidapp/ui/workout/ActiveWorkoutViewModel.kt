@@ -82,6 +82,19 @@ data class CalibrationNotice(
 )
 
 /**
+ * Where the finish's stall decision goes (ROADMAP N310): the plan screen, with the target it must open.
+ *
+ * [replace] false opens the deload confirm, true the replace sheet; both are the plan editor's, so the undo
+ * lives there (decision 3a). The workout screen navigates and is popped; it never writes the plan itself.
+ */
+data class PlanHandOff(
+    val programId: String,
+    val templateId: String,
+    val templateExerciseId: String,
+    val replace: Boolean,
+)
+
+/**
  * Owns the active workout: its exercises, their sets, and the rest timer
  * (ROADMAP P1.2, P1.3, P1.4, P1.8).
  *
@@ -254,8 +267,17 @@ class ActiveWorkoutViewModel @Inject constructor(
     private val _calibrationNotice = MutableStateFlow<List<CalibrationNotice>?>(null)
     val calibrationNotice: StateFlow<List<CalibrationNotice>?> = _calibrationNotice.asStateFlow()
 
+    /** The program the finish's stalls belong to, for the hand-off (N310). */
+    private val _stallProgramId = MutableStateFlow<String?>(null)
+
+    /** The plan hand-off the route navigates to (N310). */
+    private val _planHandOff = MutableStateFlow<PlanHandOff?>(null)
+    val planHandOff: StateFlow<PlanHandOff?> = _planHandOff.asStateFlow()
+
     /** The stall the finish owes once the calibration prompt has been answered (N305, N309). */
-    private val pendingStallNotice = MutableStateFlow<List<PlanStall>?>(null)
+    private val pendingStallNotice = MutableStateFlow<FinishStalls?>(null)
+
+    private data class FinishStalls(val programId: String, val stalls: List<PlanStall>)
 
     private val pendingUndo = MutableStateFlow<SetEntry?>(null)
     private val previousByExercise = MutableStateFlow<Map<String, PreviousPerformance>>(emptyMap())
@@ -1247,7 +1269,7 @@ class ActiveWorkoutViewModel @Inject constructor(
                     // The find-the-weight prompt comes first (N309); the stall is owed after it (N305).
                     val notice = finishStallNotice(templateId)
                     if (calibration.isEmpty()) {
-                        if (notice.isNullOrEmpty()) closeSession() else _stallNotice.value = notice
+                        if (notice == null) closeSession() else showStalls(notice)
                     } else {
                         pendingStallNotice.value = notice
                         _calibrationNotice.value = calibration
@@ -1289,6 +1311,7 @@ class ActiveWorkoutViewModel @Inject constructor(
     /** Dismisses the stall notice, which is what actually closes the screen (ROADMAP N305). */
     fun onDismissStallNotice() {
         _stallNotice.value = null
+        _stallProgramId.value = null
         closeSession()
     }
 
@@ -1364,8 +1387,30 @@ class ActiveWorkoutViewModel @Inject constructor(
         if (remaining.isEmpty()) {
             val stall = pendingStallNotice.value
             pendingStallNotice.value = null
-            if (stall.isNullOrEmpty()) closeSession() else _stallNotice.value = stall
+            if (stall == null) closeSession() else showStalls(stall)
         }
+    }
+
+    private fun showStalls(notice: FinishStalls) {
+        _stallProgramId.value = notice.programId
+        _stallNotice.value = notice.stalls
+    }
+
+    /** The finish's Deload: hand the plan screen the target it must open (N310); the plan edits, not this. */
+    fun onDeloadStall(stall: PlanStall) = handOff(stall, replace = false)
+
+    /** The finish's Replace: the same hand-off, to the plan's replace sheet (N310). */
+    fun onReplaceStall(stall: PlanStall) = handOff(stall, replace = true)
+
+    private fun handOff(stall: PlanStall, replace: Boolean) {
+        val programId = _stallProgramId.value ?: return
+        _stallNotice.value = null
+        _stallProgramId.value = null
+        _planHandOff.value = PlanHandOff(programId, stall.templateId, stall.templateExerciseId, replace)
+    }
+
+    fun onPlanHandOffHandled() {
+        _planHandOff.value = null
     }
 
     /**
@@ -1377,14 +1422,18 @@ class ActiveWorkoutViewModel @Inject constructor(
      * the weekly review carry it from there. A failed read answers null for the same reason: the workout is
      * finished and stored, and an advisory notice must not strand it — the durable surfaces report the error.
      */
-    private suspend fun finishStallNotice(templateId: String?): List<PlanStall>? {
+    private suspend fun finishStallNotice(templateId: String?): FinishStalls? {
         val program = templateId
             ?.let { programRepository.activeWeeklyProgramForTemplate(it) }
             ?.getOrNull()
         val stalls = templateId
-            ?.takeIf { program != null }
             ?.let { stallFinder.stallsForTemplate(it).getOrNull() }
-        return stalls?.filter { it.sessions == STALL_SESSIONS }
+            ?.filter { it.sessions == STALL_SESSIONS }
+        return if (program == null || stalls.isNullOrEmpty()) {
+            null
+        } else {
+            FinishStalls(program, stalls)
+        }
     }
 
     /**

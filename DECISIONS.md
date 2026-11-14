@@ -403,6 +403,19 @@ the rule; that one argues it.
   leaves the plan weightless. The marker is consumed at the finish, not the start, so an abandoned session
   tries again. No baseline work: the auto switch, its baseline and the reset are untouched.
 
+- **The finish's stall notice is a decision, and the list is every lift** (N310, amending N305 and N237).
+  N305 made the finish information-only because the only answer was the week-level creator; N307's and N308's
+  plan edits gave it the answers it was missing. Each stalled lift on the finish now offers **Deload** and
+  **Replace**, and neither writes the plan from here: the workout hands off to the plan editor (the deload
+  confirm or the replace sheet) and is replaced by it, so the confirm, the shared warning and the undo stay
+  in one place — decision 3a. *Done* is do nothing, which is a decision too and stores nothing. N237's "one
+  stall, not a list" is amended for the same reason: the card now lists **every** stalled lift, each with its
+  run length and both actions, because hiding the second lift made the card say less than it knew; the
+  week-level "lighter week" stays a secondary link at the bottom, and the finder gains the program-wide list
+  (distinct by the plan's exercise row, so a template used by two slots answers once). The card's actions are
+  offered on any program; the finish sheet stays active-weekly. The calibration prompt still runs before the
+  stall notice, and the hand-off is a navigation, not a background write.
+
 - **An encrypted export is a password-derived container, not a Keystore key** (N294). The Data section offers
   a second export beside the plain one: the ordinary backup JSON is wrapped in a self-describing JSON envelope
   (version, KDF, iteration count, salt, nonce, ciphertext), and PBKDF2-HMAC-SHA256 with 600,000 iterations and

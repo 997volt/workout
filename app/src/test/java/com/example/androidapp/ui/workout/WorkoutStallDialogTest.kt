@@ -92,11 +92,50 @@ class WorkoutStallDialogTest {
         assertThat(done).isTrue()
     }
 
-    private fun show(stalls: List<PlanStall>, onDone: () -> Unit = {}) {
+    private fun show(
+        stalls: List<PlanStall>,
+        onDone: () -> Unit = {},
+        onDeload: (PlanStall) -> Unit = {},
+        onReplace: (PlanStall) -> Unit = {},
+    ) {
         composeTestRule.setContent {
             AndroidAppTheme {
-                WorkoutStallDialog(stalls = stalls, onDone = onDone)
+                WorkoutStallDialog(
+                    stalls = stalls,
+                    onDone = onDone,
+                    onDeload = onDeload,
+                    onReplace = onReplace,
+                )
             }
         }
+    }
+
+    @Test
+    fun everyStalledLift_offersBothPlanEdits_andDoneDoesNothing() {
+        // N310: the finish is a decision now; both answers hand off to the plan, which owns the edit.
+        val stall = PlanStall(
+            exerciseName = "Back Squat",
+            sessions = 3,
+            templateId = "t1",
+            templateExerciseId = "te1",
+            exerciseId = "squat",
+        )
+        var deloaded: PlanStall? = null
+        var replaced: PlanStall? = null
+        var done = false
+        show(
+            listOf(stall),
+            onDone = { done = true },
+            onDeload = { deloaded = it },
+            onReplace = { replaced = it },
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.STALL_DIALOG_DELOAD).performClick()
+        composeTestRule.onNodeWithTag(TestTags.STALL_DIALOG_REPLACE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.STALL_DONE).performClick()
+
+        assertThat(deloaded).isEqualTo(stall)
+        assertThat(replaced).isEqualTo(stall)
+        assertThat(done).isTrue()
     }
 }

@@ -155,6 +155,8 @@ class ActiveWorkoutScreenTest {
                 onConfirmProgression = actions.onConfirmProgression,
                 onDismissProgression = actions.onDismissProgression,
                 onDismissStallNotice = actions.onDismissStallNotice,
+                onDeloadStall = {},
+                onReplaceStall = {},
                 calibrationNotice = null,
                 onUseCalibration = {},
                 onSkipCalibration = {},

@@ -617,11 +617,11 @@ private fun ProgramEditorBody(
 
         // A prescription that stopped moving, said where the program is read (N237). Nothing is written: the
         // deload is a decision about a week of training, and this is the question.
-        state.stall?.let { stall ->
+        if (state.stalls.isNotEmpty()) {
             PlanStallCard(
-                stall = stall,
-                onDeloadLift = { onDeloadLift(stall) },
-                onReplaceLift = { onReplaceLift(stall.templateId, stall.templateExerciseId) },
+                stalls = state.stalls,
+                onDeloadLift = onDeloadLift,
+                onReplaceLift = { stall -> onReplaceLift(stall.templateId, stall.templateExerciseId) },
                 onOpenDeload = onOpenDeload,
             )
         }

@@ -1488,6 +1488,66 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
+    fun theFinishStall_handsThePlanEditorTheTarget_andClearsItself() = runTest(dispatcher) {
+        // ROADMAP N310: the finish's answers are the plan editor's, so the workout hands off and is replaced.
+        val repository = FakeWorkoutRepository()
+        val programs = FakeProgramRepository().apply { activeWeeklyForTemplate = "p1" }
+        val trends = FakeTrendsRepository().apply {
+            templateSessions = DataResult.Success(List(3) { aSessionThatMissed() })
+        }
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = answeredPlan(),
+            programs = programs,
+            trends = trends,
+        )
+        observe(viewModel)
+        settle()
+        viewModel.onFinish()
+        settle()
+        val stall = viewModel.stallNotice.value!!.single()
+
+        viewModel.onDeloadStall(stall)
+        settle()
+
+        assertEquals("p1", viewModel.planHandOff.value?.programId)
+        assertEquals("t1", viewModel.planHandOff.value?.templateId)
+        assertEquals(stall.templateExerciseId, viewModel.planHandOff.value?.templateExerciseId)
+        assertFalse("deload, not replace", viewModel.planHandOff.value?.replace ?: true)
+        assertNull("the dialog is answered", viewModel.stallNotice.value)
+        assertFalse("the workout screen has not closed itself; the nav replaces it", viewModel.closed.value)
+
+        viewModel.onPlanHandOffHandled()
+        assertNull(viewModel.planHandOff.value)
+    }
+
+    @Test
+    fun theFinishReplace_handsThePlanEditorTheReplaceSheet() = runTest(dispatcher) {
+        val repository = FakeWorkoutRepository()
+        val programs = FakeProgramRepository().apply { activeWeeklyForTemplate = "p1" }
+        val trends = FakeTrendsRepository().apply {
+            templateSessions = DataResult.Success(List(3) { aSessionThatMissed() })
+        }
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = answeredPlan(),
+            programs = programs,
+            trends = trends,
+        )
+        observe(viewModel)
+        settle()
+        viewModel.onFinish()
+        settle()
+
+        viewModel.onReplaceStall(viewModel.stallNotice.value!!.single())
+        settle()
+
+        assertTrue("replace", viewModel.planHandOff.value?.replace ?: false)
+    }
+
+    @Test
     fun aStallThatHasRunPastThree_isNotSaidAgain() = runTest(dispatcher) {
         // It is already on the program's screen and the weekly review; the finish only announces the
         // moment the run reaches three, so it does not become a popup after every later session.

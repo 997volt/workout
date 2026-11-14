@@ -3,6 +3,7 @@ package com.example.androidapp.ui.programs
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -124,12 +125,14 @@ class ProgramEditorScreenTest {
         var deload = false
         setScreen(
             state = twoSlots.copy(
-                stall = PlanStall(
-                    exerciseName = "Back Squat",
-                    sessions = 3,
-                    templateId = "t1",
-                    templateExerciseId = "te1",
-                    exerciseId = "squat"
+                stalls = listOf(
+                    PlanStall(
+                        exerciseName = "Back Squat",
+                        sessions = 3,
+                        templateId = "t1",
+                        templateExerciseId = "te1",
+                        exerciseId = "squat"
+                    )
                 ),
             ),
             onOpenDeload = { deload = true },
@@ -145,17 +148,48 @@ class ProgramEditorScreenTest {
     }
 
     @Test
+    fun theStallCard_listsEveryStalledLift() {
+        // N310: the card no longer stops at the first; each stalled plan is a decision of its own.
+        setScreen(
+            state = twoSlots.copy(
+                stalls = listOf(
+                    PlanStall(
+                        exerciseName = "Back Squat",
+                        sessions = 3,
+                        templateId = "t1",
+                        templateExerciseId = "te1",
+                        exerciseId = "squat",
+                    ),
+                    PlanStall(
+                        exerciseName = "Bench Press",
+                        sessions = 4,
+                        templateId = "t1",
+                        templateExerciseId = "te2",
+                        exerciseId = "bench",
+                    ),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithText("Back Squat").assertExists()
+        composeTestRule.onNodeWithText("Bench Press").assertExists()
+        composeTestRule.onAllNodesWithTag(TestTags.Programs.STALL_DELOAD_LIFT).assertCountEquals(2)
+    }
+
+    @Test
     fun theStallCard_offersThePerLiftDeloadBesideTheLighterWeek() {
         // N307: the card's answer is the plan edit; the week-level creator stays the secondary link.
         var lift: PlanStall? = null
         setScreen(
             state = twoSlots.copy(
-                stall = PlanStall(
-                    exerciseName = "Back Squat",
-                    sessions = 3,
-                    templateId = "t1",
-                    templateExerciseId = "te1",
-                    exerciseId = "squat",
+                stalls = listOf(
+                    PlanStall(
+                        exerciseName = "Back Squat",
+                        sessions = 3,
+                        templateId = "t1",
+                        templateExerciseId = "te1",
+                        exerciseId = "squat",
+                    )
                 ),
             ),
             onDeloadLift = { lift = it },
@@ -172,12 +206,14 @@ class ProgramEditorScreenTest {
         var target: Pair<String, String>? = null
         setScreen(
             state = twoSlots.copy(
-                stall = PlanStall(
-                    exerciseName = "Back Squat",
-                    sessions = 3,
-                    templateId = "t1",
-                    templateExerciseId = "te1",
-                    exerciseId = "squat",
+                stalls = listOf(
+                    PlanStall(
+                        exerciseName = "Back Squat",
+                        sessions = 3,
+                        templateId = "t1",
+                        templateExerciseId = "te1",
+                        exerciseId = "squat",
+                    )
                 ),
             ),
             onReplaceLift = { templateId, templateExerciseId -> target = templateId to templateExerciseId },

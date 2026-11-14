@@ -91,12 +91,14 @@ class WeeklyReviewScreenTest {
                         firstTime = false,
                     ),
                 ),
-                stall = PlanStall(
-                    exerciseName = "Back Squat",
-                    sessions = 3,
-                    templateId = "t1",
-                    templateExerciseId = "te1",
-                    exerciseId = "squat"
+                stalls = listOf(
+                    PlanStall(
+                        exerciseName = "Back Squat",
+                        sessions = 3,
+                        templateId = "t1",
+                        templateExerciseId = "te1",
+                        exerciseId = "squat"
+                    )
                 ),
                 stallProgramId = "p1",
             ),
@@ -190,12 +192,14 @@ class WeeklyReviewScreenTest {
         show(
             WeeklyReviewUiState(
                 isLoading = false,
-                stall = PlanStall(
-                    exerciseName = "Back Squat",
-                    sessions = 3,
-                    templateId = "t1",
-                    templateExerciseId = "te1",
-                    exerciseId = "squat",
+                stalls = listOf(
+                    PlanStall(
+                        exerciseName = "Back Squat",
+                        sessions = 3,
+                        templateId = "t1",
+                        templateExerciseId = "te1",
+                        exerciseId = "squat",
+                    )
                 ),
                 stallProgramId = "p1",
             ),
@@ -213,12 +217,14 @@ class WeeklyReviewScreenTest {
         show(
             WeeklyReviewUiState(
                 isLoading = false,
-                stall = PlanStall(
-                    exerciseName = "Back Squat",
-                    sessions = 3,
-                    templateId = "t1",
-                    templateExerciseId = "te1",
-                    exerciseId = "squat",
+                stalls = listOf(
+                    PlanStall(
+                        exerciseName = "Back Squat",
+                        sessions = 3,
+                        templateId = "t1",
+                        templateExerciseId = "te1",
+                        exerciseId = "squat",
+                    )
                 ),
                 stallProgramId = "p1",
             ),

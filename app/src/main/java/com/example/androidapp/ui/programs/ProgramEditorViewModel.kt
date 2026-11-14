@@ -88,13 +88,12 @@ data class ProgramEditorUiState(
     val preview: SlotPreview? = null,
     val error: DataError? = null,
     /**
-     * The first prescription in this program that has stopped moving, or null (ROADMAP N237).
+     * The prescriptions in this program that have stopped moving, in the program's order (ROADMAP N310).
      *
-     * One sentence, not a list: the app is suggesting a week off, and a screen full of stalls would be a
-     * diagnosis where a suggestion was asked for. The button beside it opens the deload creator the program
-     * already has.
+     * Every one, because each is now a decision the card can offer (amending N237's one-stall rule). Empty
+     * is the normal state.
      */
-    val stall: PlanStall? = null,
+    val stalls: List<PlanStall> = emptyList(),
 ) {
     /** The program was deleted, or never existed — either way there is no editor. */
     val notFound: Boolean get() = !isLoading && program == null
@@ -291,12 +290,12 @@ class ProgramEditorViewModel @Inject constructor(
             error = currentError,
         )
     }
-        // The stall is read from history rather than from a stored flag (N237): it is a pattern in the last few
-        // sessions, so it has to be recomputed after every one of them.
-        .combine(stallForProgram()) { state, stall ->
-            when (stall) {
-                is DataResult.Success -> state.copy(stall = stall.data)
-                is DataResult.Failure -> state.copy(stall = null, error = stall.error)
+        // The stalls are read from history rather than from a stored flag (N237): a pattern in the last few
+        // sessions, so they are recomputed after every one of them.
+        .combine(stallsForProgram()) { state, stalls ->
+            when (stalls) {
+                is DataResult.Success -> state.copy(stalls = stalls.data)
+                is DataResult.Failure -> state.copy(stalls = emptyList(), error = stalls.error)
             }
         }
         .stateIn(
@@ -312,9 +311,9 @@ class ProgramEditorViewModel @Inject constructor(
      * movement on another day of the same program prescribes different work, and a session started from no
      * template is not one of these.
      */
-    private fun stallForProgram(): Flow<DataResult<PlanStall?>> =
+    private fun stallsForProgram(): Flow<DataResult<List<PlanStall>>> =
         combine(repository.observeSlots(programId), stallRefresh) { _, _ -> Unit }
-            .mapLatest { stallFinder.firstStall(programId) }
+            .mapLatest { stallFinder.stallsForProgram(programId) }
 
     fun onRename(name: String) = write { repository.renameProgram(programId, name) }
 

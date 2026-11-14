@@ -175,7 +175,7 @@ private fun WeeklyReviewBody(
         MovedSection(movements = state.movements)
         SectionHeader(text = stringResource(R.string.weekly_review_stall_title))
         StallSection(
-            stall = state.stall,
+            stalls = state.stalls,
             programId = state.stallProgramId,
             onOpenDeload = onOpenDeload,
             onDeloadLift = onDeloadLift,
@@ -320,18 +320,18 @@ private fun MovedSection(movements: List<MovementGain>) {
 /** The first stopped plan, or the sentence that says there is none (N247). */
 @Composable
 private fun StallSection(
-    stall: PlanStall?,
+    stalls: List<PlanStall>,
     programId: String?,
     onOpenDeload: (String) -> Unit,
     onDeloadLift: (String, String, String) -> Unit,
     onReplaceLift: (String, String, String) -> Unit,
 ) {
-    if (stall != null && programId != null) {
+    if (stalls.isNotEmpty() && programId != null) {
         Box(modifier = Modifier.testTag(TestTags.WEEKLY_REVIEW_STALL)) {
             PlanStallCard(
-                stall = stall,
-                onDeloadLift = { onDeloadLift(programId, stall.templateId, stall.templateExerciseId) },
-                onReplaceLift = { onReplaceLift(programId, stall.templateId, stall.templateExerciseId) },
+                stalls = stalls,
+                onDeloadLift = { stall -> onDeloadLift(programId, stall.templateId, stall.templateExerciseId) },
+                onReplaceLift = { stall -> onReplaceLift(programId, stall.templateId, stall.templateExerciseId) },
                 onOpenDeload = { onOpenDeload(programId) },
             )
         }

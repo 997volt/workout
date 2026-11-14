@@ -124,7 +124,7 @@ class WeeklyReviewViewModelTest {
         assertThat(state.plan.planned).isEqualTo(2)
         assertThat(state.plan.done).isEqualTo(1)
         assertThat(state.days).hasSize(7)
-        assertThat(state.stall?.exerciseName).isEqualTo("Back Squat")
+        assertThat(state.stalls.firstOrNull()?.exerciseName).isEqualTo("Back Squat")
         assertThat(state.stallProgramId).isEqualTo("p1")
         assertWithMessage("the block is part of the week")
             .that(state.blocks.map { it.name })
@@ -265,8 +265,8 @@ class WeeklyReviewViewModelTest {
                 DataResult.Success(programs)
             }
 
-        override suspend fun firstStall(programId: String): DataResult<PlanStall?> =
-            DataResult.Success(stall)
+        override suspend fun stallsForProgram(programId: String): DataResult<List<PlanStall>> =
+            DataResult.Success(listOfNotNull(stall))
 
         override suspend fun blocks(): DataResult<List<BlockProgress>> = DataResult.Success(blocks)
     }

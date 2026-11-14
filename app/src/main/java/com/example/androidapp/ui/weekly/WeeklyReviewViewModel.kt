@@ -44,7 +44,8 @@ data class WeeklyReviewUiState(
     val blocks: List<BlockProgress> = emptyList(),
     /** True when any program is followed, even one with no weekday schedule (B329). */
     val hasActivePlan: Boolean = false,
-    val stall: PlanStall? = null,
+    /** Every stalled prescription of the first followed program that has one (N310). */
+    val stalls: List<PlanStall> = emptyList(),
     val stallProgramId: String? = null,
     val error: DataError? = null,
 )
@@ -127,7 +128,7 @@ class WeeklyReviewViewModel @Inject constructor(
                     return@launch
                 }
             }
-            val stalled = when (val read = firstStall(active)) {
+            val stalled = when (val read = firstStalledProgram(active)) {
                 is DataResult.Success -> read.data
                 is DataResult.Failure -> {
                     // A failed stall read is not "no stall" (B351), and this screen already says a read's
@@ -148,7 +149,7 @@ class WeeklyReviewViewModel @Inject constructor(
                 movements = movements,
                 blocks = blocks,
                 hasActivePlan = active.isNotEmpty(),
-                stall = stalled?.first,
+                stalls = stalled?.first.orEmpty(),
                 stallProgramId = stalled?.second,
             )
         }
@@ -182,14 +183,21 @@ class WeeklyReviewViewModel @Inject constructor(
     }
 
     /** The first programme whose plan has stopped moving, with its id, or the read's failure (B351). */
-    private suspend fun firstStall(active: List<WorkoutProgram>): DataResult<Pair<PlanStall, String>?> =
-        active.fold(DataResult.Success(null) as DataResult<Pair<PlanStall, String>?>) { acc, program ->
+    /** The first followed program with any stall, and all of that program's stalls (N310). */
+    private suspend fun firstStalledProgram(
+        active: List<WorkoutProgram>,
+    ): DataResult<Pair<List<PlanStall>, String>?> =
+        active.fold(DataResult.Success(null) as DataResult<Pair<List<PlanStall>, String>?>) { acc, program ->
             if (acc is DataResult.Failure) {
                 acc
             } else {
-                when (val found = weekly.firstStall(program.id)) {
+                when (val found = weekly.stallsForProgram(program.id)) {
                     is DataResult.Failure -> found
-                    is DataResult.Success -> found.data?.let { DataResult.Success(it to program.id) } ?: acc
+                    is DataResult.Success ->
+                        found.data
+                            .takeIf { it.isNotEmpty() }
+                            ?.let { DataResult.Success(it to program.id) }
+                            ?: acc
                 }
             }
         }

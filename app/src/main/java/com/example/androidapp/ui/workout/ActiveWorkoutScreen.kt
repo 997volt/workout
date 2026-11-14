@@ -55,6 +55,8 @@ fun ActiveWorkoutRoute(
     onDone: () -> Unit,
     onBack: () -> Unit,
     onOpenExercise: (String) -> Unit,
+    /** Where a stall decision goes (N310): the plan editor with the target it must open. */
+    onOpenPlan: (PlanHandOff) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ActiveWorkoutViewModel = hiltViewModel(),
 ) {
@@ -62,6 +64,15 @@ fun ActiveWorkoutRoute(
     // Finishing closes the session; a stall notice still has to be read, so this is what leaves the
     // screen once it is dismissed (N305).
     LeaveWhenClosed(closed = viewModel.closed.collectAsStateWithLifecycle().value, onLeave = onDone)
+    // The finish's stall decision leaves for the plan editor, which owns the edit and its undo (N310).
+    val planHandOff by viewModel.planHandOff.collectAsStateWithLifecycle()
+    val currentOnOpenPlan by rememberUpdatedState(onOpenPlan)
+    LaunchedEffect(planHandOff) {
+        planHandOff?.let {
+            viewModel.onPlanHandOffHandled()
+            currentOnOpenPlan(it)
+        }
+    }
 
     // A State object rather than unwrapped with `by`: reading it here would recompose everything below
     // once a second, which is the whole point of F16. Only the header and the rest bar read it.
@@ -89,6 +100,8 @@ fun ActiveWorkoutRoute(
         onToggleSuperset = viewModel::onToggleSuperset,
         stallNotice = stallNotice,
         onDismissStallNotice = viewModel::onDismissStallNotice,
+        onDeloadStall = viewModel::onDeloadStall,
+        onReplaceStall = viewModel::onReplaceStall,
         calibrationNotice = calibrationNotice,
         onUseCalibration = viewModel::onUseCalibration,
         onSkipCalibration = viewModel::onSkipCalibration,
@@ -170,6 +183,9 @@ fun ActiveWorkoutScreen(
     onMoveExercise: (String, Int) -> Unit,
     onToggleSuperset: (String) -> Unit,
     onDismissStallNotice: () -> Unit,
+    /** The finish's two plan decisions; both hand off to the plan editor (N310). */
+    onDeloadStall: (PlanStall) -> Unit,
+    onReplaceStall: (PlanStall) -> Unit,
     /** The find-the-weight prompt at the finish, before the stall notice (N309). */
     calibrationNotice: List<CalibrationNotice>?,
     onUseCalibration: (CalibrationNotice) -> Unit,
@@ -234,7 +250,14 @@ fun ActiveWorkoutScreen(
             onSkip = onSkipCalibration,
         )
     }
-    if (stallNotice != null) WorkoutStallDialog(stalls = stallNotice, onDone = onDismissStallNotice)
+    if (stallNotice != null) {
+        WorkoutStallDialog(
+            stalls = stallNotice,
+            onDone = onDismissStallNotice,
+            onDeload = onDeloadStall,
+            onReplace = onReplaceStall,
+        )
+    }
     BodyweightPrompt(prompt = bodyweightPrompt, onSave = onEnterBodyweight, onDismiss = onDismissBodyweight)
 
     UndoOffers(state, snackbarHostState, onUndoDelete, onDismissUndo, onUndoFinishExercise, onDismissFinishUndo)
@@ -568,6 +591,8 @@ private fun ActiveWorkoutScreenPreview() {
             onMoveExercise = { _, _ -> },
             onToggleSuperset = { _ -> },
             onDismissStallNotice = {},
+            onDeloadStall = {},
+            onReplaceStall = {},
             calibrationNotice = null,
             onUseCalibration = {},
             onSkipCalibration = {},

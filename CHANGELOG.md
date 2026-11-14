@@ -43,6 +43,14 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   weightless, and either clears the one-shot marker. The marker is in the backup and deliberately not in the
   shared program document; Auto progression, its baseline and the reset are untouched.
 
+- **The finish's stall notice is a decision, and the stall card lists every lift** (N310). Each stalled lift
+  on the finish now offers **Deload** and **Replace**, and both hand off to the plan editor — the deload
+  confirm or the replace sheet — so the plan write and its undo stay on the plan screen; *Done* is do
+  nothing. The stall card, shared by the program editor and the weekly review, lists **every** stalled lift
+  rather than the first, each with its run length and the same two actions, with the week-level "lighter
+  week" kept as the bottom link. The calibration prompt still runs before the stall notice. The card's
+  actions are offered on any program; the finish sheet stays active-weekly.
+
 
 ### Changed
 

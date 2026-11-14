@@ -2,6 +2,7 @@ package com.example.androidapp.ui.workout
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -21,13 +22,16 @@ import com.example.androidapp.ui.components.TestTags
  *
  * A review of what the session did would repeat what history already reads back, and compare it to a plan
  * auto progression may already have moved. A lift that has stopped moving is the fact the screen cannot show
- * while it is being trained, so it is what the finish says — and nothing else. Information, not a decision:
- * the deload creator stays on the program screen's card (N237), where the plan is.
+ * while it is being trained, so it is what the finish says — and nothing else. It is a **decision** now
+ * (N310, amending N305): each stalled lift offers Deload and Replace, and both hand off to the plan editor,
+ * which owns the confirm, the replace sheet and the undo. *Done* is do nothing.
  */
 @Composable
 internal fun WorkoutStallDialog(
     stalls: List<PlanStall>,
     onDone: () -> Unit,
+    onDeload: (PlanStall) -> Unit,
+    onReplace: (PlanStall) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     AlertDialog(
@@ -47,6 +51,20 @@ internal fun WorkoutStallDialog(
                             ),
                             style = MaterialTheme.typography.bodyMedium,
                         )
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            AppTextButton(
+                                onClick = { onReplace(stall) },
+                                modifier = Modifier.testTag(TestTags.STALL_DIALOG_REPLACE),
+                            ) {
+                                Text(stringResource(R.string.program_stall_replace_lift))
+                            }
+                            AppTextButton(
+                                onClick = { onDeload(stall) },
+                                modifier = Modifier.testTag(TestTags.STALL_DIALOG_DELOAD),
+                            ) {
+                                Text(stringResource(R.string.program_stall_deload_lift))
+                            }
+                        }
                     }
                 }
             }

@@ -39,20 +39,6 @@ no baseline — a Reset cannot write the old movement's numbers onto the new mov
 The deload's surviving sets keep their baseline rows, so a Reset still restores the pre-deload targets on
 them; that is the reset's literal meaning and it is unchanged.
 
-- **N310 — The decision on both surfaces.** The finish dialog
-  ([WorkoutStallDialog.kt](app/src/main/java/com/example/androidapp/ui/workout/WorkoutStallDialog.kt))
-  stops being information-only: for the workout's just-stalled lifts (the run just reached three) of an
-  active weekly program, each gets **Deload** and **Replace**; *Done* is do nothing. The actions **hand off
-  to the plan**: the deload closes the workout and opens the program editor's deload confirm (the
-  before → after, and the other programs only when there are any), and the replace opens the plan's replace
-  sheet; the undo lives on the plan screen, so it is not lost when the workout closes. The stall card,
-  shared by the program editor and the weekly review, lists **every** stalled lift of the program rather
-  than the first — the finder gains a program-wide list — each with the same actions and its run length,
-  with the week-level "lighter week" kept as a secondary link. The card's actions are offered on any
-  program; the finish sheet stays active-weekly. The calibration prompt from N309 runs before the stall
-  sheet. This row also amends N305's "information, not a decision" rule, changes the screen states from one
-  stall to a list, and carries the tags and the announcements.
-
 - **N311 — The plan earns a set back.** The counterweight to the trim: a plan edit that **adds** a working
   set, offered from evidence and never automatic. Two triggers, one action. **The extra set you keep
   logging**: the plan prescribes N working sets and the session logged N+1, in the session just done and
