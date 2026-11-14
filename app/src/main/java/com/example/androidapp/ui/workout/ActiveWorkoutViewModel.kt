@@ -579,7 +579,9 @@ class ActiveWorkoutViewModel @Inject constructor(
                     .toSet()
                 // The volume rule judges the same prompt the question did, before any accepted step moves
                 // the plan (B437).
-                val prompt = pending?.let { ProgressionPrompt(sets = it.sets) }
+                val prompt = pending?.let { question ->
+                    ProgressionPrompt(sets = question.sets.map { it.prompt })
+                }
                 _pendingProgression.value = null
                 viewModelScope.launch {
                     // A failed record does not stop the finish: the lifter declined, and the exercise is
@@ -790,7 +792,7 @@ class ActiveWorkoutViewModel @Inject constructor(
             val tookAStep = pending.chosen.isNotEmpty()
             finishExercise(
                 pending.sessionExerciseId,
-                ProgressionPrompt(sets = pending.sets),
+                ProgressionPrompt(sets = pending.sets.map { it.prompt }),
             )
             if (tookAStep) {
                 // The step was taken, so an earlier *Not now* no longer describes this exercise (B310). A
@@ -841,7 +843,9 @@ class ActiveWorkoutViewModel @Inject constructor(
     private suspend fun suggestVolume(sessionExerciseId: String, prompt: ProgressionPrompt?) {
         val templateId = uiState.value.sessionTemplateId
         val row = uiState.value.exercises.firstOrNull { it.id == sessionExerciseId }
-        val current = prompt ?: row?.progression
+        // The prompt Done judged, or the row's own when no question was asked (B437); no row means
+        // there is nothing to offer.
+        val current = prompt ?: row?.progression ?: return
         val planEntryId = row?.planEntryId
         val suggestion = if (uiState.value.isDeloadWorkout || templateId == null || planEntryId == null) {
             null
