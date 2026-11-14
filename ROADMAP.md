@@ -33,8 +33,11 @@ never an automatic step: the Auto progression switch is unchanged.
 
 **The existing Auto progression switch, its baseline and *Reset to starting targets* are untouched.**
 These actions never read or write `progression_baselines`; the reset stays the switch's memory of where the
-plan started, not a log of plan edits. Its existing behaviour after one of these edits — a reset restores
-its own captured targets on the sets that still exist — is unchanged and not special-cased here.
+plan started, not a log of plan edits. The one interaction worth stating: the replace writes **new set
+ids**, so the old baseline rows point at removed sets and are skipped by a Reset, while the new sets carry
+no baseline — a Reset cannot write the old movement's numbers onto the new movement, with no baseline code.
+The deload's surviving sets keep their baseline rows, so a Reset still restores the pre-deload targets on
+them; that is the reset's literal meaning and it is unchanged.
 
 - **N307 — Deload this lift.** A plan edit, not a one-session override: the plan's targets change, the plan
   is the new baseline, and next week progresses from it. The set count follows one arithmetic, shared with
@@ -45,11 +48,14 @@ its own captured targets on the sets that still exist — is unchanged and not s
   the movement's own load steps** (N77), clamped at zero; an assisted set instead gains **three steps of
   assistance** (more help is lighter), and a set that states both moves its assistance; a bodyweight set
   with neither is unchanged, a hold keeps its seconds, and a warm-up is unchanged. Reps are unchanged
-  except a counted set whose plan has a range: its current target moves to the range's lowest. One
-  transactional write, the before → after shown (e.g. *"Bench Press: 5×5 @100 kg → 3×5 @95 kg"*), snackbar
-  undo. The stall clears because the old sessions now meet the lower target (B303); the week-level deload
-  (N147) stays a separate, secondary answer. The per-lift deload action joins the current stall card in
-  this row; the finish sheet and the all-stalls card are N310.
+  except a counted set whose plan has a range: its current target moves to the range's lowest. Before the
+  write the lifter sees the before → after (e.g. *"Bench Press: 5×5 @100 kg → 3×5 @95 kg"*) and, **only if
+  another program also names this plan**, the programs that change with it; the write is one transaction,
+  and the undo restores the **whole edit** — the removed sets and the kept targets, not only the targets.
+  The stall clears because the old sessions now meet the lower target (B303); the week-level deload (N147)
+  stays a separate, secondary answer. The `PlanStall` the card shows gains the plan's exercise id, because
+  the action must know which row it edits. The per-lift action joins the stall card in this row; the finish
+  sheet's hand-off is N310.
 
 - **N308 — Replace this lift.** A plan **edit**, not a session substitution (N291): the template's
   exercise row changes for every future session, the old movement's history, trends and records stay, and
@@ -60,17 +66,21 @@ its own captured targets on the sets that still exist — is unchanged and not s
   movement), the same shape the picker's add-to-template fill writes
   ([ExercisePickerViewModel.kt](app/src/main/java/com/example/androidapp/ui/workout/ExercisePickerViewModel.kt))
   — and where there is no counterpart the target is cleared; the old plan's rep range is not carried on a
-  seed. **Empty** (N309) keeps the plan's reps and target effort and clears the loads instead. The exercise
-  id changes; name, muscle, equipment, unit and step come from the library; position, rest, superset group
-  and the target effort stay; the cue is cleared, because it was the old movement's. The replace sheet
+  seed. **Empty** (N309) keeps the plan's reps and target effort and clears the loads instead. The template
+  gains a **new exercise row at the old position, with new set ids**, and the old row and its sets are
+  soft-deleted; name, muscle, equipment, unit and step come from the library; rest, superset group, target
+  effort and the **rung ladders of the kept anchors** stay (a drop scheme survives the movement change, and
+  its value stays editable); the cue is cleared, because it was the old movement's. The replace sheet
   suggests the other movements **filed under the same category** (the old movement's `parentId`, the
   library's own taxonomy, N95/N110), movements only, excluding the old movement and any already in the
   plan; a different family is one *Browse all movements* away; an unfiled movement has no suggestions, and
   no category is inferred. The confirm shows old → new, the set-count change, the seeded targets or
-  "targets to be found", and the programs that also name the plan (`otherProgramNamesUsingTemplates`);
-  choosing a movement already in the plan from browse warns. One transaction, snackbar undo (the inverse
-  restores the dropped sets, the kept targets and the exercise/cue). The picker gains a replace intent and
-  the action joins the stall card; the finish sheet and the all-stalls list are N310. No baseline work.
+  "targets to be found", and, **only if another program also names the plan**, those programs
+  (`otherProgramNamesUsingTemplates`); choosing a movement already in the plan from browse warns. One
+  transaction; the undo restores the old row and its sets and removes the new one. The new set ids are
+  deliberate: the old baseline rows are skipped by a Reset and the new sets carry no baseline, so a Reset
+  cannot write the old movement's targets onto the new movement. The picker gains a replace intent and the
+  action joins the stall card; the finish sheet's hand-off is N310.
 
 - **N309 — Find the weight.** When the load is not known, the plan can say so: **Empty** clears the working
   sets' weight and assistance (and the warm-ups' targets), keeps the plan's reps and target effort, and
@@ -82,22 +92,27 @@ its own captured targets on the sets that still exist — is unchanged and not s
   *Log set* waits for a number, and the following sets fill from "what you just did". The marker is
   consumed at the finish, not at the start, so an abandoned session tries again. At the finish, one line
   per calibration exercise — *"Use today's weights for Bench Press? 3 sets, top 65 kg"* — **Use** /
-  **Not now**: Use writes **every logged working set's** weight and assistance into the plan's work sets by
-  place, with no "answered the plan" gate, leaving reps, target effort and warm-ups alone and in one
-  transaction; Not now leaves the plan weightless; either clears the marker. The plan then has a load, so
+  **Not now**: Use writes the **plan's own working sets**, by place, from the session's work sets — not
+  every logged set: a row that was **substituted** (N291) is skipped, because it did not train the plan's
+  movement, and a session with more work sets than the plan has its **extra sets truncated** (those are
+  N311's business); reps, target effort and warm-ups stay, unmatched plan sets stay empty, in one
+  transaction. Not now leaves the plan weightless; either clears the marker. The plan then has a load, so
   the next session prefills from it and load progression can run. A plan-editor toggle offers the same
   weightless prescription outside the replace flow. No baseline work.
 
 - **N310 — The decision on both surfaces.** The finish dialog
   ([WorkoutStallDialog.kt](app/src/main/java/com/example/androidapp/ui/workout/WorkoutStallDialog.kt))
   stops being information-only: for the workout's just-stalled lifts (the run just reached three) of an
-  active weekly program, each gets **Deload** and **Replace**; *Done* is do nothing. The deload writes in
-  place; the replace closes the workout, opens the plan's replace sheet, and returns to the plan. The stall
-  card, shared by the program editor and the weekly review, lists **every** stalled lift of the program
-  rather than the first — the finder gains a program-wide list — each with the same actions and its run
-  length, with the week-level "lighter week" kept as a secondary link. The calibration prompt from N309
-  runs before the stall sheet. This row also amends N305's "information, not a decision" rule, changes the
-  screen states from one stall to a list, and carries the tags and the announcements.
+  active weekly program, each gets **Deload** and **Replace**; *Done* is do nothing. The actions **hand off
+  to the plan**: the deload closes the workout and opens the program editor's deload confirm (the
+  before → after, and the other programs only when there are any), and the replace opens the plan's replace
+  sheet; the undo lives on the plan screen, so it is not lost when the workout closes. The stall card,
+  shared by the program editor and the weekly review, lists **every** stalled lift of the program rather
+  than the first — the finder gains a program-wide list — each with the same actions and its run length,
+  with the week-level "lighter week" kept as a secondary link. The card's actions are offered on any
+  program; the finish sheet stays active-weekly. The calibration prompt from N309 runs before the stall
+  sheet. This row also amends N305's "information, not a decision" rule, changes the screen states from one
+  stall to a list, and carries the tags and the announcements.
 
 - **N311 — The plan earns a set back.** The counterweight to the trim: a plan edit that **adds** a working
   set, offered from evidence and never automatic. Two triggers, one action. **The extra set you keep
@@ -105,16 +120,17 @@ its own captured targets on the sets that still exist — is unchanged and not s
   in the previous finished one; the suggestion fires when the pattern **reaches** two, as a
   **Done snackbar** — *"Bench Press: a fourth set logged in each of the last 2 sessions. Add it to the
   plan?"* — after the step dialog or the auto-progression banner, with **Add** and the usual undo, and it
-  stays on the plan card while it holds if the snackbar is missed. **The plan is comfortable**: every
-  working set of the session just done and the two finished before it met the plan — reps in the range,
-  effort at or under the target — with no stall open; that one is offered at Done too, as the same
-  one-shot snackbar when the pattern **reaches** three, with the plan card and the weekly review behind it.
+  stays on the plan card while it holds if the snackbar is missed. **The plan is comfortable**: in the
+  session just done and the two finished before it, every working set **earned a step** — the progression
+  offer's own gate, not a fresh reading of the effort field, which opens on the plan's target — with no
+  stall open; that one is offered at Done too, as the same one-shot snackbar when the pattern **reaches**
+  three, with the plan card and the weekly review behind it.
   The write appends one NORMAL working set after the exercise's last set: for the extra-set trigger, from the logged extra set's weight, assistance and reps;
   for the comfortable trigger, from the last kept set's target
   ([TemplateRepository.kt](app/src/main/java/com/example/androidapp/domain/repository/TemplateRepository.kt)
   `addSet`). The plan's effort stays; one transaction; snackbar undo; the plan takes effect the next
   session. The gates: no open stall, not a deload week's template, and the plan's work-set count below
-  **five** — the suggestion's cap, while the editor can still add more by hand. One suggestion at a time —
+  **six** — the suggestion's cap, while the editor can still add more by hand. One suggestion at a time —
   when both hold at Done, the extra set is offered first, since it is the lifter's own work — and no stored
   "dismissed" state: each snackbar fires once at its threshold and the card carries the rest. The
   read is the same `templateSessions` the stall uses
@@ -124,14 +140,15 @@ its own captured targets on the sets that still exist — is unchanged and not s
   later.
 
 **Docs for the batch.** DECISIONS records the deload rule (amending P3.10's "never computed" to "the lifter
-chooses, the arithmetic is shown"), the replace rule (the shared trim, the seed, the category suggestions,
-the cue, the shared-plan warning), the calibration (the marker, the blank first session, the prompt, the
-20 kg default exception), the surfaces (amending N305), and the volume rule (N311: the two triggers, the
-two-session extra set and the three-session comfortable plan, both offered at Done, the five-set cap, the
-plan card behind them, and no automatic volume). N299
-is unchanged: the per-lift deload is the "separate rule" it names, and the auto switch, baseline and Reset
-are untouched. N16/B303 say why a plan
-edit clears the stall; N95/N110 are the suggestion source. Each row lands with its CHANGELOG entry under
+chooses, the arithmetic is shown"), the replace rule (the shared trim, the new row and set ids, the seed,
+the category suggestions, the kept rung ladders, the cue, the conditional shared-plan warning), the
+calibration (the marker, the blank first session, the prompt, the substituted row skipped and extra sets
+truncated, the 20 kg default exception), the surfaces (the hand-off to the plan, amending N305 and N237's
+"one stall"), and the volume rule (N311: the extra set after two sessions, the comfortable plan gated on
+earned steps after three, both offered at Done, the six-set cap, the plan card behind them, and no automatic
+volume). N299 is unchanged: the per-lift deload is the "separate rule" it names, and the auto switch,
+baseline and Reset are untouched. N16/B303 say why a plan edit clears the stall; N95/N110 are the
+suggestion source; N291 is why a replace says "in the plan". Each row lands with its CHANGELOG entry under
 `[Unreleased]`, its tests (unit, and instrumented for the plan writes and the marker/migration), and its
 roadmap row deleted.
 
