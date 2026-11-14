@@ -24,9 +24,17 @@ class CalibrationDialogTest {
         notice: CalibrationNotice,
         onUse: (CalibrationNotice) -> Unit = {},
         onSkip: (CalibrationNotice) -> Unit = {},
+        errorNotice: CalibrationNotice? = null,
+        onClose: (CalibrationNotice) -> Unit = {},
     ) {
         composeTestRule.setContent {
-            CalibrationDialog(listOf(notice), onUse = onUse, onSkip = onSkip)
+            CalibrationDialog(
+                listOf(notice),
+                onUse = onUse,
+                onSkip = onSkip,
+                errorNotice = errorNotice,
+                onClose = onClose,
+            )
         }
     }
 
@@ -55,5 +63,27 @@ class CalibrationDialogTest {
 
         assertThat(used).isEqualTo(notice)
         assertThat(skipped).isEqualTo(notice)
+    }
+
+    @Test
+    fun aFailedWrite_statesIt_andCloseMovesOnWithoutWriting() {
+        // B422: the dialog used to have no exit when a write failed, so a stored workout could not close.
+        val notice = CalibrationNotice(
+            templateExerciseId = "te1",
+            exerciseName = "Bench Press",
+            setCount = 3,
+            topWeightGrams = 65_000L,
+            topAssistanceGrams = 0L,
+            weightUnit = WeightUnit.KILOGRAMS,
+            targets = emptyList(),
+        )
+        var closed: CalibrationNotice? = null
+        show(notice, errorNotice = notice, onClose = { closed = it })
+
+        composeTestRule.onNodeWithText("The plan could not be saved", substring = true)
+            .assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.CALIBRATION_CLOSE).performClick()
+
+        assertThat(closed).isEqualTo(notice)
     }
 }

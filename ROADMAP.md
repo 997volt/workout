@@ -23,13 +23,6 @@ rows below are the fixes, ordered as the review ranked them: the must-fix group 
 findings after it, and the missing tests last as **N312**. Each row names the finding, the path and the
 fix; when a row lands, its finding is gone from this file.
 
-- **B422 — A calibration write failure traps a finished workout (must fix).**
-  [CalibrationDialog.kt](app/src/main/java/com/example/androidapp/ui/workout/CalibrationDialog.kt) has
-  `onDismissRequest = {}` and no confirm/dismiss buttons; both answers are writes, and a Failure only sets
-  `lastError` ([ActiveWorkoutViewModel.kt](app/src/main/java/com/example/androidapp/ui/workout/ActiveWorkoutViewModel.kt)).
-  The session is already stored, so a persistent failure leaves a modal that system back cannot dismiss,
-  with the error behind it. Show the error in the dialog and add a non-writing *Close* that advances
-  `removeCalibration` (the marker stays pending).
 - **B423 — History compares an older workout to a later one (must fix).**
   [WorkoutDetailViewModel.kt](app/src/main/java/com/example/androidapp/ui/history/WorkoutDetailViewModel.kt)
   calls `previousPerformance`, whose query is `ORDER BY finishedAt DESC LIMIT 1` excluding only the viewed

@@ -270,6 +270,10 @@ class ActiveWorkoutViewModel @Inject constructor(
     private val _calibrationNotice = MutableStateFlow<List<CalibrationNotice>?>(null)
     val calibrationNotice: StateFlow<List<CalibrationNotice>?> = _calibrationNotice.asStateFlow()
 
+    /** The marked plan whose answer last failed to write, so the dialog can offer a way out (B422). */
+    private val _calibrationError = MutableStateFlow<CalibrationNotice?>(null)
+    val calibrationError: StateFlow<CalibrationNotice?> = _calibrationError.asStateFlow()
+
     /** The plan's earned set, offered at *Done* (N311). */
     private val _volumeSuggestion = MutableStateFlow<VolumeSuggestion?>(null)
     val volumeSuggestion: StateFlow<VolumeSuggestion?> = _volumeSuggestion.asStateFlow()
@@ -1445,7 +1449,10 @@ class ActiveWorkoutViewModel @Inject constructor(
         viewModelScope.launch {
             when (val read = templateRepository.calibrateExercise(notice.templateExerciseId, notice.targets)) {
                 is DataResult.Success -> removeCalibration(notice)
-                is DataResult.Failure -> lastError.value = read.error
+                is DataResult.Failure -> {
+                    _calibrationError.value = notice
+                    lastError.value = read.error
+                }
             }
         }
     }
@@ -1455,12 +1462,27 @@ class ActiveWorkoutViewModel @Inject constructor(
         viewModelScope.launch {
             when (val read = templateRepository.setCalibration(notice.templateExerciseId, false)) {
                 is DataResult.Success -> removeCalibration(notice)
-                is DataResult.Failure -> lastError.value = read.error
+                is DataResult.Failure -> {
+                    _calibrationError.value = notice
+                    lastError.value = read.error
+                }
             }
         }
     }
 
+    /**
+     * The failure's way out (B422): close this notice without a write, leaving its marker pending so the
+     * next finish asks again. Without it a persistent storage failure made a stored workout unclosable.
+     */
+    fun onCloseCalibration(notice: CalibrationNotice) {
+        _calibrationError.value = null
+        removeCalibration(notice)
+    }
+
     private fun removeCalibration(notice: CalibrationNotice) {
+        if (_calibrationError.value?.templateExerciseId == notice.templateExerciseId) {
+            _calibrationError.value = null
+        }
         val remaining = _calibrationNotice.value.orEmpty()
             .filterNot { it.templateExerciseId == notice.templateExerciseId }
         _calibrationNotice.value = remaining.ifEmpty { null }

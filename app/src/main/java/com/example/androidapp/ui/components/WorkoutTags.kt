@@ -237,6 +237,7 @@ internal interface WorkoutTags {
     val CALIBRATION_DIALOG: String get() = "workout_calibration_dialog"
     val CALIBRATION_USE: String get() = "workout_calibration_use"
     val CALIBRATION_SKIP: String get() = "workout_calibration_skip"
+    val CALIBRATION_CLOSE: String get() = "workout_calibration_close"
     val STALL_DIALOG_DELOAD: String get() = "workout_stall_dialog_deload"
     val STALL_DIALOG_REPLACE: String get() = "workout_stall_dialog_replace"
 

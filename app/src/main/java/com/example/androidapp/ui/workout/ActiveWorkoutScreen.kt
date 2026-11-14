@@ -91,6 +91,7 @@ fun ActiveWorkoutRoute(
     val volumeSuggestion by viewModel.volumeSuggestion.collectAsStateWithLifecycle()
     val volumeUndo by viewModel.volumeUndo.collectAsStateWithLifecycle()
     val calibrationNotice by viewModel.calibrationNotice.collectAsStateWithLifecycle()
+    val calibrationError by viewModel.calibrationError.collectAsStateWithLifecycle()
     val personalRecord by viewModel.personalRecord.collectAsStateWithLifecycle()
     val autoStep by viewModel.autoStep.collectAsStateWithLifecycle()
     val setWriteOutcome by viewModel.setWriteOutcome.collectAsStateWithLifecycle()
@@ -115,8 +116,10 @@ fun ActiveWorkoutRoute(
         onDismissVolume = viewModel::onDismissVolume,
         onDismissVolumeUndo = viewModel::onDismissVolumeUndo,
         calibrationNotice = calibrationNotice,
+        calibrationError = calibrationError,
         onUseCalibration = viewModel::onUseCalibration,
         onSkipCalibration = viewModel::onSkipCalibration,
+        onCloseCalibration = viewModel::onCloseCalibration,
         personalRecord = personalRecord,
         autoStep = autoStep,
         onUndoAutoStep = viewModel::onUndoAutoStep,
@@ -222,6 +225,8 @@ fun ActiveWorkoutScreen(
     onUndoVolume: () -> Unit = {},
     onDismissVolume: () -> Unit = {},
     onDismissVolumeUndo: () -> Unit = {},
+    calibrationError: CalibrationNotice? = null,
+    onCloseCalibration: (CalibrationNotice) -> Unit = {},
     /**
      * True when dropping out is recorded against a program rather than reading as no workout at
      * all (ROADMAP N41): the discard prompt says so, because only a finished session settles a
@@ -267,6 +272,8 @@ fun ActiveWorkoutScreen(
             notices = calibrationNotice,
             onUse = onUseCalibration,
             onSkip = onSkipCalibration,
+            errorNotice = calibrationError,
+            onClose = onCloseCalibration,
         )
     }
     if (stallNotice != null) {
