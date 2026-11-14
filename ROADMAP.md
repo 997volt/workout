@@ -23,10 +23,6 @@ rows below are the fixes, ordered as the review ranked them: the must-fix group 
 findings after it, and the missing tests last as **N312**. Each row names the finding, the path and the
 fix; when a row lands, its finding is gone from this file.
 
-- **B424 — The history comparison ignores assistance (must fix).** `SetDelta`/`PastSet` carry only weight
-  ([WorkoutDetailViewModel.kt](app/src/main/java/com/example/androidapp/ui/history/WorkoutDetailViewModel.kt)),
-  so an assisted set that got harder by dropping assistance reads "same as last time", and a
-  weight↔assistance change is a wrong magnitude. Compare the signed load and carry assistance in `PastSet`.
 - **B425 — Adopted/seeded assistance is stored as `0`, which disables load progression (must fix).**
   `calibrateExercise` ([RoomTemplateRepository.kt](app/src/main/java/com/example/androidapp/data/RoomTemplateRepository.kt))
   and the replace seed ([ExerciseReplace.kt](app/src/main/java/com/example/androidapp/domain/model/ExerciseReplace.kt))

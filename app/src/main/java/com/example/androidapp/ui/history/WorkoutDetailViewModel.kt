@@ -108,6 +108,8 @@ data class HistoryExercise(
 data class PastSet(
     val reps: Int,
     val weightGrams: Long,
+    /** The machine's assistance, 0 for none (ROADMAP N15); carried so the comparison sees the real load. */
+    val assistanceGrams: Long = 0,
     val durationSeconds: Int? = null,
 )
 
@@ -122,9 +124,10 @@ data class HistoryPrevious(
 /**
  * What changed from the previous session's set in the same place (N306).
  *
- * [weightGrams] is the change in the number the set's own field states, **not** the bodyweight-composed load
- * a bodyweight row displays: a change in the lifter's weight is not a change in what they did. [holdSeconds]
- * is null unless both sides were holds, because a counted set and a hold have no duration to subtract.
+ * [weightGrams] is the change in the **signed load** the set states — weight minus assistance (ROADMAP N15),
+ * so an assisted set that needs less help reads as harder — not the bodyweight-composed load a bodyweight row
+ * displays: a change in the lifter's weight is not a change in what they did. [holdSeconds] is null unless
+ * both sides were holds, because a counted set and a hold have no duration to subtract.
  */
 data class SetDelta(
     val weightGrams: Long,
@@ -138,7 +141,8 @@ data class SetDelta(
 fun setDelta(set: HistorySet, previous: PastSet?): SetDelta? {
     if (previous == null) return null
     return SetDelta(
-        weightGrams = set.weightGrams - previous.weightGrams,
+        weightGrams = (set.weightGrams - set.assistanceGrams) -
+            (previous.weightGrams - previous.assistanceGrams),
         reps = set.reps - previous.reps,
         holdSeconds = if (set.durationSeconds != null && previous.durationSeconds != null) {
             set.durationSeconds - previous.durationSeconds
@@ -151,7 +155,12 @@ fun setDelta(set: HistorySet, previous: PastSet?): SetDelta? {
 /** What the previous session looked like, reduced to the place a delta needs (N306). */
 private fun PreviousPerformance.toHistoryPrevious(): HistoryPrevious = HistoryPrevious(
     sets = sets.sortedBy { it.setIndex }.map {
-        PastSet(reps = it.reps, weightGrams = it.weightGrams, durationSeconds = it.durationSeconds)
+        PastSet(
+            reps = it.reps,
+            weightGrams = it.weightGrams,
+            assistanceGrams = it.assistanceGrams,
+            durationSeconds = it.durationSeconds,
+        )
     },
     startedAt = sessionStartedAt,
 )
