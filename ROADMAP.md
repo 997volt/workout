@@ -23,9 +23,6 @@ rows below are the fixes, ordered as the review ranked them: the must-fix group 
 findings after it, and the missing tests last as **N312**. Each row names the finding, the path and the
 fix; when a row lands, its finding is gone from this file.
 
-- **B430 — Undoing Done leaves the volume suggestion live (must fix).** `onReopenExercise` clears only the
-  finish undo, so after the lifter takes the Done back, the queued "Add a set?" still writes plan work for a
-  retracted finish. Clear the suggestion on reopen, finish and close, and cover the pairing in a VM test.
 - **B431 — The new migration test should fail the instrumented job (must fix, instrumented).**
   [CalibrationMigrationTest.kt](app/src/androidTest/java/com/example/androidapp/data/local/CalibrationMigrationTest.kt)
   inserts a `template_exercises` row with no `templates`/`exercises` parents while Room runs

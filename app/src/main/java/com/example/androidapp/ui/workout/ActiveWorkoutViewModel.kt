@@ -928,6 +928,8 @@ class ActiveWorkoutViewModel @Inject constructor(
         // "is it still in the session?", which is why the separate wrapper for the banner
         // was a second name for one operation.
         pendingFinishedExercise.value = null
+        // A Done taken back cannot still be earning a set (B430): the queued suggestion goes with it.
+        _volumeSuggestion.value = null
         // Reopening something that is gone — undone twice, or removed meanwhile — is reported
         // rather than silently ignored: the guard that used to sit in the undo wrapper is this
         // question, asked where the action now is.
@@ -1560,6 +1562,9 @@ class ActiveWorkoutViewModel @Inject constructor(
      * workout.
      */
     private fun closeSession() {
+        // Nothing of the finish outlives it (B430): a suggestion or an undo must not survive the screen.
+        _volumeSuggestion.value = null
+        _volumeUndo.value = null
         _closed.value = true
     }
 
