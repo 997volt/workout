@@ -58,6 +58,8 @@ import java.time.format.FormatStyle
 fun WeeklyReviewRoute(
     onBack: () -> Unit,
     onOpenDeload: (String) -> Unit,
+    /** The per-lift plan edit's hand-off: the program, its template and the exercise row (N307, N310). */
+    onDeloadLift: (String, String, String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: WeeklyReviewViewModel = hiltViewModel(),
 ) {
@@ -68,6 +70,7 @@ fun WeeklyReviewRoute(
         onBack = onBack,
         onRetry = viewModel::load,
         onOpenDeload = onOpenDeload,
+        onDeloadLift = onDeloadLift,
         modifier = modifier,
     )
 }
@@ -79,6 +82,7 @@ internal fun WeeklyReviewScreen(
     onBack: () -> Unit,
     onRetry: () -> Unit,
     onOpenDeload: (String) -> Unit,
+    onDeloadLift: (String, String, String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -120,6 +124,7 @@ internal fun WeeklyReviewScreen(
             else -> WeeklyReviewBody(
                 state = state,
                 onOpenDeload = onOpenDeload,
+                onDeloadLift = onDeloadLift,
                 modifier = Modifier.padding(innerPadding),
             )
         }
@@ -130,6 +135,7 @@ internal fun WeeklyReviewScreen(
 private fun WeeklyReviewBody(
     state: WeeklyReviewUiState,
     onOpenDeload: (String) -> Unit,
+    onDeloadLift: (String, String, String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val dateFormat = remember { DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM) }
@@ -166,6 +172,7 @@ private fun WeeklyReviewBody(
             stall = state.stall,
             programId = state.stallProgramId,
             onOpenDeload = onOpenDeload,
+            onDeloadLift = onDeloadLift,
         )
     }
 }
@@ -305,10 +312,19 @@ private fun MovedSection(movements: List<MovementGain>) {
 
 /** The first stopped plan, or the sentence that says there is none (N247). */
 @Composable
-private fun StallSection(stall: PlanStall?, programId: String?, onOpenDeload: (String) -> Unit) {
+private fun StallSection(
+    stall: PlanStall?,
+    programId: String?,
+    onOpenDeload: (String) -> Unit,
+    onDeloadLift: (String, String, String) -> Unit,
+) {
     if (stall != null && programId != null) {
         Box(modifier = Modifier.testTag(TestTags.WEEKLY_REVIEW_STALL)) {
-            PlanStallCard(stall = stall, onOpenDeload = { onOpenDeload(programId) })
+            PlanStallCard(
+                stall = stall,
+                onDeloadLift = { onDeloadLift(programId, stall.templateId, stall.templateExerciseId) },
+                onOpenDeload = { onOpenDeload(programId) },
+            )
         }
     } else {
         Text(

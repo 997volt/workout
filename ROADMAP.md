@@ -39,24 +39,6 @@ no baseline — a Reset cannot write the old movement's numbers onto the new mov
 The deload's surviving sets keep their baseline rows, so a Reset still restores the pre-deload targets on
 them; that is the reset's literal meaning and it is unchanged.
 
-- **N307 — Deload this lift.** A plan edit, not a one-session override: the plan's targets change, the plan
-  is the new baseline, and next week progresses from it. The set count follows one arithmetic, shared with
-  the replace: N = the plan's stand-alone working sets; keep the first
-  `min(N, max(2, N − round(0.3 × N)))` (round half up), which is `1, 2, 2, 3, 3, 4, 5, 6, 6, 7, 8, 8` for
-  N = 1…12; drop the later working sets and the rungs that belong to them. Warm-ups are untouched — not
-  removed, no target changes — and the rungs of kept anchors stay. Every kept working set loses **three of
-  the movement's own load steps** (N77), clamped at zero; an assisted set instead gains **three steps of
-  assistance** (more help is lighter), and a set that states both moves its assistance; a bodyweight set
-  with neither is unchanged, a hold keeps its seconds, and a warm-up is unchanged. Reps are unchanged
-  except a counted set whose plan has a range: its current target moves to the range's lowest. Before the
-  write the lifter sees the before → after (e.g. *"Bench Press: 5×5 @100 kg → 3×5 @95 kg"*) and, **only if
-  another program also names this plan**, the programs that change with it; the write is one transaction,
-  and the undo restores the **whole edit** — the removed sets and the kept targets, not only the targets.
-  The stall clears because the old sessions now meet the lower target (B303); the week-level deload (N147)
-  stays a separate, secondary answer. The `PlanStall` the card shows gains the plan's exercise id, because
-  the action must know which row it edits. The per-lift action joins the stall card in this row; the finish
-  sheet's hand-off is N310.
-
 - **N308 — Replace this lift.** A plan **edit**, not a session substitution (N291): the template's
   exercise row changes for every future session, the old movement's history, trends and records stay, and
   the stall clears because the plan no longer names it. The set rows are trimmed by the same rule as N307

@@ -242,6 +242,10 @@ class ProgramsViewModelTest {
         override fun observeActivePrograms(): Flow<List<WorkoutProgram>> = flowOf(emptyList())
 
         override fun observeSlots(programId: String): Flow<List<ProgramSlot>> = flowOf(emptyList())
+        override suspend fun otherProgramNamesUsingTemplates(
+            templateIds: List<String>,
+            programId: String,
+        ): DataResult<List<String>> = DataResult.Success(emptyList())
 
         override fun observeProgramRun(programId: String): Flow<ProgramRun?> = flowOf(null)
 

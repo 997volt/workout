@@ -339,6 +339,12 @@ class TemplatesViewModelTest {
 
         override fun observeExercises(templateId: String): Flow<List<TemplateExercise>> = exercises
         override fun observeSets(templateId: String): Flow<List<TemplateSet>> = flowOf(emptyList())
+        override suspend fun deloadExercise(
+            templateExerciseId: String,
+            stepGrams: Long,
+        ): DataResult<com.example.androidapp.domain.model.ExerciseDeload> {
+            error("these tests do not write a plan")
+        }
 
         /** Recorded as one call, since writing the ramp in front is a single write (B34). */
         val prependedSets = mutableListOf<Pair<String, List<TemplateSetEdit>>>()

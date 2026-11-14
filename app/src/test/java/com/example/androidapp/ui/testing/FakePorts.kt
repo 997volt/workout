@@ -242,6 +242,15 @@ internal class FakeProgramRepository : ProgramRepository {
     override suspend fun activeWeeklyProgramForTemplate(templateId: String): DataResult<String?> =
         DataResult.Success(activeWeeklyForTemplate)
 
+    /** The other programs the confirm names, for the per-lift deload/replace warning (N307, N308). */
+    var otherProgramNames: List<String> = emptyList()
+    var otherProgramNamesResult: DataResult<List<String>>? = null
+
+    override suspend fun otherProgramNamesUsingTemplates(
+        templateIds: List<String>,
+        programId: String,
+    ): DataResult<List<String>> = otherProgramNamesResult ?: DataResult.Success(otherProgramNames)
+
     override fun observeSlots(programId: String): Flow<List<ProgramSlot>> = slots
 
     override fun observeProgramRun(programId: String): Flow<ProgramRun?> = run
@@ -348,6 +357,16 @@ internal class FakeTemplateRepository : TemplateRepository {
     /** Planned exercises by template id, which is what a balance read flattens. */
     val exercises = MutableStateFlow<Map<String, List<TemplateExercise>>>(emptyMap())
 
+    /** Planned sets by template id, for the per-lift deload's preview and undo (N307). */
+    val sets = MutableStateFlow<Map<String, List<TemplateSet>>>(emptyMap())
+
+    /** Every deload the editor asked for, with the edit it applied. */
+    val deloads = mutableListOf<Pair<String, com.example.androidapp.domain.model.ExerciseDeload>>()
+
+    /** Every restored set and rewritten target, in the order the undo asked. */
+    val restoredSets = mutableListOf<String>()
+    val updatedSets = mutableListOf<Pair<String, TemplateSetEdit>>()
+
     override fun observeTemplates(includeHidden: Boolean): Flow<List<WorkoutTemplate>> = templates
 
     override fun observeDeletedTemplates(): Flow<List<WorkoutTemplate>> = unused()
@@ -361,7 +380,8 @@ internal class FakeTemplateRepository : TemplateRepository {
     override fun observeExercises(templateId: String): Flow<List<TemplateExercise>> =
         exercises.map { byTemplate -> byTemplate[templateId].orEmpty() }
 
-    override fun observeSets(templateId: String): Flow<List<TemplateSet>> = unused()
+    override fun observeSets(templateId: String): Flow<List<TemplateSet>> =
+        sets.map { byTemplate -> byTemplate[templateId].orEmpty() }
 
     override suspend fun keepVersion(templateId: String): DataResult<Unit> = unused()
 
@@ -397,8 +417,10 @@ internal class FakeTemplateRepository : TemplateRepository {
     override suspend fun addSet(templateExerciseId: String, edit: TemplateSetEdit): DataResult<Unit> =
         unused()
 
-    override suspend fun updateSet(templateSetId: String, edit: TemplateSetEdit): DataResult<Unit> =
-        unused()
+    override suspend fun updateSet(templateSetId: String, edit: TemplateSetEdit): DataResult<Unit> {
+        updatedSets += templateSetId to edit
+        return DataResult.Success(Unit)
+    }
 
     override suspend fun applyProgression(
         templateSetId: String,
@@ -408,7 +430,20 @@ internal class FakeTemplateRepository : TemplateRepository {
 
     override suspend fun removeSet(templateSetId: String): DataResult<Unit> = unused()
 
-    override suspend fun restoreSet(templateSetId: String): DataResult<Unit> = unused()
+    override suspend fun deloadExercise(
+        templateExerciseId: String,
+        stepGrams: Long,
+    ): DataResult<com.example.androidapp.domain.model.ExerciseDeload> {
+        val planned = sets.value.values.flatten().filter { it.templateExerciseId == templateExerciseId }
+        val plan = com.example.androidapp.domain.model.deloadOf(planned, stepGrams)
+        deloads += templateExerciseId to plan
+        return DataResult.Success(plan)
+    }
+
+    override suspend fun restoreSet(templateSetId: String): DataResult<Unit> {
+        restoredSets += templateSetId
+        return DataResult.Success(Unit)
+    }
 
     override suspend fun setExercisePlan(
         templateExerciseId: String,

@@ -2993,6 +2993,10 @@ class ActiveWorkoutViewModelTest {
             flowOf(planned)
 
         override fun observeSets(templateId: String): Flow<List<TemplateSet>> = flowOf(emptyList())
+        override suspend fun deloadExercise(
+            templateExerciseId: String,
+            stepGrams: Long,
+        ): DataResult<com.example.androidapp.domain.model.ExerciseDeload> = notUsed()
         override suspend fun createTemplateFromSession(
             sessionId: String,
             name: String,
@@ -3784,6 +3788,10 @@ private class FakeProgramRepository : ProgramRepository {
         DataResult.Success(activeWeeklyForTemplate)
 
     override fun observeSlots(programId: String): Flow<List<ProgramSlot>> = flowOf(emptyList())
+    override suspend fun otherProgramNamesUsingTemplates(
+        templateIds: List<String>,
+        programId: String,
+    ): DataResult<List<String>> = DataResult.Success(emptyList())
 
     override fun observeProgramRun(programId: String): Flow<ProgramRun?> = flowOf(null)
 

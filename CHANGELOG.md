@@ -15,6 +15,16 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ## [Unreleased]
 
+### Added
+
+- **A stalled lift can be deloaded in place** (N307). The stall card's "Deload this lift" trims the plan's
+  later working sets — two survivors at minimum — and takes three of the movement's own load steps off every
+  kept set, assistance instead when the set is assisted, the range's floor for a counted set with a range, and
+  nothing on a warm-up, a rung or a hold's seconds. The confirm shows the before → after before it writes, and
+  names another program only when that program actually shares the plan. The undo restores the whole edit, not
+  only the targets. The plan is the new baseline, so the next session progresses from it; the auto progression
+  switch, its baseline and the reset are untouched.
+
 ### Changed
 
 - **A stall is an exercise, not one of its sets** (N304). The deload card used to need the same set to miss for

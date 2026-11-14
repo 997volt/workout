@@ -1,6 +1,7 @@
 package com.example.androidapp.domain.repository
 
 import com.example.androidapp.domain.DataResult
+import com.example.androidapp.domain.model.ExerciseDeload
 import com.example.androidapp.domain.model.ProgressionDirection
 import com.example.androidapp.domain.model.ProgressionTargets
 import com.example.androidapp.domain.model.SetType
@@ -195,6 +196,16 @@ interface TemplateRepository {
     ): DataResult<String>
 
     suspend fun removeSet(templateSetId: String): DataResult<Unit>
+
+    /**
+     * The per-lift deload (ROADMAP N307): one transactional plan edit that removes the later work sets and
+     * drops every kept work set by three of the movement's own steps ([stepGrams]).
+     *
+     * The returned [ExerciseDeload] is the same arithmetic the confirm read. Its removed ids share one
+     * deletion timestamp, so [restoreSet] on any of them takes the whole removal back; the kept targets are
+     * restored by [updateSet] from the caller's before-state, which is what makes the undo the whole edit.
+     */
+    suspend fun deloadExercise(templateExerciseId: String, stepGrams: Long): DataResult<ExerciseDeload>
 
     /**
      * Takes a planned set's removal back, **at the position it held** (ROADMAP N90).

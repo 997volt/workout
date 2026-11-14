@@ -46,6 +46,15 @@ interface ProgramRepository {
      */
     suspend fun activeWeeklyProgramForTemplate(templateId: String): DataResult<String?>
 
+    /**
+     * The other programs that name any of [templateIds] (ROADMAP N307, N308).
+     *
+     * An edit that trims or replaces a plan changes every program that schedules it, so the confirm names
+     * them — but only when there are any, which is why the answer is a list rather than a boolean. A read's
+     * failure is a failure, not "nothing else uses it".
+     */
+    suspend fun otherProgramNamesUsingTemplates(templateIds: List<String>, programId: String): DataResult<List<String>>
+
     /** A program's slots in its own order, each carrying its template's name. */
     fun observeSlots(programId: String): Flow<List<ProgramSlot>>
 

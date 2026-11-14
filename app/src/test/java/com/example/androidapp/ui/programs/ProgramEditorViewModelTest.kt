@@ -8,6 +8,9 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.PlanStallFinder
+import com.example.androidapp.domain.model.PlanStall
+import com.example.androidapp.domain.model.TemplateExercise
+import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.ui.testing.FakeDocumentIo
 import com.example.androidapp.ui.testing.FakeProgramRepository
@@ -62,13 +65,107 @@ class ProgramEditorViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun viewModel() = ProgramEditorViewModel(
+    private fun viewModel(
+        handle: SavedStateHandle = SavedStateHandle(mapOf("programId" to PROGRAM_ID)),
+    ) = ProgramEditorViewModel(
         repository = repository,
         templateRepository = templates,
         stallFinder = PlanStallFinder(repository, templates, FakeTrendsRepository()),
         documentIo = documentIo,
-        savedStateHandle = SavedStateHandle(mapOf("programId" to PROGRAM_ID)),
+        savedStateHandle = handle,
     )
+
+    private fun planExercise() = TemplateExercise(
+        id = "te1",
+        templateId = "t1",
+        exerciseId = "squat",
+        position = 0,
+        exerciseName = "Back Squat",
+        primaryMuscle = null,
+        equipment = null,
+        stepGrams = 2_500L,
+    )
+
+    private fun planSet(id: String, index: Int) = TemplateSet(
+        id = id,
+        templateExerciseId = "te1",
+        setIndex = index,
+        targetWeightGrams = 100_000L,
+        targetRepsMin = 5,
+        targetRepsMax = 8,
+    )
+
+    private fun plannedSquat() {
+        templates.exercises.value = mapOf("t1" to listOf(planExercise()))
+        templates.sets.value = mapOf("t1" to (0 until 5).map { planSet("s$it", it) })
+    }
+
+    @Test
+    fun thePerLiftDeload_waitsForTheConfirm_andTheUndoRestoresTheWholeEdit() = runTest(dispatcher) {
+        plannedSquat()
+        val viewModel = viewModel()
+        backgroundScope.launch { viewModel.uiState.collect {} }
+        advanceUntilIdle()
+
+        viewModel.onDeloadLift(PlanStall("Back Squat", 3, "t1", "te1", "squat"))
+        advanceUntilIdle()
+
+        // The confirm is the whole plan: five working sets become three, with the last loads three steps down.
+        assertThat(viewModel.deloadPrompt.value?.kept?.map { it.before.id })
+            .containsExactly("s0", "s1", "s2").inOrder()
+        assertThat(viewModel.deloadPrompt.value?.removedCount).isEqualTo(2)
+        assertThat(viewModel.deloadPrompt.value?.kept?.first()?.after?.weightGrams).isEqualTo(92_500L)
+        assertWithMessage("nothing is written before the confirm").that(templates.deloads).isEmpty()
+
+        viewModel.onConfirmDeload()
+        advanceUntilIdle()
+
+        assertThat(templates.deloads).hasSize(1)
+        assertThat(viewModel.deloadPrompt.value).isNull()
+        assertThat(viewModel.deloadUndo.value?.removedSetIds).containsExactly("s3", "s4").inOrder()
+        assertThat(viewModel.deloadUndo.value?.keptBefore?.map { it.id })
+            .containsExactly("s0", "s1", "s2").inOrder()
+
+        viewModel.onUndoDeload()
+        advanceUntilIdle()
+
+        assertWithMessage("one removed id restores the removal")
+            .that(templates.restoredSets).containsExactly("s3")
+        assertWithMessage("the kept targets are rewritten to their before-state")
+            .that(templates.updatedSets.map { it.first }).containsExactly("s0", "s1", "s2").inOrder()
+        assertThat(templates.updatedSets.first().second.targetWeightGrams).isEqualTo(100_000L)
+    }
+
+    @Test
+    fun theSharedWarning_isShownOnlyWhenAnotherProgramNamesThePlan() = runTest(dispatcher) {
+        plannedSquat()
+        repository.otherProgramNames = listOf("Full Body")
+        val viewModel = viewModel()
+
+        viewModel.onDeloadLift(PlanStall("Back Squat", 3, "t1", "te1", "squat"))
+        advanceUntilIdle()
+
+        assertThat(viewModel.deloadPrompt.value?.sharedProgramNames).containsExactly("Full Body")
+    }
+
+    @Test
+    fun theHandOff_opensTheConfirmOnce_andClearsItself() = runTest(dispatcher) {
+        plannedSquat()
+        val handle = SavedStateHandle(
+            mapOf(
+                "programId" to PROGRAM_ID,
+                "deloadTemplateId" to "t1",
+                "deloadTemplateExerciseId" to "te1",
+            ),
+        )
+        val viewModel = viewModel(handle)
+        advanceUntilIdle()
+
+        assertThat(viewModel.deloadPrompt.value?.templateExerciseId).isEqualTo("te1")
+        assertWithMessage("the one-shot target is cleared so a recreation does not re-open it")
+            .that(handle.get<String>("deloadTemplateExerciseId"))
+            .isNull()
+    }
 
     @Test
     fun aRefusedWrite_isReported_andAcknowledgingItClearsTheMessage() = runTest(dispatcher) {

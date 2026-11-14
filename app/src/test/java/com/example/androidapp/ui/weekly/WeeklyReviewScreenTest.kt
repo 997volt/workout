@@ -3,6 +3,7 @@ package com.example.androidapp.ui.weekly
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.model.BlockProgress
@@ -14,6 +15,7 @@ import com.example.androidapp.domain.model.ReviewDay
 import com.example.androidapp.domain.model.WeekPlan
 import com.example.androidapp.domain.model.WeekTotals
 import com.example.androidapp.ui.components.TestTags
+import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -33,13 +35,17 @@ class WeeklyReviewScreenTest {
 
     private val monday = LocalDate.of(2026, 10, 26)
 
-    private fun show(state: WeeklyReviewUiState) {
+    private fun show(
+        state: WeeklyReviewUiState,
+        onDeloadLift: (String, String, String) -> Unit = { _, _, _ -> },
+    ) {
         composeTestRule.setContent {
             WeeklyReviewScreen(
                 state = state,
                 onBack = {},
                 onRetry = {},
                 onOpenDeload = {},
+                onDeloadLift = onDeloadLift,
             )
         }
     }
@@ -83,7 +89,13 @@ class WeeklyReviewScreenTest {
                         firstTime = false,
                     ),
                 ),
-                stall = PlanStall(exerciseName = "Back Squat", sessions = 3),
+                stall = PlanStall(
+                    exerciseName = "Back Squat",
+                    sessions = 3,
+                    templateId = "t1",
+                    templateExerciseId = "te1",
+                    exerciseId = "squat"
+                ),
                 stallProgramId = "p1",
             ),
         )
@@ -167,6 +179,30 @@ class WeeklyReviewScreenTest {
 
         composeTestRule.onNodeWithText("Squat day · Recovery week").performScrollTo().assertExists()
         composeTestRule.onNodeWithText("Squat day · Deload").assertDoesNotExist()
+    }
+
+    @Test
+    fun theStallCard_handsTheLiftToTheProgramEditorsDeloadConfirm() {
+        // N307: the weekly review reads the stall; the plan edit and its undo belong to the program editor.
+        var target: Triple<String, String, String>? = null
+        show(
+            WeeklyReviewUiState(
+                isLoading = false,
+                stall = PlanStall(
+                    exerciseName = "Back Squat",
+                    sessions = 3,
+                    templateId = "t1",
+                    templateExerciseId = "te1",
+                    exerciseId = "squat",
+                ),
+                stallProgramId = "p1",
+            ),
+            onDeloadLift = { programId, templateId, exerciseId -> target = Triple(programId, templateId, exerciseId) },
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.STALL_DELOAD_LIFT).performScrollTo().performClick()
+
+        assertThat(target).isEqualTo(Triple("p1", "t1", "te1"))
     }
 
     private fun occurrence(state: OccurrenceState) = DayOccurrence(

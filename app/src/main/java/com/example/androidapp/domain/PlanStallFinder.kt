@@ -77,6 +77,9 @@ class PlanStallFinder @Inject constructor(
                 performedBySession = performed,
                 // The movement's own answer (N235): Off is never counted (N304).
                 progressionMode = exercise.progressionMode,
+                templateId = exercise.templateId,
+                templateExerciseId = exercise.id,
+                exerciseId = exercise.exerciseId,
             ).stall()
         }
     }

@@ -95,6 +95,12 @@ class RoomProgramRepository @Inject constructor(
     override suspend fun activeWeeklyProgramForTemplate(templateId: String): DataResult<String?> =
         dataResultOf { dao.findActiveWeeklyProgramForTemplate(templateId) }
 
+    override suspend fun otherProgramNamesUsingTemplates(
+        templateIds: List<String>,
+        programId: String,
+    ): DataResult<List<String>> =
+        dataResultOf { dao.otherProgramNamesUsingTemplates(templateIds, programId) }
+
     override fun observeSlots(programId: String): Flow<List<ProgramSlot>> =
         dao.observeSlotDetails(programId).map { rows -> rows.map { it.toDomain() } }
 

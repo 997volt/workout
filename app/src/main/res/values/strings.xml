@@ -1407,7 +1407,22 @@
         <item quantity="one">No progress in %1$d session running.</item>
         <item quantity="other">No progress in %1$d sessions running.</item>
     </plurals>
-    <string name="program_stall_deload">Plan a deload</string>
+    <string name="program_stall_deload">Plan a lighter week</string>
+    <string name="program_stall_deload_lift">Deload this lift</string>
+    <!-- The per-lift deload's confirm (ROADMAP N307). The plan itself changes, so the numbers are shown
+         before the write and the other programs only when the plan is actually shared. -->
+    <string name="program_deload_lift_title">Deload this lift?</string>
+    <string name="program_deload_lift_sets">Working sets: %1$d → %2$d</string>
+    <plurals name="program_deload_lift_removed">
+        <item quantity="one">%1$d later set removed</item>
+        <item quantity="other">%1$d later sets removed</item>
+    </plurals>
+    <string name="program_deload_lift_shared">Also changes: %1$s</string>
+    <string name="program_deload_lift_hint">The plan itself changes, for every future session.</string>
+    <string name="program_deload_lift_confirm">Deload</string>
+    <string name="program_deload_lift_cancel">Cancel</string>
+    <string name="program_deload_lift_undo">Deloaded %1$s</string>
+    <string name="program_deload_lift_undo_action">Undo</string>
     <!-- What a finished workout is told when a lift has just stopped moving (ROADMAP N305). -->
     <string name="finish_stall_title">What stalled</string>
     <string name="finish_stall_done">Done</string>

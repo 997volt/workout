@@ -351,6 +351,23 @@ the rule; that one argues it.
   lifter's weight changing is not the lifter doing more on the bar. The delta is derived from the state rather
   than stored with the row, because history is editable and a corrected set must disagree with last time by
   the corrected amount.
+- **A per-lift deload is a plan edit the lifter asks for, with a deterministic arithmetic** (N307, amending
+  P3.10's "never computed"). P3.10 said a deload is a week the lifter marks; the per-lift answer is the other
+  scale — a lift whose plan has not moved for three sessions (N304) can be made lighter without touching the
+  week. The decision stays the lifter's: the action is on the stall card, the confirm shows the before → after
+  before any write, and the other programs that name the plan are named only when there are any (decision
+  5a). What the app adds is the **arithmetic**, and it is one function the confirm and the write both read:
+  N = the stand-alone working sets, keep `min(N, max(2, N − round(0.3N)))`, drop the later anchors and their
+  rungs, three of the movement's own load steps on every kept set, assistance instead when the set is
+  assisted, the range's floor for a counted set with a range, and nothing on a warm-up, a rung or a hold's
+  seconds. The undo is the **whole edit** (decision 4a): the deload's removals share one deletion timestamp,
+  so one restore takes them back together, and the kept targets are rewritten from the captured before. The
+  plan is the new baseline; the auto switch, its baseline and the reset are untouched, and the reset's literal
+  behaviour — restoring its captured targets on the surviving sets — is left alone rather than special-cased.
+  The stall's [PlanStall] now carries the plan's exercise id, because the card's action must know which row it
+  edits; the weekly review hands the same target to the program editor (N310), which owns the confirm and the
+  undo.
+
 - **An encrypted export is a password-derived container, not a Keystore key** (N294). The Data section offers
   a second export beside the plain one: the ordinary backup JSON is wrapped in a self-describing JSON envelope
   (version, KDF, iteration count, salt, nonce, ciphertext), and PBKDF2-HMAC-SHA256 with 600,000 iterations and

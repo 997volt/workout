@@ -284,6 +284,9 @@ class PlanStallTest {
         planned = planned,
         performedBySession = sessions,
         progressionMode = mode,
+        templateId = "t1",
+        templateExerciseId = "te1",
+        exerciseId = "squat",
     )
 
     private fun planSet(

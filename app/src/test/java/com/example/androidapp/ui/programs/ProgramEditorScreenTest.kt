@@ -59,6 +59,13 @@ class ProgramEditorScreenTest {
         onOpenTemplate: (String) -> Unit = {},
         onOpenBalance: () -> Unit = {},
         onOpenDeload: () -> Unit = {},
+        onDeloadLift: (PlanStall) -> Unit = {},
+        deloadPrompt: DeloadPrompt? = null,
+        onConfirmDeload: () -> Unit = {},
+        onCancelDeload: () -> Unit = {},
+        deloadUndo: DeloadUndo? = null,
+        onUndoDeload: () -> Unit = {},
+        onDismissDeloadUndo: () -> Unit = {},
         onOpenWeeks: () -> Unit = {},
         onOpenProgression: () -> Unit = {},
         onPreviewSlot: (String, String) -> Unit = { _, _ -> },
@@ -82,6 +89,13 @@ class ProgramEditorScreenTest {
                 onOpenTemplate = onOpenTemplate,
                 onOpenBalance = onOpenBalance,
                 onOpenDeload = onOpenDeload,
+                onDeloadLift = onDeloadLift,
+                deloadPrompt = deloadPrompt,
+                onConfirmDeload = onConfirmDeload,
+                onCancelDeload = onCancelDeload,
+                deloadUndo = deloadUndo,
+                onUndoDeload = onUndoDeload,
+                onDismissDeloadUndo = onDismissDeloadUndo,
                 onOpenWeeks = onOpenWeeks,
                 onOpenProgression = onOpenProgression,
                 onPreviewSlot = onPreviewSlot,
@@ -102,7 +116,13 @@ class ProgramEditorScreenTest {
         var deload = false
         setScreen(
             state = twoSlots.copy(
-                stall = PlanStall(exerciseName = "Back Squat", sessions = 3),
+                stall = PlanStall(
+                    exerciseName = "Back Squat",
+                    sessions = 3,
+                    templateId = "t1",
+                    templateExerciseId = "te1",
+                    exerciseId = "squat"
+                ),
             ),
             onOpenDeload = { deload = true },
         )
@@ -114,6 +134,52 @@ class ProgramEditorScreenTest {
         composeTestRule.onNodeWithTag(TestTags.Programs.STALL_DELOAD).performClick()
 
         assertThat(deload).isTrue()
+    }
+
+    @Test
+    fun theStallCard_offersThePerLiftDeloadBesideTheLighterWeek() {
+        // N307: the card's answer is the plan edit; the week-level creator stays the secondary link.
+        var lift: PlanStall? = null
+        setScreen(
+            state = twoSlots.copy(
+                stall = PlanStall(
+                    exerciseName = "Back Squat",
+                    sessions = 3,
+                    templateId = "t1",
+                    templateExerciseId = "te1",
+                    exerciseId = "squat",
+                ),
+            ),
+            onDeloadLift = { lift = it },
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.STALL_DELOAD_LIFT).performClick()
+
+        assertThat(lift?.templateExerciseId).isEqualTo("te1")
+    }
+
+    @Test
+    fun theDeloadConfirm_showsTheNumbersAndWritesNothingUntilConfirmed() {
+        // N307: the confirm is the plan's before -> after; the write belongs to confirming.
+        var confirmed = false
+        setScreen(
+            state = twoSlots,
+            deloadPrompt = DeloadPrompt(
+                templateExerciseId = "te1",
+                exerciseName = "Back Squat",
+                kept = emptyList(),
+                removedCount = 2,
+                sharedProgramNames = emptyList(),
+                stepGrams = 2_500L,
+                weightUnit = null,
+            ),
+            onConfirmDeload = { confirmed = true },
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.DELOAD_LIFT_DIALOG).assertExists()
+        composeTestRule.onNodeWithText("Deload").performClick()
+
+        assertThat(confirmed).isTrue()
     }
 
     @Test

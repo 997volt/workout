@@ -1,13 +1,5 @@
 package com.example.androidapp.data
 
-import com.example.androidapp.domain.repository.TemplateSetEdit
-import com.example.androidapp.domain.Load
-import com.example.androidapp.domain.model.rungLoad
-import com.example.androidapp.domain.model.rungWeightAt
-import com.example.androidapp.domain.model.runAt
-import com.example.androidapp.domain.model.MAX_REPS
-import com.example.androidapp.domain.model.SetType
-import com.example.androidapp.domain.model.warmUpRamp
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -15,11 +7,19 @@ import com.example.androidapp.data.local.ExerciseEntity
 import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
+import com.example.androidapp.domain.Load
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.model.Equipment
+import com.example.androidapp.domain.model.MAX_REPS
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
-import java.time.Instant
+import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.domain.model.TemplateSet
+import com.example.androidapp.domain.model.runAt
+import com.example.androidapp.domain.model.rungLoad
+import com.example.androidapp.domain.model.rungWeightAt
+import com.example.androidapp.domain.model.warmUpRamp
+import com.example.androidapp.domain.repository.TemplateSetEdit
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -30,6 +30,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.time.Instant
 
 /**
  * Template writes, end to end through the repository (ROADMAP N3).
@@ -672,6 +673,55 @@ class TemplateRepositoryTest {
     }
 
     /** A template with one exercise added, for the plan tests to write sets against. */
+    @Test
+    fun thePerLiftDeload_trimsAndTheUndoRestoresTheWholeEdit() = runTest {
+        val template = create("Legs")
+        val exercise = plannedExercise(template)
+        repeat(5) {
+            repository.addSet(
+                exercise,
+                TemplateSetEdit(
+                    role = SetType.NORMAL,
+                    targetWeightGrams = 100_000L,
+                    targetRepsMin = 5,
+                    targetRepsMax = 8,
+                ),
+            )
+        }
+        val before = repository.observeSets(template).first()
+
+        val plan = (repository.deloadExercise(exercise, 2_500L) as DataResult.Success).data
+
+        assertEquals(before.drop(3).map { it.id }, plan.removedSetIds)
+        val after = repository.observeSets(template).first()
+        assertEquals(3, after.size)
+        assertEquals(92_500L, after.first().targetWeightGrams)
+        assertEquals(5, after.first().targetRepsCurrent)
+
+        // The undo, as the editor performs it: one removed id takes the whole removal back, then the
+        // kept targets are rewritten from the before-state.
+        assertTrue(repository.restoreSet(plan.removedSetIds.first()) is DataResult.Success)
+        plan.kept.forEach { kept ->
+            val original = before.first { it.id == kept.setId }
+            assertTrue(repository.updateSet(kept.setId, original.toEdit()) is DataResult.Success)
+        }
+        val undone = repository.observeSets(template).first()
+        assertEquals(5, undone.size)
+        assertEquals(100_000L, undone.first().targetWeightGrams)
+    }
+
+    private fun TemplateSet.toEdit() = TemplateSetEdit(
+        role = role,
+        targetWeightGrams = targetWeightGrams,
+        targetAssistanceGrams = targetAssistanceGrams,
+        targetRepsMin = targetRepsMin,
+        targetRepsMax = targetRepsMax,
+        targetRepsCurrent = targetRepsCurrent,
+        dropValueGrams = dropValueGrams,
+        targetDurationSeconds = targetDurationSeconds,
+        note = note,
+    )
+
     private suspend fun plannedExercise(templateId: String): String {
         repository.addExercise(templateId, "back-squat")
         return repository.observeExercises(templateId).first().single().id

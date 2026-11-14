@@ -19,6 +19,12 @@ data class PlanStall(
     val exerciseName: String,
     /** How many consecutive sessions in which nothing moved: [STALL_SESSIONS] or more. */
     val sessions: Int,
+    /** The template the stalled plan belongs to, so the answer edits the right plan (N307). */
+    val templateId: String,
+    /** The plan's exercise row: the target a deload or replace writes (N307, N308). */
+    val templateExerciseId: String,
+    /** The library movement the row names, which a replace starts from (N308). */
+    val exerciseId: String,
 )
 
 /** One exercise as one finished session performed it (ROADMAP N237), in the order its sets were logged. */
@@ -53,6 +59,10 @@ data class PrescriptionHistory(
     val planned: List<ProgressionPlanSet>,
     val performedBySession: List<List<ProgressionPerformance>>,
     val progressionMode: ProgressionMode? = null,
+    /** The plan's identity, carried through to the [PlanStall] so its answer can find the row (N307). */
+    val templateId: String,
+    val templateExerciseId: String,
+    val exerciseId: String,
 )
 
 /**
@@ -149,7 +159,15 @@ fun PrescriptionHistory.stall(threshold: Int = STALL_SESSIONS): PlanStall? {
         run = if (missedEverywhere) run + 1 else 0
     }
 
-    return run.takeIf { it >= threshold }?.let { PlanStall(exerciseName = exerciseName, sessions = it) }
+    return run.takeIf { it >= threshold }?.let {
+        PlanStall(
+            exerciseName = exerciseName,
+            sessions = it,
+            templateId = templateId,
+            templateExerciseId = templateExerciseId,
+            exerciseId = exerciseId,
+        )
+    }
 }
 
 /** How many sessions in a row make a stall: three, the rule the roadmap sets (N237, N304). */

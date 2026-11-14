@@ -100,7 +100,13 @@ class WeeklyReviewViewModelTest {
             ),
             programs = listOf(program()),
             blocks = listOf(BlockProgress(name = "Push Pull Legs", position = 3, length = 9, complete = false)),
-            stall = PlanStall(exerciseName = "Back Squat", sessions = 3),
+            stall = PlanStall(
+                exerciseName = "Back Squat",
+                sessions = 3,
+                templateId = "t1",
+                templateExerciseId = "te1",
+                exerciseId = "squat"
+            ),
         )
         val viewModel = WeeklyReviewViewModel(weekly = fake, timeSource = TimeSource { now })
 

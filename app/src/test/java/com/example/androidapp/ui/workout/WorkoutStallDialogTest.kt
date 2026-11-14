@@ -28,7 +28,17 @@ class WorkoutStallDialogTest {
 
     @Test
     fun theDialogNamesTheExerciseAndItsRun() {
-        show(listOf(PlanStall(exerciseName = "Back Squat", sessions = 3)))
+        show(
+            listOf(
+                PlanStall(
+                    exerciseName = "Back Squat",
+                    sessions = 3,
+                    templateId = "t1",
+                    templateExerciseId = "te1",
+                    exerciseId = "squat"
+                )
+            )
+        )
 
         composeTestRule.onNodeWithTag(TestTags.STALL_DIALOG).assertIsDisplayed()
         composeTestRule.onNodeWithText("Back Squat").assertIsDisplayed()
@@ -39,8 +49,20 @@ class WorkoutStallDialogTest {
     fun everyStalledLiftIsListed() {
         show(
             listOf(
-                PlanStall(exerciseName = "Back Squat", sessions = 3),
-                PlanStall(exerciseName = "Bench Press", sessions = 4),
+                PlanStall(
+                    exerciseName = "Back Squat",
+                    sessions = 3,
+                    templateId = "t1",
+                    templateExerciseId = "te1",
+                    exerciseId = "squat"
+                ),
+                PlanStall(
+                    exerciseName = "Bench Press",
+                    sessions = 4,
+                    templateId = "t1",
+                    templateExerciseId = "te2",
+                    exerciseId = "bench"
+                ),
             ),
         )
 
@@ -52,7 +74,18 @@ class WorkoutStallDialogTest {
     @Test
     fun done_dismisses() {
         var done = false
-        show(listOf(PlanStall(exerciseName = "Back Squat", sessions = 3)), onDone = { done = true })
+        show(
+            listOf(
+                PlanStall(
+                    exerciseName = "Back Squat",
+                    sessions = 3,
+                    templateId = "t1",
+                    templateExerciseId = "te1",
+                    exerciseId = "squat"
+                )
+            ),
+            onDone = { done = true }
+        )
 
         composeTestRule.onNodeWithTag(TestTags.STALL_DONE).performClick()
 

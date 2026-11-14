@@ -138,6 +138,15 @@ fun AppNavHost(
     }
 }
 
+/** The stall card's/the finish's hand-off to the plan editor's deload confirm (N307, N310). */
+private fun NavHostController.openDeloadConfirm(
+    programId: String,
+    templateId: String,
+    templateExerciseId: String,
+) {
+    navigate(ProgramEditor(programId, templateId, templateExerciseId))
+}
+
 /** Home, the exercise library, one exercise's detail, and the app's settings. */
 private fun NavGraphBuilder.homeDestinations(navController: NavHostController) {
     composable<Measurements> { entry ->
@@ -157,6 +166,7 @@ private fun NavGraphBuilder.homeDestinations(navController: NavHostController) {
         WeeklyReviewRoute(
             onBack = { navController.popBackStack() },
             onOpenDeload = { programId -> navController.navigate(ProgramDeload(programId)) },
+            onDeloadLift = navController::openDeloadConfirm,
         )
     }
 

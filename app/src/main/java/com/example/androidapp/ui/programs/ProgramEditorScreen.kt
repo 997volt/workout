@@ -37,6 +37,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -62,6 +63,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
 import com.example.androidapp.domain.DataError
+import com.example.androidapp.domain.model.PlanStall
 import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.model.ProgramPhases
 import com.example.androidapp.domain.model.ProgramSlot
@@ -113,6 +115,8 @@ fun ProgramEditorRoute(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val deleted by viewModel.deleted.collectAsStateWithLifecycle()
     val templateToEdit by viewModel.templateToEdit.collectAsStateWithLifecycle()
+    val deloadPrompt by viewModel.deloadPrompt.collectAsStateWithLifecycle()
+    val deloadUndo by viewModel.deloadUndo.collectAsStateWithLifecycle()
     val currentOnBack by rememberUpdatedState(onBack)
     val currentOnOpenTemplate by rememberUpdatedState(onOpenTemplate)
 
@@ -149,6 +153,13 @@ fun ProgramEditorRoute(
         onOpenTemplate = onOpenTemplate,
         onOpenBalance = onOpenBalance,
         onOpenDeload = onOpenDeload,
+        onDeloadLift = viewModel::onDeloadLift,
+        deloadPrompt = deloadPrompt,
+        onConfirmDeload = viewModel::onConfirmDeload,
+        onCancelDeload = viewModel::onCancelDeload,
+        deloadUndo = deloadUndo,
+        onUndoDeload = viewModel::onUndoDeload,
+        onDismissDeloadUndo = viewModel::onDeloadUndoShown,
         onOpenWeeks = onOpenWeeks,
         onOpenProgression = onOpenProgression,
         onPreviewSlot = viewModel::onPreviewSlot,
@@ -181,6 +192,14 @@ fun ProgramEditorScreen(
     onOpenTemplate: (String) -> Unit,
     onOpenBalance: () -> Unit,
     onOpenDeload: () -> Unit,
+    /** The per-lift plan edit's confirm and its whole-edit undo (N307). */
+    onDeloadLift: (PlanStall) -> Unit,
+    deloadPrompt: DeloadPrompt?,
+    onConfirmDeload: () -> Unit,
+    onCancelDeload: () -> Unit,
+    deloadUndo: DeloadUndo?,
+    onUndoDeload: () -> Unit,
+    onDismissDeloadUndo: () -> Unit,
     onOpenWeeks: () -> Unit,
     onOpenProgression: () -> Unit,
     onPreviewSlot: (String, String) -> Unit,
@@ -205,6 +224,30 @@ fun ProgramEditorScreen(
     val phases = rememberPhaseWeekSelection(state.program?.id, state.slots, isSequence, onRemovePhaseWeek)
 
     EditorMessages(state.error, transferMessage, snackbarHostState, onDismissMessage, onDismissTransferMessage)
+
+    // The deload's whole-edit undo (N307, decision 4a): one snackbar, one action, both halves restored.
+    val undoName = deloadUndo?.exerciseName
+    val undoMessage = if (undoName == null) "" else stringResource(R.string.program_deload_lift_undo, undoName)
+    val undoAction = stringResource(R.string.program_deload_lift_undo_action)
+    val currentUndo by rememberUpdatedState(onUndoDeload)
+    val currentDismiss by rememberUpdatedState(onDismissDeloadUndo)
+    LaunchedEffect(deloadUndo) {
+        if (deloadUndo == null) return@LaunchedEffect
+        val result = snackbarHostState.showSnackbar(
+            message = undoMessage,
+            actionLabel = undoAction,
+            withDismissAction = true,
+        )
+        if (result == SnackbarResult.ActionPerformed) currentUndo()
+        currentDismiss()
+    }
+    if (deloadPrompt != null) {
+        DeloadLiftDialog(
+            prompt = deloadPrompt,
+            onConfirm = onConfirmDeload,
+            onCancel = onCancelDeload,
+        )
+    }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -238,6 +281,7 @@ fun ProgramEditorScreen(
             onOpenTemplate = onOpenTemplate,
             onPreviewSlot = onPreviewSlot,
             onOpenDeload = onOpenDeload,
+            onDeloadLift = onDeloadLift,
             onOpenWeeks = onOpenWeeks,
             modifier = Modifier.padding(innerPadding),
         )
@@ -465,6 +509,7 @@ private fun ProgramEditorMenu(
     }
 }
 
+@Suppress("LongMethod") // The body is the screen's wiring; the deload card (N307) is the line at the ceiling.
 @Composable
 private fun ProgramEditorBody(
     state: ProgramEditorUiState,
@@ -481,6 +526,8 @@ private fun ProgramEditorBody(
     onPreviewSlot: (String, String) -> Unit,
     /** Opens the deload creator this program already has (ROADMAP N237). */
     onOpenDeload: () -> Unit,
+    /** Opens the per-lift deload's confirm (N307). */
+    onDeloadLift: (PlanStall) -> Unit,
     /** Opens the recovery-week choices (ROADMAP N300). */
     onOpenWeeks: () -> Unit,
     modifier: Modifier = Modifier,
@@ -527,7 +574,13 @@ private fun ProgramEditorBody(
 
         // A prescription that stopped moving, said where the program is read (N237). Nothing is written: the
         // deload is a decision about a week of training, and this is the question.
-        state.stall?.let { stall -> PlanStallCard(stall = stall, onOpenDeload = onOpenDeload) }
+        state.stall?.let { stall ->
+            PlanStallCard(
+                stall = stall,
+                onDeloadLift = { onDeloadLift(stall) },
+                onOpenDeload = onOpenDeload,
+            )
+        }
 
         // A sequence shows its whole order; a weekly program shows the selected authored week, and
         // week 1 is every day of a program that never authored a second one (N292).
@@ -1111,6 +1164,13 @@ private fun ProgramEditorScreenPreview() {
             onOpenTemplate = {},
             onOpenBalance = {},
             onOpenDeload = {},
+            onDeloadLift = {},
+            deloadPrompt = null,
+            onConfirmDeload = {},
+            onCancelDeload = {},
+            deloadUndo = null,
+            onUndoDeload = {},
+            onDismissDeloadUndo = {},
             onOpenWeeks = {},
             onOpenProgression = {},
             onPreviewSlot = { _, _ -> },

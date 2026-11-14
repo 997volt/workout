@@ -28,12 +28,14 @@ import com.example.androidapp.ui.components.TestTags
  * on a card**, not a dialog and not a write: three sessions is enough to ask, and far from enough to decide for a
  * lifter that a week of their training should change.
  *
- * The answer is the deload creator the program already has (N147) rather than a second idea of what a deload
- * is — a marked week with days and a kept percentage, authored in one place.
+ * The answer is a **plan edit**: "Deload this lift" (N307) drops this plan's later work sets and three load
+ * steps. The week-level creator (N147) is the other answer and stays as the secondary link — a lighter *week*
+ * is a different decision from a lighter *lift*, and the copy keeps the two apart.
  */
 @Composable
 internal fun PlanStallCard(
     stall: PlanStall,
+    onDeloadLift: () -> Unit,
     onOpenDeload: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -66,6 +68,12 @@ internal fun PlanStallCard(
                     modifier = Modifier.testTag(TestTags.Programs.STALL_DELOAD),
                 ) {
                     Text(stringResource(R.string.program_stall_deload))
+                }
+                AppTextButton(
+                    onClick = onDeloadLift,
+                    modifier = Modifier.testTag(TestTags.Programs.STALL_DELOAD_LIFT),
+                ) {
+                    Text(stringResource(R.string.program_stall_deload_lift))
                 }
             }
         }

@@ -156,7 +156,17 @@ data object Programs
 
 /** One program: its name, its ordered slots, and whether it is the active one (P3.3). */
 @Serializable
-data class ProgramEditor(val programId: String)
+data class ProgramEditor(
+    val programId: String,
+    /**
+     * A stall card's or the finish's hand-off: the plan to open the deload confirm for (N307, N310).
+     *
+     * Both are null for the ordinary editor. The ViewModel clears them once it has opened the confirm, so a
+     * rotation cannot re-open a decision the lifter has already made.
+     */
+    val deloadTemplateId: String? = null,
+    val deloadTemplateExerciseId: String? = null,
+)
 
 /**
  * Building one program's deload week (ROADMAP N147).

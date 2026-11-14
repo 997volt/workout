@@ -9,14 +9,21 @@ import androidx.navigation.toRoute
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.PlanStallFinder
+import com.example.androidapp.domain.Weight
+import com.example.androidapp.domain.WeightUnit
+import com.example.androidapp.domain.dataResultOf
+import com.example.androidapp.domain.model.DeloadedSet
 import com.example.androidapp.domain.model.PlanStall
 import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.TemplateExercise
+import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.WorkoutTemplate
+import com.example.androidapp.domain.model.deloadOf
 import com.example.androidapp.domain.repository.ProgramRepository
 import com.example.androidapp.domain.repository.TemplateRepository
+import com.example.androidapp.domain.repository.TemplateSetEdit
 import com.example.androidapp.platform.DocumentIo
 import com.example.androidapp.ui.navigation.ProgramEditor
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -27,11 +34,13 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -90,6 +99,40 @@ data class ProgramEditorUiState(
     val notFound: Boolean get() = !isLoading && program == null
 }
 
+/** One kept work set's before and after, as the per-lift deload's confirm shows it (N307). */
+data class DeloadPreviewSet(val before: TemplateSet, val after: DeloadedSet)
+
+/**
+ * A per-lift deload waiting for the lifter's yes (N307).
+ *
+ * It is a **plan edit**, so the confirm shows the numbers it will write and names the other programs
+ * only when the plan is actually shared. Nothing is written until [onConfirmDeload].
+ */
+data class DeloadPrompt(
+    val templateExerciseId: String,
+    val exerciseName: String,
+    val kept: List<DeloadPreviewSet>,
+    val removedCount: Int,
+    /** The other programs that name this plan, empty when it is not shared (decision 5a). */
+    val sharedProgramNames: List<String>,
+    val stepGrams: Long,
+    /** The plan's own unit, or null to follow the app setting (N64). */
+    val weightUnit: WeightUnit?,
+)
+
+/**
+ * The deload the snackbar can still take back (N307).
+ *
+ * It carries both halves of the edit: [keptBefore] to rewrite the kept targets and [removedSetIds] so one
+ * restore takes the removal back. That is decision 4a — the undo is the whole edit, not only the targets.
+ */
+data class DeloadUndo(
+    val templateExerciseId: String,
+    val exerciseName: String,
+    val keptBefore: List<TemplateSet>,
+    val removedSetIds: List<String>,
+)
+
 /**
  * One program: its name, its ordered slots, and whether it is the active one (ROADMAP P3.3).
  *
@@ -109,11 +152,36 @@ class ProgramEditorViewModel @Inject constructor(
 
     private val programId: String = savedStateHandle.toRoute<ProgramEditor>().programId
 
+    private val deloadTarget = savedStateHandle.toRoute<ProgramEditor>().let {
+        it.deloadTemplateId to it.deloadTemplateExerciseId
+    }
+
+    init {
+        val (templateId, exerciseId) = deloadTarget
+        if (templateId != null && exerciseId != null) {
+            // The hand-off is a one-shot (N310): clear it before a recreation can open it again.
+            savedStateHandle.remove<String>("deloadTemplateId")
+            savedStateHandle.remove<String>("deloadTemplateExerciseId")
+            openDeload(templateId, exerciseId)
+        }
+    }
+
     private val error = MutableStateFlow<DataError?>(null)
 
     /** True once the program is gone, so the screen can leave the editor. */
     private val _deleted = MutableStateFlow(false)
     val deleted: StateFlow<Boolean> = _deleted
+
+    /** The deload confirm, or null: a plan edit is a decision and waits for it (N307). */
+    private val _deloadPrompt = MutableStateFlow<DeloadPrompt?>(null)
+    val deloadPrompt: StateFlow<DeloadPrompt?> = _deloadPrompt.asStateFlow()
+
+    /** The deload the snackbar can still undo, or null (N307). */
+    private val _deloadUndo = MutableStateFlow<DeloadUndo?>(null)
+    val deloadUndo: StateFlow<DeloadUndo?> = _deloadUndo.asStateFlow()
+
+    /** Bumped after a plan write, so the stall reads the changed plan rather than its old answer. */
+    private val stallRefresh = MutableStateFlow(0)
 
     /**
      * The slot the preview is showing, or null (ROADMAP N72).
@@ -207,7 +275,8 @@ class ProgramEditorViewModel @Inject constructor(
      * template is not one of these.
      */
     private fun stallForProgram(): Flow<DataResult<PlanStall?>> =
-        repository.observeSlots(programId).mapLatest { stallFinder.firstStall(programId) }
+        combine(repository.observeSlots(programId), stallRefresh) { _, _ -> Unit }
+            .mapLatest { stallFinder.firstStall(programId) }
 
     fun onRename(name: String) = write { repository.renameProgram(programId, name) }
 
@@ -351,6 +420,117 @@ class ProgramEditorViewModel @Inject constructor(
             }
         }
     }
+
+    /** The card's "Deload this lift" (N307): read the plan, then ask. */
+    fun onDeloadLift(stall: PlanStall) = openDeload(stall.templateId, stall.templateExerciseId)
+
+    private fun openDeload(templateId: String, templateExerciseId: String) {
+        viewModelScope.launch {
+            val read = dataResultOf {
+                val exercise = templateRepository.observeExercises(templateId).first()
+                    .firstOrNull { it.id == templateExerciseId }
+                    ?: throw NoSuchElementException("the plan's exercise is gone")
+                val sets = templateRepository.observeSets(templateId).first()
+                    .filter { it.templateExerciseId == templateExerciseId }
+                val step = Weight.stepGramsFor(
+                    exercise.stepGrams,
+                    exercise.weightUnit ?: WeightUnit.KILOGRAMS,
+                )
+                val plan = deloadOf(sets, step)
+                val byId = sets.associateBy { it.id }
+                val kept = plan.kept.mapNotNull { after ->
+                    byId[after.setId]?.let { before -> DeloadPreviewSet(before, after) }
+                }
+                val shared = when (
+                    val names = repository.otherProgramNamesUsingTemplates(listOf(templateId), programId)
+                ) {
+                    is DataResult.Success -> names.data
+                    is DataResult.Failure -> {
+                        // A failed read is not "nothing else uses it" (B351); say it, and still ask.
+                        error.value = names.error
+                        emptyList()
+                    }
+                }
+                DeloadPrompt(
+                    templateExerciseId = templateExerciseId,
+                    exerciseName = exercise.exerciseName,
+                    kept = kept,
+                    removedCount = plan.removedSetIds.size,
+                    sharedProgramNames = shared,
+                    stepGrams = step,
+                    weightUnit = exercise.weightUnit,
+                )
+            }
+            when (read) {
+                is DataResult.Success -> _deloadPrompt.value = read.data
+                is DataResult.Failure -> error.value = read.error
+            }
+        }
+    }
+
+    /** Writes the edit the confirm showed; the undo is the whole edit (N307, decision 4a). */
+    fun onConfirmDeload() {
+        val prompt = _deloadPrompt.value ?: return
+        viewModelScope.launch {
+            when (val read = templateRepository.deloadExercise(prompt.templateExerciseId, prompt.stepGrams)) {
+                is DataResult.Success -> {
+                    _deloadPrompt.value = null
+                    _deloadUndo.value = DeloadUndo(
+                        templateExerciseId = prompt.templateExerciseId,
+                        exerciseName = prompt.exerciseName,
+                        keptBefore = prompt.kept.map { it.before },
+                        removedSetIds = read.data.removedSetIds,
+                    )
+                    stallRefresh.update { it + 1 }
+                }
+                is DataResult.Failure -> error.value = read.error
+            }
+        }
+    }
+
+    fun onCancelDeload() {
+        _deloadPrompt.value = null
+    }
+
+    fun onDeloadUndoShown() {
+        _deloadUndo.value = null
+    }
+
+    fun onUndoDeload() {
+        val undo = _deloadUndo.value ?: return
+        _deloadUndo.value = null
+        viewModelScope.launch {
+            var failure: DataError? = null
+            // One removed id restores the whole removal: the deload's rows share one deletion timestamp.
+            undo.removedSetIds.firstOrNull()?.let { id ->
+                (templateRepository.restoreSet(id) as? DataResult.Failure)?.let { failure = it.error }
+            }
+            if (failure == null) {
+                for (before in undo.keptBefore) {
+                    when (val result = templateRepository.updateSet(before.id, before.asEdit())) {
+                        is DataResult.Success -> Unit
+                        is DataResult.Failure -> {
+                            failure = result.error
+                            break
+                        }
+                    }
+                }
+            }
+            if (failure != null) error.value = failure else stallRefresh.update { it + 1 }
+        }
+    }
+
+    private fun TemplateSet.asEdit() = TemplateSetEdit(
+        role = role,
+        targetWeightGrams = targetWeightGrams,
+        targetAssistanceGrams = targetAssistanceGrams,
+        targetRepsMin = targetRepsMin,
+        targetRepsMax = targetRepsMax,
+        targetRepsCurrent = targetRepsCurrent,
+        dropValueGrams = dropValueGrams,
+        targetDurationSeconds = targetDurationSeconds,
+        note = note,
+    )
 
     fun onErrorShown() {
         error.value = null

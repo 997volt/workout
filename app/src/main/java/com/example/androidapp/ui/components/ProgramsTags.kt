@@ -45,6 +45,8 @@ internal object ProgramsTags {
     /** A plan that stopped moving, and the way to a deload (ROADMAP N237). */
     const val STALL = "program_stall"
     const val STALL_DELOAD = "program_stall_deload"
+    const val STALL_DELOAD_LIFT = "program_stall_deload_lift"
+    const val DELOAD_LIFT_DIALOG = "program_deload_lift_dialog"
 
     const val DELETE = "program_delete"
     const val DELETE_CONFIRM = "program_delete_confirm"

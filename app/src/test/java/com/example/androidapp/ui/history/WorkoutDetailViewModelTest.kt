@@ -559,6 +559,10 @@ private class FakeTemplateRepository(
     override suspend fun keepVersion(templateId: String): DataResult<Unit> = DataResult.Success(Unit)
     override fun observeExercises(templateId: String): Flow<List<TemplateExercise>> = flowOf(emptyList())
     override fun observeSets(templateId: String): Flow<List<TemplateSet>> = flowOf(emptyList())
+    override suspend fun deloadExercise(
+        templateExerciseId: String,
+        stepGrams: Long,
+    ): DataResult<com.example.androidapp.domain.model.ExerciseDeload> = unused()
 
     private fun unused(): Nothing = error("this fake does not write")
 }
@@ -578,6 +582,10 @@ private class FakeProgramRepository : ProgramRepository {
         DataResult.Success(null)
 
     override fun observeSlots(programId: String): Flow<List<ProgramSlot>> = flowOf(emptyList())
+    override suspend fun otherProgramNamesUsingTemplates(
+        templateIds: List<String>,
+        programId: String,
+    ): DataResult<List<String>> = DataResult.Success(emptyList())
 
     override fun observeProgramRun(programId: String): Flow<ProgramRun?> = flowOf(null)
 

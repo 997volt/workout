@@ -18,6 +18,7 @@ import com.example.androidapp.domain.NotFoundException
 import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.dataResultOf
+import com.example.androidapp.domain.model.ExerciseDeload
 import com.example.androidapp.domain.model.MAX_REPS
 import com.example.androidapp.domain.model.Rpe
 import com.example.androidapp.domain.model.RungRun
@@ -25,6 +26,7 @@ import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.WorkoutTemplate
+import com.example.androidapp.domain.model.deloadOf
 import com.example.androidapp.domain.model.runAt
 import com.example.androidapp.domain.model.rungLoad
 import com.example.androidapp.domain.nowEpochMillis
@@ -459,30 +461,7 @@ class RoomTemplateRepository @Inject constructor(
             ?: throw NotFoundException("template exercise ${stored.templateExerciseId}")
         val sets = plannedSetsOf(exercise)
         val index = sets.indexOfFirst { it.id == templateSetId }
-        val going = if (index < 0) {
-            listOf(templateSetId)
-        } else {
-            // **A rung that opens its run takes the run with it** (B152). The run's value lives on its first
-            // row and every later rung stores null, so removing the opener left the survivors with no value to
-            // derive from: the plan read "no load to drop" for sets that had a load a moment earlier, and
-            // re-typing the number did not put the ladder back — the survivor was now rung 1, so it derived
-            // anchor − 1 × value and the plan was quietly re-valued rather than merely blanked. The anchor's
-            // removal already took the whole run for the same reason (`runAt` names every rung whose anchor
-            // this row is), and the run that would be left is the one shape `rungProblem` refuses to author.
-            val run = sets.runAt(index)
-            val opensItsRun = run?.rung == 1
-            if (opensItsRun && run != null) {
-                // The contiguous same-role run that starts here — the same definition `runAt` reads (B339).
-                // Every later row with this role is *not* the run: a plan may hold a second drop ladder
-                // after a normal set, and taking it would delete work the lifter never touched.
-                sets.drop(index)
-                    .takeWhile { it.role == stored.role }
-                    .map { it.id }
-            } else {
-                listOf(templateSetId) +
-                    sets.indices.filter { sets.runAt(it)?.anchorIndex == index }.map { sets[it].id }
-            }
-        }
+        val going = if (index < 0) listOf(templateSetId) else removalBlock(sets, index)
         // The row above the block is the stable anchor: survivors renumber, and a later ramp can move
         // every index, but the anchor's identity does not (B364).
         val aboveId = sets.getOrNull(index - 1)?.takeIf { index > 0 }?.id
@@ -497,6 +476,84 @@ class RoomTemplateRepository @Inject constructor(
                         setDao.updateTemplateSet(row.copy(setIndex = position, updatedAt = now))
                     }
                 }
+        }
+    }
+
+    /**
+     * The per-lift deload (ROADMAP N307): one plan edit that removes the later work sets and drops every
+     * kept work set by three of the movement's own steps.
+     *
+     * The arithmetic is [deloadOf]'s, the same function the confirm reads. The removals share **one**
+     * timestamp, which is what makes the undo whole: `restoreSet` restores every row hidden by one write,
+     * so the returned [ExerciseDeload] plus one removed id is enough to take the edit back. The targets and
+     * the removed sets land inside one transaction; a failure leaves neither half behind.
+     *
+     * The survivors are renumbered once, after every block has gone, so the plan's order and each kept
+     * rung's ladder still read by position (B72, N79).
+     */
+    override suspend fun deloadExercise(
+        templateExerciseId: String,
+        stepGrams: Long,
+    ): DataResult<ExerciseDeload> = dataResultOf {
+        val exercise = dao.findTemplateExercise(templateExerciseId)
+            ?: throw NotFoundException("template exercise $templateExerciseId")
+        val plan = deloadOf(plannedSetsOf(exercise), stepGrams)
+        val now = timeSource.nowEpochMillis()
+        database.withTransaction {
+            plan.removedSetIds.forEach { id ->
+                val sets = plannedSetsOf(exercise)
+                val index = sets.indexOfFirst { it.id == id }
+                if (index < 0) return@forEach
+                val aboveId = sets.getOrNull(index - 1)?.id
+                removalBlock(sets, index).forEach { setDao.softDeleteTemplateSet(it, now, aboveId) }
+            }
+            // Renumber once: every removal captured the set above it while the old indexes were intact.
+            setDao.findTemplateSets(exercise.templateId)
+                .filter { it.templateExerciseId == exercise.id }
+                .sortedBy { it.setIndex }
+                .forEachIndexed { position, row ->
+                    if (row.setIndex != position) {
+                        setDao.updateTemplateSet(row.copy(setIndex = position, updatedAt = now))
+                    }
+                }
+            plan.kept.forEach { target ->
+                val before = setDao.findTemplateSet(target.setId)?.toDomain()
+                    ?: throw NotFoundException("template set ${target.setId}")
+                updateSetRow(
+                    target.setId,
+                    TemplateSetEdit(
+                        role = before.role,
+                        targetWeightGrams = target.weightGrams,
+                        targetAssistanceGrams = target.assistanceGrams,
+                        targetRepsMin = before.targetRepsMin,
+                        targetRepsMax = before.targetRepsMax,
+                        targetRepsCurrent = target.repsCurrent ?: before.targetRepsCurrent,
+                        dropValueGrams = before.dropValueGrams,
+                        targetDurationSeconds = before.targetDurationSeconds,
+                        note = before.note,
+                    ),
+                )
+            }
+        }
+        plan
+    }
+
+    /**
+     * What one planned set's removal takes with it (ROADMAP N79, B152, B339).
+     *
+     * **A rung that opens its run takes the run with it**, and an anchor's removal takes every rung whose
+     * anchor it is. A later row with the same role is not the run: a plan may hold a second drop ladder
+     * after a normal set, and taking it would delete work the lifter never touched.
+     */
+    private fun removalBlock(sets: List<TemplateSet>, index: Int): List<String> {
+        val set = sets[index]
+        return if (sets.runAt(index)?.rung == 1) {
+            sets.drop(index)
+                .takeWhile { it.role == set.role }
+                .map { it.id }
+        } else {
+            listOf(set.id) +
+                sets.indices.filter { sets.runAt(it)?.anchorIndex == index }.map { sets[it].id }
         }
     }
 
