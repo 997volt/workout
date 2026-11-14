@@ -16,10 +16,14 @@ import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.PlanStall
 import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.model.ProgramSlot
+import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSet
+import com.example.androidapp.domain.model.VolumeReason
+import com.example.androidapp.domain.model.VolumeSuggestion
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.WorkoutTemplate
+import com.example.androidapp.domain.repository.TemplateSetEdit
 import com.example.androidapp.ui.components.TestTags
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
@@ -71,6 +75,7 @@ class ProgramEditorScreenTest {
         replaceUndo: ReplaceUndo? = null,
         onUndoReplace: () -> Unit = {},
         onDismissReplaceUndo: () -> Unit = {},
+        onAddVolume: (VolumeSuggestion) -> Unit = {},
         onOpenWeeks: () -> Unit = {},
         onOpenProgression: () -> Unit = {},
         onPreviewSlot: (String, String) -> Unit = { _, _ -> },
@@ -102,6 +107,7 @@ class ProgramEditorScreenTest {
                 onUndoDeload = onUndoDeload,
                 onDismissDeloadUndo = onDismissDeloadUndo,
                 onReplaceLift = onReplaceLift,
+                onAddVolume = onAddVolume,
                 replaceUndo = replaceUndo,
                 onUndoReplace = onUndoReplace,
                 onDismissReplaceUndo = onDismissReplaceUndo,
@@ -862,4 +868,35 @@ class ProgramEditorScreenTest {
         composeTestRule.onNodeWithTag(TestTags.Programs.WEEKS_MENU).assertDoesNotExist()
         composeTestRule.onNodeWithTag(TestTags.Programs.BALANCE).assertExists()
     }
+
+    @Test
+    fun thePlanCard_offersTheEarnedSet_andTheAddCallsBack() {
+        // N311: the card is where the rest of the suggestions live; its Add is the lifter's write.
+        var added: VolumeSuggestion? = null
+        setScreen(
+            state = twoSlots.copy(volumes = listOf(earnedSet())),
+            onAddVolume = { added = it },
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.VOLUME).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.Programs.VOLUME_ADD).performClick()
+
+        assertThat(added?.reason).isEqualTo(VolumeReason.EXTRA_SET)
+        assertThat(added?.plannedSets).isEqualTo(3)
+    }
+
+    private fun earnedSet() = VolumeSuggestion(
+        templateId = "t1",
+        templateExerciseId = "te1",
+        exerciseId = "squat",
+        exerciseName = "Back Squat",
+        reason = VolumeReason.EXTRA_SET,
+        plannedSets = 3,
+        edit = TemplateSetEdit(
+            role = SetType.NORMAL,
+            targetWeightGrams = 100_000L,
+            targetRepsMin = 5,
+            targetRepsMax = 5,
+        ),
+    )
 }

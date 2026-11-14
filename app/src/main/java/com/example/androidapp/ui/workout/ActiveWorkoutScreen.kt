@@ -9,8 +9,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -39,6 +41,8 @@ import com.example.androidapp.domain.model.PersonalRecordMoment
 import com.example.androidapp.domain.model.PlanStall
 import com.example.androidapp.domain.model.ProgressionDirection
 import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.domain.model.VolumeReason
+import com.example.androidapp.domain.model.VolumeSuggestion
 import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.ProgressionDialog
 import com.example.androidapp.ui.components.SetEdit
@@ -84,6 +88,8 @@ fun ActiveWorkoutRoute(
     val pendingProgression by viewModel.pendingProgression.collectAsStateWithLifecycle()
     RestCueAndScreenOn(clock, restCueEnabled, keepScreenOn, restTimerEnabled)
     val stallNotice by viewModel.stallNotice.collectAsStateWithLifecycle()
+    val volumeSuggestion by viewModel.volumeSuggestion.collectAsStateWithLifecycle()
+    val volumeUndo by viewModel.volumeUndo.collectAsStateWithLifecycle()
     val calibrationNotice by viewModel.calibrationNotice.collectAsStateWithLifecycle()
     val personalRecord by viewModel.personalRecord.collectAsStateWithLifecycle()
     val autoStep by viewModel.autoStep.collectAsStateWithLifecycle()
@@ -102,6 +108,12 @@ fun ActiveWorkoutRoute(
         onDismissStallNotice = viewModel::onDismissStallNotice,
         onDeloadStall = viewModel::onDeloadStall,
         onReplaceStall = viewModel::onReplaceStall,
+        volumeSuggestion = volumeSuggestion,
+        volumeUndo = volumeUndo,
+        onAddVolume = viewModel::onAddVolume,
+        onUndoVolume = viewModel::onUndoVolume,
+        onDismissVolume = viewModel::onDismissVolume,
+        onDismissVolumeUndo = viewModel::onDismissVolumeUndo,
         calibrationNotice = calibrationNotice,
         onUseCalibration = viewModel::onUseCalibration,
         onSkipCalibration = viewModel::onSkipCalibration,
@@ -203,6 +215,13 @@ fun ActiveWorkoutScreen(
     /** Declines the whole question and closes the exercise (ROADMAP N74). */
     onDismissProgression: () -> Unit,
     modifier: Modifier = Modifier,
+    /** The plan's earned set at *Done* (N311), its undo, and the two dismissals. */
+    volumeSuggestion: VolumeSuggestion? = null,
+    volumeUndo: String? = null,
+    onAddVolume: () -> Unit = {},
+    onUndoVolume: () -> Unit = {},
+    onDismissVolume: () -> Unit = {},
+    onDismissVolumeUndo: () -> Unit = {},
     /**
      * True when dropping out is recorded against a program rather than reading as no workout at
      * all (ROADMAP N41): the discard prompt says so, because only a finished session settles a
@@ -261,6 +280,48 @@ fun ActiveWorkoutScreen(
     BodyweightPrompt(prompt = bodyweightPrompt, onSave = onEnterBodyweight, onDismiss = onDismissBodyweight)
 
     UndoOffers(state, snackbarHostState, onUndoDelete, onDismissUndo, onUndoFinishExercise, onDismissFinishUndo)
+
+    // The plan's earned set (N311): one snackbar, Add or dismiss; an accepted Add leaves the same
+    // snackbar holding its undo. The message names the exercise and the plan's own count.
+    val suggestion = volumeSuggestion
+    val volumeMessage = when (suggestion?.reason) {
+        VolumeReason.EXTRA_SET -> stringResource(
+            R.string.volume_extra_message,
+            suggestion.exerciseName,
+            suggestion.plannedSets,
+        )
+
+        VolumeReason.COMFORTABLE -> stringResource(R.string.volume_comfortable_message, suggestion.exerciseName)
+
+        null -> null
+    }
+    val volumeAddLabel = stringResource(R.string.volume_add)
+    val volumeAddedMessage = stringResource(R.string.volume_added_message)
+    val volumeUndoLabel = stringResource(R.string.volume_undo)
+    val currentAddVolume by rememberUpdatedState(onAddVolume)
+    val currentDismissVolume by rememberUpdatedState(onDismissVolume)
+    val currentUndoVolume by rememberUpdatedState(onUndoVolume)
+    val currentDismissVolumeUndo by rememberUpdatedState(onDismissVolumeUndo)
+    LaunchedEffect(volumeMessage) {
+        if (volumeMessage == null) return@LaunchedEffect
+        when (
+            snackbarHostState.showSnackbar(
+                message = volumeMessage,
+                actionLabel = volumeAddLabel,
+                duration = SnackbarDuration.Long,
+            )
+        ) {
+            SnackbarResult.ActionPerformed -> currentAddVolume()
+            SnackbarResult.Dismissed -> currentDismissVolume()
+        }
+    }
+    LaunchedEffect(volumeUndo) {
+        if (volumeUndo == null) return@LaunchedEffect
+        when (snackbarHostState.showSnackbar(volumeAddedMessage, actionLabel = volumeUndoLabel)) {
+            SnackbarResult.ActionPerformed -> currentUndoVolume()
+            SnackbarResult.Dismissed -> currentDismissVolumeUndo()
+        }
+    }
 
     // Whether the activity picker is open: transient UI, so it lives beside the row that opens it (N141).
     var choosingActivity by rememberSaveable { mutableStateOf(false) }

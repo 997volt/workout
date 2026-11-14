@@ -9,6 +9,7 @@ import androidx.navigation.toRoute
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.PlanStallFinder
+import com.example.androidapp.domain.PlanVolumeFinder
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.dataResultOf
@@ -19,6 +20,7 @@ import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.ReplaceOutcome
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSet
+import com.example.androidapp.domain.model.VolumeSuggestion
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.WorkoutTemplate
 import com.example.androidapp.domain.model.deloadOf
@@ -94,6 +96,8 @@ data class ProgramEditorUiState(
      * is the normal state.
      */
     val stalls: List<PlanStall> = emptyList(),
+    /** The plan's earned sets, one per exercise the card offers (N311). */
+    val volumes: List<VolumeSuggestion> = emptyList(),
 ) {
     /** The program was deleted, or never existed — either way there is no editor. */
     val notFound: Boolean get() = !isLoading && program == null
@@ -152,6 +156,7 @@ class ProgramEditorViewModel @Inject constructor(
     private val repository: ProgramRepository,
     private val templateRepository: TemplateRepository,
     private val stallFinder: PlanStallFinder,
+    private val planVolumeFinder: PlanVolumeFinder,
     private val documentIo: DocumentIo,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
@@ -298,6 +303,12 @@ class ProgramEditorViewModel @Inject constructor(
                 is DataResult.Failure -> state.copy(stalls = emptyList(), error = stalls.error)
             }
         }
+        .combine(volumeSuggestions()) { state, volumes ->
+            when (volumes) {
+                is DataResult.Success -> state.copy(volumes = volumes.data)
+                is DataResult.Failure -> state.copy(volumes = emptyList(), error = volumes.error)
+            }
+        }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
@@ -314,6 +325,10 @@ class ProgramEditorViewModel @Inject constructor(
     private fun stallsForProgram(): Flow<DataResult<List<PlanStall>>> =
         combine(repository.observeSlots(programId), stallRefresh) { _, _ -> Unit }
             .mapLatest { stallFinder.stallsForProgram(programId) }
+
+    private fun volumeSuggestions(): Flow<DataResult<List<VolumeSuggestion>>> =
+        combine(repository.observeSlots(programId), stallRefresh) { _, _ -> Unit }
+            .mapLatest { planVolumeFinder.suggestionsForProgram(programId) }
 
     fun onRename(name: String) = write { repository.renameProgram(programId, name) }
 
@@ -591,6 +606,50 @@ class ProgramEditorViewModel @Inject constructor(
     fun onErrorShown() {
         error.value = null
     }
+
+    private val _volumeUndo = MutableStateFlow<String?>(null)
+    val volumeUndo: StateFlow<String?> = _volumeUndo.asStateFlow()
+
+    /** Adds the card's set to the plan, after the reader chose it (N311). */
+    fun onAddVolume(suggestion: VolumeSuggestion) {
+        viewModelScope.launch {
+            when (val write = templateRepository.addSet(suggestion.templateExerciseId, suggestion.edit)) {
+                is DataResult.Success -> {
+                    error.value = null
+                    stallRefresh.update { it + 1 }
+                    _volumeUndo.value = addedSetId(suggestion)
+                }
+
+                is DataResult.Failure -> error.value = write.error
+            }
+        }
+    }
+
+    fun onUndoVolume() {
+        val id = _volumeUndo.value ?: return
+        viewModelScope.launch {
+            when (val write = templateRepository.removeSet(id)) {
+                is DataResult.Success -> {
+                    _volumeUndo.value = null
+                    stallRefresh.update { it + 1 }
+                }
+
+                is DataResult.Failure -> error.value = write.error
+            }
+        }
+    }
+
+    fun onDismissVolumeUndo() {
+        _volumeUndo.value = null
+    }
+
+    private suspend fun addedSetId(suggestion: VolumeSuggestion): String? =
+        templateRepository.observeExercises(suggestion.templateId)
+            .first()
+            .firstOrNull { it.id == suggestion.templateExerciseId }
+            ?.sets
+            ?.maxByOrNull { it.setIndex }
+            ?.id
 
     private fun write(action: suspend () -> DataResult<Unit>) {
         viewModelScope.launch {

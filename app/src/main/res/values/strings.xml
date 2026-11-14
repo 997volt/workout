@@ -1447,6 +1447,13 @@
     <string name="finish_stall_title">What stalled</string>
     <string name="finish_stall_done">Done</string>
     <!-- The find-the-weight prompt at the finish (ROADMAP N309): one line per marked plan, Use or Not now. -->
+    <string name="weekly_review_volume_title">Earned sets</string>
+    <string name="volume_card_title">The plan earned a set back</string>
+    <string name="volume_extra_message">%1$s: both of the last two sessions logged one more set than the plan\'s %2$d. Add a set?</string>
+    <string name="volume_comfortable_message">%1$s: every set earned a step for three sessions. Add a set?</string>
+    <string name="volume_add">Add set</string>
+    <string name="volume_added_message">One more set in the plan.</string>
+    <string name="volume_undo">Undo</string>
     <string name="calibration_title">Find the weight</string>
     <string name="calibration_question">Use today\'s weights for %1$s?</string>
     <plurals name="calibration_detail">

@@ -8,6 +8,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.PlanStallFinder
+import com.example.androidapp.domain.PlanVolumeFinder
 import com.example.androidapp.domain.model.PlanStall
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSet
@@ -71,6 +72,7 @@ class ProgramEditorViewModelTest {
         repository = repository,
         templateRepository = templates,
         stallFinder = PlanStallFinder(repository, templates, FakeTrendsRepository()),
+        planVolumeFinder = PlanVolumeFinder(repository, templates, FakeTrendsRepository()),
         documentIo = documentIo,
         savedStateHandle = handle,
     )

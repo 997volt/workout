@@ -416,6 +416,23 @@ the rule; that one argues it.
   offered on any program; the finish sheet stays active-weekly. The calibration prompt still runs before the
   stall notice, and the hand-off is a navigation, not a background write.
 
+- **A plan can earn a set back, and only the lifter adds it** (N311). The trim's counterweight is a plan
+  edit with evidence, offered and never automatic. **The extra set**: the plan prescribes N working sets and
+  the session logged N+1, in the session just done and the previous finished one — so the suggestion is that
+  the plan is one set short rather than that a day ran long. **The comfortable plan**: in the session just
+  done and the two before it, every working set *earned a step* through the progression offer's own gate,
+  not a fresh reading of the RPE field (decision 1b), with no stall open. The gates are shared: no open stall
+  (a deload answers a stall, not more work), the plan's work-set count below **six** (decision 8b; the
+  editor can still add more by hand), and a deload workout earns neither. The finish says one at a time, the
+  extra set first because it is the lifter's own work, and only when the pattern **reaches** its threshold:
+  the session before the pair (or the fourth back for the comfortable) must not already have held, or an
+  earlier Done said it. There is no stored "dismissed" state — the card on the program editor and the weekly
+  review carries the rest while the rule holds. The write appends one NORMAL working set after the plan's
+  last: from the logged extra set's weight, assistance and reps for the extra trigger, from the last kept
+  set's target for the comfortable one; the plan's effort stays, one transaction, undo from the same
+  snackbar, and the plan takes effect next session. No auto volume: the auto switch, its baseline and Reset
+  stay exactly as they are, and an automatic volume step would be its own opt-in later.
+
 - **An encrypted export is a password-derived container, not a Keystore key** (N294). The Data section offers
   a second export beside the plain one: the ordinary backup JSON is wrapped in a self-describing JSON envelope
   (version, KDF, iteration count, salt, nonce, ciphertext), and PBKDF2-HMAC-SHA256 with 600,000 iterations and

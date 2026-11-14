@@ -5,6 +5,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.PlanStallFinder
+import com.example.androidapp.domain.PlanVolumeFinder
 import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.Weight
@@ -170,6 +171,7 @@ class ActiveWorkoutViewModelTest {
         templates,
         programs,
         PlanStallFinder(programs, templates, trends),
+        PlanVolumeFinder(programs, templates, trends),
         progression,
         activeWorkoutRoute(templateId, repeatSessionId, slotId),
         settings,
@@ -2413,6 +2415,7 @@ class ActiveWorkoutViewModelTest {
             FakeTemplateRepository(),
             FakeProgramRepository(),
             PlanStallFinder(FakeProgramRepository(), FakeTemplateRepository(), FakeTrendsRepository()),
+            PlanVolumeFinder(FakeProgramRepository(), FakeTemplateRepository(), FakeTrendsRepository()),
             FakeProgressionRepository(),
             activeWorkoutRoute(),
             FakeSettingsRepository(),

@@ -3,6 +3,7 @@ package com.example.androidapp.ui.weekly
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
+import com.example.androidapp.domain.PlanVolumeFinder
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.model.BlockProgress
 import com.example.androidapp.domain.model.DayOccurrence
@@ -14,6 +15,9 @@ import com.example.androidapp.domain.model.ProgramSchedule
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.WorkoutSummary
 import com.example.androidapp.domain.repository.WeeklyReviewRepository
+import com.example.androidapp.ui.testing.FakeProgramRepository
+import com.example.androidapp.ui.testing.FakeTemplateRepository
+import com.example.androidapp.ui.testing.FakeTrendsRepository
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import kotlinx.coroutines.Dispatchers
@@ -61,7 +65,7 @@ class WeeklyReviewViewModelTest {
     fun theFirstResume_doesNotStartASecondLoad() = runTest(dispatcher) {
         // B392: init's load and the route's first ON_RESUME used to race; the later one won unpredictably.
         val fake = FakeWeekly(history = emptyList(), occurrences = emptyMap())
-        val viewModel = WeeklyReviewViewModel(weekly = fake, timeSource = TimeSource { now })
+        val viewModel = reviewViewModel(weekly = fake, timeSource = TimeSource { now })
         viewModel.onResume()
         advanceUntilIdle()
 
@@ -72,7 +76,7 @@ class WeeklyReviewViewModelTest {
     @Test
     fun onResume_reloadsTheWeekTheClockNowNames() = runTest(dispatcher) {
         // N286: a week boundary must not wait for the screen to be recreated.
-        val viewModel = WeeklyReviewViewModel(
+        val viewModel = reviewViewModel(
             weekly = FakeWeekly(history = emptyList(), occurrences = emptyMap()),
             timeSource = TimeSource { now },
         )
@@ -108,7 +112,7 @@ class WeeklyReviewViewModelTest {
                 exerciseId = "squat"
             ),
         )
-        val viewModel = WeeklyReviewViewModel(weekly = fake, timeSource = TimeSource { now })
+        val viewModel = reviewViewModel(weekly = fake, timeSource = TimeSource { now })
 
         advanceUntilIdle()
 
@@ -152,7 +156,7 @@ class WeeklyReviewViewModelTest {
             occurrences = mapOf(monday to listOf(occurrence(monday, OccurrenceState.DONE))),
             failDate = monday,
         )
-        val viewModel = WeeklyReviewViewModel(weekly = fake, timeSource = TimeSource { now })
+        val viewModel = reviewViewModel(weekly = fake, timeSource = TimeSource { now })
         advanceUntilIdle()
 
         assertWithMessage("a failed read must be said rather than drawn as an empty week")
@@ -179,7 +183,7 @@ class WeeklyReviewViewModelTest {
             occurrences = mapOf(monday to listOf(occurrence(monday, OccurrenceState.DONE))),
             failPrograms = true,
         )
-        val viewModel = WeeklyReviewViewModel(weekly = fake, timeSource = TimeSource { now })
+        val viewModel = reviewViewModel(weekly = fake, timeSource = TimeSource { now })
         advanceUntilIdle()
 
         val state = viewModel.state.value
@@ -215,6 +219,20 @@ class WeeklyReviewViewModelTest {
         isActive = true,
         position = 0,
         kind = ProgramKind.WEEKLY,
+    )
+
+    private fun reviewViewModel(
+        weekly: WeeklyReviewRepository,
+        timeSource: TimeSource = TimeSource { now },
+    ) = WeeklyReviewViewModel(
+        weekly = weekly,
+        planVolumeFinder = PlanVolumeFinder(
+            FakeProgramRepository(),
+            FakeTemplateRepository(),
+            FakeTrendsRepository(),
+        ),
+        templateRepository = FakeTemplateRepository(),
+        timeSource = timeSource,
     )
 
     private class FakeWeekly(

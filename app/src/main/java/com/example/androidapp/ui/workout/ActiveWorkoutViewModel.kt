@@ -7,6 +7,7 @@ import androidx.navigation.toRoute
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.PlanStallFinder
+import com.example.androidapp.domain.PlanVolumeFinder
 import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.WeightUnit
@@ -28,6 +29,7 @@ import com.example.androidapp.domain.model.SessionExercise
 import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.TemplateExercise
+import com.example.androidapp.domain.model.VolumeSuggestion
 import com.example.androidapp.domain.model.WorkoutSession
 import com.example.androidapp.domain.model.pendingProgressionFor
 import com.example.androidapp.domain.model.runContinuesAfter
@@ -116,6 +118,7 @@ class ActiveWorkoutViewModel @Inject constructor(
     private val templateRepository: TemplateRepository,
     private val programRepository: ProgramRepository,
     private val stallFinder: PlanStallFinder,
+    private val planVolumeFinder: PlanVolumeFinder,
     private val progressionRepository: ProgressionRepository,
     savedStateHandle: SavedStateHandle,
     private val settingsRepository: SettingsRepository,
@@ -266,6 +269,14 @@ class ActiveWorkoutViewModel @Inject constructor(
     /** The find-the-weight prompt waiting at the finish, before the stall notice (ROADMAP N309). */
     private val _calibrationNotice = MutableStateFlow<List<CalibrationNotice>?>(null)
     val calibrationNotice: StateFlow<List<CalibrationNotice>?> = _calibrationNotice.asStateFlow()
+
+    /** The plan's earned set, offered at *Done* (N311). */
+    private val _volumeSuggestion = MutableStateFlow<VolumeSuggestion?>(null)
+    val volumeSuggestion: StateFlow<VolumeSuggestion?> = _volumeSuggestion.asStateFlow()
+
+    /** The set an accepted suggestion appended, for the snackbar's undo (N311). */
+    private val _volumeUndo = MutableStateFlow<String?>(null)
+    val volumeUndo: StateFlow<String?> = _volumeUndo.asStateFlow()
 
     /** The program the finish's stalls belong to, for the hand-off (N310). */
     private val _stallProgramId = MutableStateFlow<String?>(null)
@@ -784,6 +795,9 @@ class ActiveWorkoutViewModel @Inject constructor(
             is DataResult.Success -> {
                 lastError.value = null
                 pendingFinishedExercise.value = sessionExerciseId
+                // The plan's earned set is said after the exercise is stored, so the card and the snackbar
+                // cannot disagree about whether the session that earned it counts (N311).
+                suggestVolume(sessionExerciseId)
             }
 
             is DataResult.Failure -> lastError.value = result.error
@@ -801,6 +815,72 @@ class ActiveWorkoutViewModel @Inject constructor(
     fun onDismissFinishUndo() {
         pendingFinishedExercise.value = null
     }
+
+    /**
+     * The plan's earned set after a finished exercise, or nothing (ROADMAP N311).
+     *
+     * The current session's prompt is the same one *Done* judged, so the suggestion and the question read
+     * the session the same way. A deload workout earns no set (the week is the point), and a failed read is
+     * silent: the finish is stored, and the card on the plan screen reports the durable answer.
+     */
+    private suspend fun suggestVolume(sessionExerciseId: String) {
+        val templateId = uiState.value.sessionTemplateId
+        val row = uiState.value.exercises.firstOrNull { it.id == sessionExerciseId }
+        val suggestion = if (uiState.value.isDeloadWorkout || templateId == null || row == null) {
+            null
+        } else {
+            planVolumeFinder.doneSuggestion(templateId, row.exerciseId, row.progression).getOrNull()
+        }
+        if (suggestion != null) _volumeSuggestion.value = suggestion
+    }
+
+    /** Adds the offered set to the plan; undoable from the same snackbar (N311). */
+    fun onAddVolume() {
+        val suggestion = _volumeSuggestion.value ?: return
+        viewModelScope.launch {
+            when (val write = templateRepository.addSet(suggestion.templateExerciseId, suggestion.edit)) {
+                is DataResult.Success -> {
+                    val added = addedSetId(suggestion)
+                    _volumeSuggestion.value = null
+                    lastError.value = null
+                    _volumeUndo.value = added
+                }
+
+                is DataResult.Failure -> lastError.value = write.error
+            }
+        }
+    }
+
+    fun onUndoVolume() {
+        val id = _volumeUndo.value ?: return
+        viewModelScope.launch {
+            when (val write = templateRepository.removeSet(id)) {
+                is DataResult.Success -> {
+                    _volumeUndo.value = null
+                    lastError.value = null
+                }
+
+                is DataResult.Failure -> lastError.value = write.error
+            }
+        }
+    }
+
+    fun onDismissVolume() {
+        _volumeSuggestion.value = null
+    }
+
+    fun onDismissVolumeUndo() {
+        _volumeUndo.value = null
+    }
+
+    /** The appended set's row, read back by the plan's highest index (the append's contract). */
+    private suspend fun addedSetId(suggestion: VolumeSuggestion): String? =
+        templateRepository.observeExercises(suggestion.templateId)
+            .first()
+            .firstOrNull { it.id == suggestion.templateExerciseId }
+            ?.sets
+            ?.maxByOrNull { it.setIndex }
+            ?.id
 
     /**
      * Writes how an exercise felt, at any time (ROADMAP N10).

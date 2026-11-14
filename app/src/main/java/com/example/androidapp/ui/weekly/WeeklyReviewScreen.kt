@@ -15,10 +15,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
@@ -35,6 +40,7 @@ import com.example.androidapp.domain.model.MovementGain
 import com.example.androidapp.domain.model.OccurrenceState
 import com.example.androidapp.domain.model.PlanStall
 import com.example.androidapp.domain.model.ReviewDay
+import com.example.androidapp.domain.model.VolumeSuggestion
 import com.example.androidapp.ui.components.AppCard
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.CenteredMessage
@@ -45,6 +51,7 @@ import com.example.androidapp.ui.components.TopBarTitle
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.components.label
 import com.example.androidapp.ui.programs.PlanStallCard
+import com.example.androidapp.ui.programs.PlanVolumeCard
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
@@ -66,6 +73,7 @@ fun WeeklyReviewRoute(
     viewModel: WeeklyReviewViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val volumeUndo by viewModel.volumeUndo.collectAsStateWithLifecycle()
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.onResume() }
     WeeklyReviewScreen(
         state = state,
@@ -74,6 +82,10 @@ fun WeeklyReviewRoute(
         onOpenDeload = onOpenDeload,
         onDeloadLift = onDeloadLift,
         onReplaceLift = onReplaceLift,
+        onAddVolume = viewModel::onAddVolume,
+        volumeUndo = volumeUndo,
+        onUndoVolume = viewModel::onUndoVolume,
+        onDismissVolumeUndo = viewModel::onDismissVolumeUndo,
         modifier = modifier,
     )
 }
@@ -88,8 +100,25 @@ internal fun WeeklyReviewScreen(
     onDeloadLift: (String, String, String) -> Unit,
     onReplaceLift: (String, String, String) -> Unit,
     modifier: Modifier = Modifier,
+    /** The earned-set card's Add and its undo (N311). */
+    onAddVolume: (VolumeSuggestion) -> Unit = {},
+    volumeUndo: String? = null,
+    onUndoVolume: () -> Unit = {},
+    onDismissVolumeUndo: () -> Unit = {},
 ) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val volumeAdded = stringResource(R.string.volume_added_message)
+    val volumeUndoAction = stringResource(R.string.volume_undo)
+    val currentUndoVolume by rememberUpdatedState(onUndoVolume)
+    val currentDismissVolume by rememberUpdatedState(onDismissVolumeUndo)
+    LaunchedEffect(volumeUndo) {
+        if (volumeUndo == null) return@LaunchedEffect
+        val result = snackbarHostState.showSnackbar(volumeAdded, actionLabel = volumeUndoAction)
+        if (result == SnackbarResult.ActionPerformed) currentUndoVolume()
+        currentDismissVolume()
+    }
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         modifier = modifier.fillMaxSize().testTag(TestTags.WEEKLY_REVIEW_SCREEN),
         topBar = {
             CenterAlignedTopAppBar(
@@ -130,6 +159,7 @@ internal fun WeeklyReviewScreen(
                 onOpenDeload = onOpenDeload,
                 onDeloadLift = onDeloadLift,
                 onReplaceLift = onReplaceLift,
+                onAddVolume = onAddVolume,
                 modifier = Modifier.padding(innerPadding),
             )
         }
@@ -142,6 +172,7 @@ private fun WeeklyReviewBody(
     onOpenDeload: (String) -> Unit,
     onDeloadLift: (String, String, String) -> Unit,
     onReplaceLift: (String, String, String) -> Unit,
+    onAddVolume: (VolumeSuggestion) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val dateFormat = remember { DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM) }
@@ -181,6 +212,10 @@ private fun WeeklyReviewBody(
             onDeloadLift = onDeloadLift,
             onReplaceLift = onReplaceLift,
         )
+        if (state.volumes.isNotEmpty()) {
+            SectionHeader(text = stringResource(R.string.weekly_review_volume_title))
+            PlanVolumeCard(suggestions = state.volumes, onAdd = onAddVolume)
+        }
     }
 }
 

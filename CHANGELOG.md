@@ -51,6 +51,17 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   week" kept as the bottom link. The calibration prompt still runs before the stall notice. The card's
   actions are offered on any program; the finish sheet stays active-weekly.
 
+- **The plan earns a set back** (N311). Two triggers, one action, never automatic: the **extra set** — the
+  plan prescribes N working sets and the last two sessions logged N+1 — and the **comfortable plan** — every
+  working set earned a step through the progression offer for three sessions. Both are offered at *Done* as
+  a snackbar with **Add set** and undo, once when the pattern reaches its threshold (the extra set first),
+  and the plan card on the program editor and the weekly review carries them while the rule holds. The gates
+  are no open stall, the plan's work sets below six, and a deload workout earns none. The write appends one
+  NORMAL working set after the plan's last: the logged extra set's weight, assistance and reps for the
+  extra-set trigger, the last kept set's target for the comfortable one; the plan's effort stays, one
+  transaction, snackbar undo, and the plan takes effect next session. No auto volume: the auto switch,
+  baseline and Reset are untouched.
+
 
 ### Changed
 

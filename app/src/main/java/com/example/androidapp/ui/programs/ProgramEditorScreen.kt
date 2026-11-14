@@ -67,6 +67,7 @@ import com.example.androidapp.domain.model.PlanStall
 import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.model.ProgramPhases
 import com.example.androidapp.domain.model.ProgramSlot
+import com.example.androidapp.domain.model.VolumeSuggestion
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.WorkoutTemplate
 import com.example.androidapp.ui.components.AppTextButton
@@ -122,6 +123,7 @@ fun ProgramEditorRoute(
     val deloadUndo by viewModel.deloadUndo.collectAsStateWithLifecycle()
     val replaceTarget by viewModel.replaceTarget.collectAsStateWithLifecycle()
     val replaceUndo by viewModel.replaceUndo.collectAsStateWithLifecycle()
+    val volumeUndo by viewModel.volumeUndo.collectAsStateWithLifecycle()
     val currentOnBack by rememberUpdatedState(onBack)
     val currentOnOpenTemplate by rememberUpdatedState(onOpenTemplate)
 
@@ -170,6 +172,10 @@ fun ProgramEditorRoute(
         onOpenDeload = onOpenDeload,
         onDeloadLift = viewModel::onDeloadLift,
         onReplaceLift = onReplaceLift,
+        onAddVolume = viewModel::onAddVolume,
+        volumeUndo = volumeUndo,
+        onUndoVolume = viewModel::onUndoVolume,
+        onDismissVolumeUndo = viewModel::onDismissVolumeUndo,
         replaceUndo = replaceUndo,
         onUndoReplace = viewModel::onUndoReplace,
         onDismissReplaceUndo = viewModel::onReplaceUndoShown,
@@ -239,6 +245,11 @@ fun ProgramEditorScreen(
     onDismissMessage: () -> Unit,
     onDismissTransferMessage: () -> Unit,
     modifier: Modifier = Modifier,
+    /** The earned-set card's Add and its undo (N311). */
+    onAddVolume: (VolumeSuggestion) -> Unit = {},
+    volumeUndo: String? = null,
+    onUndoVolume: () -> Unit = {},
+    onDismissVolumeUndo: () -> Unit = {},
     transferMessage: String? = null,
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
@@ -264,6 +275,17 @@ fun ProgramEditorScreen(
         )
         if (result == SnackbarResult.ActionPerformed) currentUndo()
         currentDismiss()
+    }
+    // The earned set's undo (N311): the card's Add is one tap, and the snackbar is the way back.
+    val volumeAdded = stringResource(R.string.volume_added_message)
+    val volumeUndoAction = stringResource(R.string.volume_undo)
+    val currentUndoVolume by rememberUpdatedState(onUndoVolume)
+    val currentDismissVolume by rememberUpdatedState(onDismissVolumeUndo)
+    LaunchedEffect(volumeUndo) {
+        if (volumeUndo == null) return@LaunchedEffect
+        val result = snackbarHostState.showSnackbar(volumeAdded, actionLabel = volumeUndoAction)
+        if (result == SnackbarResult.ActionPerformed) currentUndoVolume()
+        currentDismissVolume()
     }
     if (deloadPrompt != null) {
         DeloadLiftDialog(
@@ -323,6 +345,7 @@ fun ProgramEditorScreen(
             onOpenDeload = onOpenDeload,
             onDeloadLift = onDeloadLift,
             onReplaceLift = onReplaceLift,
+            onAddVolume = onAddVolume,
             onOpenWeeks = onOpenWeeks,
             modifier = Modifier.padding(innerPadding),
         )
@@ -571,6 +594,8 @@ private fun ProgramEditorBody(
     onDeloadLift: (PlanStall) -> Unit,
     /** Opens the replace sheet (N308). */
     onReplaceLift: (String, String) -> Unit,
+    /** The earned-set card's Add (N311). */
+    onAddVolume: (VolumeSuggestion) -> Unit,
     /** Opens the recovery-week choices (ROADMAP N300). */
     onOpenWeeks: () -> Unit,
     modifier: Modifier = Modifier,
@@ -617,6 +642,9 @@ private fun ProgramEditorBody(
 
         // A prescription that stopped moving, said where the program is read (N237). Nothing is written: the
         // deload is a decision about a week of training, and this is the question.
+        if (state.volumes.isNotEmpty()) {
+            PlanVolumeCard(suggestions = state.volumes, onAdd = onAddVolume)
+        }
         if (state.stalls.isNotEmpty()) {
             PlanStallCard(
                 stalls = state.stalls,

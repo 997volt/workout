@@ -1,5 +1,6 @@
 package com.example.androidapp.ui.weekly
 
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -12,8 +13,12 @@ import com.example.androidapp.domain.model.MovementGain
 import com.example.androidapp.domain.model.OccurrenceState
 import com.example.androidapp.domain.model.PlanStall
 import com.example.androidapp.domain.model.ReviewDay
+import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.domain.model.VolumeReason
+import com.example.androidapp.domain.model.VolumeSuggestion
 import com.example.androidapp.domain.model.WeekPlan
 import com.example.androidapp.domain.model.WeekTotals
+import com.example.androidapp.domain.repository.TemplateSetEdit
 import com.example.androidapp.ui.components.TestTags
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
@@ -39,6 +44,7 @@ class WeeklyReviewScreenTest {
         state: WeeklyReviewUiState,
         onDeloadLift: (String, String, String) -> Unit = { _, _, _ -> },
         onReplaceLift: (String, String, String) -> Unit = { _, _, _ -> },
+        onAddVolume: (VolumeSuggestion) -> Unit = {},
     ) {
         composeTestRule.setContent {
             WeeklyReviewScreen(
@@ -48,6 +54,7 @@ class WeeklyReviewScreenTest {
                 onOpenDeload = {},
                 onDeloadLift = onDeloadLift,
                 onReplaceLift = onReplaceLift,
+                onAddVolume = onAddVolume,
             )
         }
     }
@@ -245,4 +252,36 @@ class WeeklyReviewScreenTest {
         state = state,
         canCorrect = false,
     )
+
+    @Test
+    fun theEarnedSetsCard_listsTheSuggestion_andTheAddCallsBack() {
+        var added: VolumeSuggestion? = null
+        show(
+            state = WeeklyReviewUiState(
+                isLoading = false,
+                volumes = listOf(
+                    VolumeSuggestion(
+                        templateId = "t1",
+                        templateExerciseId = "te1",
+                        exerciseId = "squat",
+                        exerciseName = "Back Squat",
+                        reason = VolumeReason.EXTRA_SET,
+                        plannedSets = 3,
+                        edit = TemplateSetEdit(
+                            role = SetType.NORMAL,
+                            targetWeightGrams = 100_000L,
+                            targetRepsMin = 5,
+                            targetRepsMax = 5,
+                        ),
+                    ),
+                ),
+            ),
+            onAddVolume = { added = it },
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.VOLUME).performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.Programs.VOLUME_ADD).performScrollTo().performClick()
+
+        assertThat(added?.exerciseName).isEqualTo("Back Squat")
+    }
 }
