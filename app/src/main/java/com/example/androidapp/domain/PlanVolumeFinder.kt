@@ -81,6 +81,7 @@ class PlanVolumeFinder @Inject constructor(
         templateId: String,
         templateExerciseId: String,
         current: ProgressionPrompt,
+        currentPerformed: List<ProgressionPerformance>,
     ): DataResult<VolumeSuggestion?> = dataResultOf {
         val plan = templates.observeExercises(templateId).first()
         // The resolved plan row, not the first movement of that name (B428): a plan may name the same
@@ -90,8 +91,17 @@ class PlanVolumeFinder @Inject constructor(
             is DataResult.Failure -> throw read.error.asThrowable()
             is DataResult.Success -> read.data
         }
-        val previous = sessions.map { session -> promptFor(exercise, session) }
-        doneSuggestion(exercise, current, previous)
+        // The previous history is the sessions that trained the movement (B429): a vacation or a
+        // substitution is absence, not a session that failed to earn the pattern.
+        val trained = sessions.mapNotNull { session ->
+            session.performedFor(exercise)?.let { session to it }
+        }
+        doneSuggestion(
+            exercise = exercise,
+            current = current,
+            previous = trained.map { (session, _) -> promptFor(exercise, session) },
+            performedBySession = trained.map { it.second } + listOf(currentPerformed),
+        )
     }
 
     /**
@@ -105,13 +115,25 @@ class PlanVolumeFinder @Inject constructor(
         exercise: TemplateExercise,
         current: ProgressionPrompt,
         previous: List<ProgressionPrompt>,
+        /**
+         * The raw performed sets per session, oldest first, including the current (B429), or null to derive
+         * them from the prompts (the old, place-compacted behaviour, kept for the pure tests' shape).
+         *
+         * The production always passes the raw sets: `pairedPerformances` must see the session's own
+         * order, not the planned pairs, or an extra in the middle reads as a different set.
+         */
+        performedBySession: List<List<ProgressionPerformance>>? = null,
     ): VolumeSuggestion? {
         val planned = exercise.progressionSets()
         val work = planned.workSets()
         // The session just ended is part of the history the gate reads (B427): if it is the third missed
         // one, the plan has just stalled and must not be offered more work; the card, read after the
         // finish, includes it and the two surfaces must agree.
-        if (!isOpen(work, exercise, previous + current)) return null
+        val history = performedBySession
+            ?: (previous + current).map { prompt ->
+                prompt.sets.filter { it.planned != null }.mapNotNull { it.performed }
+            }
+        if (!isOpen(work, exercise, history)) return null
 
         // The current makes the pair/trio; the session behind it must not have held, or the threshold
         // was reached on an earlier Done and the card carries it instead.
@@ -138,9 +160,13 @@ class PlanVolumeFinder @Inject constructor(
     ): VolumeSuggestion? {
         val planned = exercise.progressionSets()
         val work = planned.workSets()
-        if (!isOpen(work, exercise, sessions.map { promptFor(exercise, it, planned) })) return null
+        // Only sessions that trained the movement take part (B429): absence is neither evidence nor a break.
+        val trained = sessions.mapNotNull { session ->
+            session.performedFor(exercise)?.let { session to it }
+        }
+        if (!isOpen(work, exercise, trained.map { it.second })) return null
 
-        val prompts = sessions.map { promptFor(exercise, it, planned) }
+        val prompts = trained.map { (session, _) -> promptFor(exercise, session, planned) }
         if (prompts.takeLast(EXTRA_SESSIONS).size == EXTRA_SESSIONS &&
             prompts.takeLast(EXTRA_SESSIONS).all { it.extraCount() == 1 }
         ) {
@@ -169,20 +195,21 @@ class PlanVolumeFinder @Inject constructor(
     private fun isOpen(
         work: List<ProgressionPlanSet>,
         exercise: TemplateExercise,
-        history: List<ProgressionPrompt>,
+        performedBySession: List<List<ProgressionPerformance>>,
     ): Boolean {
         if (work.isEmpty() || work.size >= MAX_WORK_SETS) return false
-        return stall(exercise, history) == null
+        return stall(exercise, performedBySession) == null
     }
 
-    private fun stall(exercise: TemplateExercise, prompts: List<ProgressionPrompt>): PlanStall? {
-        // The prompts are per session, so their planned halves are the same plan; the stall rule reads the
-        // performed halves, which is what makes this the same judgement as the stall card's.
-        val planned = prompts.firstOrNull()?.sets.orEmpty().mapNotNull { it.planned }
-        if (planned.isEmpty()) return null
-        val performedBySession = prompts.map { prompt ->
-            prompt.sets.filter { it.planned != null }.mapNotNull { it.performed }
-        }.filter { it.isNotEmpty() }
+    private fun stall(
+        exercise: TemplateExercise,
+        performedBySession: List<List<ProgressionPerformance>>,
+    ): PlanStall? {
+        // The raw performed sets, in the session's own order (B429): the stall rule pairs them with the
+        // plan by class, and the prompt's planned pairs would drop an extra or compact a skipped set,
+        // reading a different session from the stall card's.
+        if (performedBySession.isEmpty()) return null
+        val planned = exercise.progressionSets()
         return PrescriptionHistory(
             exerciseName = exercise.exerciseName,
             planned = planned,
@@ -194,17 +221,15 @@ class PlanVolumeFinder @Inject constructor(
         ).stall()
     }
 
+    private fun TemplateSession.performedFor(exercise: TemplateExercise): List<ProgressionPerformance>? =
+        performed.firstOrNull { it.exerciseId == exercise.exerciseId }?.sets
+
     private fun promptFor(
         exercise: TemplateExercise,
         session: TemplateSession,
         planned: List<ProgressionPlanSet> = exercise.progressionSets(),
-    ): ProgressionPrompt {
-        val performed = session.performed
-            .firstOrNull { it.exerciseId == exercise.exerciseId }
-            ?.sets
-            .orEmpty()
-        return progressionPromptFor(planned, performed)
-    }
+    ): ProgressionPrompt =
+        progressionPromptFor(planned, session.performedFor(exercise).orEmpty())
 
     @Suppress("ReturnCount")
     private fun suggestion(

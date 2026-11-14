@@ -139,19 +139,42 @@ class PlanVolumeFinderTest {
         val finder = PlanVolumeFinder(FakeProgramRepository(), templates, trends)
         val current = prompt(second, List(4) { performed() })
 
-        val suggestion = finder.doneSuggestion("t1", "te2", current).getOrNull()
+        val suggestion = finder.doneSuggestion("t1", "te2", current, List(4) { performed() }).getOrNull()
 
         assertThat(suggestion?.templateExerciseId).isEqualTo("te2")
         assertThat(suggestion?.exerciseName).isEqualTo("Squat B")
     }
 
-    private fun session(sets: List<com.example.androidapp.domain.model.ProgressionPerformance>) =
-        TemplateSession(
-            sessionId = "s-${sets.size}-${System.identityHashCode(sets)}",
-            startedAt = Instant.parse("2026-09-01T07:00:00Z"),
-            performed = listOf(PerformedExercise(exerciseId = "squat", sets = sets)),
-        )
+    private fun session(
+        sets: List<com.example.androidapp.domain.model.ProgressionPerformance>,
+        exerciseId: String = "squat",
+    ) = TemplateSession(
+        sessionId = "s-${sets.size}-${System.identityHashCode(sets)}",
+        startedAt = Instant.parse("2026-09-01T07:00:00Z"),
+        performed = listOf(PerformedExercise(exerciseId = exerciseId, sets = sets)),
+    )
 
+
+    @Test
+    fun theCard_ignoresASessionThatDidNotTrainTheMovement() = runTest {
+        // B429: absence is neither evidence nor a break. A session that trained another movement used to
+        // sit between the two extra-set sessions and hide the pattern.
+        val templates = FakeTemplateRepository().apply { exercises.value = mapOf("t1" to listOf(exercise())) }
+        val trends = FakeTrendsRepository().apply {
+            templateSessions = DataResult.Success(
+                listOf(
+                    session(List(4) { performed() }),
+                    session(List(3) { performed() }, exerciseId = "bench"),
+                    session(List(4) { performed() }),
+                ),
+            )
+        }
+        val finder = PlanVolumeFinder(FakeProgramRepository(), templates, trends)
+
+        val suggestion = finder.suggestionsForTemplate("t1").getOrNull().orEmpty().single()
+
+        assertThat(suggestion.reason).isEqualTo(VolumeReason.EXTRA_SET)
+    }
     private fun exercise(sets: Int = 3) = TemplateExercise(
         id = "te1",
         templateId = "t1",

@@ -23,12 +23,6 @@ rows below are the fixes, ordered as the review ranked them: the must-fix group 
 findings after it, and the missing tests last as **N312**. Each row names the finding, the path and the
 fix; when a row lands, its finding is gone from this file.
 
-- **B429 — The volume finder rebuilds the stall history from prompt pairs (must fix).** The prompt pairs
-  drop extra performed sets and compact missing ones before `PrescriptionHistory.stall()` re-pairs them,
-  so the volume gate can disagree with the stall card about which set was answered. It also counts sessions
-  that did not train the movement, so a vacation/substitution breaks both volume streaks (the stall rule's
-  "absence is neither" rule). Use the raw `TemplateSession.performed` sets and skip sessions with no
-  performed exercise, as the stall finder does.
 - **B430 — Undoing Done leaves the volume suggestion live (must fix).** `onReopenExercise` clears only the
   finish undo, so after the lifter takes the Done back, the queued "Add a set?" still writes plan work for a
   retracted finish. Clear the suggestion on reopen, finish and close, and cover the pairing in a VM test.

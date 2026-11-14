@@ -834,7 +834,14 @@ class ActiveWorkoutViewModel @Inject constructor(
         val suggestion = if (uiState.value.isDeloadWorkout || templateId == null || planEntryId == null) {
             null
         } else {
-            planVolumeFinder.doneSuggestion(templateId, planEntryId, row.progression).getOrNull()
+            planVolumeFinder
+                .doneSuggestion(
+                    templateId,
+                    planEntryId,
+                    row.progression,
+                    row.sets.map { it.toProgressionPerformance() },
+                )
+                .getOrNull()
         }
         if (suggestion != null) _volumeSuggestion.value = suggestion
     }
