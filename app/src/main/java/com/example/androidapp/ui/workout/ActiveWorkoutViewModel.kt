@@ -1385,8 +1385,9 @@ class ActiveWorkoutViewModel @Inject constructor(
             // stored its rows leave the flow. Both notices are about the workout that was just trained.
             val templateId = uiState.value.sessionTemplateId
             val calibration = calibrationNotices()
-            // The movements this session trained, read before the finish empties the live rows (B442).
-            val trained = uiState.value.exercises.map { it.exerciseId }.toSet()
+            // The movements this session trained, read before the finish closes it (B442): the stored
+            // session rows, because the live state has already dropped the ones it was drawing.
+            val trained = sessionExercises.first().map { it.exerciseId }.toSet()
 
             when (val result = workoutRepository.finishSession(sessionId)) {
                 is DataResult.Success -> {

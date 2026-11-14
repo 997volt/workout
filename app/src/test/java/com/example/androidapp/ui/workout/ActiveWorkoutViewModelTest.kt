@@ -246,6 +246,17 @@ class ActiveWorkoutViewModelTest {
         ),
     )
 
+    /** One stored session row, as the finish reads the session to know what it trained (B442). */
+    private fun aSessionExercise(exerciseId: String) = SessionExercise(
+        id = "se-$exerciseId",
+        sessionId = "s1",
+        exerciseId = exerciseId,
+        position = 0,
+        exerciseName = "Back Squat",
+        primaryMuscle = null,
+        equipment = null,
+    )
+
     /** Two exercises the plan answers, so two *Done* presses can each earn a step (B402). */
     private fun twoAnsweredPlans() = FakeTemplateRepository(
         planned = listOf(
@@ -1467,19 +1478,11 @@ class ActiveWorkoutViewModelTest {
         val trends = FakeTrendsRepository().apply {
             templateSessions = DataResult.Success(List(3) { aSessionThatMissed() })
         }
-        val benchPlan = FakeTemplateRepository(
-            planned = listOf(
-                plannedExercise(
-                    position = 0,
-                    exerciseId = "bench-press",
-                    sets = listOf(plannedSet(index = 0, reps = 5, weightGrams = 60_000L)),
-                ),
-            ),
-        )
+        repository.exercises.value = listOf(aSessionExercise("bench-press"))
         val viewModel = viewModelFor(
             repository,
             templateId = "t1",
-            templates = benchPlan,
+            templates = answeredPlan(),
             programs = programs,
             trends = trends,
         )
@@ -1502,6 +1505,7 @@ class ActiveWorkoutViewModelTest {
         val trends = FakeTrendsRepository().apply {
             templateSessions = DataResult.Success(List(3) { aSessionThatMissed() })
         }
+        repository.exercises.value = listOf(aSessionExercise("back-squat"))
         val viewModel = viewModelFor(
             repository,
             templateId = "t1",
@@ -1533,6 +1537,7 @@ class ActiveWorkoutViewModelTest {
         val trends = FakeTrendsRepository().apply {
             templateSessions = DataResult.Success(List(3) { aSessionThatMissed() })
         }
+        repository.exercises.value = listOf(aSessionExercise("back-squat"))
         val viewModel = viewModelFor(
             repository,
             templateId = "t1",
@@ -1567,6 +1572,7 @@ class ActiveWorkoutViewModelTest {
         val trends = FakeTrendsRepository().apply {
             templateSessions = DataResult.Success(List(3) { aSessionThatMissed() })
         }
+        repository.exercises.value = listOf(aSessionExercise("back-squat"))
         val viewModel = viewModelFor(
             repository,
             templateId = "t1",
@@ -1594,6 +1600,7 @@ class ActiveWorkoutViewModelTest {
         val trends = FakeTrendsRepository().apply {
             templateSessions = DataResult.Success(List(4) { aSessionThatMissed() })
         }
+        repository.exercises.value = listOf(aSessionExercise("back-squat"))
         val viewModel = viewModelFor(
             repository,
             templateId = "t1",
@@ -1620,6 +1627,7 @@ class ActiveWorkoutViewModelTest {
         val trends = FakeTrendsRepository().apply {
             templateSessions = DataResult.Failure(DataError.Storage(IOException("the read failed")))
         }
+        repository.exercises.value = listOf(aSessionExercise("back-squat"))
         val viewModel = viewModelFor(
             repository,
             templateId = "t1",
