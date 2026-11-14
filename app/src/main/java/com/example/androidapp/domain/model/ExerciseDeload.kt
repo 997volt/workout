@@ -15,8 +15,10 @@ package com.example.androidapp.domain.model
  *
  * The load is the movement's own step (N77), three times: a weighted set loses three steps, clamped at
  * zero; an assisted set gains three steps of assistance (more help is lighter); a set that states
- * assistance moves its assistance and leaves the weight alone; a bodyweight set, a hold and a warm-up
- * are unchanged. A counted set whose plan wrote a range moves its current target to the range's floor;
+ * assistance moves its assistance and leaves the weight alone; a bodyweight set and a warm-up are
+ * unchanged. A hold keeps its seconds and still moves a load it states (the test's 40 kg hold goes to
+ * 32.5); its target is not a rep range. A counted set whose plan wrote a range moves its current target
+ * to the range's floor;
  * a fixed-rep plan and a hold keep the target they had.
  */
 data class ExerciseDeload(

@@ -23,10 +23,6 @@ rows below are the fixes, ordered as the review ranked them: the must-fix group 
 findings after it, and the missing tests last as **N312**. Each row names the finding, the path and the
 fix; when a row lands, its finding is gone from this file.
 
-- **B433 — A weighted hold is deloaded by the weight path (confirm).** `deloadTarget` does not exclude a
-  timed set from the weight branch, while the [ExerciseDeload.kt](app/src/main/java/com/example/androidapp/domain/model/ExerciseDeload.kt)
-  doc says a hold is unchanged (the CHANGELOG says only "a hold's seconds"). Decide which is intended and
-  make code and docs agree.
 - **B434 — A seeded replace bypasses the run validation (minor).** The new plan is inserted with
   `setDao.insertTemplateSet` without `validateRun`, so a new movement much lighter than the old drop value
   can leave a stranded rung. Validate the written plan or clamp/clear the ladder, and test a low seed.
