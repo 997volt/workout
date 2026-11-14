@@ -275,6 +275,53 @@ class PlanStallTest {
         assertEquals("the card says how many", 4, history.stall()?.sessions)
     }
 
+    @Test
+    fun aLoggedRung_isNotAWorkingSet_soTheAnchorStillStalls() {
+        // B420: the rung is derived from the anchor and has no targets of its own. Counting it as a logged
+        // set made every session with a drop ladder read as progress, so the plan never stalled.
+        val history = history(
+            planned = listOf(
+                planSet(reps = 5),
+                planSet(reps = null, index = 1, role = SetType.DROP, range = false),
+            ),
+            sessions = List(3) {
+                listOf(
+                    performed(reps = 3),
+                    performed(reps = 10, role = SetType.DROP),
+                )
+            },
+        )
+
+        assertEquals("the anchor is the work set", 3, history.stall()?.sessions)
+    }
+
+    @Test
+    fun aRungOnlySession_isAbsence_notProgress() {
+        val history = history(
+            planned = listOf(
+                planSet(reps = 5),
+                planSet(reps = null, index = 1, role = SetType.DROP, range = false),
+            ),
+            sessions = List(3) { listOf(performed(reps = 10, role = SetType.DROP)) },
+        )
+
+        assertNull(history.stall())
+    }
+
+    @Test
+    fun aTargetlessSet_doesNotTurnEverySessionIntoProgress() {
+        // B420: a set with no reps and no hold cannot miss, so it used to reset the run by being logged.
+        val history = history(
+            planned = listOf(
+                planSet(reps = 5),
+                planSet(reps = null, index = 1, range = false),
+            ),
+            sessions = List(3) { listOf(performed(reps = 3), performed(reps = 10)) },
+        )
+
+        assertEquals("the targetless set is not judged", 3, history.stall()?.sessions)
+    }
+
     private fun history(
         planned: List<ProgressionPlanSet>,
         sessions: List<List<ProgressionPerformance>>,

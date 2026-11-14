@@ -23,12 +23,6 @@ rows below are the fixes, ordered as the review ranked them: the must-fix group 
 findings after it, and the missing tests last as **N312**. Each row names the finding, the path and the
 fix; when a row lands, its finding is gone from this file.
 
-- **B420 — A plan with a logged rung can never stall (must fix).** [PlanStall.kt](app/src/main/java/com/example/androidapp/domain/model/PlanStall.kt)
-  keeps DROP/CLUSTER rows in `plannedWork` and therefore in `logged`; rungs are authored with no targets,
-  so `measurableKinds` is empty and the session reads as *progress*, resetting the run. One logged rung
-  defeats the stall card and the finish notice; a targetless plan set does the same. Count only
-  `isWork && !isRung` sets with a measurable target in `logged`, and test the anchor-missed + rung-logged
-  case and the rung-only (absence) case.
 - **B421 — Find-the-weight cannot mark a plan with a drop run, and the deload can fail the same
   validation (must fix).** [RoomTemplateRepository.kt](app/src/main/java/com/example/androidapp/data/RoomTemplateRepository.kt)
   writes `makeWeightless` through `updateSetRow`, which re-runs `validateRun`; nulling the anchor makes

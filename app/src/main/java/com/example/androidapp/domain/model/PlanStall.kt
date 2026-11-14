@@ -137,7 +137,19 @@ private fun overEffort(planned: ProgressionPlanSet, done: ProgressionPerformance
  * coincidence.
  */
 fun PrescriptionHistory.stall(threshold: Int = STALL_SESSIONS): PlanStall? {
-    val plannedWork = planned.filterNot { it.role == SetType.WARMUP }.sortedBy { it.setIndex }
+    // Only a stand-alone working set with a number the rule can judge takes part. A rung is derived from the
+    // set above it (N79, B305) and a targetless set has nothing to measure (B420): either would read as a
+    // set that "met" the plan because `measurableKinds` has nothing to report, resetting a run it never
+    // answered. A session that logged only those is absent, not progress.
+    val plannedWork = planned
+        .filter { set ->
+            set.role.isWork && !set.role.isRung &&
+                (
+                    set.targetRepsCurrent ?: set.targetRepsMin ?: set.targetRepsMax != null ||
+                        set.targetDurationSeconds != null
+                    )
+        }
+        .sortedBy { it.setIndex }
     // The exercise's effort is carried onto every prescribed set (N59), so any work set answers for the plan.
     val eligible = progressionMode != ProgressionMode.OFF &&
         plannedWork.isNotEmpty() &&
@@ -147,7 +159,7 @@ fun PrescriptionHistory.stall(threshold: Int = STALL_SESSIONS): PlanStall? {
     var run = 0
     performedBySession.forEach { session ->
         // The offer's own pairing (B305): a logged rung is extra, never the stand-in for a work set the
-        // session did not log, so the two surfaces cannot disagree about which set was answered.
+        // session did not log, and now never a working set of its own (B420).
         val paired = pairedPerformances(planned, session)
         val logged = plannedWork.mapNotNull { plannedSet ->
             paired.bySetId[plannedSet.setId]?.let { done -> plannedSet to done }
