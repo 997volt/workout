@@ -45,10 +45,13 @@ internal object ProgramsTags {
     /** A plan that stopped moving, and the way to a deload (ROADMAP N237). */
     const val STALL = "program_stall"
     const val STALL_DELOAD = "program_stall_deload"
-    const val STALL_DELOAD_LIFT = "program_stall_deload_lift"
-    const val STALL_REPLACE_LIFT = "program_stall_replace_lift"
     const val VOLUME = "program_volume"
-    const val VOLUME_ADD = "program_volume_add"
+
+    // The per-lift actions carry the plan row's id (B443): a multi-lift card has one per row, so a
+    // shared tag made TalkBack repeat the same name and let a test address only the first.
+    fun stallDeloadLift(templateExerciseId: String) = "program_stall_deload_lift_$templateExerciseId"
+    fun stallReplaceLift(templateExerciseId: String) = "program_stall_replace_lift_$templateExerciseId"
+    fun volumeAdd(templateExerciseId: String) = "program_volume_add_$templateExerciseId"
     const val REPLACE_SCREEN = "program_replace"
     const val REPLACE_CONFIRM = "program_replace_confirm"
     const val REPLACE_EMPTY = "program_replace_empty"

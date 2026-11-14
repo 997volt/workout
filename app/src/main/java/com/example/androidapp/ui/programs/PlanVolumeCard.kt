@@ -13,6 +13,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
@@ -55,13 +57,11 @@ internal fun PlanVolumeCard(
                         text = when (suggestion.reason) {
                             VolumeReason.EXTRA_SET -> stringResource(
                                 R.string.volume_extra_message,
-                                suggestion.exerciseName,
                                 suggestion.plannedSets,
                             )
 
                             VolumeReason.COMFORTABLE -> stringResource(
                                 R.string.volume_comfortable_message,
-                                suggestion.exerciseName,
                             )
                         },
                         style = MaterialTheme.typography.bodyMedium,
@@ -71,9 +71,15 @@ internal fun PlanVolumeCard(
                         horizontalArrangement = Arrangement.End,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
+                        val addDescription = stringResource(
+                            R.string.volume_add_for,
+                            suggestion.exerciseName,
+                        )
                         AppTextButton(
                             onClick = { onAdd(suggestion) },
-                            modifier = Modifier.testTag(TestTags.Programs.VOLUME_ADD),
+                            modifier = Modifier
+                                .testTag(TestTags.Programs.volumeAdd(suggestion.templateExerciseId))
+                                .semantics { contentDescription = addDescription },
                         ) {
                             Text(stringResource(R.string.volume_add))
                         }

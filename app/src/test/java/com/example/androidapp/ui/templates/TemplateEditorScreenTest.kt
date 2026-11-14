@@ -5,6 +5,7 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -1040,7 +1041,8 @@ class TemplateEditorScreenTest {
         )
         openBlock("te1")
 
-        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_FIND_WEIGHT).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_FIND_WEIGHT)
+            .assertContentDescriptionEquals("Find the weight")
         val rest = composeTestRule.onNodeWithTag(TestTags.TEMPLATE_REST_FIELD).getUnclippedBoundsInRoot()
         val rpe = composeTestRule.onNodeWithTag(TestTags.TEMPLATE_EXERCISE_RPE).getUnclippedBoundsInRoot()
         val cue = composeTestRule.onNodeWithTag(TestTags.TEMPLATE_CUE_FIELD).getUnclippedBoundsInRoot()

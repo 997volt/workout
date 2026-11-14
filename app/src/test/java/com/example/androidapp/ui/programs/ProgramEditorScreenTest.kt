@@ -3,7 +3,6 @@ package com.example.androidapp.ui.programs
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -179,7 +178,8 @@ class ProgramEditorScreenTest {
 
         composeTestRule.onNodeWithText("Back Squat").assertExists()
         composeTestRule.onNodeWithText("Bench Press").assertExists()
-        composeTestRule.onAllNodesWithTag(TestTags.Programs.STALL_DELOAD_LIFT).assertCountEquals(2)
+        composeTestRule.onNodeWithTag(TestTags.Programs.stallDeloadLift("te1")).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Programs.stallDeloadLift("te2")).assertExists()
     }
 
     @Test
@@ -201,7 +201,7 @@ class ProgramEditorScreenTest {
             onDeloadLift = { lift = it },
         )
 
-        composeTestRule.onNodeWithTag(TestTags.Programs.STALL_DELOAD_LIFT).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Programs.stallDeloadLift("te1")).performClick()
 
         assertThat(lift?.templateExerciseId).isEqualTo("te1")
     }
@@ -225,7 +225,7 @@ class ProgramEditorScreenTest {
             onReplaceLift = { templateId, templateExerciseId -> target = templateId to templateExerciseId },
         )
 
-        composeTestRule.onNodeWithTag(TestTags.Programs.STALL_REPLACE_LIFT).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Programs.stallReplaceLift("te1")).performClick()
 
         assertThat(target).isEqualTo("t1" to "te1")
     }
@@ -879,7 +879,7 @@ class ProgramEditorScreenTest {
         )
 
         composeTestRule.onNodeWithTag(TestTags.Programs.VOLUME).assertIsDisplayed()
-        composeTestRule.onNodeWithTag(TestTags.Programs.VOLUME_ADD).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Programs.volumeAdd("te1")).performClick()
 
         assertThat(added?.reason).isEqualTo(VolumeReason.EXTRA_SET)
         assertThat(added?.plannedSets).isEqualTo(3)

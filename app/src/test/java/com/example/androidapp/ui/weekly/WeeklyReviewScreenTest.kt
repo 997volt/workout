@@ -213,7 +213,7 @@ class WeeklyReviewScreenTest {
             onDeloadLift = { programId, templateId, exerciseId -> target = Triple(programId, templateId, exerciseId) },
         )
 
-        composeTestRule.onNodeWithTag(TestTags.Programs.STALL_DELOAD_LIFT).performScrollTo().performClick()
+        composeTestRule.onNodeWithTag(TestTags.Programs.stallDeloadLift("te1")).performScrollTo().performClick()
 
         assertThat(target).isEqualTo(Triple("p1", "t1", "te1"))
     }
@@ -238,7 +238,7 @@ class WeeklyReviewScreenTest {
             onReplaceLift = { programId, templateId, exerciseId -> target = Triple(programId, templateId, exerciseId) },
         )
 
-        composeTestRule.onNodeWithTag(TestTags.Programs.STALL_REPLACE_LIFT).performScrollTo().performClick()
+        composeTestRule.onNodeWithTag(TestTags.Programs.stallReplaceLift("te1")).performScrollTo().performClick()
 
         assertThat(target).isEqualTo(Triple("p1", "t1", "te1"))
     }
@@ -280,7 +280,7 @@ class WeeklyReviewScreenTest {
         )
 
         composeTestRule.onNodeWithTag(TestTags.Programs.VOLUME).performScrollTo().assertIsDisplayed()
-        composeTestRule.onNodeWithTag(TestTags.Programs.VOLUME_ADD).performScrollTo().performClick()
+        composeTestRule.onNodeWithTag(TestTags.Programs.volumeAdd("te1")).performScrollTo().performClick()
 
         assertThat(added?.exerciseName).isEqualTo("Back Squat")
     }

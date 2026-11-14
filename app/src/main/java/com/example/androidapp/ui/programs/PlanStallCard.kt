@@ -15,6 +15,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
 import com.example.androidapp.domain.model.PlanStall
@@ -62,24 +64,11 @@ internal fun PlanStallCard(
                         ),
                         style = MaterialTheme.typography.bodyMedium,
                     )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        AppTextButton(
-                            onClick = { onReplaceLift(stall) },
-                            modifier = Modifier.testTag(TestTags.Programs.STALL_REPLACE_LIFT),
-                        ) {
-                            Text(stringResource(R.string.program_stall_replace_lift))
-                        }
-                        AppTextButton(
-                            onClick = { onDeloadLift(stall) },
-                            modifier = Modifier.testTag(TestTags.Programs.STALL_DELOAD_LIFT),
-                        ) {
-                            Text(stringResource(R.string.program_stall_deload_lift))
-                        }
-                    }
+                    StallActions(
+                        stall = stall,
+                        onReplaceLift = onReplaceLift,
+                        onDeloadLift = onDeloadLift,
+                    )
                 }
                 if (index < stalls.lastIndex) HorizontalDivider()
             }
@@ -95,6 +84,39 @@ internal fun PlanStallCard(
                     Text(stringResource(R.string.program_stall_deload))
                 }
             }
+        }
+    }
+}
+
+/** One lift's two answers, each tagged and named for that lift (B443). */
+@Composable
+private fun StallActions(
+    stall: PlanStall,
+    onReplaceLift: (PlanStall) -> Unit,
+    onDeloadLift: (PlanStall) -> Unit,
+) {
+    val replaceDescription = stringResource(R.string.program_stall_replace_lift_for, stall.exerciseName)
+    val deloadDescription = stringResource(R.string.program_stall_deload_lift_for, stall.exerciseName)
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.End,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        AppTextButton(
+            onClick = { onReplaceLift(stall) },
+            modifier = Modifier
+                .testTag(TestTags.Programs.stallReplaceLift(stall.templateExerciseId))
+                .semantics { contentDescription = replaceDescription },
+        ) {
+            Text(stringResource(R.string.program_stall_replace_lift))
+        }
+        AppTextButton(
+            onClick = { onDeloadLift(stall) },
+            modifier = Modifier
+                .testTag(TestTags.Programs.stallDeloadLift(stall.templateExerciseId))
+                .semantics { contentDescription = deloadDescription },
+        ) {
+            Text(stringResource(R.string.program_stall_deload_lift))
         }
     }
 }

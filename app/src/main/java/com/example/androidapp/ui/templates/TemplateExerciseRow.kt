@@ -29,6 +29,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -122,10 +124,13 @@ internal fun ExercisePlanFields(
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
+            val findWeightDescription = stringResource(R.string.template_find_weight)
             Switch(
                 checked = findWeight,
                 onCheckedChange = { findWeight = it },
-                modifier = Modifier.testTag(TestTags.TEMPLATE_FIND_WEIGHT),
+                modifier = Modifier
+                    .testTag(TestTags.TEMPLATE_FIND_WEIGHT)
+                    .semantics { contentDescription = findWeightDescription },
             )
         }
         Row(

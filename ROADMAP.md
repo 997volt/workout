@@ -23,12 +23,6 @@ rows below are the fixes, ordered as the review ranked them: the must-fix group 
 findings after it, and the missing tests last as **N312**. Each row names the finding, the path and the
 fix; when a row lands, its finding is gone from this file.
 
-- **B443 — The new controls miss the app's accessibility/UI conventions (minor).** The volume card prints
-  the exercise name twice ([PlanVolumeCard.kt](app/src/main/java/com/example/androidapp/ui/programs/PlanVolumeCard.kt));
-  the find-the-weight switch has no accessible name
-  ([TemplateExerciseRow.kt](app/src/main/java/com/example/androidapp/ui/templates/TemplateExerciseRow.kt));
-  and the multi-lift calibration/stall dialogs use one identical tag and label per action for every lift, so
-  TalkBack repeats and a test cannot address one row. Name the exercise on the control and use per-row tags.
 - **B444 — The docs/schema story lag the code (minor).** DECISIONS N305 still says "information, not a
   decision" without the N310 amendment, and `WorkoutStallDialogTest`'s KDoc repeats it while the test taps
   Deload/Replace; the `WorkoutDatabase` schema story stops at 24
