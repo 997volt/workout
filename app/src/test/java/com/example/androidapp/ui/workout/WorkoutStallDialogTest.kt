@@ -15,10 +15,11 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * The one thing a finished workout still says (ROADMAP N305).
+ * What a finished workout says about a just-stalled lift (ROADMAP N305, amended by N310).
  *
- * A stall is the exercise's, so the dialog names the lift and how long nothing has moved — and it is
- * information, so *Done* is the only thing it offers.
+ * A stall is the exercise's, so the dialog names the lift and how long nothing has moved. N305 said
+ * information only; N310 made it a decision: each lift's Deload/Replace hands off to the plan editor,
+ * which owns the edit, and *Done* just closes the finish.
  */
 @RunWith(AndroidJUnit4::class)
 class WorkoutStallDialogTest {

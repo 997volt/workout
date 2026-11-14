@@ -335,8 +335,10 @@ the rule; that one argues it.
   cannot show — a lift that has stopped moving (N304) — in a compact dialog in the review's place. It is
   shown only for a workout of an **active weekly** program, only when a run **just** reaches three (so it is
   not a popup after every session a stall persists — the program editor and weekly review carry it from
-  there), and it lists every stalled lift of that workout as information, not a decision: the deload creator
-  stays on the program's card (N237). **The note prompt stays** — it is input, and the finish is the only
+  there), and it lists every stalled lift of that workout. **N310 amends this**: the list is a decision —
+  each lift's *Deload this lift* / *Replace this lift* hands off to the plan editor, which owns the edit,
+  while the finish itself stays one-shot (the program editor and weekly review carry the ongoing state).
+  **The note prompt stays** — it is input, and the finish is the only
   place a workout comment is written.
 - **History compares a session to the last one, by place, and stores no copy** (N306). The review's
   comparison was against the plan, which is a living thing (N16) and may already have moved (N299); what a

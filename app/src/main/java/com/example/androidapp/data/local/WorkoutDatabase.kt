@@ -87,6 +87,10 @@ import androidx.room.TypeConverters
  * when the switch went on is what a reset restores. Every program already on disk is manual.
  * See [MIGRATION_23_24].
  *
+ * **Schema 25 is N309**, one column: a plan's exercise can be marked "find the weight", so the next
+ * session opens its sets blank instead of prefilling from history; the marker is one-shot and a weight
+ * the lifter enters clears it. Every plan already on disk is unmarked. See [MIGRATION_24_25].
+ *
  * There is deliberately **no** `fallbackToDestructiveMigration()`: it would turn
  * a forgotten migration into silent, total data loss for a user's training
  * history. A missing migration must fail loudly in development instead — which is exactly why 2.0

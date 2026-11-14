@@ -23,11 +23,6 @@ rows below are the fixes, ordered as the review ranked them: the must-fix group 
 findings after it, and the missing tests last as **N312**. Each row names the finding, the path and the
 fix; when a row lands, its finding is gone from this file.
 
-- **B444 — The docs/schema story lag the code (minor).** DECISIONS N305 still says "information, not a
-  decision" without the N310 amendment, and `WorkoutStallDialogTest`'s KDoc repeats it while the test taps
-  Deload/Replace; the `WorkoutDatabase` schema story stops at 24
-  ([WorkoutDatabase.kt](app/src/main/java/com/example/androidapp/data/local/WorkoutDatabase.kt)). Note N305 as
-  amended, fix the test KDoc, and add the 25 paragraph.
 - **N312 — Cover the batch's untested seams.** No ViewModel test touches `calibrationNotices`,
   Use/Skip or the calibration→stall ordering; none touches `suggestVolume`/`onAddVolume`/`onUndoVolume` or
   the editor/weekly add+undo (the fakes' `addSet`/`removeSet` still throw); the two finders' card paths
