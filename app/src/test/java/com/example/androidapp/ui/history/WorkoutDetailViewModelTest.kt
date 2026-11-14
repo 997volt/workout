@@ -335,6 +335,19 @@ class WorkoutDetailViewModelTest {
         assistanceGrams = assistance,
     )
 
+    @Test
+    fun thePreviousRead_isBoundedByTheViewedSessionsFinish() = runTest(dispatcher) {
+        // B423: the history of an older workout used to compare against the newest training, not the one
+        // before it. The ViewModel must pass the viewed session's finish as the ceiling.
+        val finished = Instant.parse("2026-09-29T08:00:00Z")
+        repository.session.value = repository.session.value?.copy(finishedAt = finished)
+        val viewModel = viewModelFor()
+        observe(viewModel)
+        advanceUntilIdle()
+
+        assertEquals(finished.toEpochMilli(), repository.lastBefore)
+    }
+
     private class FakeWorkoutRepository : WorkoutRepository {
         val session = MutableStateFlow<WorkoutSession?>(
             WorkoutSession(id = SESSION_ID, startedAt = Instant.parse("2026-09-29T07:00:00Z")),
@@ -467,11 +480,17 @@ class WorkoutDetailViewModelTest {
         }
 
         override suspend fun deleteSet(setId: String): DataResult<Unit> = unused()
+        /** The viewed session's finish the last previous-read was bounded by (B423). */
+        var lastBefore: Long? = null
+
         override suspend fun previousPerformance(
             exerciseId: String,
             currentSessionId: String?,
-        ): DataResult<PreviousPerformance> =
-            DataResult.Success(previousByExercise[exerciseId] ?: PreviousPerformance(emptyList()))
+            beforeFinishedAt: Long?,
+        ): DataResult<PreviousPerformance> {
+            lastBefore = beforeFinishedAt
+            return DataResult.Success(previousByExercise[exerciseId] ?: PreviousPerformance(emptyList()))
+        }
 
         override suspend fun startRest(seconds: Int) = unused()
         override suspend fun adjustRest(deltaSeconds: Int) = unused()

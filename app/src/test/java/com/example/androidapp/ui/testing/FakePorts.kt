@@ -181,6 +181,7 @@ internal class FakeWorkoutRepository : WorkoutRepository {
     override suspend fun previousPerformance(
         exerciseId: String,
         currentSessionId: String?,
+        beforeFinishedAt: Long?,
     ): DataResult<PreviousPerformance> = previousResult ?: DataResult.Success(previous)
 
     override suspend fun startRest(seconds: Int): DataResult<Instant> = unused()

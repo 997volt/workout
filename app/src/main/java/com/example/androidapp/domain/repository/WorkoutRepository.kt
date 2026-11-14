@@ -292,6 +292,13 @@ interface WorkoutRepository {
          * its own is running there.
          */
         currentSessionId: String? = null,
+        /**
+         * The viewed session's finish, when the caller is looking *back* from it (ROADMAP N306, B423).
+         *
+         * The history detail of an older workout must compare to the session before it, not to whatever
+         * was trained most recently; the prefill and the exercise screen leave it null for the latest.
+         */
+        beforeFinishedAt: Long? = null,
     ): DataResult<PreviousPerformance>
 
     /**

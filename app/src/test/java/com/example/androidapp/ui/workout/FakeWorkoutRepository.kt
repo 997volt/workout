@@ -145,6 +145,7 @@ internal class FakeWorkoutRepository : WorkoutRepository {
     override suspend fun previousPerformance(
         exerciseId: String,
         currentSessionId: String?,
+        beforeFinishedAt: Long?,
     ): DataResult<PreviousPerformance> = if (failHistory) {
         DataResult.Failure(com.example.androidapp.domain.DataError.Storage(java.io.IOException("locked")))
     } else {

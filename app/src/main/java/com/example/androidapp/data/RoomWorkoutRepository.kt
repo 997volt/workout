@@ -674,11 +674,12 @@ class RoomWorkoutRepository @Inject constructor(
     override suspend fun previousPerformance(
         exerciseId: String,
         currentSessionId: String?,
+        beforeFinishedAt: Long?,
     ): DataResult<PreviousPerformance> = dataResultOf {
         // Two plain queries composed here rather than one correlated subquery:
         // this is the read a user waits on before their first set, and it is far
         // easier to reason about — and to test — as two obvious steps.
-        val previousSessionId = dao.findPreviousSessionIdFor(exerciseId, currentSessionId)
+        val previousSessionId = dao.findPreviousSessionIdFor(exerciseId, currentSessionId, beforeFinishedAt)
             ?: return@dataResultOf PreviousPerformance(emptyList())
 
         PreviousPerformance(

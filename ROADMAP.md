@@ -23,12 +23,6 @@ rows below are the fixes, ordered as the review ranked them: the must-fix group 
 findings after it, and the missing tests last as **N312**. Each row names the finding, the path and the
 fix; when a row lands, its finding is gone from this file.
 
-- **B423 — History compares an older workout to a later one (must fix).**
-  [WorkoutDetailViewModel.kt](app/src/main/java/com/example/androidapp/ui/history/WorkoutDetailViewModel.kt)
-  calls `previousPerformance`, whose query is `ORDER BY finishedAt DESC LIMIT 1` excluding only the viewed
-  session ([WorkoutDao.kt](app/src/main/java/com/example/androidapp/data/local/WorkoutDao.kt)); any workout
-  older than the movement's latest is compared to a *later* session. Bound the read by the viewed session's
-  `finishedAt`; keep the prefill's unbounded read.
 - **B424 — The history comparison ignores assistance (must fix).** `SetDelta`/`PastSet` carry only weight
   ([WorkoutDetailViewModel.kt](app/src/main/java/com/example/androidapp/ui/history/WorkoutDetailViewModel.kt)),
   so an assisted set that got harder by dropping assistance reads "same as last time", and a

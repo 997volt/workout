@@ -29,6 +29,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -341,11 +342,13 @@ class WorkoutDetailViewModel @Inject constructor(
     }
 
     /** The movement's previous training, or null when there is none to compare (N306). */
-    private suspend fun readPrevious(exerciseId: String): PreviousPerformance? =
-        when (val read = workoutRepository.previousPerformance(exerciseId, sessionId)) {
+    private suspend fun readPrevious(exerciseId: String): PreviousPerformance? {
+        val before = session.first()?.finishedAt?.toEpochMilli()
+        return when (val read = workoutRepository.previousPerformance(exerciseId, sessionId, before)) {
             is DataResult.Success -> read.data.takeIf { it.sets.isNotEmpty() }
             is DataResult.Failure -> null
         }
+    }
 
     val uiState: StateFlow<WorkoutDetailUiState> =
         combine(
