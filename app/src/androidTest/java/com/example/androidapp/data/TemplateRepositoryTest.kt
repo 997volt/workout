@@ -756,6 +756,42 @@ class TemplateRepositoryTest {
     }
 
     @Test
+    fun aSeededReplaceLighterThanTheLadder_keepsTheStrandedRung() = runTest {
+        // B434: the new movement's last work can be far lighter than the old plan's drop value. The
+        // replace is a deliberate edit; the stranded rung is stored for the editor to show.
+        val template = create("Legs")
+        val old = plannedExercise(template)
+        repository.addSet(
+            old,
+            TemplateSetEdit(
+                role = SetType.NORMAL,
+                targetWeightGrams = 100_000L,
+                targetRepsMin = 5,
+                targetRepsMax = 8,
+            ),
+        )
+        repository.addSet(old, TemplateSetEdit(role = SetType.DROP, dropValueGrams = 10_000L))
+
+        val outcome = (
+            repository.replaceExercise(
+                old,
+                "bench-press",
+                listOf(ReplacementSeed(5_000L, 0L, 6, null)),
+                empty = false,
+            ) as DataResult.Success
+            ).data
+
+        val replaced = repository.observeExercises(template).first().single()
+        assertEquals(outcome.newTemplateExerciseId, replaced.id)
+        assertEquals("the seed is the new movement's load", 5_000L, replaced.sets.first().targetWeightGrams)
+        assertEquals(
+            "the ladder is written as the edit asks, even stranded",
+            10_000L,
+            replaced.sets.last().dropValueGrams,
+        )
+    }
+
+    @Test
     fun theCalibrationMarker_makesThePlanWeightless_andTheUseAdoptsAndClearsIt() = runTest {
         val template = create("Legs")
         val exercise = plannedExercise(template)

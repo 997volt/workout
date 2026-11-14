@@ -224,7 +224,9 @@ interface TemplateRepository {
      * [seeds] is the new movement's last finished work, by place, one per kept work set (null where it had
      * no counterpart); [empty] is the deliberate "keep the plan's reps, clear the loads" choice instead
      * (N309's marker and prompt). New set ids are deliberate: the auto progression baseline names the old
-     * sets, so a Reset cannot write the old movement's targets onto the new one.
+     * sets, so a Reset cannot write the old movement's targets onto the new one. A seeded rung is written as
+     * the edit asks even when the new movement's load cannot support the old drop value (B434): the stranded
+     * rung is the editor's to show — the B421 deliberate-transition rule — not a reason to refuse the edit.
      */
     suspend fun replaceExercise(
         templateExerciseId: String,

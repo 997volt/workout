@@ -23,9 +23,6 @@ rows below are the fixes, ordered as the review ranked them: the must-fix group 
 findings after it, and the missing tests last as **N312**. Each row names the finding, the path and the
 fix; when a row lands, its finding is gone from this file.
 
-- **B434 — A seeded replace bypasses the run validation (minor).** The new plan is inserted with
-  `setDao.insertTemplateSet` without `validateRun`, so a new movement much lighter than the old drop value
-  can leave a stranded rung. Validate the written plan or clamp/clear the ladder, and test a low seed.
 - **B435 — A marked timed movement's blank weight becomes 0 kg (minor).** The blank prefill is turned into
   `Load(0,0)` for a timed set ([SetEntryFields.kt](app/src/main/java/com/example/androidapp/ui/components/SetEntryFields.kt)),
   so Log is enabled at 0 and Use calibrates 0 — for a loaded carry this defeats find-the-weight. Carry
