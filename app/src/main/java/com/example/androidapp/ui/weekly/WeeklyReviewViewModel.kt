@@ -54,7 +54,12 @@ data class WeeklyReviewUiState(
     /** The earned sets of that program, or the first followed one with any (N311). */
     val volumes: List<VolumeSuggestion> = emptyList(),
     val stallProgramId: String? = null,
+    /** The week's own reads' failure: it replaces the screen, because the week cannot be drawn. */
     val error: DataError? = null,
+    /** A failed stall read, shown beside its section instead of replacing the week (B439). */
+    val stallError: DataError? = null,
+    /** A failed earned-set read or Add, shown beside its section instead of replacing the week (B439). */
+    val volumeError: DataError? = null,
 )
 
 /**
@@ -138,21 +143,17 @@ class WeeklyReviewViewModel @Inject constructor(
                     return@launch
                 }
             }
-            val stalled = when (val read = firstStalledProgram(active)) {
-                is DataResult.Success -> read.data
-                is DataResult.Failure -> {
-                    // A failed stall read is not "no stall" (B351), and this screen already says a read's
-                    // failure rather than drawing an answer it did not get.
-                    _state.value = WeeklyReviewUiState(isLoading = false, error = read.error)
-                    return@launch
-                }
+            // The advisories are not the week (B439): a failed stall or earned-set read is said beside
+            // its section, and the rest of the review still draws from the reads that answered.
+            val (stalled, stallError) = when (val read = firstStalledProgram(active)) {
+                is DataResult.Success -> read.data to null
+                is DataResult.Failure -> null to read.error
             }
-            val volumes = when (val read = volumeSuggestionsFor(active, stalled?.second)) {
-                is DataResult.Success -> read.data
-                is DataResult.Failure -> {
-                    _state.value = WeeklyReviewUiState(isLoading = false, error = read.error)
-                    return@launch
-                }
+            val (volumes, volumeError) = when (
+                val read = volumeSuggestionsFor(active, stalled?.second)
+            ) {
+                is DataResult.Success -> read.data to null
+                is DataResult.Failure -> emptyList<VolumeSuggestion>() to read.error
             }
 
             _state.value = WeeklyReviewUiState(
@@ -169,6 +170,8 @@ class WeeklyReviewViewModel @Inject constructor(
                 stalls = stalled?.first.orEmpty(),
                 stallProgramId = stalled?.second,
                 volumes = volumes,
+                stallError = stallError,
+                volumeError = volumeError,
             )
         }
     }
@@ -231,6 +234,7 @@ class WeeklyReviewViewModel @Inject constructor(
                     _volumeUndo.value = write.data
                     _state.update { state ->
                         state.copy(
+                            volumeError = null,
                             volumes = state.volumes.filterNot {
                                 it.templateExerciseId == suggestion.templateExerciseId
                             },
@@ -238,7 +242,7 @@ class WeeklyReviewViewModel @Inject constructor(
                     }
                 }
 
-                is DataResult.Failure -> _state.update { it.copy(error = write.error) }
+                is DataResult.Failure -> _state.update { it.copy(volumeError = write.error) }
             }
         }
     }
@@ -252,7 +256,7 @@ class WeeklyReviewViewModel @Inject constructor(
                     load()
                 }
 
-                is DataResult.Failure -> _state.update { it.copy(error = write.error) }
+                is DataResult.Failure -> _state.update { it.copy(volumeError = write.error) }
             }
         }
     }

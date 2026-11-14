@@ -283,8 +283,14 @@ class WeeklyReviewViewModelTest {
                 DataResult.Success(programs)
             }
 
+        var failStalls = false
+
         override suspend fun stallsForProgram(programId: String): DataResult<List<PlanStall>> =
-            DataResult.Success(listOfNotNull(stall))
+            if (failStalls) {
+                DataResult.Failure(DataError.Storage(IllegalStateException("the stalls could not be read")))
+            } else {
+                DataResult.Success(listOfNotNull(stall))
+            }
 
         override suspend fun blocks(): DataResult<List<BlockProgress>> = DataResult.Success(blocks)
     }

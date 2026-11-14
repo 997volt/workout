@@ -34,6 +34,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
+import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.model.BlockProgress
 import com.example.androidapp.domain.model.MovementGain
@@ -212,11 +213,34 @@ private fun WeeklyReviewBody(
             onDeloadLift = onDeloadLift,
             onReplaceLift = onReplaceLift,
         )
+        WeeklyAdvisories(state = state, onAddVolume = onAddVolume)
+    }
+}
+
+/** The stall and earned-set sections with their own failures beside them (B439). */
+@Composable
+private fun WeeklyAdvisories(
+    state: WeeklyReviewUiState,
+    onAddVolume: (VolumeSuggestion) -> Unit,
+) {
+    state.stallError?.let { error -> AdvisoryLine(error) }
+    if (state.volumes.isNotEmpty() || state.volumeError != null) {
+        SectionHeader(text = stringResource(R.string.weekly_review_volume_title))
+        state.volumeError?.let { error -> AdvisoryLine(error) }
         if (state.volumes.isNotEmpty()) {
-            SectionHeader(text = stringResource(R.string.weekly_review_volume_title))
             PlanVolumeCard(suggestions = state.volumes, onAdd = onAddVolume)
         }
     }
+}
+
+/** One advisory failure, said where its section is rather than replacing the week (B439). */
+@Composable
+private fun AdvisoryLine(error: DataError) {
+    Text(
+        text = dataErrorMessage(error),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.error,
+    )
 }
 
 /** The week's totals beside the plan's ratio, and last week's numbers for comparison (N247). */

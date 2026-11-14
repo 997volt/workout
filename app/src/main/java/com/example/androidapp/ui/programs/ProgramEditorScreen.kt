@@ -258,7 +258,13 @@ fun ProgramEditorScreen(
     val isSequence = state.program?.kind == ProgramKind.SEQUENCE
     val phases = rememberPhaseWeekSelection(state.program?.id, state.slots, isSequence, onRemovePhaseWeek)
 
-    EditorMessages(state.error, transferMessage, snackbarHostState, onDismissMessage, onDismissTransferMessage)
+    EditorMessages(
+        state.error ?: state.finderError,
+        transferMessage,
+        snackbarHostState,
+        onDismissMessage,
+        onDismissTransferMessage,
+    )
 
     // The deload's whole-edit undo (N307, decision 4a): one snackbar, one action, both halves restored.
     val undoName = deloadUndo?.exerciseName

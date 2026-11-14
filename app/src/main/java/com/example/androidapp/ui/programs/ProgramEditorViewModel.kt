@@ -72,6 +72,8 @@ data class ProgramEditorUiState(
      * is up to, derived from what was done rather than stored.
      */
     val runSlotId: String? = null,
+    /** A finder (stall or earned-set) read's failure, delivered once and shown beside the plan (B439). */
+    val finderError: DataError? = null,
     /**
      * True when a block has no session left (B197).
      *
@@ -209,6 +211,9 @@ class ProgramEditorViewModel @Inject constructor(
 
     private val error = MutableStateFlow<DataError?>(null)
 
+    /** The finder failures are one-shot (B439): the combine's block sets them once per read. */
+    private val _finderError = MutableStateFlow<DataError?>(null)
+
     /** True once the program is gone, so the screen can leave the editor. */
     private val _deleted = MutableStateFlow(false)
     val deleted: StateFlow<Boolean> = _deleted
@@ -299,15 +304,24 @@ class ProgramEditorViewModel @Inject constructor(
         .combine(stallsForProgram()) { state, stalls ->
             when (stalls) {
                 is DataResult.Success -> state.copy(stalls = stalls.data)
-                is DataResult.Failure -> state.copy(stalls = emptyList(), error = stalls.error)
+                is DataResult.Failure -> {
+                    // Said beside the plan, once per read (B439): the state's error re-derived the
+                    // Failure on every dismissal, so the snackbar could not be closed.
+                    _finderError.value = stalls.error
+                    state.copy(stalls = emptyList())
+                }
             }
         }
         .combine(volumeSuggestions()) { state, volumes ->
             when (volumes) {
                 is DataResult.Success -> state.copy(volumes = volumes.data)
-                is DataResult.Failure -> state.copy(volumes = emptyList(), error = volumes.error)
+                is DataResult.Failure -> {
+                    _finderError.value = volumes.error
+                    state.copy(volumes = emptyList())
+                }
             }
         }
+        .combine(_finderError) { state, finder -> state.copy(finderError = finder) }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
@@ -628,5 +642,6 @@ class ProgramEditorViewModel @Inject constructor(
     /** A failure has been read: clear it so the snackbar can go (the B439 rework will make this one-shot). */
     fun onErrorShown() {
         error.value = null
+        _finderError.value = null
     }
 }

@@ -9,6 +9,7 @@ import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.PlanStallFinder
 import com.example.androidapp.domain.PlanVolumeFinder
+import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.VolumeReason
 import com.example.androidapp.domain.model.VolumeSuggestion
@@ -328,6 +329,38 @@ class ProgramEditorViewModelTest {
         assertThat(handle.get<String>("replaceTemplateExerciseId")).isNull()
         viewModel.onReplaceTargetHandled()
         assertThat(viewModel.replaceTarget.value).isNull()
+    }
+
+
+    @Test
+    fun aFinderFailure_isShownOnce_andDismissedWithoutComingBack() = runTest(dispatcher) {
+        // B439: the finder failure was re-derived from the state combine, so dismissing it re-emitted it.
+        // A slot with a plan makes the finders actually read history, where the failure is.
+        plannedSquat()
+        repository.slots.value = listOf(
+            ProgramSlot(id = "ps1", programId = PROGRAM_ID, templateId = "t1", position = 0),
+        )
+        val trends = FakeTrendsRepository().apply {
+            templateSessions = DataResult.Failure(
+                DataError.Storage(IllegalStateException("history unavailable")),
+            )
+        }
+        val editor = ProgramEditorViewModel(
+            repository = repository,
+            templateRepository = templates,
+            stallFinder = PlanStallFinder(repository, templates, trends),
+            planVolumeFinder = PlanVolumeFinder(repository, templates, trends),
+            documentIo = documentIo,
+            savedStateHandle = SavedStateHandle(mapOf("programId" to PROGRAM_ID)),
+        )
+        backgroundScope.launch { editor.uiState.collect {} }
+        advanceUntilIdle()
+
+        assertThat(editor.uiState.value.finderError).isNotNull()
+        editor.onErrorShown()
+        advanceUntilIdle()
+        assertWithMessage("a dismissal does not re-derive the same failure")
+            .that(editor.uiState.value.finderError).isNull()
     }
 
     @Test

@@ -23,10 +23,6 @@ rows below are the fixes, ordered as the review ranked them: the must-fix group 
 findings after it, and the missing tests last as **N312**. Each row names the finding, the path and the
 fix; when a row lands, its finding is gone from this file.
 
-- **B439 — Advisory failures are handled as fatal on the plan surfaces (minor).** The weekly review replaces
-  the whole week with the error view on a failed stall/volume read and on a failed Add; the program editor's
-  finder failure is re-derived from the state combine, so `onErrorShown()` re-emits the same Failure and the
-  snackbar loops. Keep advisory read/Add failures beside their section, and deliver finder failures once.
 - **B440 — A program-document edit silently clears the marker (minor).** The import applies edited rows with
   a full-row update from a DTO defaulting the marker to false
   ([ProgramImportWrite.kt](app/src/main/java/com/example/androidapp/data/ProgramImportWrite.kt)), so
