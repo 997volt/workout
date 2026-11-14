@@ -510,6 +510,7 @@ internal fun SetSuggestion.initialDraft(unit: WeightUnit, timed: Boolean): SetEn
     durationText = if (timed) DurationFormat.ofSeconds((durationSeconds ?: DEFAULT_HOLD_SECONDS).toLong()) else "",
     timed = timed,
     weightText = if (weightKnown) Weight.display(weightGrams, assistanceGrams, unit) else "",
+    weightKnown = weightKnown,
     rpeText = if (setType.recordsEffort) {
         Rpe.format(targetRpeHalves ?: DEFAULT_RPE_HALVES)
     } else {

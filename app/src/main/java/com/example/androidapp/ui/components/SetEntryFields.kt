@@ -61,6 +61,12 @@ internal data class SetEntryDraft(
     /** Only the dialog edits the comment; the inline fields leave it empty. */
     val noteText: String = "",
     val setType: SetType = SetType.NORMAL,
+    /**
+     * Whether the weight is known (B435): false for a marked plan's first set, where a blank field must
+     * stay a question. A timed set otherwise treats a blank load as 0 — a plank is bodyweight — but a
+     * loaded carry's first set must not be logged at 0 without the lifter naming a load.
+     */
+    val weightKnown: Boolean = true,
 )
 
 /**
@@ -79,6 +85,7 @@ internal val SetEntryDraftSaver = mapSaver(
             "rpe" to draft.rpeText,
             "note" to draft.noteText,
             "type" to draft.setType.name,
+            "weightKnown" to draft.weightKnown,
         )
     },
     restore = { values ->
@@ -90,6 +97,7 @@ internal val SetEntryDraftSaver = mapSaver(
             rpeText = values["rpe"] as? String ?: "",
             noteText = values["note"] as? String ?: "",
             setType = (values["type"] as? String)?.let { SetType.valueOf(it) } ?: SetType.NORMAL,
+            weightKnown = values["weightKnown"] as? Boolean ?: true,
         )
     },
 )
@@ -140,7 +148,11 @@ internal fun SetEntryDraft.values(unit: WeightUnit): SetEntryValues {
     // One field, two columns: a leading minus is assistance (ROADMAP N15). A timed set may state no load:
     // a plank is bodyweight and nothing else, which is 0 rather than a question left unanswered.
     val load = Weight.parseLoad(weightText, unit)
-        ?: if (timed && weightText.isBlank()) Load(weightGrams = 0L, assistanceGrams = 0L) else null
+        ?: if (timed && weightText.isBlank() && weightKnown) {
+            Load(weightGrams = 0L, assistanceGrams = 0L)
+        } else {
+            null
+        }
     // Halves, so 9.5 is a value and 9.3 is not (ROADMAP N6).
     val rpeHalves = rpeText.trim().ifEmpty { null }?.let(Rpe::parse)
     return SetEntryValues(

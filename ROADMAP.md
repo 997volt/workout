@@ -23,10 +23,6 @@ rows below are the fixes, ordered as the review ranked them: the must-fix group 
 findings after it, and the missing tests last as **N312**. Each row names the finding, the path and the
 fix; when a row lands, its finding is gone from this file.
 
-- **B435 — A marked timed movement's blank weight becomes 0 kg (minor).** The blank prefill is turned into
-  `Load(0,0)` for a timed set ([SetEntryFields.kt](app/src/main/java/com/example/androidapp/ui/components/SetEntryFields.kt)),
-  so Log is enabled at 0 and Use calibrates 0 — for a loaded carry this defeats find-the-weight. Carry
-  `weightKnown` into `values`/`isComplete`.
 - **B436 — The appended-set lookup is a race and is triplicated (minor).** The three VMs read the plan back
   via `maxBy(setIndex)` after `addSet`; two Adds in flight can both resolve to the second set (undo removes
   the wrong one), a failed/null read silently drops the undo, and the same ten lines live in three places.

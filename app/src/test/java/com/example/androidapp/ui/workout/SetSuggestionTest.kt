@@ -3,6 +3,7 @@ package com.example.androidapp.ui.workout
 import com.example.androidapp.domain.Load
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.WeightUnit
+import com.example.androidapp.ui.components.values
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.PreviousPerformance
@@ -557,6 +558,10 @@ class SetSuggestionTest {
         assertEquals(5, first.reps)
         assertEquals(16, first.targetRpeHalves)
         assertEquals("", first.initialDraft(WeightUnit.KILOGRAMS, timed = false).weightText)
+        // A blank timed set is a question too (B435): it must not log at 0 kg and calibrate the plan to 0.
+        val timed = first.initialDraft(WeightUnit.KILOGRAMS, timed = true)
+        assertNull("the timed draft's blank weight is unknown", timed.values(WeightUnit.KILOGRAMS).load)
+        assertFalse(timed.values(WeightUnit.KILOGRAMS).isComplete)
 
         val next = suggestionForNextSet(
             listOf(SetRow(id = "x", number = 1, reps = 5, weightGrams = 75_000L)),
