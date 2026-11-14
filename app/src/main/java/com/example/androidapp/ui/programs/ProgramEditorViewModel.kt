@@ -16,6 +16,7 @@ import com.example.androidapp.domain.model.DeloadedSet
 import com.example.androidapp.domain.model.PlanStall
 import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.model.ProgramSlot
+import com.example.androidapp.domain.model.ReplaceOutcome
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.WorkoutProgram
@@ -133,6 +134,12 @@ data class DeloadUndo(
     val removedSetIds: List<String>,
 )
 
+/** A replace hand-off waiting for the route to open its sheet (N308). */
+data class ReplaceTarget(val templateId: String, val templateExerciseId: String)
+
+/** The replace the plan screen can take back (N308, decision 4a). */
+data class ReplaceUndo(val outcome: ReplaceOutcome)
+
 /**
  * One program: its name, its ordered slots, and whether it is the active one (ROADMAP P3.3).
  *
@@ -156,6 +163,20 @@ class ProgramEditorViewModel @Inject constructor(
         it.deloadTemplateId to it.deloadTemplateExerciseId
     }
 
+    private val replaceTargetRoute = savedStateHandle.toRoute<ProgramEditor>().let {
+        it.replaceTemplateId to it.replaceTemplateExerciseId
+    }
+
+    /** A replace asked for by a weekly-review hand-off, one-shot for the route to open (N308). */
+    private val _replaceTarget = MutableStateFlow<ReplaceTarget?>(null)
+    val replaceTarget: StateFlow<ReplaceTarget?> = _replaceTarget.asStateFlow()
+
+    /** The replace the snackbar can still undo (N308). */
+    private val _replaceUndo = MutableStateFlow<ReplaceUndo?>(null)
+    val replaceUndo: StateFlow<ReplaceUndo?> = _replaceUndo.asStateFlow()
+
+    private val replaceResult = savedStateHandle.getStateFlow<String?>("replaceOldId", null)
+
     init {
         val (templateId, exerciseId) = deloadTarget
         if (templateId != null && exerciseId != null) {
@@ -163,6 +184,23 @@ class ProgramEditorViewModel @Inject constructor(
             savedStateHandle.remove<String>("deloadTemplateId")
             savedStateHandle.remove<String>("deloadTemplateExerciseId")
             openDeload(templateId, exerciseId)
+        }
+        val (replaceTemplate, replaceExercise) = replaceTargetRoute
+        if (replaceTemplate != null && replaceExercise != null) {
+            savedStateHandle.remove<String>("replaceTemplateId")
+            savedStateHandle.remove<String>("replaceTemplateExerciseId")
+            _replaceTarget.value = ReplaceTarget(replaceTemplate, replaceExercise)
+        }
+        viewModelScope.launch {
+            replaceResult.collect { old ->
+                if (old == null) return@collect
+                val newId = savedStateHandle.get<String>("replaceNewId") ?: return@collect
+                val ids = savedStateHandle.get<ArrayList<String>>("replaceSetIds").orEmpty()
+                savedStateHandle.remove<String>("replaceOldId")
+                savedStateHandle.remove<String>("replaceNewId")
+                savedStateHandle.remove<ArrayList<String>>("replaceSetIds")
+                _replaceUndo.value = ReplaceUndo(ReplaceOutcome(old, newId, ids))
+            }
         }
     }
 
@@ -419,6 +457,25 @@ class ProgramEditorViewModel @Inject constructor(
                 is DataResult.Failure -> error.value = result.error
             }
         }
+    }
+
+    fun onReplaceTargetHandled() {
+        _replaceTarget.value = null
+    }
+
+    fun onUndoReplace() {
+        val undo = _replaceUndo.value ?: return
+        _replaceUndo.value = null
+        viewModelScope.launch {
+            when (val read = templateRepository.undoReplaceExercise(undo.outcome)) {
+                is DataResult.Success -> stallRefresh.update { it + 1 }
+                is DataResult.Failure -> error.value = read.error
+            }
+        }
+    }
+
+    fun onReplaceUndoShown() {
+        _replaceUndo.value = null
     }
 
     /** The card's "Deload this lift" (N307): read the plan, then ask. */

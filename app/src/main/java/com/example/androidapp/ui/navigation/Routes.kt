@@ -135,6 +135,11 @@ data class ExercisePicker(
     val templateId: String? = null,
     /** The session row this pick substitutes for, or null to append a movement (N291). */
     val substituteFor: String? = null,
+    /**
+     * Set when the picker is only choosing a movement for the replace sheet (N308): a tap answers with
+     * the id instead of appending it to a plan or a session.
+     */
+    val replaceFor: String? = null,
 )
 
 /** The template list (ROADMAP N3). */
@@ -166,6 +171,17 @@ data class ProgramEditor(
      */
     val deloadTemplateId: String? = null,
     val deloadTemplateExerciseId: String? = null,
+    /** The same hand-off for the replace sheet (N308), opened after the deload one has been read. */
+    val replaceTemplateId: String? = null,
+    val replaceTemplateExerciseId: String? = null,
+)
+
+/** Replacing one plan's movement with another (N308). */
+@Serializable
+data class ProgramReplace(
+    val programId: String,
+    val templateId: String,
+    val templateExerciseId: String,
 )
 
 /**

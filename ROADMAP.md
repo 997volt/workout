@@ -39,31 +39,6 @@ no baseline — a Reset cannot write the old movement's numbers onto the new mov
 The deload's surviving sets keep their baseline rows, so a Reset still restores the pre-deload targets on
 them; that is the reset's literal meaning and it is unchanged.
 
-- **N308 — Replace this lift.** A plan **edit**, not a session substitution (N291): the template's
-  exercise row changes for every future session, the old movement's history, trends and records stay, and
-  the stall clears because the plan no longer names it. The set rows are trimmed by the same rule as N307
-  — the first kept working sets survive, the later ones and their rungs are dropped, warm-ups stay with
-  their targets cleared, kept rungs stay. The kept working sets are seeded **by place** from the new
-  movement's last finished session — weight, assistance and fixed reps (or the duration for a timed
-  movement), the same shape the picker's add-to-template fill writes
-  ([ExercisePickerViewModel.kt](app/src/main/java/com/example/androidapp/ui/workout/ExercisePickerViewModel.kt))
-  — and where there is no counterpart the target is cleared; the old plan's rep range is not carried on a
-  seed. **Empty** (N309) keeps the plan's reps and target effort and clears the loads instead. The template
-  gains a **new exercise row at the old position, with new set ids**, and the old row and its sets are
-  soft-deleted; name, muscle, equipment, unit and step come from the library; rest, superset group, target
-  effort and the **rung ladders of the kept anchors** stay (a drop scheme survives the movement change, and
-  its value stays editable); the cue is cleared, because it was the old movement's. The replace sheet
-  suggests the other movements **filed under the same category** (the old movement's `parentId`, the
-  library's own taxonomy, N95/N110), movements only, excluding the old movement and any already in the
-  plan; a different family is one *Browse all movements* away; an unfiled movement has no suggestions, and
-  no category is inferred. The confirm shows old → new, the set-count change, the seeded targets or
-  "targets to be found", and, **only if another program also names the plan**, those programs
-  (`otherProgramNamesUsingTemplates`); choosing a movement already in the plan from browse warns. One
-  transaction; the undo restores the old row and its sets and removes the new one. The new set ids are
-  deliberate: the old baseline rows are skipped by a Reset and the new sets carry no baseline, so a Reset
-  cannot write the old movement's targets onto the new movement. The picker gains a replace intent and the
-  action joins the stall card; the finish sheet's hand-off is N310.
-
 - **N309 — Find the weight.** When the load is not known, the plan can say so: **Empty** clears the working
   sets' weight and assistance (and the warm-ups' targets), keeps the plan's reps and target effort, and
   sets a **one-shot marker** on the plan's exercise — a column on `template_exercises`, a migration, an

@@ -280,4 +280,46 @@ class ProgramEditorViewModelTest {
     private companion object {
         const val PROGRAM_ID = "p1"
     }
+
+    @Test
+    fun theReplace_setsTheUndo_andTheUndoWritesItBack() = runTest(dispatcher) {
+        val handle = SavedStateHandle(
+            mapOf(
+                "programId" to PROGRAM_ID,
+                "replaceOldId" to "old",
+                "replaceNewId" to "new",
+                "replaceSetIds" to arrayListOf("s0", "s1"),
+            ),
+        )
+        val viewModel = viewModel(handle)
+        backgroundScope.launch { viewModel.uiState.collect {} }
+        advanceUntilIdle()
+
+        assertThat(viewModel.replaceUndo.value?.outcome?.oldTemplateExerciseId).isEqualTo("old")
+
+        viewModel.onUndoReplace()
+        advanceUntilIdle()
+
+        assertThat(templates.undoneReplacements.map { it.oldTemplateExerciseId })
+            .containsExactly("old")
+        assertThat(viewModel.replaceUndo.value).isNull()
+    }
+
+    @Test
+    fun theReplaceHandOff_opensOnce_andClearsItself() = runTest(dispatcher) {
+        val handle = SavedStateHandle(
+            mapOf(
+                "programId" to PROGRAM_ID,
+                "replaceTemplateId" to "t1",
+                "replaceTemplateExerciseId" to "te1",
+            ),
+        )
+        val viewModel = viewModel(handle)
+        advanceUntilIdle()
+
+        assertThat(viewModel.replaceTarget.value?.templateExerciseId).isEqualTo("te1")
+        assertThat(handle.get<String>("replaceTemplateExerciseId")).isNull()
+        viewModel.onReplaceTargetHandled()
+        assertThat(viewModel.replaceTarget.value).isNull()
+    }
 }

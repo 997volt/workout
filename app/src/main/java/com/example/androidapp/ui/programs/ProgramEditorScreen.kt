@@ -92,6 +92,7 @@ import java.time.LocalDate
  * rather than edited here.
  */
 @Composable
+@Suppress("LongMethod") // The route is the screen's wiring; the N308 replace hand-off is the line at the ceiling.
 fun ProgramEditorRoute(
     onBack: () -> Unit,
     /**
@@ -105,6 +106,8 @@ fun ProgramEditorRoute(
     onOpenBalance: () -> Unit,
     /** Opens the deload creator direct, from a stall card (ROADMAP N147). */
     onOpenDeload: () -> Unit,
+    /** Opens the replace sheet for one stalled plan (N308); the plan screen owns its undo. */
+    onReplaceLift: (String, String) -> Unit,
     /** Opens the recovery-week choices: exempt this/next week, or build a deload (ROADMAP N300). */
     onOpenWeeks: () -> Unit,
     /** Opens this program's auto progression switch and preflight (ROADMAP N299). */
@@ -117,6 +120,8 @@ fun ProgramEditorRoute(
     val templateToEdit by viewModel.templateToEdit.collectAsStateWithLifecycle()
     val deloadPrompt by viewModel.deloadPrompt.collectAsStateWithLifecycle()
     val deloadUndo by viewModel.deloadUndo.collectAsStateWithLifecycle()
+    val replaceTarget by viewModel.replaceTarget.collectAsStateWithLifecycle()
+    val replaceUndo by viewModel.replaceUndo.collectAsStateWithLifecycle()
     val currentOnBack by rememberUpdatedState(onBack)
     val currentOnOpenTemplate by rememberUpdatedState(onOpenTemplate)
 
@@ -126,6 +131,16 @@ fun ProgramEditorRoute(
         templateToEdit?.let { templateId ->
             viewModel.onTemplateEditHandled()
             currentOnOpenTemplate(templateId)
+        }
+    }
+
+    // A weekly review / finish hand-off opens the replace sheet with this screen as its parent, so the
+    // sheet's result and undo come back here (N308, decision 3a).
+    val currentOnReplaceLift by rememberUpdatedState(onReplaceLift)
+    LaunchedEffect(replaceTarget) {
+        replaceTarget?.let {
+            viewModel.onReplaceTargetHandled()
+            currentOnReplaceLift(it.templateId, it.templateExerciseId)
         }
     }
 
@@ -154,6 +169,10 @@ fun ProgramEditorRoute(
         onOpenBalance = onOpenBalance,
         onOpenDeload = onOpenDeload,
         onDeloadLift = viewModel::onDeloadLift,
+        onReplaceLift = onReplaceLift,
+        replaceUndo = replaceUndo,
+        onUndoReplace = viewModel::onUndoReplace,
+        onDismissReplaceUndo = viewModel::onReplaceUndoShown,
         deloadPrompt = deloadPrompt,
         onConfirmDeload = viewModel::onConfirmDeload,
         onCancelDeload = viewModel::onCancelDeload,
@@ -200,6 +219,11 @@ fun ProgramEditorScreen(
     deloadUndo: DeloadUndo?,
     onUndoDeload: () -> Unit,
     onDismissDeloadUndo: () -> Unit,
+    /** The card's replace, and the undo the sheet's result leaves on this screen (N308). */
+    onReplaceLift: (String, String) -> Unit,
+    replaceUndo: ReplaceUndo?,
+    onUndoReplace: () -> Unit,
+    onDismissReplaceUndo: () -> Unit,
     onOpenWeeks: () -> Unit,
     onOpenProgression: () -> Unit,
     onPreviewSlot: (String, String) -> Unit,
@@ -249,6 +273,22 @@ fun ProgramEditorScreen(
         )
     }
 
+    // The replace sheet's result returns here with its undo (N308, decision 3a).
+    val replaceUndoMessage = stringResource(R.string.program_replace_undo)
+    val replaceUndoAction = stringResource(R.string.program_replace_undo_action)
+    val currentUndoReplace by rememberUpdatedState(onUndoReplace)
+    val currentDismissReplace by rememberUpdatedState(onDismissReplaceUndo)
+    LaunchedEffect(replaceUndo) {
+        if (replaceUndo == null) return@LaunchedEffect
+        val result = snackbarHostState.showSnackbar(
+            message = replaceUndoMessage,
+            actionLabel = replaceUndoAction,
+            withDismissAction = true,
+        )
+        if (result == SnackbarResult.ActionPerformed) currentUndoReplace()
+        currentDismissReplace()
+    }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -282,6 +322,7 @@ fun ProgramEditorScreen(
             onPreviewSlot = onPreviewSlot,
             onOpenDeload = onOpenDeload,
             onDeloadLift = onDeloadLift,
+            onReplaceLift = onReplaceLift,
             onOpenWeeks = onOpenWeeks,
             modifier = Modifier.padding(innerPadding),
         )
@@ -528,6 +569,8 @@ private fun ProgramEditorBody(
     onOpenDeload: () -> Unit,
     /** Opens the per-lift deload's confirm (N307). */
     onDeloadLift: (PlanStall) -> Unit,
+    /** Opens the replace sheet (N308). */
+    onReplaceLift: (String, String) -> Unit,
     /** Opens the recovery-week choices (ROADMAP N300). */
     onOpenWeeks: () -> Unit,
     modifier: Modifier = Modifier,
@@ -578,6 +621,7 @@ private fun ProgramEditorBody(
             PlanStallCard(
                 stall = stall,
                 onDeloadLift = { onDeloadLift(stall) },
+                onReplaceLift = { onReplaceLift(stall.templateId, stall.templateExerciseId) },
                 onOpenDeload = onOpenDeload,
             )
         }
@@ -1125,6 +1169,7 @@ private fun DeleteProgramDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
     )
 }
 
+@Suppress("LongMethod") // A preview's argument list; it says nothing about the screen (N308).
 @Preview(showBackground = true)
 @Composable
 private fun ProgramEditorScreenPreview() {
@@ -1171,6 +1216,10 @@ private fun ProgramEditorScreenPreview() {
             deloadUndo = null,
             onUndoDeload = {},
             onDismissDeloadUndo = {},
+            onReplaceLift = { _, _ -> },
+            replaceUndo = null,
+            onUndoReplace = {},
+            onDismissReplaceUndo = {},
             onOpenWeeks = {},
             onOpenProgression = {},
             onPreviewSlot = { _, _ -> },

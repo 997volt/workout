@@ -339,6 +339,19 @@ class TemplatesViewModelTest {
 
         override fun observeExercises(templateId: String): Flow<List<TemplateExercise>> = exercises
         override fun observeSets(templateId: String): Flow<List<TemplateSet>> = flowOf(emptyList())
+        override suspend fun replaceExercise(
+            templateExerciseId: String,
+            newExerciseId: String,
+            seeds: List<com.example.androidapp.domain.model.ReplacementSeed?>,
+            empty: Boolean,
+        ): DataResult<com.example.androidapp.domain.model.ReplaceOutcome> {
+            error("these tests do not write a plan")
+        }
+        override suspend fun undoReplaceExercise(
+            outcome: com.example.androidapp.domain.model.ReplaceOutcome,
+        ): DataResult<Unit> {
+            error("these tests do not write a plan")
+        }
         override suspend fun deloadExercise(
             templateExerciseId: String,
             stepGrams: Long,

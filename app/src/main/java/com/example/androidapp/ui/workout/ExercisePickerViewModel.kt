@@ -92,6 +92,13 @@ class ExercisePickerViewModel @Inject constructor(
     /** The session row being replaced, or null when appending (N291). */
     private val substituteFor: String? = savedStateHandle.toRoute<ExercisePicker>().substituteFor
 
+    /** Set when the picker is choosing a movement for the replace sheet (N308), not adding it. */
+    private val replaceFor: String? = savedStateHandle.toRoute<ExercisePicker>().replaceFor
+
+    /** The movement a replace-mode pick chose, for the route to hand back before it pops. */
+    private val _picked = MutableStateFlow<String?>(null)
+    val picked: StateFlow<String?> = _picked
+
     private val query = MutableStateFlow(savedStateHandle[QUERY_KEY] ?: "")
 
     /** Emits true once the exercise is stored, so the screen can pop itself. */
@@ -137,6 +144,10 @@ class ExercisePickerViewModel @Inject constructor(
     }
 
     fun onExerciseSelected(exerciseId: String) {
+        if (replaceFor != null) {
+            _picked.value = exerciseId
+            return
+        }
         launchAdd(exerciseId)
     }
 
@@ -151,7 +162,8 @@ class ExercisePickerViewModel @Inject constructor(
     fun onCreateExercise(name: String) {
         viewModelScope.launch {
             when (val created = exerciseRepository.createCustomExercise(name)) {
-                is DataResult.Success -> launchAdd(created.data.id)
+                is DataResult.Success ->
+                    if (replaceFor != null) _picked.value = created.data.id else launchAdd(created.data.id)
                 is DataResult.Failure -> _error.value = created.error
             }
         }

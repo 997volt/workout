@@ -46,6 +46,10 @@ internal object ProgramsTags {
     const val STALL = "program_stall"
     const val STALL_DELOAD = "program_stall_deload"
     const val STALL_DELOAD_LIFT = "program_stall_deload_lift"
+    const val STALL_REPLACE_LIFT = "program_stall_replace_lift"
+    const val REPLACE_SCREEN = "program_replace"
+    const val REPLACE_CONFIRM = "program_replace_confirm"
+    const val REPLACE_EMPTY = "program_replace_empty"
     const val DELOAD_LIFT_DIALOG = "program_deload_lift_dialog"
 
     const val DELETE = "program_delete"

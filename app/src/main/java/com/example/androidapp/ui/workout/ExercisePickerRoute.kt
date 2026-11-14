@@ -25,19 +25,27 @@ import com.example.androidapp.ui.components.dataErrorMessage
 fun ExercisePickerRoute(
     onAddExercise: () -> Unit,
     onBack: () -> Unit,
+    /** In the replace mode, the chosen movement; the caller hands it back and pops (N308). */
+    /** The replace mode's answer, in the present tense the Compose rule asks for (N308). */
+    onPick: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ExercisePickerViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val added by viewModel.added.collectAsStateWithLifecycle()
+    val picked by viewModel.picked.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
 
     // rememberUpdatedState, because the effect restarts on `added`: reading the
     // lambda parameter directly would capture a stale callback.
     val currentOnAddExercise by rememberUpdatedState(onAddExercise)
+    val currentOnPick by rememberUpdatedState(onPick)
 
     LaunchedEffect(added) {
         if (added) currentOnAddExercise()
+    }
+    LaunchedEffect(picked) {
+        picked?.let(currentOnPick)
     }
 
     // Whether the naming dialog is up. Held here rather than in the ViewModel

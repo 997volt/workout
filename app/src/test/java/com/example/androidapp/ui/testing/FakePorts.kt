@@ -174,10 +174,14 @@ internal class FakeWorkoutRepository : WorkoutRepository {
 
     override suspend fun deleteSet(setId: String): DataResult<Unit> = unused()
 
+    /** What the seed read answers; empty is "the movement has no history" (N308). */
+    var previous = PreviousPerformance(emptyList())
+    var previousResult: DataResult<PreviousPerformance>? = null
+
     override suspend fun previousPerformance(
         exerciseId: String,
         currentSessionId: String?,
-    ): DataResult<PreviousPerformance> = unused()
+    ): DataResult<PreviousPerformance> = previousResult ?: DataResult.Success(previous)
 
     override suspend fun startRest(seconds: Int): DataResult<Instant> = unused()
 
@@ -367,6 +371,14 @@ internal class FakeTemplateRepository : TemplateRepository {
     val restoredSets = mutableListOf<String>()
     val updatedSets = mutableListOf<Pair<String, TemplateSetEdit>>()
 
+    /** Every replace as the old exercise row and the new movement's id (N308). */
+    val replacements = mutableListOf<Pair<String, String>>()
+
+    /** Every replace the undo took back. */
+    val undoneReplacements = mutableListOf<com.example.androidapp.domain.model.ReplaceOutcome>()
+
+    var replaceResult: DataResult<com.example.androidapp.domain.model.ReplaceOutcome>? = null
+
     override fun observeTemplates(includeHidden: Boolean): Flow<List<WorkoutTemplate>> = templates
 
     override fun observeDeletedTemplates(): Flow<List<WorkoutTemplate>> = unused()
@@ -440,6 +452,28 @@ internal class FakeTemplateRepository : TemplateRepository {
         return DataResult.Success(plan)
     }
 
+    override suspend fun replaceExercise(
+        templateExerciseId: String,
+        newExerciseId: String,
+        seeds: List<com.example.androidapp.domain.model.ReplacementSeed?>,
+        empty: Boolean,
+    ): DataResult<com.example.androidapp.domain.model.ReplaceOutcome> {
+        replacements += templateExerciseId to newExerciseId
+        return replaceResult
+            ?: DataResult.Success(
+                com.example.androidapp.domain.model.ReplaceOutcome(
+                    oldTemplateExerciseId = templateExerciseId,
+                    newTemplateExerciseId = "new-$templateExerciseId",
+                    newSetIds = emptyList(),
+                ),
+            )
+    }
+    override suspend fun undoReplaceExercise(
+        outcome: com.example.androidapp.domain.model.ReplaceOutcome,
+    ): DataResult<Unit> {
+        undoneReplacements += outcome
+        return DataResult.Success(Unit)
+    }
     override suspend fun restoreSet(templateSetId: String): DataResult<Unit> {
         restoredSets += templateSetId
         return DataResult.Success(Unit)

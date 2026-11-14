@@ -347,6 +347,16 @@ interface TemplateDao {
     )
     suspend fun softDeleteTemplateExercise(id: String, at: Long): Int
 
+    /** Brings a replaced exercise row back for the undo (N308); its sets were never deleted. */
+    @Query(
+        """
+        UPDATE template_exercises
+        SET deletedAt = NULL, updatedAt = :at
+        WHERE id = :id AND deletedAt IS NOT NULL
+        """,
+    )
+    suspend fun restoreTemplateExercise(id: String, at: Long): Int
+
     @Query(
         """
         UPDATE template_exercises

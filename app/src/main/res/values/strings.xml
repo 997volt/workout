@@ -1409,6 +1409,24 @@
     </plurals>
     <string name="program_stall_deload">Plan a lighter week</string>
     <string name="program_stall_deload_lift">Deload this lift</string>
+    <string name="program_stall_replace_lift">Replace this lift</string>
+    <!-- The replace sheet (ROADMAP N308). The movement changes; the plan's trim, the seed or Empty, and
+         the sharing are the decisions shown before the write. -->
+    <string name="program_replace_title">Replace this lift</string>
+    <string name="program_replace_old">%1$s, as planned now</string>
+    <string name="program_replace_with">Replace with</string>
+    <string name="program_replace_browse">Browse all movements</string>
+    <string name="program_replace_empty">Empty — find the weight</string>
+    <string name="program_replace_empty_hint">Keeps the plan\'s reps, clears the loads. The first session asks for the weight.</string>
+    <string name="program_replace_seeded">Seeded from last time: %1$s</string>
+    <string name="program_replace_no_seed">No history for this movement: the target is cleared.</string>
+    <string name="program_replace_sets">Working sets: %1$d → %2$d</string>
+    <string name="program_replace_shared">Also changes: %1$s</string>
+    <string name="program_replace_confirm">Replace</string>
+    <string name="program_replace_back">Back</string>
+    <string name="program_replace_undo">Replaced the lift</string>
+    <string name="program_replace_undo_action">Undo</string>
+    <string name="program_replace_loading">Reading the plan…</string>
     <!-- The per-lift deload's confirm (ROADMAP N307). The plan itself changes, so the numbers are shown
          before the write and the other programs only when the plan is actually shared. -->
     <string name="program_deload_lift_title">Deload this lift?</string>

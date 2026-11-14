@@ -29,13 +29,14 @@ import com.example.androidapp.ui.components.TestTags
  * lifter that a week of their training should change.
  *
  * The answer is a **plan edit**: "Deload this lift" (N307) drops this plan's later work sets and three load
- * steps. The week-level creator (N147) is the other answer and stays as the secondary link — a lighter *week*
- * is a different decision from a lighter *lift*, and the copy keeps the two apart.
+ * steps, "Replace this lift" (N308) changes the movement, and the week-level creator (N147) stays as the
+ * secondary link — a lighter *week* is a different decision from a lighter *lift*.
  */
 @Composable
 internal fun PlanStallCard(
     stall: PlanStall,
     onDeloadLift: () -> Unit,
+    onReplaceLift: () -> Unit,
     onOpenDeload: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -68,6 +69,12 @@ internal fun PlanStallCard(
                     modifier = Modifier.testTag(TestTags.Programs.STALL_DELOAD),
                 ) {
                     Text(stringResource(R.string.program_stall_deload))
+                }
+                AppTextButton(
+                    onClick = onReplaceLift,
+                    modifier = Modifier.testTag(TestTags.Programs.STALL_REPLACE_LIFT),
+                ) {
+                    Text(stringResource(R.string.program_stall_replace_lift))
                 }
                 AppTextButton(
                     onClick = onDeloadLift,

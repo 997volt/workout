@@ -13,6 +13,7 @@ import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MAX_REPS
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.ReplacementSeed
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.runAt
@@ -708,6 +709,48 @@ class TemplateRepositoryTest {
         val undone = repository.observeSets(template).first()
         assertEquals(5, undone.size)
         assertEquals(100_000L, undone.first().targetWeightGrams)
+    }
+
+    @Test
+    fun theReplace_writesANewRowWithNewSetIds_andTheUndoRestoresTheOld() = runTest {
+        val template = create("Legs")
+        val old = plannedExercise(template)
+        repeat(5) {
+            repository.addSet(
+                old,
+                TemplateSetEdit(
+                    role = SetType.NORMAL,
+                    targetWeightGrams = 100_000L,
+                    targetRepsMin = 5,
+                    targetRepsMax = 8,
+                ),
+            )
+        }
+
+        val outcome = (
+            repository.replaceExercise(
+                old,
+                "bench-press",
+                listOf(ReplacementSeed(80_000L, 0L, 6, null)),
+                empty = false,
+            ) as DataResult.Success
+            ).data
+
+        val replaced = repository.observeExercises(template).first().single()
+        assertEquals(outcome.newTemplateExerciseId, replaced.id)
+        assertEquals("bench-press", replaced.exerciseId)
+        // Five work sets trim to three; the one seed went to the first place, the others are cleared.
+        assertEquals(3, replaced.sets.size)
+        assertEquals(80_000L, replaced.sets.first().targetWeightGrams)
+        assertEquals(6, replaced.sets.first().targetRepsMin)
+        assertNull(replaced.sets[1].targetWeightGrams)
+        assertEquals("a new row has new set ids", 3, replaced.sets.map { it.id }.distinct().size)
+
+        assertTrue(repository.undoReplaceExercise(outcome) is DataResult.Success)
+
+        val restored = repository.observeExercises(template).first().single()
+        assertEquals(old, restored.id)
+        assertEquals(5, restored.sets.size)
     }
 
     private fun TemplateSet.toEdit() = TemplateSetEdit(

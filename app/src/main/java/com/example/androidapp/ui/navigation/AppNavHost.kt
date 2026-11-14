@@ -35,6 +35,7 @@ import com.example.androidapp.ui.programs.ProgramBalanceRoute
 import com.example.androidapp.ui.programs.ProgramDeloadRoute
 import com.example.androidapp.ui.programs.ProgramEditorRoute
 import com.example.androidapp.ui.programs.ProgramProgressionRoute
+import com.example.androidapp.ui.programs.ProgramReplaceRoute
 import com.example.androidapp.ui.programs.ProgramWeeksRoute
 import com.example.androidapp.ui.programs.ProgramsRoute
 import com.example.androidapp.ui.settings.DiagnosticsRoute
@@ -138,6 +139,27 @@ fun AppNavHost(
     }
 }
 
+/** The week in review, pulled out of the home graph's length (N247, N308). */
+private fun NavGraphBuilder.weeklyReviewDestination(navController: NavHostController) {
+    composable<WeeklyReview> {
+        WeeklyReviewRoute(
+            onBack = { navController.popBackStack() },
+            onOpenDeload = { programId -> navController.navigate(ProgramDeload(programId)) },
+            onDeloadLift = navController::openDeloadConfirm,
+            onReplaceLift = { programId, templateId, templateExerciseId ->
+                // The plan editor, not this screen, is the replace sheet's parent: the undo lives there.
+                navController.navigate(
+                    ProgramEditor(
+                        programId = programId,
+                        replaceTemplateId = templateId,
+                        replaceTemplateExerciseId = templateExerciseId,
+                    ),
+                )
+            },
+        )
+    }
+}
+
 /** The stall card's/the finish's hand-off to the plan editor's deload confirm (N307, N310). */
 private fun NavHostController.openDeloadConfirm(
     programId: String,
@@ -162,13 +184,7 @@ private fun NavGraphBuilder.homeDestinations(navController: NavHostController) {
         AdherenceRoute(onBack = { navController.popBackStack() })
     }
 
-    composable<WeeklyReview> {
-        WeeklyReviewRoute(
-            onBack = { navController.popBackStack() },
-            onOpenDeload = { programId -> navController.navigate(ProgramDeload(programId)) },
-            onDeloadLift = navController::openDeloadConfirm,
-        )
-    }
+    weeklyReviewDestination(navController)
 
     composable<Settings> {
         SettingsRoute(
@@ -248,6 +264,27 @@ private fun NavGraphBuilder.workoutDestinations(navController: NavHostController
         ExercisePickerRoute(
             onAddExercise = { navController.popBackStack() },
             onBack = { navController.popBackStack() },
+            onPick = { exerciseId ->
+                // The replace sheet's browse answer (N308): this entry is its parent, and the sheet reads it.
+                navController.previousBackStackEntry?.savedStateHandle?.set("replaceExerciseId", exerciseId)
+                navController.popBackStack()
+            },
+        )
+    }
+
+    composable<ProgramReplace> { entry ->
+        val route = entry.toRoute<ProgramReplace>()
+        ProgramReplaceRoute(
+            onBack = { navController.popBackStack() },
+            onBrowse = { navController.navigate(ExercisePicker(replaceFor = route.templateExerciseId)) },
+            onReplace = { outcome ->
+                // The parent plan screen owns the undo (decision 3a); the result travels through its handle.
+                val previous = navController.previousBackStackEntry
+                previous?.savedStateHandle?.set("replaceOldId", outcome.oldTemplateExerciseId)
+                previous?.savedStateHandle?.set("replaceNewId", outcome.newTemplateExerciseId)
+                previous?.savedStateHandle?.set("replaceSetIds", ArrayList(outcome.newSetIds))
+                navController.popBackStack()
+            },
         )
     }
 }
@@ -326,6 +363,10 @@ private fun NavGraphBuilder.programDestinations(navController: NavHostController
             onOpenBalance = { navController.navigate(ProgramBalance(programId)) },
             // The same program's deload week, built from its own workouts (N147), from a stall card.
             onOpenDeload = { navController.navigate(ProgramDeload(programId)) },
+            // The plan edit's sheet (N308); this screen is its parent, so its result and undo come back here.
+            onReplaceLift = { templateId, templateExerciseId ->
+                navController.navigate(ProgramReplace(programId, templateId, templateExerciseId))
+            },
             // Exempt this/next week or build a lighter one (N300).
             onOpenWeeks = { navController.navigate(ProgramWeeks(programId)) },
             onOpenProgression = { navController.navigate(ProgramProgression(programId)) },

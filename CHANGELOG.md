@@ -24,6 +24,16 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   names another program only when that program actually shares the plan. The undo restores the whole edit, not
   only the targets. The plan is the new baseline, so the next session progresses from it; the auto progression
   switch, its baseline and the reset are untouched.
+- **A stalled lift can be replaced in place** (N308). The stall card's "Replace this lift" writes a new
+  exercise row at the old position with **new set ids** and soft-deletes the old row, so the old movement's
+  history stays and the Auto progression baseline cannot carry its numbers onto the new lift. The plan keeps
+  N307's trim, the rest, superset group and target effort; the cue is cleared and the warm-ups' targets are
+  cleared; the kept rungs keep their ladders. The kept work sets are seeded by place from the new movement's
+  last finished session, with **Empty** keeping the plan's reps and clearing the loads instead. The
+  suggestions are the movements filed under the old movement's category; another family is one *Browse all
+  movements* away. The confirm names another program only when the plan is shared, and the undo restores the
+  old row.
+
 
 ### Changed
 

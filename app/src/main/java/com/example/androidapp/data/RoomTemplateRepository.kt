@@ -20,6 +20,8 @@ import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.dataResultOf
 import com.example.androidapp.domain.model.ExerciseDeload
 import com.example.androidapp.domain.model.MAX_REPS
+import com.example.androidapp.domain.model.ReplaceOutcome
+import com.example.androidapp.domain.model.ReplacementSeed
 import com.example.androidapp.domain.model.Rpe
 import com.example.androidapp.domain.model.RungRun
 import com.example.androidapp.domain.model.SetType
@@ -27,6 +29,7 @@ import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.WorkoutTemplate
 import com.example.androidapp.domain.model.deloadOf
+import com.example.androidapp.domain.model.replacementOf
 import com.example.androidapp.domain.model.runAt
 import com.example.androidapp.domain.model.rungLoad
 import com.example.androidapp.domain.nowEpochMillis
@@ -537,6 +540,79 @@ class RoomTemplateRepository @Inject constructor(
         }
         plan
     }
+
+    override suspend fun replaceExercise(
+        templateExerciseId: String,
+        newExerciseId: String,
+        seeds: List<ReplacementSeed?>,
+        empty: Boolean,
+    ): DataResult<ReplaceOutcome> = dataResultOf {
+        val old = dao.findTemplateExercise(templateExerciseId)
+            ?: throw NotFoundException("template exercise $templateExerciseId")
+        val plan = replacementOf(plannedSetsOf(old), seeds, empty)
+        val now = timeSource.nowEpochMillis()
+        val newRowId = UUID.randomUUID().toString()
+        val setIds = plan.sets.map { UUID.randomUUID().toString() }
+        database.withTransaction {
+            dao.insertTemplateExercise(
+                TemplateExerciseEntity(
+                    id = newRowId,
+                    templateId = old.templateId,
+                    exerciseId = newExerciseId,
+                    position = old.position,
+                    restSeconds = old.restSeconds,
+                    // The cue was the old movement's; the rest and the effort are the plan's.
+                    techniqueNote = null,
+                    targetRpeHalves = old.targetRpeHalves,
+                    supersetGroup = old.supersetGroup,
+                    createdAt = now,
+                    updatedAt = now,
+                    deletedAt = null,
+                ),
+            )
+            plan.sets.forEachIndexed { index, set ->
+                setDao.insertTemplateSet(
+                    TemplateSetEntity(
+                        id = setIds[index],
+                        templateExerciseId = newRowId,
+                        setIndex = index,
+                        role = set.role,
+                        targetWeightGrams = set.weightGrams,
+                        targetAssistanceGrams = set.assistanceGrams,
+                        targetRepsMin = set.repsMin,
+                        targetRepsMax = set.repsMax,
+                        targetRepsCurrent = set.repsCurrent,
+                        dropValueGrams = set.dropValueGrams,
+                        targetDurationSeconds = set.targetDurationSeconds,
+                        note = set.note,
+                        createdAt = now,
+                        updatedAt = now,
+                        deletedAt = null,
+                    ),
+                )
+            }
+            if (dao.softDeleteTemplateExercise(old.id, now) == 0) {
+                throw NotFoundException("template exercise ${old.id}")
+            }
+        }
+        ReplaceOutcome(
+            oldTemplateExerciseId = old.id,
+            newTemplateExerciseId = newRowId,
+            newSetIds = setIds,
+        )
+    }
+
+    override suspend fun undoReplaceExercise(outcome: ReplaceOutcome): DataResult<Unit> =
+        dataResultOf {
+            val now = timeSource.nowEpochMillis()
+            database.withTransaction {
+                outcome.newSetIds.forEach { setDao.softDeleteTemplateSet(it, now) }
+                dao.softDeleteTemplateExercise(outcome.newTemplateExerciseId, now)
+                if (dao.restoreTemplateExercise(outcome.oldTemplateExerciseId, now) == 0) {
+                    throw NotFoundException("template exercise ${outcome.oldTemplateExerciseId}")
+                }
+            }
+        }
 
     /**
      * What one planned set's removal takes with it (ROADMAP N79, B152, B339).

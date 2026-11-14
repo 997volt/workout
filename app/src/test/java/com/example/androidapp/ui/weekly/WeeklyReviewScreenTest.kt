@@ -38,6 +38,7 @@ class WeeklyReviewScreenTest {
     private fun show(
         state: WeeklyReviewUiState,
         onDeloadLift: (String, String, String) -> Unit = { _, _, _ -> },
+        onReplaceLift: (String, String, String) -> Unit = { _, _, _ -> },
     ) {
         composeTestRule.setContent {
             WeeklyReviewScreen(
@@ -46,6 +47,7 @@ class WeeklyReviewScreenTest {
                 onRetry = {},
                 onOpenDeload = {},
                 onDeloadLift = onDeloadLift,
+                onReplaceLift = onReplaceLift,
             )
         }
     }
@@ -201,6 +203,29 @@ class WeeklyReviewScreenTest {
         )
 
         composeTestRule.onNodeWithTag(TestTags.Programs.STALL_DELOAD_LIFT).performScrollTo().performClick()
+
+        assertThat(target).isEqualTo(Triple("p1", "t1", "te1"))
+    }
+
+    @Test
+    fun theStallCard_handsTheReplaceToTheProgramEditor() {
+        var target: Triple<String, String, String>? = null
+        show(
+            WeeklyReviewUiState(
+                isLoading = false,
+                stall = PlanStall(
+                    exerciseName = "Back Squat",
+                    sessions = 3,
+                    templateId = "t1",
+                    templateExerciseId = "te1",
+                    exerciseId = "squat",
+                ),
+                stallProgramId = "p1",
+            ),
+            onReplaceLift = { programId, templateId, exerciseId -> target = Triple(programId, templateId, exerciseId) },
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.STALL_REPLACE_LIFT).performScrollTo().performClick()
 
         assertThat(target).isEqualTo(Triple("p1", "t1", "te1"))
     }

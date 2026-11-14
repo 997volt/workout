@@ -368,6 +368,24 @@ the rule; that one argues it.
   edits; the weekly review hands the same target to the program editor (N310), which owns the confirm and the
   undo.
 
+- **A replace is a new plan row, not a renamed one** (N308, distinguishing N291's session substitution). A
+  session substitution changes one workout; a replace changes what the plan names, for every future session,
+  while the old movement's history stays the history it was. The row is **added at the old position with new
+  set ids** and the old row is soft-deleted rather than the exercise id being rewritten in place: the Auto
+  progression baseline names the old sets, so a Reset after a rename in place would write the old movement's
+  targets onto the new one (the B303 rule would make the stall clear for the wrong reason too). The old
+  baseline rows are now skipped and the new sets carry none, with no baseline code. The plan keeps N307's
+  trim (the survivor rule and the warm-up clearing), the rest, superset group and target effort; the cue is
+  cleared because it was the old movement's; the kept rungs keep their ladders. The kept work sets are seeded
+  **by place** from the new movement's last finished session — its weight, assistance and fixed reps, or its
+  hold — and a place with no counterpart is cleared, not guessed from the old plan; **Empty** is the
+  deliberate other choice, keeping the plan's reps and clearing the loads (N309's marker and prompt). The
+  category suggestions are the old movement's `parentId` family, movements only, minus the old row and the
+  plan's own; an unfiled movement has none and the browse picker is the way out. The confirm names another
+  program only when the plan is shared, and the undo takes the new row and sets back and restores the old row
+  (decision 4a). The weekly review/finish hand-off goes through the program editor first (3a), so the undo
+  lives on the plan screen.
+
 - **An encrypted export is a password-derived container, not a Keystore key** (N294). The Data section offers
   a second export beside the plain one: the ordinary backup JSON is wrapped in a self-describing JSON envelope
   (version, KDF, iteration count, salt, nonce, ciphertext), and PBKDF2-HMAC-SHA256 with 600,000 iterations and

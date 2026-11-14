@@ -60,6 +60,8 @@ fun WeeklyReviewRoute(
     onOpenDeload: (String) -> Unit,
     /** The per-lift plan edit's hand-off: the program, its template and the exercise row (N307, N310). */
     onDeloadLift: (String, String, String) -> Unit,
+    /** The replace sheet's hand-off (N308); the plan editor owns its undo. */
+    onReplaceLift: (String, String, String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: WeeklyReviewViewModel = hiltViewModel(),
 ) {
@@ -71,6 +73,7 @@ fun WeeklyReviewRoute(
         onRetry = viewModel::load,
         onOpenDeload = onOpenDeload,
         onDeloadLift = onDeloadLift,
+        onReplaceLift = onReplaceLift,
         modifier = modifier,
     )
 }
@@ -83,6 +86,7 @@ internal fun WeeklyReviewScreen(
     onRetry: () -> Unit,
     onOpenDeload: (String) -> Unit,
     onDeloadLift: (String, String, String) -> Unit,
+    onReplaceLift: (String, String, String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -125,6 +129,7 @@ internal fun WeeklyReviewScreen(
                 state = state,
                 onOpenDeload = onOpenDeload,
                 onDeloadLift = onDeloadLift,
+                onReplaceLift = onReplaceLift,
                 modifier = Modifier.padding(innerPadding),
             )
         }
@@ -136,6 +141,7 @@ private fun WeeklyReviewBody(
     state: WeeklyReviewUiState,
     onOpenDeload: (String) -> Unit,
     onDeloadLift: (String, String, String) -> Unit,
+    onReplaceLift: (String, String, String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val dateFormat = remember { DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM) }
@@ -173,6 +179,7 @@ private fun WeeklyReviewBody(
             programId = state.stallProgramId,
             onOpenDeload = onOpenDeload,
             onDeloadLift = onDeloadLift,
+            onReplaceLift = onReplaceLift,
         )
     }
 }
@@ -317,12 +324,14 @@ private fun StallSection(
     programId: String?,
     onOpenDeload: (String) -> Unit,
     onDeloadLift: (String, String, String) -> Unit,
+    onReplaceLift: (String, String, String) -> Unit,
 ) {
     if (stall != null && programId != null) {
         Box(modifier = Modifier.testTag(TestTags.WEEKLY_REVIEW_STALL)) {
             PlanStallCard(
                 stall = stall,
                 onDeloadLift = { onDeloadLift(programId, stall.templateId, stall.templateExerciseId) },
+                onReplaceLift = { onReplaceLift(programId, stall.templateId, stall.templateExerciseId) },
                 onOpenDeload = { onOpenDeload(programId) },
             )
         }

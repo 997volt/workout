@@ -4,6 +4,8 @@ import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.model.ExerciseDeload
 import com.example.androidapp.domain.model.ProgressionDirection
 import com.example.androidapp.domain.model.ProgressionTargets
+import com.example.androidapp.domain.model.ReplaceOutcome
+import com.example.androidapp.domain.model.ReplacementSeed
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSet
@@ -206,6 +208,25 @@ interface TemplateRepository {
      * restored by [updateSet] from the caller's before-state, which is what makes the undo the whole edit.
      */
     suspend fun deloadExercise(templateExerciseId: String, stepGrams: Long): DataResult<ExerciseDeload>
+
+    /**
+     * Replaces the movement a plan row names (ROADMAP N308): a **new exercise row at the old position with
+     * new set ids**, the old row soft-deleted, and the trimmed plan written onto the new row.
+     *
+     * [seeds] is the new movement's last finished work, by place, one per kept work set (null where it had
+     * no counterpart); [empty] is the deliberate "keep the plan's reps, clear the loads" choice instead
+     * (N309's marker and prompt). New set ids are deliberate: the auto progression baseline names the old
+     * sets, so a Reset cannot write the old movement's targets onto the new one.
+     */
+    suspend fun replaceExercise(
+        templateExerciseId: String,
+        newExerciseId: String,
+        seeds: List<ReplacementSeed?>,
+        empty: Boolean,
+    ): DataResult<ReplaceOutcome>
+
+    /** Takes a replace back: the new row and its sets go, the old row comes back (N308, decision 4a). */
+    suspend fun undoReplaceExercise(outcome: ReplaceOutcome): DataResult<Unit>
 
     /**
      * Takes a planned set's removal back, **at the position it held** (ROADMAP N90).

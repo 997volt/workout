@@ -559,6 +559,19 @@ private class FakeTemplateRepository(
     override suspend fun keepVersion(templateId: String): DataResult<Unit> = DataResult.Success(Unit)
     override fun observeExercises(templateId: String): Flow<List<TemplateExercise>> = flowOf(emptyList())
     override fun observeSets(templateId: String): Flow<List<TemplateSet>> = flowOf(emptyList())
+    override suspend fun replaceExercise(
+        templateExerciseId: String,
+        newExerciseId: String,
+        seeds: List<com.example.androidapp.domain.model.ReplacementSeed?>,
+        empty: Boolean,
+    ): DataResult<com.example.androidapp.domain.model.ReplaceOutcome> {
+        return unused()
+    }
+    override suspend fun undoReplaceExercise(
+        outcome: com.example.androidapp.domain.model.ReplaceOutcome,
+    ): DataResult<Unit> {
+        return unused()
+    }
     override suspend fun deloadExercise(
         templateExerciseId: String,
         stepGrams: Long,

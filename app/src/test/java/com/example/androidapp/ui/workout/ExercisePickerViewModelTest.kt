@@ -21,6 +21,7 @@ import com.example.androidapp.domain.repository.MergeSummary
 import com.example.androidapp.domain.repository.TemplateRepository
 import com.example.androidapp.domain.repository.TemplateSetEdit
 import com.example.androidapp.domain.repository.WorkoutRepository
+import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -86,6 +87,24 @@ class ExercisePickerViewModelTest {
     /** `uiState` uses `WhileSubscribed`, so nothing flows until it is collected. */
     private fun kotlinx.coroutines.test.TestScope.observe(viewModel: ExercisePickerViewModel) {
         backgroundScope.launch { viewModel.uiState.collect {} }
+    }
+
+    @Test
+    fun theReplaceMode_answersWithThePick_insteadOfAppending() = runTest(dispatcher) {
+        // N308: the picker is choosing a movement for the replace sheet, so its answer is the id.
+        val viewModel = ExercisePickerViewModel(
+            FakeExerciseRepository(),
+            FakeWorkoutRepository(),
+            FakeTemplateRepository(),
+            SavedStateHandle(mapOf("replaceFor" to "te1")),
+        )
+        observe(viewModel)
+
+        viewModel.onExerciseSelected("back-squat")
+        advanceUntilIdle()
+
+        assertThat(viewModel.picked.value).isEqualTo("back-squat")
+        assertThat(viewModel.added.value).isFalse()
     }
 
     @Test
@@ -603,6 +622,19 @@ class ExercisePickerViewModelTest {
         override fun observeExercises(templateId: String): Flow<List<TemplateExercise>> =
             flowOf(listOfNotNull(planned))
         override fun observeSets(templateId: String): Flow<List<TemplateSet>> = flowOf(emptyList())
+        override suspend fun replaceExercise(
+            templateExerciseId: String,
+            newExerciseId: String,
+            seeds: List<com.example.androidapp.domain.model.ReplacementSeed?>,
+            empty: Boolean,
+        ): DataResult<com.example.androidapp.domain.model.ReplaceOutcome> {
+            error("these tests do not write a plan")
+        }
+        override suspend fun undoReplaceExercise(
+            outcome: com.example.androidapp.domain.model.ReplaceOutcome,
+        ): DataResult<Unit> {
+            error("these tests do not write a plan")
+        }
         override suspend fun deloadExercise(
             templateExerciseId: String,
             stepGrams: Long,

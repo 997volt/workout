@@ -66,6 +66,10 @@ class ProgramEditorScreenTest {
         deloadUndo: DeloadUndo? = null,
         onUndoDeload: () -> Unit = {},
         onDismissDeloadUndo: () -> Unit = {},
+        onReplaceLift: (String, String) -> Unit = { _, _ -> },
+        replaceUndo: ReplaceUndo? = null,
+        onUndoReplace: () -> Unit = {},
+        onDismissReplaceUndo: () -> Unit = {},
         onOpenWeeks: () -> Unit = {},
         onOpenProgression: () -> Unit = {},
         onPreviewSlot: (String, String) -> Unit = { _, _ -> },
@@ -96,6 +100,10 @@ class ProgramEditorScreenTest {
                 deloadUndo = deloadUndo,
                 onUndoDeload = onUndoDeload,
                 onDismissDeloadUndo = onDismissDeloadUndo,
+                onReplaceLift = onReplaceLift,
+                replaceUndo = replaceUndo,
+                onUndoReplace = onUndoReplace,
+                onDismissReplaceUndo = onDismissReplaceUndo,
                 onOpenWeeks = onOpenWeeks,
                 onOpenProgression = onOpenProgression,
                 onPreviewSlot = onPreviewSlot,
@@ -156,6 +164,28 @@ class ProgramEditorScreenTest {
         composeTestRule.onNodeWithTag(TestTags.Programs.STALL_DELOAD_LIFT).performClick()
 
         assertThat(lift?.templateExerciseId).isEqualTo("te1")
+    }
+
+    @Test
+    fun theStallCard_offersTheReplaceSheet_besideTheDeload() {
+        // N308: the card's other plan edit; the sheet owns the movement choice, this is the way in.
+        var target: Pair<String, String>? = null
+        setScreen(
+            state = twoSlots.copy(
+                stall = PlanStall(
+                    exerciseName = "Back Squat",
+                    sessions = 3,
+                    templateId = "t1",
+                    templateExerciseId = "te1",
+                    exerciseId = "squat",
+                ),
+            ),
+            onReplaceLift = { templateId, templateExerciseId -> target = templateId to templateExerciseId },
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.STALL_REPLACE_LIFT).performClick()
+
+        assertThat(target).isEqualTo("t1" to "te1")
     }
 
     @Test
