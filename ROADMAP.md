@@ -28,8 +28,8 @@ stall card the program editor and weekly review share
 
 The trim those answers apply needs a counterweight: a plan that has lost sets should be able to earn them
 back, and a plan the lifter keeps over-performing deserves to catch up. **N311** is the mirror — the same
-three-session evidence, the same one-tap plan edit, the same undo — and it is a suggestion, never an
-automatic step: the Auto progression switch is unchanged.
+pattern-over-a-few-sessions evidence, the same one-tap plan edit, the same undo — and it is a suggestion,
+never an automatic step: the Auto progression switch is unchanged.
 
 **The existing Auto progression switch, its baseline and *Reset to starting targets* are untouched.**
 These actions never read or write `progression_baselines`; the reset stays the switch's memory of where the
@@ -101,22 +101,22 @@ its own captured targets on the sets that still exist — is unchanged and not s
 
 - **N311 — The plan earns a set back.** The counterweight to the trim: a plan edit that **adds** a working
   set, offered from evidence and never automatic. Two triggers, one action. **The extra set you keep
-  logging**: the plan prescribes N working sets and the session logged N+1, in each of the last two
-  finished sessions of that workout and in the one just done; the suggestion fires when the pattern
-  **reaches** three, as a
-  **Done snackbar** — *"Bench Press: a fourth set logged in each of the last 3 sessions. Add it to the
+  logging**: the plan prescribes N working sets and the session logged N+1, in the session just done and
+  in the previous finished one; the suggestion fires when the pattern **reaches** two, as a
+  **Done snackbar** — *"Bench Press: a fourth set logged in each of the last 2 sessions. Add it to the
   plan?"* — after the step dialog or the auto-progression banner, with **Add** and the usual undo, and it
   stays on the plan card while it holds if the snackbar is missed. **The plan is comfortable**: every
-  working set of the last three sessions met the plan — reps in the range, effort at or under the target —
-  with no stall open; that one lives on the plan card and the weekly review rather than at Done, because it
-  is a slower judgement than the session just finished. The write appends one NORMAL working set after the
-  exercise's last set: for the extra-set trigger, from the logged extra set's weight, assistance and reps;
+  working set of the session just done and the two finished before it met the plan — reps in the range,
+  effort at or under the target — with no stall open; that one is offered at Done too, as the same
+  one-shot snackbar when the pattern **reaches** three, with the plan card and the weekly review behind it.
+  The write appends one NORMAL working set after the exercise's last set: for the extra-set trigger, from the logged extra set's weight, assistance and reps;
   for the comfortable trigger, from the last kept set's target
   ([TemplateRepository.kt](app/src/main/java/com/example/androidapp/domain/repository/TemplateRepository.kt)
   `addSet`). The plan's effort stays; one transaction; snackbar undo; the plan takes effect the next
   session. The gates: no open stall, not a deload week's template, and the plan's work-set count below
-  **five** — the suggestion's cap, while the editor can still add more by hand. One suggestion at a time,
-  no stored "dismissed" state: the snackbar fires once at the threshold and the card carries the rest. The
+  **five** — the suggestion's cap, while the editor can still add more by hand. One suggestion at a time —
+  when both hold at Done, the extra set is offered first, since it is the lifter's own work — and no stored
+  "dismissed" state: each snackbar fires once at its threshold and the card carries the rest. The
   read is the same `templateSessions` the stall uses
   ([TrendsRepository.kt](app/src/main/java/com/example/androidapp/domain/repository/TrendsRepository.kt))
   plus the current session's work sets, the plan's count, the cap and the stall check; no schema. **No auto
@@ -127,7 +127,8 @@ its own captured targets on the sets that still exist — is unchanged and not s
 chooses, the arithmetic is shown"), the replace rule (the shared trim, the seed, the category suggestions,
 the cue, the shared-plan warning), the calibration (the marker, the blank first session, the prompt, the
 20 kg default exception), the surfaces (amending N305), and the volume rule (N311: the two triggers, the
-three-session threshold, the five-set cap, the Done snackbar and the card, and no automatic volume). N299
+two-session extra set and the three-session comfortable plan, both offered at Done, the five-set cap, the
+plan card behind them, and no automatic volume). N299
 is unchanged: the per-lift deload is the "separate rule" it names, and the auto switch, baseline and Reset
 are untouched. N16/B303 say why a plan
 edit clears the stall; N95/N110 are the suggestion source. Each row lands with its CHANGELOG entry under
