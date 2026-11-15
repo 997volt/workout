@@ -21,11 +21,6 @@ The review of everything unreleased at `ffcf0320` (N304–N311 and their fixes B
 below: the local gate and the full 510-test instrumented suite were green on the reviewed tree, so each row
 names a path the tests do not cover. The rows are ordered by severity.
 
-- **B448 — A failed stall read still says "No plan has stopped moving." (should fix).**
-  [WeeklyReviewScreen.kt](app/src/main/java/com/example/androidapp/ui/weekly/WeeklyReviewScreen.kt) (:397) draws
-  the empty-state sentence whenever `stalls` is empty, including when B439's advisory error is set (:226), so a
-  section says both "couldn't read" and "nothing stalled". Suppress the sentence when `stallError != null`, and
-  render a state carrying it.
 - **B449 — Plan edits can apply twice (minor).** The editor's and the weekly review's *Add* and the deload
   confirm have no in-flight guard ([ProgramEditorViewModel.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramEditorViewModel.kt)
   :556, :600; [WeeklyReviewViewModel.kt](app/src/main/java/com/example/androidapp/ui/weekly/WeeklyReviewViewModel.kt)

@@ -34,7 +34,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
-import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.model.BlockProgress
 import com.example.androidapp.domain.model.MovementGain
@@ -209,35 +208,29 @@ private fun WeeklyReviewBody(
         StallSection(
             stalls = state.stalls,
             programId = state.stallProgramId,
+            readFailed = state.stallError != null,
             onOpenDeload = onOpenDeload,
             onDeloadLift = onDeloadLift,
             onReplaceLift = onReplaceLift,
         )
-        WeeklyAdvisories(state = state, onAddVolume = onAddVolume)
-    }
-}
-
-/** The stall and earned-set sections with their own failures beside them (B439). */
-@Composable
-private fun WeeklyAdvisories(
-    state: WeeklyReviewUiState,
-    onAddVolume: (VolumeSuggestion) -> Unit,
-) {
-    state.stallError?.let { error -> AdvisoryLine(error) }
-    if (state.volumes.isNotEmpty() || state.volumeError != null) {
-        SectionHeader(text = stringResource(R.string.weekly_review_volume_title))
-        state.volumeError?.let { error -> AdvisoryLine(error) }
-        if (state.volumes.isNotEmpty()) {
-            PlanVolumeCard(suggestions = state.volumes, onAdd = onAddVolume)
+        // The earned-set section and its own failure (B439), which the stall read's failure does not replace.
+        if (state.volumes.isNotEmpty() || state.volumeError != null) {
+            SectionHeader(text = stringResource(R.string.weekly_review_volume_title))
+            if (state.volumeError != null) {
+                AdvisoryLine(stringResource(R.string.weekly_review_volume_failed))
+            }
+            if (state.volumes.isNotEmpty()) {
+                PlanVolumeCard(suggestions = state.volumes, onAdd = onAddVolume)
+            }
         }
     }
 }
 
 /** One advisory failure, said where its section is rather than replacing the week (B439). */
 @Composable
-private fun AdvisoryLine(error: DataError) {
+private fun AdvisoryLine(text: String) {
     Text(
-        text = dataErrorMessage(error),
+        text = text,
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.error,
     )
@@ -381,6 +374,8 @@ private fun MovedSection(movements: List<MovementGain>) {
 private fun StallSection(
     stalls: List<PlanStall>,
     programId: String?,
+    /** Whether the read that would have filled [stalls] failed (B439, B448). */
+    readFailed: Boolean,
     onOpenDeload: (String) -> Unit,
     onDeloadLift: (String, String, String) -> Unit,
     onReplaceLift: (String, String, String) -> Unit,
@@ -394,6 +389,9 @@ private fun StallSection(
                 onOpenDeload = { onOpenDeload(programId) },
             )
         }
+    } else if (readFailed) {
+        // "Nothing stalled" is a claim a failed read cannot make (B448); the section says what it knows.
+        AdvisoryLine(stringResource(R.string.weekly_review_stall_failed))
     } else {
         Text(
             text = stringResource(R.string.weekly_review_no_stall),

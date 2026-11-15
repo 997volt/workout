@@ -163,6 +163,8 @@
     <string name="weekly_review_moved_line">%1$s — %2$s %3$s (was %4$s %5$s)</string>
     <string name="weekly_review_stall_title">What stalled</string>
     <string name="weekly_review_no_stall">No plan has stopped moving.</string>
+    <string name="weekly_review_stall_failed">Couldn\'t check for stalled lifts.</string>
+    <string name="weekly_review_volume_failed">Couldn\'t update the earned sets.</string>
     <string name="weekly_review_retry">Try again</string>
     <string name="weekly_review_done">Done</string>
     <string name="weekly_review_missed">Missed</string>

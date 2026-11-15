@@ -7,6 +7,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.model.BlockProgress
 import com.example.androidapp.domain.model.DayOccurrence
 import com.example.androidapp.domain.model.MovementGain
@@ -24,6 +25,7 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.io.IOException
 import java.time.LocalDate
 
 /**
@@ -190,6 +192,40 @@ class WeeklyReviewScreenTest {
 
         composeTestRule.onNodeWithText("Squat day · Recovery week").performScrollTo().assertExists()
         composeTestRule.onNodeWithText("Squat day · Deload").assertDoesNotExist()
+    }
+
+    @Test
+    fun aFailedStallRead_saysSo_insteadOfClaimingNothingStalled() {
+        // B448: "No plan has stopped moving." is a claim a failed read cannot make.
+        show(
+            WeeklyReviewUiState(
+                isLoading = false,
+                weekStart = monday,
+                weekEnd = monday.plusDays(6),
+                hasActivePlan = true,
+                stallError = DataError.Storage(IOException("locked")),
+            ),
+        )
+
+        composeTestRule.onNodeWithText("No plan has stopped moving.").assertDoesNotExist()
+        composeTestRule.onNodeWithText("Couldn't check for stalled lifts.").assertExists()
+    }
+
+    @Test
+    fun aFailedEarnedSetRead_saysSo_inItsOwnSection() {
+        // B439: the advisory failure belongs to the earned-set section, not to the whole week.
+        show(
+            WeeklyReviewUiState(
+                isLoading = false,
+                weekStart = monday,
+                weekEnd = monday.plusDays(6),
+                hasActivePlan = true,
+                volumeError = DataError.Storage(IOException("locked")),
+            ),
+        )
+
+        composeTestRule.onNodeWithText("Earned sets").assertExists()
+        composeTestRule.onNodeWithText("Couldn't update the earned sets.").assertExists()
     }
 
     @Test

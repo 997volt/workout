@@ -182,6 +182,26 @@ class WeeklyReviewViewModelTest {
     }
 
     @Test
+    fun aFailedStallRead_isSaidBesideTheWeek_ratherThanReplacingIt() = runTest(dispatcher) {
+        // B439/B448: the week still draws, the failure is kept for its own section, and the screen no longer
+        // claims nothing stalled from a read that never answered.
+        val fake = FakeWeekly(
+            history = emptyList(),
+            occurrences = emptyMap(),
+            programs = listOf(program()),
+        ).apply { failStalls = true }
+        val viewModel = reviewViewModel(fake)
+
+        advanceUntilIdle()
+
+        val state = viewModel.state.value
+        assertThat(state.error).isNull()
+        assertThat(state.stallError).isNotNull()
+        assertThat(state.weekStart).isEqualTo(monday)
+        assertThat(state.days).hasSize(7)
+    }
+
+    @Test
     fun aFailedProgramRead_isAnError_ratherThanNoProgramFollowed() = runTest(dispatcher) {
         // N255: `hasActivePlan` feeds the sentence "No program is being followed", so a failed read cannot
         // answer it with false.
