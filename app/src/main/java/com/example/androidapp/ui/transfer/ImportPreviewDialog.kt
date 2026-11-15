@@ -100,8 +100,11 @@ private fun PreviewProblems(problems: List<BackupProblem>) {
         }
         if (problems.size > PROBLEMS_SHOWN) {
             Text(
+                // The item says "…and %1$d more.": the count is both the quantity and its argument
+                // (B453). Without the argument `String.format` threw before the preview could draw.
                 text = pluralStringResource(
                     R.plurals.import_preview_problem_more,
+                    problems.size - PROBLEMS_SHOWN,
                     problems.size - PROBLEMS_SHOWN,
                 ),
                 style = MaterialTheme.typography.bodySmall,

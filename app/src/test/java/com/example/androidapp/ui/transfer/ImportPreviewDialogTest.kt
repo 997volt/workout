@@ -69,6 +69,25 @@ class ImportPreviewDialogTest {
     }
 
     @Test
+    fun aFileWithMoreProblemsThanShown_saysHowManyMore() {
+        // B453: the "…and N more." plural has a %1$d, and the preview passed no argument for it, so
+        // formatting threw when a file had more than the four rows the dialog lists.
+        show(
+            BackupPreview(
+                sessions = PreviewCounts(0, 0, 0, 0),
+                sets = PreviewCounts(0, 0, 0, 0),
+                measurements = PreviewCounts(0, 0, 0, 0),
+                exercises = PreviewCounts(0, 0, 0, 0),
+                problems = (1..5).map {
+                    BackupProblem("Set $it", "A counted set needs between 1 and 10000 reps.")
+                },
+            ),
+        )
+
+        composeTestRule.onNodeWithText("…and 2 more.").assertExists()
+    }
+
+    @Test
     fun aLegacyFile_saysItsOutOfRangeValues_willBeRestoredAsIs() {
         // B374: a file written before the current ceilings may hold a 183% reading; refusing it would
         // lose the only copy, so the preview accepts it and says the values travel as they are.

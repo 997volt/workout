@@ -21,10 +21,6 @@ The review of everything unreleased at `ffcf0320` (N304–N311 and their fixes B
 below: the local gate and the full 510-test instrumented suite were green on the reviewed tree, so each row
 names a path the tests do not cover. The rows are ordered by severity.
 
-- **B453 — The import preview's "and N more" crashes (pre-existing).** Found while checking the batch's format
-  strings: [ImportPreviewDialog.kt](app/src/main/java/com/example/androidapp/ui/transfer/ImportPreviewDialog.kt)
-  (:101) passes no format argument for a `%1$d` plural item, so a file with more than three problems throws
-  `MissingFormatArgumentException` when the preview opens. Pass the count. It predates this batch.
 - **N313 — The review's missing tests.** B438's promised race tests never landed; B439's weekly failures have
   none (`failStalls` is never flipped and no screen test carries `stallError`/`volumeError`); no Compose test
   renders the workout's volume snackbar, which is why B445 shipped. Add those, and the second-row dialog test
