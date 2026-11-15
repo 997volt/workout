@@ -161,7 +161,9 @@ the APK is downloadable:
 
 ```bash
 gh run download <the dispatch run id> -n r8-mapping -D /tmp/r8-mapping
-gh release upload v1.3 /tmp/r8-mapping/mapping.txt#mapping-1.3.txt --clobber
+# The asset's **name** is what the remote check downloads; `file#label` only sets a label, so rename it first.
+cp /tmp/r8-mapping/mapping.txt /tmp/r8-mapping/mapping-1.3.txt
+gh release upload v1.3 /tmp/r8-mapping/mapping-1.3.txt --clobber
 ```
 
 Then check that what is published is the file the notes describe. This is the one step that needs
@@ -169,7 +171,7 @@ the network and a token, so it is opt-in — it downloads the APK and mapping wi
 to the files just verified:
 
 ```bash
-./tools/verify-release.py --remote v1.3 --commit <the release commit>
+./tools/verify-release.py --remote v1.3 --commit <the full release commit>
 ```
 
 **Do not skip it because the upload looked right.** The two failures it catches are a wrong file
