@@ -153,9 +153,14 @@ class ProgramEditorScreenTest {
     }
 
     @Test
+    @Config(qualifiers = "w411dp-h2000dp")
     fun theStallCard_listsEveryStalledLift() {
         // N310: the card no longer stops at the first; each stalled plan is a decision of its own.
+        // N312: the second lift's button is its own — a card that drew both but handed every press the
+        // first row would still list them, so the second is the one pressed here.
+        var lift: PlanStall? = null
         setScreen(
+            onDeloadLift = { lift = it },
             state = twoSlots.copy(
                 stalls = listOf(
                     PlanStall(
@@ -179,7 +184,9 @@ class ProgramEditorScreenTest {
         composeTestRule.onNodeWithText("Back Squat").assertExists()
         composeTestRule.onNodeWithText("Bench Press").assertExists()
         composeTestRule.onNodeWithTag(TestTags.Programs.stallDeloadLift("te1")).assertExists()
-        composeTestRule.onNodeWithTag(TestTags.Programs.stallDeloadLift("te2")).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Programs.stallDeloadLift("te2")).performClick()
+
+        assertThat(lift?.templateExerciseId).isEqualTo("te2")
     }
 
     @Test

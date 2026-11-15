@@ -42,6 +42,7 @@ import com.example.androidapp.domain.model.StatisticsRange
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSession
 import com.example.androidapp.domain.model.TemplateSet
+import com.example.androidapp.domain.model.VolumeReason
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.WorkoutSession
 import com.example.androidapp.domain.model.WorkoutSummary
@@ -248,14 +249,23 @@ class ActiveWorkoutViewModelTest {
     )
 
     /** One stored session row, as the finish reads the session to know what it trained (B442). */
-    private fun aSessionExercise(exerciseId: String) = SessionExercise(
-        id = "se-$exerciseId",
+    private fun aSessionExercise(
+        exerciseId: String,
+        id: String = "se-$exerciseId",
+        position: Int = 0,
+        substitutedFrom: String? = null,
+        isTimed: Boolean = false,
+        name: String = "Back Squat",
+    ) = SessionExercise(
+        id = id,
         sessionId = "s1",
         exerciseId = exerciseId,
-        position = 0,
-        exerciseName = "Back Squat",
+        substitutedFromExerciseId = substitutedFrom,
+        position = position,
+        exerciseName = name,
         primaryMuscle = null,
         equipment = null,
+        isTimed = isTimed,
     )
 
     /** Two exercises the plan answers, so two *Done* presses can each earn a step (B402). */
@@ -1469,7 +1479,6 @@ class ActiveWorkoutViewModelTest {
         // cancel was lost: a finished workout must not leave a rest alarm armed.
     }
 
-
     @Test
     fun aStallForAMovementTheSessionDidNotTrain_isNotSaid() = runTest(dispatcher) {
         // B442: a run of three survives a workout of the template that did not train the lift, so the
@@ -1530,7 +1539,6 @@ class ActiveWorkoutViewModelTest {
         assertTrue("dismissing it closes the workout", viewModel.closed.value)
     }
 
-
     @Test
     fun aMarkedPlan_isAskedAtTheFinish_beforeAnyStall() = runTest(dispatcher) {
         // N312: the calibration notice, its Use/Skip answer and the calibration-before-stall ordering.
@@ -1553,6 +1561,8 @@ class ActiveWorkoutViewModelTest {
             planned = listOf(
                 plannedExercise(
                     position = 0,
+                    // An effort the rule can progress, so the stall behind the question is a real one.
+                    targetRpeHalves = 16,
                     sets = listOf(plannedSet(index = 0, reps = 5, weightGrams = 100_000L)),
                 ).copy(calibrationPending = true),
             ),
@@ -1581,7 +1591,386 @@ class ActiveWorkoutViewModelTest {
         settle()
 
         assertNull("one answer clears the prompt", viewModel.calibrationNotice.value)
+        val adopted = marked.calibrations.single()
+        assertEquals("the answer is the plan row the session followed", "te-0", adopted.first)
+        assertEquals("and today's number for the set it logged", 100_000L, adopted.second.single().weightGrams)
+        assertEquals("with the plan's own set id", "ts-0", adopted.second.single().setId)
+        assertEquals(
+            "the stall is owed once the question is answered",
+            "Back Squat",
+            viewModel.stallNotice.value?.single()?.exerciseName,
+        )
     }
+
+    @Test
+    fun skippingTheCalibration_marksThePlanWeightless_andClearsThePrompt() = runTest(dispatcher) {
+        // N312: *Not now* is an answer too — it clears the one-shot marker without adopting anything.
+        val repository = FakeWorkoutRepository()
+        val trends = FakeTrendsRepository().apply { templateSessions = DataResult.Success(emptyList()) }
+        repository.exercises.value = listOf(aSessionExercise("back-squat"))
+        repository.sets.value = listOf(
+            SetEntry(
+                id = "e1",
+                sessionExerciseId = "se-back-squat",
+                setIndex = 0,
+                reps = 5,
+                weightGrams = 100_000L,
+            ),
+        )
+        val marked = FakeTemplateRepository(
+            planned = listOf(
+                plannedExercise(
+                    position = 0,
+                    sets = listOf(plannedSet(index = 0, reps = 5, weightGrams = 100_000L)),
+                ).copy(calibrationPending = true),
+            ),
+        )
+        marked.sets.value = mapOf("t1" to listOf(plannedSet(index = 0, reps = 5, weightGrams = 100_000L)))
+        val viewModel = viewModelFor(repository, templateId = "t1", templates = marked, trends = trends)
+        observe(viewModel)
+        settle()
+
+        viewModel.onFinish()
+        settle()
+        val notice = viewModel.calibrationNotice.value!!.single()
+
+        viewModel.onSkipCalibration(notice)
+        settle()
+
+        assertNull("the prompt is one-shot either way", viewModel.calibrationNotice.value)
+        assertEquals("the plan is left weightless", "te-0" to false, marked.calibrationMarks.single())
+        assertTrue("and nothing was adopted", marked.calibrations.isEmpty())
+        assertTrue("with nothing left to ask, the workout closes", viewModel.closed.value)
+    }
+
+    @Test
+    fun aMarkedPlanTrainedByAStandIn_isNotAsked() = runTest(dispatcher) {
+        // N312 (decision 6a): a substituted row did not train the plan's movement, so it says nothing
+        // about the weight the plan should adopt.
+        val repository = FakeWorkoutRepository()
+        repository.exercises.value = listOf(
+            aSessionExercise("bench-press", id = "se-bench", substitutedFrom = "back-squat"),
+        )
+        repository.sets.value = listOf(
+            SetEntry(
+                id = "e1",
+                sessionExerciseId = "se-bench",
+                setIndex = 0,
+                reps = 5,
+                weightGrams = 80_000L,
+            ),
+        )
+        val marked = FakeTemplateRepository(
+            planned = listOf(
+                plannedExercise(
+                    position = 0,
+                    sets = listOf(plannedSet(index = 0, reps = 5, weightGrams = 100_000L)),
+                ).copy(calibrationPending = true),
+            ),
+        )
+        marked.sets.value = mapOf("t1" to listOf(plannedSet(index = 0, reps = 5, weightGrams = 100_000L)))
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = marked,
+            trends = FakeTrendsRepository().apply { templateSessions = DataResult.Success(emptyList()) },
+        )
+        observe(viewModel)
+        settle()
+
+        viewModel.onFinish()
+        settle()
+
+        assertNull("a stand-in is not the plan's movement", viewModel.calibrationNotice.value)
+        assertTrue("and nothing is adopted from it", marked.calibrations.isEmpty())
+    }
+
+    @Test
+    fun aDuplicateMovement_isAskedForTheRowTheSessionFollowed() = runTest(dispatcher) {
+        // N312 (B428): a plan may name the same movement twice. Only the second row is marked and only its
+        // own performed set answers the question, not the first row with the same movement id.
+        val repository = FakeWorkoutRepository()
+        repository.exercises.value = listOf(
+            aSessionExercise("back-squat", id = "se-a", position = 0),
+            aSessionExercise("back-squat", id = "se-b", position = 1),
+        )
+        repository.sets.value = listOf(
+            SetEntry(id = "a1", sessionExerciseId = "se-a", setIndex = 0, reps = 5, weightGrams = 80_000L),
+            SetEntry(id = "b1", sessionExerciseId = "se-b", setIndex = 0, reps = 5, weightGrams = 110_000L),
+        )
+        val first = plannedExercise(
+            position = 0,
+            sets = listOf(plannedSet(index = 0, reps = 5, weightGrams = 80_000L)),
+        )
+        val second = plannedExercise(
+            position = 1,
+            sets = listOf(
+                TemplateSet(
+                    id = "ts-1",
+                    templateExerciseId = "te-1",
+                    setIndex = 0,
+                    role = SetType.NORMAL,
+                    targetWeightGrams = 80_000L,
+                    targetRepsMax = 5,
+                ),
+            ),
+        ).copy(calibrationPending = true)
+        val marked = FakeTemplateRepository(planned = listOf(first, second))
+        marked.sets.value = mapOf("t1" to (first.sets + second.sets))
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = marked,
+            trends = FakeTrendsRepository().apply { templateSessions = DataResult.Success(emptyList()) },
+        )
+        observe(viewModel)
+        settle()
+
+        viewModel.onFinish()
+        settle()
+
+        val notice = viewModel.calibrationNotice.value!!.single()
+        assertEquals("only the marked row is asked", "te-1", notice.templateExerciseId)
+        assertEquals("with the row the session followed", 110_000L, notice.topWeightGrams)
+        assertEquals("and its own planned set", "ts-1", notice.targets.single().setId)
+        assertEquals(110_000L, notice.targets.single().weightGrams)
+    }
+
+    @Test
+    fun aMarkedPlanWithMoreLoggedThanPlanned_calibratesOnlyItsPlaces() = runTest(dispatcher) {
+        // N312 (decision 6a): an extra set is N311's business, not the calibration's. The answer carries the
+        // plan's two places, so a fourth logged set cannot append a third target the plan never wrote.
+        val repository = FakeWorkoutRepository()
+        repository.exercises.value = listOf(aSessionExercise("back-squat"))
+        repository.sets.value = listOf(
+            SetEntry(id = "e1", sessionExerciseId = "se-back-squat", setIndex = 0, reps = 5, weightGrams = 100_000L),
+            SetEntry(id = "e2", sessionExerciseId = "se-back-squat", setIndex = 1, reps = 5, weightGrams = 105_000L),
+            SetEntry(id = "e3", sessionExerciseId = "se-back-squat", setIndex = 2, reps = 5, weightGrams = 110_000L),
+        )
+        val planned = FakeTemplateRepository(
+            planned = listOf(
+                plannedExercise(
+                    position = 0,
+                    sets = (0 until 2).map { plannedSet(index = it, reps = 5, weightGrams = 100_000L) },
+                ).copy(calibrationPending = true),
+            ),
+        )
+        planned.sets.value = mapOf(
+            "t1" to (0 until 2).map { plannedSet(index = it, reps = 5, weightGrams = 100_000L) },
+        )
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = planned,
+            trends = FakeTrendsRepository().apply { templateSessions = DataResult.Success(emptyList()) },
+        )
+        observe(viewModel)
+        settle()
+
+        viewModel.onFinish()
+        settle()
+
+        val notice = viewModel.calibrationNotice.value!!.single()
+        assertEquals("only the plan's places are counted", 2, notice.setCount)
+        assertEquals("and only they are adopted", 2, notice.targets.size)
+        assertEquals(listOf(100_000L, 105_000L), notice.targets.map { it.weightGrams })
+    }
+
+    @Test
+    fun aMarkedPlanWithFewerLoggedThanPlanned_calibratesWhatWasDone() = runTest(dispatcher) {
+        // N312: a short session answers for the sets it logged, not for an unlogged place the plan holds.
+        val repository = FakeWorkoutRepository()
+        repository.exercises.value = listOf(aSessionExercise("back-squat"))
+        repository.sets.value = listOf(
+            SetEntry(id = "e1", sessionExerciseId = "se-back-squat", setIndex = 0, reps = 5, weightGrams = 100_000L),
+        )
+        val planned = FakeTemplateRepository(
+            planned = listOf(
+                plannedExercise(
+                    position = 0,
+                    sets = (0 until 3).map { plannedSet(index = it, reps = 5, weightGrams = 100_000L) },
+                ).copy(calibrationPending = true),
+            ),
+        )
+        planned.sets.value = mapOf(
+            "t1" to (0 until 3).map { plannedSet(index = it, reps = 5, weightGrams = 100_000L) },
+        )
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = planned,
+            trends = FakeTrendsRepository().apply { templateSessions = DataResult.Success(emptyList()) },
+        )
+        observe(viewModel)
+        settle()
+
+        viewModel.onFinish()
+        settle()
+
+        val notice = viewModel.calibrationNotice.value!!.single()
+        assertEquals("one set was done, so one is adopted", 1, notice.setCount)
+        assertEquals("ts-0", notice.targets.single().setId)
+        assertEquals(100_000L, notice.targets.single().weightGrams)
+    }
+
+    @Test
+    fun aMarkedTimedPlan_adoptsTheHoldItLogged() = runTest(dispatcher) {
+        // N312 (B435): a marked timed movement's blank first set made *Use* calibrate the plan to 0. A timed
+        // row that logged a real load is asked like any other, and its load is what the answer carries.
+        val repository = FakeWorkoutRepository()
+        repository.exercises.value = listOf(
+            aSessionExercise("farmer-carry", id = "se-carry", isTimed = true, name = "Farmer's Carry"),
+        )
+        repository.sets.value = listOf(
+            SetEntry(
+                id = "e1",
+                sessionExerciseId = "se-carry",
+                setIndex = 0,
+                reps = 0,
+                weightGrams = 20_000L,
+                durationSeconds = 40,
+            ),
+        )
+        val carrySet = TemplateSet(
+            id = "ts-carry",
+            templateExerciseId = "te-carry",
+            setIndex = 0,
+            role = SetType.NORMAL,
+            targetDurationSeconds = 40,
+        )
+        val carryPlan = TemplateExercise(
+            id = "te-carry",
+            templateId = "t1",
+            exerciseId = "farmer-carry",
+            position = 0,
+            exerciseName = "Farmer's Carry",
+            primaryMuscle = null,
+            equipment = null,
+            sets = listOf(carrySet),
+        )
+        val marked = FakeTemplateRepository(planned = listOf(carryPlan.copy(calibrationPending = true)))
+        marked.sets.value = mapOf("t1" to listOf(carrySet))
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = marked,
+            trends = FakeTrendsRepository().apply { templateSessions = DataResult.Success(emptyList()) },
+        )
+        observe(viewModel)
+        settle()
+
+        viewModel.onFinish()
+        settle()
+
+        val notice = viewModel.calibrationNotice.value!!.single()
+        assertEquals("the carry's load is a real number", 20_000L, notice.topWeightGrams)
+        assertEquals("and the plan's hold is not turned into reps", 1, notice.setCount)
+    }
+
+    @Test
+    fun theEarnedSet_isOfferedAfterDone_andItsAddAndUndoAreTheRepositories() = runTest(dispatcher) {
+        // N312: the finish's earned-set card — suggestVolume, onAddVolume and onUndoVolume — had no test at
+        // all; the plan screen's copy was the only one exercised.
+        val (viewModel, templates) = earnedSetWorkout()
+
+        val suggestion = viewModel.volumeSuggestion.value
+        assertEquals("the turn's extra set", VolumeReason.EXTRA_SET, suggestion?.reason)
+        assertEquals("te-0", suggestion?.templateExerciseId)
+        assertEquals("the plan is still three sets", 3, suggestion?.plannedSets)
+
+        viewModel.onAddVolume()
+        settle()
+
+        assertEquals("the added set is the undo's subject", "new-set", viewModel.volumeUndo.value)
+        assertNull("the card goes with the write", viewModel.volumeSuggestion.value)
+        val added = templates.addedSets.single()
+        assertEquals("te-0", added.first)
+        assertEquals("the extra set's own reps", 5, added.second.targetRepsMin)
+        assertEquals("and its own load", 100_000L, added.second.targetWeightGrams)
+
+        viewModel.onUndoVolume()
+        settle()
+
+        assertNull("one undo takes the one set", viewModel.volumeUndo.value)
+        assertEquals(listOf("new-set"), templates.removedSets)
+    }
+
+    @Test
+    fun takingTheDoneBack_dismissesTheSetItEarned() = runTest(dispatcher) {
+        // B430: reopening *is* undoing that Done. The question it asked and the set it earned both go.
+        val (viewModel, _) = earnedSetWorkout()
+        val id = viewModel.uiState.value.exercises.single().id
+        assertNotNull("the Done earned a set", viewModel.volumeSuggestion.value)
+
+        viewModel.onReopenExercise(id)
+        settle()
+
+        assertNull("a Done taken back cannot still be earning a set", viewModel.volumeSuggestion.value)
+        assertFalse(viewModel.uiState.value.exercises.single().isFinished)
+    }
+
+    /**
+     * A finished exercise whose plan earned an extra set (N312, N311), as the finish sees it.
+     *
+     * The plan prescribes three working sets; the stored sessions logged three and then four; this session
+     * logs four. The pattern reaches its threshold on this *Done* — the session behind it had one, the one
+     * before that did not — so the finish offers the set once, from the prompt the question judged (B437).
+     */
+    private fun TestScope.earnedSetWorkout(): Pair<ActiveWorkoutViewModel, FakeTemplateRepository> {
+        val repository = FakeWorkoutRepository()
+        val templates = FakeTemplateRepository(
+            planned = listOf(
+                plannedExercise(
+                    position = 0,
+                    sets = (0 until 3).map { plannedSet(index = it, reps = 5, weightGrams = 100_000L) },
+                ),
+            ),
+        )
+        val trends = FakeTrendsRepository().apply {
+            templateSessions = DataResult.Success(
+                listOf(aStoredSession(sets = 3), aStoredSession(sets = 4)),
+            )
+        }
+        val viewModel = viewModelFor(repository, templateId = "t1", templates = templates, trends = trends)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        val id = viewModel.uiState.value.exercises.single().id
+        repeat(4) {
+            viewModel.onLogSet(
+                id,
+                SetEdit(
+                    reps = 5,
+                    weightGrams = 100_000L,
+                    rpeHalves = 7,
+                    note = null,
+                    setType = SetType.NORMAL,
+                    assistanceGrams = 0L,
+                ),
+            )
+            settle()
+        }
+        // The plan answers, so the first Done asks the next-step question; the second is *Not now*, which
+        // finishes with the prompt the question judged.
+        viewModel.onFinishExercise(id)
+        settle()
+        viewModel.onFinishExercise(id)
+        settle()
+        return viewModel to templates
+    }
+
+    /** One stored session of the plan above, with [sets] logged working sets (N312). */
+    private fun aStoredSession(sets: Int) = TemplateSession(
+        sessionId = "stored-$sets",
+        startedAt = Instant.parse("2026-09-01T07:00:00Z"),
+        performed = listOf(
+            PerformedExercise(
+                exerciseId = "back-squat",
+                sets = List(sets) { ProgressionPerformance(reps = 5, weightGrams = 100_000L) },
+            ),
+        ),
+    )
 
     @Test
     fun theFinishStall_handsThePlanEditorTheTarget_andClearsItself() = runTest(dispatcher) {
@@ -3156,6 +3545,13 @@ class ActiveWorkoutViewModelTest {
 
         val sets = MutableStateFlow<Map<String, List<TemplateSet>>>(emptyMap())
 
+        /** Every calibration answer written back, as the row and the numbers adopted (N312). */
+        val calibrations =
+            mutableListOf<Pair<String, List<com.example.androidapp.domain.model.CalibrationTarget>>>()
+
+        /** Every marker write, as the row and the state it was left in (N312). */
+        val calibrationMarks = mutableListOf<Pair<String, Boolean>>()
+
         override fun observeSets(templateId: String): Flow<List<TemplateSet>> =
             sets.map { it[templateId].orEmpty() }
         override suspend fun makeWeightless(templateExerciseId: String): DataResult<Unit> {
@@ -3165,12 +3561,16 @@ class ActiveWorkoutViewModelTest {
             templateExerciseId: String,
             pending: Boolean,
         ): DataResult<Unit> {
-            return notUsed()
+            calibrationMarks += templateExerciseId to pending
+            return DataResult.Success(Unit)
         }
         override suspend fun calibrateExercise(
             templateExerciseId: String,
             targets: List<com.example.androidapp.domain.model.CalibrationTarget>,
-        ): DataResult<Unit> = DataResult.Success(Unit)
+        ): DataResult<Unit> {
+            calibrations += templateExerciseId to targets
+            return DataResult.Success(Unit)
+        }
         override suspend fun replaceExercise(
             templateExerciseId: String,
             newExerciseId: String,
@@ -3216,10 +3616,17 @@ class ActiveWorkoutViewModelTest {
             edits: List<TemplateSetEdit>,
         ): DataResult<Unit> = DataResult.Success(Unit)
 
+        /** Every set the finish's earned-set card appended or took back (N312). */
+        val addedSets = mutableListOf<Pair<String, TemplateSetEdit>>()
+        val removedSets = mutableListOf<String>()
+
         override suspend fun addSet(
             templateExerciseId: String,
             edit: TemplateSetEdit,
-        ): DataResult<String> = notUsed()
+        ): DataResult<String> {
+            addedSets += templateExerciseId to edit
+            return DataResult.Success("new-set")
+        }
 
         override suspend fun updateSet(
             templateSetId: String,
@@ -3241,7 +3648,10 @@ class ActiveWorkoutViewModelTest {
             return DataResult.Success("w-${progressionWrites.size}")
         }
 
-        override suspend fun removeSet(templateSetId: String): DataResult<Unit> = notUsed()
+        override suspend fun removeSet(templateSetId: String): DataResult<Unit> {
+            removedSets += templateSetId
+            return DataResult.Success(Unit)
+        }
         override suspend fun undoDeload(
             removedSetIds: List<String>,
             keptBefore: List<com.example.androidapp.domain.model.TemplateSet>,
@@ -3253,7 +3663,7 @@ class ActiveWorkoutViewModelTest {
             restSeconds: Int?,
             techniqueNote: String?,
             targetRpeHalves: Int?,
-        findWeight: Boolean?,
+            findWeight: Boolean?,
         ): DataResult<Unit> = notUsed()
 
         private fun notUsed(): Nothing = error("this test does not write a plan")

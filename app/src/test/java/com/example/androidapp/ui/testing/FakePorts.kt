@@ -207,6 +207,9 @@ internal class FakeProgramRepository : ProgramRepository {
     val program = MutableStateFlow<WorkoutProgram?>(null)
     val activePrograms = MutableStateFlow<List<WorkoutProgram>>(emptyList())
     val slots = MutableStateFlow<List<ProgramSlot>>(emptyList())
+
+    /** Slots per program, for a read that names two; falls back to [slots]. */
+    var slotsByProgram: Map<String, List<ProgramSlot>> = emptyMap()
     val run = MutableStateFlow<ProgramRun?>(null)
     val sequenceSchedule = MutableStateFlow<SequenceSchedule?>(null)
 
@@ -256,7 +259,8 @@ internal class FakeProgramRepository : ProgramRepository {
         programId: String,
     ): DataResult<List<String>> = otherProgramNamesResult ?: DataResult.Success(otherProgramNames)
 
-    override fun observeSlots(programId: String): Flow<List<ProgramSlot>> = slots
+    override fun observeSlots(programId: String): Flow<List<ProgramSlot>> =
+        slotsByProgram[programId]?.let { flowOf(it) } ?: slots
 
     override fun observeProgramRun(programId: String): Flow<ProgramRun?> = run
 
@@ -504,6 +508,7 @@ internal class FakeTemplateRepository : TemplateRepository {
         calibrations += templateExerciseId to targets
         return DataResult.Success(Unit)
     }
+
     /** Every deload undo, as the removed ids and the kept before-state it was given (B432). */
     val undoDeloads = mutableListOf<Pair<List<String>, List<com.example.androidapp.domain.model.TemplateSet>>>()
 
@@ -685,10 +690,14 @@ internal class FakeTrendsRepository : com.example.androidapp.domain.repository.T
     /** What the stall rule reads, or null when this test never asks (N305). */
     var templateSessions: DataResult<List<TemplateSession>>? = null
 
+    /** Sessions per template, for a read that asks about more than one; falls back to [templateSessions]. */
+    var sessionsByTemplate: Map<String, DataResult<List<TemplateSession>>> = emptyMap()
+
     override suspend fun templateSessions(
         templateId: String,
         limit: Int,
-    ): DataResult<List<TemplateSession>> = templateSessions ?: unused()
+    ): DataResult<List<TemplateSession>> =
+        sessionsByTemplate[templateId] ?: templateSessions ?: unused()
 }
 
 /** The document port, proving a write without a content resolver. */

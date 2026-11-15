@@ -47,6 +47,7 @@ import com.example.androidapp.ui.templates.TemplatesRoute
 import com.example.androidapp.ui.weekly.WeeklyReviewRoute
 import com.example.androidapp.ui.workout.ActiveWorkoutRoute
 import com.example.androidapp.ui.workout.ExercisePickerRoute
+import com.example.androidapp.ui.workout.PlanHandOff
 
 /**
  * The app's single navigation graph (ROADMAP F2, P1.2).
@@ -160,6 +161,21 @@ private fun NavGraphBuilder.weeklyReviewDestination(navController: NavHostContro
     }
 }
 
+/**
+ * The plan editor one of the finish's answers opens (ROADMAP N310, N312).
+ *
+ * A deload hand-off names only the deload confirm and a replace only the sheet: the two are separate
+ * questions and a route carrying both would open one and leave the other waiting. The mapping is a
+ * function rather than a lambda so it is asserted without building the graph, which needs Hilt.
+ */
+internal fun planEditorRouteFor(handOff: PlanHandOff): ProgramEditor = ProgramEditor(
+    programId = handOff.programId,
+    deloadTemplateId = handOff.templateId.takeUnless { handOff.replace },
+    deloadTemplateExerciseId = handOff.templateExerciseId.takeUnless { handOff.replace },
+    replaceTemplateId = handOff.templateId.takeIf { handOff.replace },
+    replaceTemplateExerciseId = handOff.templateExerciseId.takeIf { handOff.replace },
+)
+
 /** The stall card's/the finish's hand-off to the plan editor's deload confirm (N307, N310). */
 private fun NavHostController.openDeloadConfirm(
     programId: String,
@@ -259,15 +275,7 @@ private fun NavGraphBuilder.workoutDestinations(navController: NavHostController
             onOpenExercise = { exerciseId -> navController.navigate(ExerciseDetail(exerciseId)) },
             onOpenPlan = { handOff ->
                 // The plan editor owns the confirm/sheet and the undo; the workout screen is replaced (3a).
-                navController.navigate(
-                    ProgramEditor(
-                        programId = handOff.programId,
-                        deloadTemplateId = handOff.templateId.takeUnless { handOff.replace },
-                        deloadTemplateExerciseId = handOff.templateExerciseId.takeUnless { handOff.replace },
-                        replaceTemplateId = handOff.templateId.takeIf { handOff.replace },
-                        replaceTemplateExerciseId = handOff.templateExerciseId.takeIf { handOff.replace },
-                    ),
-                ) {
+                navController.navigate(planEditorRouteFor(handOff)) {
                     popUpTo<ActiveWorkout> { inclusive = true }
                 }
             },

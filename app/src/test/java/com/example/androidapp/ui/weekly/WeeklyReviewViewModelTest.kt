@@ -9,9 +9,16 @@ import com.example.androidapp.domain.model.BlockProgress
 import com.example.androidapp.domain.model.DayOccurrence
 import com.example.androidapp.domain.model.MovementGain
 import com.example.androidapp.domain.model.OccurrenceState
+import com.example.androidapp.domain.model.PerformedExercise
 import com.example.androidapp.domain.model.PlanStall
 import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.model.ProgramSchedule
+import com.example.androidapp.domain.model.ProgramSlot
+import com.example.androidapp.domain.model.ProgressionPerformance
+import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.domain.model.TemplateExercise
+import com.example.androidapp.domain.model.TemplateSession
+import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.WorkoutSummary
 import com.example.androidapp.domain.repository.WeeklyReviewRepository
@@ -224,15 +231,175 @@ class WeeklyReviewViewModelTest {
     private fun reviewViewModel(
         weekly: WeeklyReviewRepository,
         timeSource: TimeSource = TimeSource { now },
-    ) = WeeklyReviewViewModel(
-        weekly = weekly,
-        planVolumeFinder = PlanVolumeFinder(
+        planVolumeFinder: PlanVolumeFinder = PlanVolumeFinder(
             FakeProgramRepository(),
             FakeTemplateRepository(),
             FakeTrendsRepository(),
         ),
-        templateRepository = FakeTemplateRepository(),
+        templateRepository: FakeTemplateRepository = FakeTemplateRepository(),
+    ) = WeeklyReviewViewModel(
+        weekly = weekly,
+        planVolumeFinder = planVolumeFinder,
+        templateRepository = templateRepository,
         timeSource = timeSource,
+    )
+
+    @Test
+    fun theEarnedSet_prefersTheProgramTheStallCameFrom() = runTest(dispatcher) {
+        // N312: with two followed programs, the card belongs to the one the week is already answering for,
+        // not to whichever happens to be listed first.
+        val (programs, templates) = twoEarnedPlans()
+        val trends = trendsFor(mapOf("t1" to earnedSessions("squat"), "t2" to earnedSessions("bench")))
+        val fake = FakeWeekly(
+            history = emptyList(),
+            occurrences = emptyMap(),
+            programs = twoPrograms(),
+            stall = stall("te2", "bench"),
+            stallProgramId = "p2",
+        )
+        val viewModel = reviewViewModel(
+            fake,
+            planVolumeFinder = PlanVolumeFinder(programs, templates, trends),
+            templateRepository = templates,
+        )
+        advanceUntilIdle()
+
+        assertThat(viewModel.state.value.stallProgramId).isEqualTo("p2")
+        assertThat(viewModel.state.value.volumes.map { it.templateExerciseId }).containsExactly("te2")
+    }
+
+    @Test
+    fun theEarnedSet_fallsBackToTheFirstFollowedProgramWithOne() = runTest(dispatcher) {
+        // N312: no stall of its own, so the first followed program that has a suggestion answers, and the
+        // rest of the list is not read past it.
+        val (programs, templates) = twoEarnedPlans()
+        val trends = trendsFor(mapOf("t1" to emptyList(), "t2" to earnedSessions("bench")))
+        val fake = FakeWeekly(
+            history = emptyList(),
+            occurrences = emptyMap(),
+            programs = twoPrograms(),
+        )
+        val viewModel = reviewViewModel(
+            fake,
+            planVolumeFinder = PlanVolumeFinder(programs, templates, trends),
+            templateRepository = templates,
+        )
+        advanceUntilIdle()
+
+        assertThat(viewModel.state.value.volumeError).isNull()
+        assertThat(viewModel.state.value.volumes.map { it.templateExerciseId }).containsExactly("te2")
+    }
+
+    @Test
+    fun theEarnedSetsAdd_andItsUndo_areTheRepositories() = runTest(dispatcher) {
+        // N312: the weekly review's own copy of N311's Add and undo; only the plan editor's was tested.
+        val (programs, templates) = twoEarnedPlans()
+        val trends = trendsFor(mapOf("t1" to earnedSessions("squat")))
+        val fake = FakeWeekly(
+            history = emptyList(),
+            occurrences = emptyMap(),
+            programs = listOf(program()),
+        )
+        val viewModel = reviewViewModel(
+            fake,
+            planVolumeFinder = PlanVolumeFinder(programs, templates, trends),
+            templateRepository = templates,
+        )
+        advanceUntilIdle()
+        val suggestion = viewModel.state.value.volumes.single()
+        assertThat(suggestion.templateExerciseId).isEqualTo("te1")
+
+        viewModel.onAddVolume(suggestion)
+        advanceUntilIdle()
+
+        assertThat(viewModel.volumeUndo.value).isEqualTo("new-set")
+        assertWithMessage("the card goes with the write").that(viewModel.state.value.volumes).isEmpty()
+
+        viewModel.onUndoVolume()
+        advanceUntilIdle()
+
+        assertThat(viewModel.volumeUndo.value).isNull()
+        assertThat(templates.removedSets).containsExactly("new-set")
+    }
+
+    /** Two followed weekly programs, each naming one movement, for the earned-set reads (N312). */
+    private fun twoEarnedPlans(): Pair<FakeProgramRepository, FakeTemplateRepository> {
+        val templates = FakeTemplateRepository().apply {
+            exercises.value = mapOf(
+                "t1" to listOf(earnedPlanExercise("te1", "t1", "squat", "Back Squat")),
+                "t2" to listOf(earnedPlanExercise("te2", "t2", "bench", "Bench Press")),
+            )
+        }
+        val programs = FakeProgramRepository().apply {
+            slotsByProgram = mapOf(
+                "p1" to listOf(ProgramSlot(id = "ps1", programId = "p1", templateId = "t1", position = 0)),
+                "p2" to listOf(ProgramSlot(id = "ps2", programId = "p2", templateId = "t2", position = 0)),
+            )
+        }
+        return programs to templates
+    }
+
+    private fun twoPrograms() = listOf(program(), program().copy(id = "p2", name = "Upper"))
+
+    /** A three-set plan whose movement can earn a step, so the volume rule judges it (N311). */
+    private fun earnedPlanExercise(
+        id: String,
+        templateId: String,
+        exerciseId: String,
+        name: String,
+    ) = TemplateExercise(
+        id = id,
+        templateId = templateId,
+        exerciseId = exerciseId,
+        position = 0,
+        exerciseName = name,
+        primaryMuscle = null,
+        equipment = null,
+        targetRpeHalves = 16,
+        sets = (0 until 3).map { index ->
+            TemplateSet(
+                id = "$id-set-$index",
+                templateExerciseId = id,
+                setIndex = index,
+                role = SetType.NORMAL,
+                targetWeightGrams = 100_000L,
+                targetRepsMin = 5,
+                targetRepsMax = 5,
+            )
+        },
+    )
+
+    /** Two four-set sessions: the extra-set pattern the card holds while it holds (N311). */
+    private fun earnedSessions(exerciseId: String) = listOf(
+        storedSession(exerciseId, sets = 4, id = "$exerciseId-a"),
+        storedSession(exerciseId, sets = 4, id = "$exerciseId-b"),
+    )
+
+    private fun storedSession(
+        exerciseId: String,
+        sets: Int,
+        id: String = "$exerciseId-$sets",
+    ) = TemplateSession(
+        sessionId = id,
+        startedAt = Instant.parse("2026-10-01T07:00:00Z"),
+        performed = listOf(
+            PerformedExercise(
+                exerciseId = exerciseId,
+                sets = List(sets) { ProgressionPerformance(reps = 5, weightGrams = 100_000L) },
+            ),
+        ),
+    )
+
+    private fun trendsFor(sessions: Map<String, List<TemplateSession>>) = FakeTrendsRepository().apply {
+        sessionsByTemplate = sessions.mapValues { DataResult.Success(it.value) }
+    }
+
+    private fun stall(templateExerciseId: String, exerciseId: String) = PlanStall(
+        exerciseName = if (exerciseId == "bench") "Bench Press" else "Back Squat",
+        sessions = 3,
+        templateId = if (templateExerciseId == "te2") "t2" else "t1",
+        templateExerciseId = templateExerciseId,
+        exerciseId = exerciseId,
     )
 
     private class FakeWeekly(
@@ -241,6 +408,8 @@ class WeeklyReviewViewModelTest {
         private val programs: List<WorkoutProgram> = emptyList(),
         private val blocks: List<BlockProgress> = emptyList(),
         private val stall: PlanStall? = null,
+        /** The program that holds [stall]; the others answer none, so a preferred program is reachable. */
+        private val stallProgramId: String? = null,
         var failDate: LocalDate? = null,
         var failPrograms: Boolean = false,
         var historyReads: Int = 0,
@@ -288,6 +457,8 @@ class WeeklyReviewViewModelTest {
         override suspend fun stallsForProgram(programId: String): DataResult<List<PlanStall>> =
             if (failStalls) {
                 DataResult.Failure(DataError.Storage(IllegalStateException("the stalls could not be read")))
+            } else if (stallProgramId != null && stallProgramId != programId) {
+                DataResult.Success(emptyList())
             } else {
                 DataResult.Success(listOfNotNull(stall))
             }

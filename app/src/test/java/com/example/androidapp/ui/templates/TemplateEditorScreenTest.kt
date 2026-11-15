@@ -1064,6 +1064,33 @@ class TemplateEditorScreenTest {
     }
 
     @Test
+    fun theFindWeightSwitch_reachesTheSave_asTrue() {
+        // N312 (N309): the switch is a state read at Save, and nothing asserted that the screen's own state
+        // travelled into the callback — only that the control existed.
+        var savedFindWeight: Boolean? = null
+        setScreen(
+            state = twoExercises.copy(exercises = listOf(twoExercises.exercises.first())),
+            actions = Actions(
+                onSaveExercisePlan = { _, _, _, _, findWeight -> savedFindWeight = findWeight },
+            ),
+        )
+        openBlock("te1")
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_EXERCISE_LIST)
+            .performScrollToNode(hasTestTag(TestTags.TEMPLATE_FIND_WEIGHT))
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_FIND_WEIGHT).performClick()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_EXERCISE_LIST)
+            .performScrollToNode(hasTestTag(TestTags.TEMPLATE_REST_CUE_SAVE))
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_REST_CUE_SAVE).assertIsEnabled()
+        // The action rather than a tap: the row sits at the list's edge in this viewport, where a touch is
+        // clipped, and the state the Save reads is what this test is about.
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_REST_CUE_SAVE)
+            .performSemanticsAction(SemanticsActions.OnClick)
+
+        assertThat(savedFindWeight).isTrue()
+    }
+
+    @Test
     fun addSet_startsFromTheLastPlannedSet() {
         // ROADMAP N46: Duplicate is gone and Add set prefills from the set before it, so a plan is
         // extended by confirming rather than by retyping — and any count, not just a doubling.

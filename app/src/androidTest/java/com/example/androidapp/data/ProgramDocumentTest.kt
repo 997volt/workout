@@ -425,7 +425,6 @@ class ProgramDocumentTest {
     /** Back to a bare database, which is what "another device" means for this feature. */
     private suspend fun wipe() = withContext(Dispatchers.IO) { database.clearAllTables() }
 
-
     @Test
     fun aDocumentEdit_keepsTheFindTheWeightMarker() = runTest {
         // B440: the document has no marker, and a full-row update read its false default as "clear it".
@@ -445,6 +444,9 @@ class ProgramDocumentTest {
             templateExercises = document.templateExercises.map {
                 if (it.id == planned.id) it.copy(techniqueNote = "brace") else it
             },
+            // A change to a program this device holds is an edit, marked as one; without the marker the
+            // import is a load and never reads the row (N312 — the test never exercised B440's fix).
+            edit = EditMarker(baseExportedAt = document.exportedAt),
         )
 
         programs.importProgramDocument(ProgramDocumentCodec.encode(edited))

@@ -88,6 +88,17 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   says nothing, and a movement never trained before has no comparison line. It is a read, not a stored copy, and
   it replaces the plan-vs-actual comparison the finish's review used to make.
 
+### Fixed
+
+- **The unreleased batch's untested seams are covered** (N312). The finish's calibration prompt now has tests
+  for *Use* and *Not now*, the calibration-before-stall order, a substituted row, a plan naming the same
+  movement twice, a marked hold, and a session that logged more or fewer sets than the plan wrote; the workout and the weekly review each have tests for the earned-set
+  suggestion, its Add and undo (and taking the *Done* back with the set it earned); the two finders' card and
+  failure paths, the backup's find-the-weight marker and the shared document's exclusion of it, the finish's
+  hand-off to the plan editor, the second stalled lift's button, the find-the-weight switch's Save, and the
+  weekly review's choice of program are asserted; and the deload, replace and calibration writes are
+  exercised through the schema with warm-ups, rungs, assistance, a hold and a range.
+
 ## [2.29] — 2026-11-11 (versionCode 50)
 
 ### Added

@@ -865,6 +865,231 @@ class TemplateRepositoryTest {
         assertEquals(1_000L, deloaded.sets.last().dropValueGrams)
     }
 
+    @Test
+    fun thePerLiftDeload_keepsTheRampTheLadderAndTheHold() = runTest {
+        // N312: the per-lift deload through the schema, not the pure rule — a warm-up and a rung are
+        // untouched, an assisted set gains help, a hold keeps its seconds, and a range moves to its floor.
+        val template = create("Legs")
+        val exercise = plannedExercise(template)
+        repository.setExercisePlan(
+            exercise,
+            restSeconds = 120,
+            techniqueNote = "Brace before the descent",
+            targetRpeHalves = 16,
+        )
+        repository.addSet(
+            exercise,
+            TemplateSetEdit(
+                role = SetType.WARMUP,
+                targetWeightGrams = 60_000L,
+                targetRepsMin = 5,
+                targetRepsMax = 5,
+            ),
+        )
+        repository.addSet(
+            exercise,
+            TemplateSetEdit(
+                role = SetType.NORMAL,
+                targetWeightGrams = 100_000L,
+                targetRepsMin = 5,
+                targetRepsMax = 8,
+                targetRepsCurrent = 7,
+            ),
+        )
+        repository.addSet(exercise, TemplateSetEdit(role = SetType.DROP, dropValueGrams = 10_000L))
+        repository.addSet(
+            exercise,
+            TemplateSetEdit(
+                role = SetType.NORMAL,
+                targetAssistanceGrams = 20_000L,
+                targetRepsMin = 8,
+                targetRepsMax = 10,
+            ),
+        )
+        repository.addSet(
+            exercise,
+            TemplateSetEdit(
+                role = SetType.NORMAL,
+                targetWeightGrams = 40_000L,
+                targetDurationSeconds = 45,
+            ),
+        )
+        // The fourth working set is the one the trim takes; the rung belongs to a kept anchor.
+        repository.addSet(
+            exercise,
+            TemplateSetEdit(
+                role = SetType.NORMAL,
+                targetWeightGrams = 100_000L,
+                targetRepsMin = 5,
+                targetRepsMax = 5,
+            ),
+        )
+
+        val plan = (repository.deloadExercise(exercise, 2_500L) as DataResult.Success).data
+
+        assertEquals("one of four working sets goes", 1, plan.removedSetIds.size)
+        val after = repository.observeSets(template).first()
+        val warmUp = after.single { it.role == SetType.WARMUP }
+        assertEquals("a warm-up is not a set of the deload", 60_000L, warmUp.targetWeightGrams)
+        assertEquals(5, warmUp.targetRepsMax)
+
+        val ranged = after.single { it.role == SetType.NORMAL && it.targetRepsMin == 5 }
+        assertEquals("three load steps off", 92_500L, ranged.targetWeightGrams)
+        assertEquals("and a range moves to its floor", 5, ranged.targetRepsCurrent)
+
+        val assisted = after.single { it.targetAssistanceGrams != null }
+        assertEquals("more help is lighter", 27_500L, assisted.targetAssistanceGrams)
+        assertNull("an assisted set states no weight of its own", assisted.targetWeightGrams)
+
+        val hold = after.single { it.targetDurationSeconds != null }
+        assertEquals("a hold keeps its seconds", 45, hold.targetDurationSeconds)
+        assertEquals("and still moves its load", 32_500L, hold.targetWeightGrams)
+        assertNull("its range is not a rep range", hold.targetRepsCurrent)
+
+        val rung = after.single { it.role == SetType.DROP }
+        assertEquals("a kept anchor keeps its ladder", 10_000L, rung.dropValueGrams)
+
+        val row = repository.observeExercises(template).first().single()
+        assertEquals("the cue and the rest are the row's, untouched", "Brace before the descent", row.techniqueNote)
+        assertEquals(120, row.restSeconds)
+    }
+
+    @Test
+    fun theEmptyReplace_clearsTheCueAndTheWarmUps_andKeepsThePlansReps() = runTest {
+        // N312: N308's Empty through the schema — a new row with new ids, the old movement's cue and every
+        // warm-up target gone, and the plan's reps, climbed place and effort kept for the number to find.
+        val template = create("Legs")
+        val old = plannedExercise(template)
+        repository.setExercisePlan(
+            old,
+            restSeconds = 120,
+            techniqueNote = "Pause at the bottom",
+            targetRpeHalves = 16,
+        )
+        repository.addSet(
+            old,
+            TemplateSetEdit(
+                role = SetType.WARMUP,
+                targetWeightGrams = 60_000L,
+                targetRepsMin = 5,
+                targetRepsMax = 5,
+            ),
+        )
+        repeat(4) {
+            repository.addSet(
+                old,
+                TemplateSetEdit(
+                    role = SetType.NORMAL,
+                    targetWeightGrams = 100_000L,
+                    targetRepsMin = 5,
+                    targetRepsMax = 8,
+                    targetRepsCurrent = 6,
+                ),
+            )
+        }
+
+        val outcome = (
+            repository.replaceExercise(old, "bench-press", seeds = emptyList(), empty = true)
+                as DataResult.Success
+            ).data
+
+        val replaced = repository.observeExercises(template).first().single()
+        assertEquals(outcome.newTemplateExerciseId, replaced.id)
+        assertEquals("the new movement", "bench-press", replaced.exerciseId)
+        assertNull("the cue was the old movement's", replaced.techniqueNote)
+        assertEquals("the rest is the plan's", 120, replaced.restSeconds)
+        assertEquals("and the effort is the plan's", 16, replaced.targetRpeHalves)
+        assertTrue("Empty is what asks for the number next session", replaced.calibrationPending)
+
+        val warmUp = replaced.sets.single { it.role == SetType.WARMUP }
+        assertNull("the ramp's weight means the old movement", warmUp.targetWeightGrams)
+        assertNull(warmUp.targetRepsMax)
+
+        val work = replaced.sets.filter { it.role == SetType.NORMAL }
+        assertEquals("four working sets trim to three", 3, work.size)
+        assertTrue(
+            "Empty keeps the reps and clears the loads",
+            work.all {
+                it.targetWeightGrams == null &&
+                    it.targetAssistanceGrams == null &&
+                    it.targetRepsMin == 5 &&
+                    it.targetRepsMax == 8 &&
+                    it.targetRepsCurrent == 6
+            },
+        )
+        assertEquals("and every kept set is a new row", 4, outcome.newSetIds.size)
+    }
+
+    @Test
+    fun theCalibrationAdoption_writesOnlyItsOwnSetsAndKeepsAHoldsSeconds() = runTest {
+        // N312: the adoption through the schema — a hold keeps its seconds while its load is adopted, an
+        // assisted number reaches the assistance column, and another row's set id is not this row's to write.
+        val template = create("Legs")
+        val lift = plannedExercise(template)
+        repository.addSet(
+            lift,
+            TemplateSetEdit(
+                role = SetType.NORMAL,
+                targetWeightGrams = 100_000L,
+                targetRepsMin = 5,
+                targetRepsMax = 5,
+            ),
+        )
+        repository.addSet(lift, TemplateSetEdit(role = SetType.NORMAL, targetDurationSeconds = 45))
+        // A second row of the same movement: this adoption must not reach its sets.
+        repository.addExercise(template, "back-squat")
+        val other = repository.observeExercises(template).first()
+            .single { it.exerciseId == "back-squat" && it.id != lift }
+            .id
+        val otherSet = (
+            repository.addSet(
+                other,
+                TemplateSetEdit(
+                    role = SetType.NORMAL,
+                    targetWeightGrams = 70_000L,
+                    targetRepsMin = 5,
+                    targetRepsMax = 5,
+                ),
+            ) as DataResult.Success
+            ).data
+
+        assertTrue(repository.makeWeightless(lift) is DataResult.Success)
+        val plannedSets = repository.observeSets(template).first().filter { it.templateExerciseId == lift }
+        val holdId = plannedSets.single { it.targetDurationSeconds == 45 }.id
+        val countedId = plannedSets.single { it.targetDurationSeconds == null }.id
+
+        assertTrue(
+            repository.calibrateExercise(
+                lift,
+                listOf(
+                    CalibrationTarget(countedId, 90_000L, 5_000L),
+                    CalibrationTarget(holdId, 20_000L, 0L),
+                    // A stale answer for another row must not reach it.
+                    CalibrationTarget(otherSet, 1_000L, 0L),
+                ),
+            ) is DataResult.Success,
+        )
+
+        val after = repository.observeSets(template).first()
+        val counted = after.single { it.id == countedId }
+        assertEquals("the number found", 90_000L, counted.targetWeightGrams)
+        assertEquals("and the help it needed", 5_000L, counted.targetAssistanceGrams)
+
+        val hold = after.single { it.id == holdId }
+        assertEquals("a hold adopts its load", 20_000L, hold.targetWeightGrams)
+        assertEquals("and keeps its seconds", 45, hold.targetDurationSeconds)
+
+        assertEquals(
+            "another row's set is not this adoption's to write",
+            70_000L,
+            after.single { it.id == otherSet }.targetWeightGrams,
+        )
+        assertFalse(
+            "the prompt is one-shot",
+            repository.observeExercises(template).first().first { it.id == lift }.calibrationPending,
+        )
+    }
+
     private fun TemplateSet.toEdit() = TemplateSetEdit(
         role = role,
         targetWeightGrams = targetWeightGrams,

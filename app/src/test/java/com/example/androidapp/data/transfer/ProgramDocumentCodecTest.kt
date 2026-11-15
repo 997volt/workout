@@ -58,6 +58,22 @@ class ProgramDocumentCodecTest {
     }
 
     @Test
+    fun aProgramDocument_dropsTheFindTheWeightMarker() {
+        // N309: the marker is a transition — the plan asking for a number on this device — not part of the
+        // program's definition. A document that carried it would make the recipient's next session wait for
+        // a number the sender had not found yet.
+        val marked = document().copy(
+            templateExercises = listOf(templateExercise().copy(calibrationPending = true)),
+        )
+
+        val encoded = ProgramDocumentCodec.encode(marked)
+        val decoded = ProgramDocumentCodec.decode(encoded)
+
+        assertThat(encoded).doesNotContain("calibrationPending")
+        assertThat(decoded.templateExercises.single().calibrationPending).isFalse()
+    }
+
+    @Test
     fun aPlannedFailure_survivesTheFormat() {
         // B276: the shared role enum listed five of the app's six, so exporting a program whose plan
         // held a failure set threw and was reported as a generic storage failure, while a document

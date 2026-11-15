@@ -1,13 +1,12 @@
 package com.example.androidapp.domain
 
 import com.example.androidapp.domain.model.PerformedExercise
-import com.example.androidapp.domain.model.TemplateSession
-import java.time.Instant
-import kotlinx.coroutines.test.runTest
+import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.ProgressionPerformance
 import com.example.androidapp.domain.model.ProgressionPrompt
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.TemplateExercise
+import com.example.androidapp.domain.model.TemplateSession
 import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.VolumeReason
 import com.example.androidapp.domain.model.progressionPromptFor
@@ -16,7 +15,9 @@ import com.example.androidapp.ui.testing.FakeProgramRepository
 import com.example.androidapp.ui.testing.FakeTemplateRepository
 import com.example.androidapp.ui.testing.FakeTrendsRepository
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
+import java.time.Instant
 
 /**
  * The plan earning a set back (ROADMAP N311).
@@ -154,7 +155,6 @@ class PlanVolumeFinderTest {
         performed = listOf(PerformedExercise(exerciseId = exerciseId, sets = sets)),
     )
 
-
     @Test
     fun theCard_ignoresASessionThatDidNotTrainTheMovement() = runTest {
         // B429: absence is neither evidence nor a break. A session that trained another movement used to
@@ -175,6 +175,45 @@ class PlanVolumeFinderTest {
 
         assertThat(suggestion.reason).isEqualTo(VolumeReason.EXTRA_SET)
     }
+
+    @Test
+    fun theProgramCard_collectsEachTemplatesSuggestions() = runTest {
+        // N312: the card's program path (suggestionsForProgram) was untested; only the per-template read was.
+        val templates = FakeTemplateRepository().apply {
+            exercises.value = mapOf("t1" to listOf(exercise()))
+        }
+        val trends = FakeTrendsRepository().apply {
+            templateSessions = DataResult.Success(
+                listOf(session(List(4) { performed() }), session(List(4) { performed() })),
+            )
+        }
+        val programs = FakeProgramRepository().apply {
+            slots.value = listOf(
+                ProgramSlot(id = "ps1", programId = "p1", templateId = "t1", position = 0),
+            )
+        }
+        val finder = PlanVolumeFinder(programs, templates, trends)
+
+        val suggestions = finder.suggestionsForProgram("p1").getOrNull().orEmpty()
+
+        assertThat(suggestions.single().templateExerciseId).isEqualTo("te1")
+        assertThat(suggestions.single().reason).isEqualTo(VolumeReason.EXTRA_SET)
+    }
+
+    @Test
+    fun aFailedHistoryRead_isAFailure() = runTest {
+        // N312: the card's failure path.
+        val templates = FakeTemplateRepository().apply {
+            exercises.value = mapOf("t1" to listOf(exercise()))
+        }
+        val trends = FakeTrendsRepository().apply {
+            templateSessions = DataResult.Failure(DataError.Storage(IllegalStateException("history")))
+        }
+        val finder = PlanVolumeFinder(FakeProgramRepository(), templates, trends)
+
+        assertThat(finder.suggestionsForTemplate("t1")).isInstanceOf(DataResult.Failure::class.java)
+    }
+
     private fun exercise(sets: Int = 3) = TemplateExercise(
         id = "te1",
         templateId = "t1",

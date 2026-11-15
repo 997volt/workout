@@ -133,6 +133,9 @@ class BackupCodecRoundTripTest {
             // The column N59's amendment added: the plan's one target RPE per exercise. A hand-written
             // codec that forgets it restores the effort as absent, which is the whole trap this file is.
             targetRpeHalves = 17,
+            // The one-shot find-the-weight marker (N309). It is in the backup — the backup is the whole
+            // device's state — so a codec that forgets it restores a plan already answering its own prompt.
+            calibrationPending = true,
             createdAt = 1_600_000_000_000L,
             updatedAt = 1_600_000_000_001L,
             deletedAt = null,

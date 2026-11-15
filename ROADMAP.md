@@ -15,30 +15,6 @@ work was planned, so they do not always run in order — and an id this file doe
 shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 [CHANGELOG-1.x.md](CHANGELOG-1.x.md) for the 1.x releases.
 
-## Next — the findings from the unreleased review
-
-The review of the N304–N311 batch (unreleased at `6c4d9e0d`; the local unit/lint/detekt/assemble gate
-green, the instrumented suite not run here) found defects that the batch's own rows did not cover. The
-rows below are the fixes, ordered as the review ranked them: the must-fix group first, the smaller
-findings after it, and the missing tests last as **N312**. Each row names the finding, the path and the
-fix; when a row lands, its finding is gone from this file.
-
-- **N312 — Cover the batch's untested seams.** No ViewModel test touches `calibrationNotices`,
-  Use/Skip or the calibration→stall ordering; none touches `suggestVolume`/`onAddVolume`/`onUndoVolume` or
-  the editor/weekly add+undo (the fakes' `addSet`/`removeSet` still throw); the two finders' card paths
-  (`suggestionsForProgram`/`suggestionsForTemplate`, `stallsForProgram`, failure paths) are unasserted; the
-  backup round-trip fixture never sets the marker true, and no test asserts the shared document omits it; the
-  N310 hand-off's `AppNavHost` mapping is untested. Also missing: the two-lift screen test's second button,
-  the find-the-weight switch's true path reaching `onSaveExercisePlan`, the weekly selection order, the
-  marked-substitute/duplicate-movement/timed cases, undo-of-Done plus a pending suggestion, and the
-  instrumented depth for deload/replace/calibrate (rungs, warm-ups, assistance, Empty, cues, hold/range,
-  substituted/short/extra sets) and for `makeWeightless` on a drop run.
-
-The review also verified the areas those rows do not touch: the finish ordering (calibration before the
-stall), the by-place pairing and substitution rules, the N310 hand-off (one-shot args, `popUpTo<ActiveWorkout>`),
-the volume cap/crossings, the schema 25 wiring and the shared-document exclusion, the dynamic CI test count,
-and the CHANGELOG/DECISIONS/roadmap state. Those need no rows.
-
 ## Parked — deliberately not planned
 
 Each row is a product in its own right, contradicts "local-only", or both. Parking is a
