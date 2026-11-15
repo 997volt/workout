@@ -13,7 +13,7 @@ repeated here.
 **1.0–1.18 live in [CHANGELOG-1.x.md](CHANGELOG-1.x.md)**, kept whole rather than deleted because the
 id a 1.x commit names is still looked up by it. This file carries the current release.
 
-## [Unreleased]
+## [2.30] — 2026-11-15 (versionCode 51)
 
 ### Added
 
@@ -90,14 +90,100 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
-- **The unreleased batch's untested seams are covered** (N312). The finish's calibration prompt now has tests
-  for *Use* and *Not now*, the calibration-before-stall order, a substituted row, a plan naming the same
-  movement twice, a marked hold, and a session that logged more or fewer sets than the plan wrote; the workout and the weekly review each have tests for the earned-set
-  suggestion, its Add and undo (and taking the *Done* back with the set it earned); the two finders' card and
-  failure paths, the backup's find-the-weight marker and the shared document's exclusion of it, the finish's
-  hand-off to the plan editor, the second stalled lift's button, the find-the-weight switch's Save, and the
-  weekly review's choice of program are asserted; and the deload, replace and calibration writes are
-  exercised through the schema with warm-ups, rungs, assistance, a hold and a range.
+- **The finish's earned-set offer no longer crashes the workout** (B445). B443 took the exercise name out of the
+  shared snackbar text, but the workout still passed a name where the message expects a number, so the first
+  extra set the plan earned threw at composition. The finish has its own text that names the lift; the card
+  keeps the name as its row title.
+- **A backup with more than three problems previews instead of crashing** (B453). The "…and N more" line passed
+  no number for its own count, so the import preview threw as soon as a file had more problems than it lists.
+  The count is formatted, and the preview opens.
+- **Adopting or seeding zero assistance no longer stops the load step** (B425). *Use* and a seeded replace
+  stored 0 for "no assistance", which the progression rule reads as an assisted set and stops raising the load;
+  the calibration path still did. Both now store none, so a lift keeps progressing after the answer.
+- **A plan naming the same movement twice reads each row's own history** (B446). The stall and earned-set cards
+  matched a plan row to the first session row with that movement, so the second row could be told it had stalled
+  from the first row's sets, and the finish's stall offer could point at the row that did not stall. Each row now
+  reads its own place.
+- **A program edited through a document keeps find-the-weight** (B440). A document carries no marker, and the
+  edit wrote the row's whole state from it, clearing the marker while its loads stayed blank. The edit writes
+  only the columns a document owns.
+- **A fresh install and an upgrade state the marker column the same way** (B441). Migration 24→25 gave
+  `calibrationPending` a SQL default the entity and the exported schema did not declare. The three now agree.
+- **Two presses on a plan edit are one write** (B449). *Add set* could append twice with only the last undoable,
+  and the deload confirm could run twice — the second trimming and lightening the already-deloaded plan, past
+  any undo. All three plan edits are single-flight, and the appended set's position is read inside its
+  transaction.
+- **Undoing a deload that removed two separate blocks keeps the plan's order** (B451). Every removal shared one
+  timestamp and the undo put them all after the first block's neighbour, so a warm-up between two removed sets
+  came back last. Each block is now restored after the neighbour it was cut from.
+- **The finish says when it could not check the marked plans** (B452). A failed read was cleared by the
+  successful finish, so the workout closed without the question or a word about it. It now says so once and
+  carries on to its stall or its close.
+- **A failed stall read no longer says nothing stalled** (B448). The weekly review printed "No plan has stopped
+  moving" beside an error saying the read failed. The section now says it could not check, and the earned-set
+  section has its own failure line with the same rule.
+- **The finish's multi-lift dialogs name each lift's buttons** (B447). With two stalled lifts or two marked
+  plans, TalkBack repeated "Replace this lift" or "Use" with nothing to say which lift. Each row's controls now
+  carry the lift in their accessible name and can be addressed on their own.
+- **The earned-set and stall controls are named for the lift** (B443). The card's *Add* had no accessible name,
+  the find-the-weight switch had none, and every stall row shared one tag and label. Each names the lift it
+  acts on, and the volume card no longer repeats the name.
+- **The find-the-weight prompt shows an assisted lift's best set** (B450). An assisted set stores weight 0, so
+  the prompt's "top" was whichever set was logged first — the worst one. It now compares the signed load (the
+  least help), and a bodyweight plan states only the set count.
+- **The finish's stall notice only names movements the session trained** (B442). A run of three survived a
+  workout from the same template that did not train the lift, and the notice could claim it had just reached
+  three. It now needs the movement in this session's stored rows.
+- **A failed stall or earned-set read stays beside its section** (B439). The weekly review replaced the whole
+  week with the error view on a failed advisory read or Add, and the program editor re-delivered a finder
+  failure after it was dismissed. Each failure is said beside its own section, once.
+- **The earned-set offer is one decision at a time** (B438). A suggestion that arrived during an Add was
+  dropped, a second press appended twice while the undo tracked only the last set, and a failed Add left the
+  card live with no message. The clear is by identity, both actions are single-flight, and a failure clears the
+  card after saying so.
+- **The earned-set offer judges the Done it came from** (B437). The suggestion was computed from the plan after
+  the finished exercise had already moved it, so it could describe a different session. It now reads the same
+  prompt the Done question did.
+- **A marked timed set waits for a number instead of logging 0 kg** (B435). A timed set treats a blank load as
+  bodyweight, so a marked carry logged 0 with *Log set* enabled and *Use* calibrated the plan to 0. A marked
+  timed set's blank field is a question.
+- **The deload confirm states a hold's load correctly** (B433). A hold's after-line showed its seconds but not
+  the load the deload moved, so the before → after read as if nothing had changed.
+- **The deload's undo is one transaction** (B432). The restore and the kept targets were two writes, so a
+  failure between them could leave half the edit back. They now land together or not at all.
+- **Taking Done back also takes back the set it earned** (B430). Reopening a finished exercise left its
+  earned-set offer up, so a set could be added for a Done that no longer stood.
+- **The earned-set rule reads the sessions as logged** (B429). It compared the planned pairs rather than the raw
+  sets, and a session that trained another movement counted as a failure. It now reads the raw sessions and
+  treats absence as neither evidence nor a break.
+- **A duplicate movement's answer belongs to the row followed** (B428). A plan may name the same movement twice,
+  and the finish's calibration and earned-set lookups both took the first row with that movement. Each resolves
+  the row the session actually followed.
+- **The session that completes a stall earns no extra set** (B427). The earned-set gate judged the history
+  without the session just done, so the Done that opened a stall could also offer more work. The current
+  session is now part of the gate.
+- **Find-the-weight is a state, not a command** (B426). Every plan save while the switch was on cleared the
+  loads again, so a weight entered after the switch was wiped by an unrelated cue or rest edit. The transition
+  runs only when the marker changes.
+- **History compares the load the set states, not the raw weight** (B424). An assisted set's weight is 0 with
+  the help in its own column, so the comparison read an assisted set as lighter work. It compares weight minus
+  assistance.
+- **An old workout compares to the session before it** (B423). The detail's previous read was unbounded, so
+  viewing an older workout compared it to the newest training. It is bounded by the viewed session's finish.
+- **A failed find-the-weight write can be closed** (B422). The prompt had no way out when its write failed, so a
+  stored workout could not be closed. *Close* moves on without writing and leaves the marker pending.
+- **Find-the-weight and a deload keep a plan's drop run** (B421). Clearing the loads or lightening the anchor
+  could leave a rung with no valid load, and the write was refused, making the feature unusable on a plan with a
+  ladder. The deliberate transitions keep the ladder and may strand it for the editor to show.
+- **A logged drop rung no longer counts as stall progress** (B420). A rung has no targets of its own and could
+  be read as a set that met the plan, resetting a run it never answered. Only a stand-alone working set with a
+  number the rule can judge counts.
+- **The 2.30 batch's untested seams and races are covered** (N312, N313). The finish's calibration prompt and
+  its answers, the calibration-before-stall order, a substituted row, a plan naming the same movement twice, a
+  marked hold and short or extra sets; the earned-set cards' Add, undo, single-flight and the Done that takes
+  them back; the finders' duplicate rows and failure paths; the finish's hand-off and per-lift dialogs; the
+  weekly review's advisory failures; the backup's marker and the shared document's exclusion of it; the plan
+  writes through the schema; and the import preview's long list are each asserted.
 
 ## [2.29] — 2026-11-11 (versionCode 50)
 
