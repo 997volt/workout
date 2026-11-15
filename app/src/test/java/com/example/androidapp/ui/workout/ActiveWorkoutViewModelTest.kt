@@ -2001,6 +2001,22 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
+    fun aSecondAdd_andASecondUndo_beforeTheWriteLands_areIgnored() = runTest(dispatcher) {
+        // B438's single-flight, which N313 owed a test: two presses in one frame are one write each.
+        val (viewModel, templates) = earnedSetWorkout()
+
+        viewModel.onAddVolume()
+        viewModel.onAddVolume()
+        settle()
+        assertEquals(1, templates.addedSets.size)
+
+        viewModel.onUndoVolume()
+        viewModel.onUndoVolume()
+        settle()
+        assertEquals(1, templates.removedSets.size)
+    }
+
+    @Test
     fun takingTheDoneBack_dismissesTheSetItEarned() = runTest(dispatcher) {
         // B430: reopening *is* undoing that Done. The question it asked and the set it earned both go.
         val (viewModel, _) = earnedSetWorkout()

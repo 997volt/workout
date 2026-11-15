@@ -21,10 +21,6 @@ The review of everything unreleased at `ffcf0320` (N304–N311 and their fixes B
 below: the local gate and the full 510-test instrumented suite were green on the reviewed tree, so each row
 names a path the tests do not cover. The rows are ordered by severity.
 
-- **N313 — The review's missing tests.** B438's promised race tests never landed; B439's weekly failures have
-  none (`failStalls` is never flipped and no screen test carries `stallError`/`volumeError`); no Compose test
-  renders the workout's volume snackbar, which is why B445 shipped. Add those, and the second-row dialog test
-  B447 needs.
 - **N314 — `makeWeightless` has no production caller.** [TemplateRepository.kt](app/src/main/java/com/example/androidapp/domain/repository/TemplateRepository.kt)
   (:250) and [RoomTemplateRepository.kt](app/src/main/java/com/example/androidapp/data/RoomTemplateRepository.kt)
   (:633) are reached only by tests and fakes: the plan-editor toggle and *Empty* use `setExercisePlan(findWeight)`

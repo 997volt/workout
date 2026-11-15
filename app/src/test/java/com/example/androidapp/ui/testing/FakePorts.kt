@@ -2,6 +2,7 @@ package com.example.androidapp.ui.testing
 
 import android.content.Context
 import android.net.Uri
+import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.BackupFolder
@@ -442,7 +443,11 @@ internal class FakeTemplateRepository : TemplateRepository {
     /** Every set the volume cards appended, so a double press can be told from one (B449). */
     val addedSets = mutableListOf<Pair<String, TemplateSetEdit>>()
 
+    /** Refuses the next Add, for a section's failure line (B439, N313). */
+    var failAddSet = false
+
     override suspend fun addSet(templateExerciseId: String, edit: TemplateSetEdit): DataResult<String> {
+        if (failAddSet) return DataResult.Failure(DataError.Storage(java.io.IOException("locked")))
         addedSets += templateExerciseId to edit
         return DataResult.Success("new-set")
     }
