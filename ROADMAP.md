@@ -17,18 +17,10 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next — the findings from the 2.30 review
 
-The review of everything unreleased at `ffcf0320` (N304–N311 and their fixes B420–B444) found one crash in the
-batch, one pre-existing crash found while checking its strings, three correctness/accessibility defects and the
-smaller gaps below. The local gate and the full 510-test instrumented suite were green on the reviewed tree, so
-each row names a path the tests do not cover. The rows are ordered by severity; **B445 is the must-fix**.
+The review of everything unreleased at `ffcf0320` (N304–N311 and their fixes B420–B444) found the findings
+below: the local gate and the full 510-test instrumented suite were green on the reviewed tree, so each row
+names a path the tests do not cover. The rows are ordered by severity.
 
-- **B445 — The finish's earned-set snackbar crashes (must fix).** B443 removed the exercise name from
-  `volume_extra_message`, but [ActiveWorkoutScreen.kt](app/src/main/java/com/example/androidapp/ui/workout/ActiveWorkoutScreen.kt)
-  still passes `(exerciseName, plannedSets)` into the one-`%d` string at :295, so the first *Done* that earns an
-  extra set throws `IllegalFormatConversionException` during composition. The comfortable line passes the name
-  into a placeholder-free string, so that snackbar no longer names the lift either (the comment at :292 still
-  says it does). Give the finish its own name-bearing strings, and render the screen with a suggestion in a
-  Compose test.
 - **B446 — The finders use the first session row of a movement (should fix).**
   [PlanStallFinder.kt](app/src/main/java/com/example/androidapp/domain/PlanStallFinder.kt) (:77) and
   [PlanVolumeFinder.kt](app/src/main/java/com/example/androidapp/domain/PlanVolumeFinder.kt) (:224) pair a plan

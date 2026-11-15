@@ -289,16 +289,17 @@ fun ActiveWorkoutScreen(
     UndoOffers(state, snackbarHostState, onUndoDelete, onDismissUndo, onUndoFinishExercise, onDismissFinishUndo)
 
     // The plan's earned set (N311): one snackbar, Add or dismiss; an accepted Add leaves the same
-    // snackbar holding its undo. The message names the exercise and the plan's own count.
+    // snackbar holding its undo. The message names the exercise and the plan's own count (B445): the card
+    // draws the name as a title, so only this copy has to carry it.
     val suggestion = volumeSuggestion
     val volumeMessage = when (suggestion?.reason) {
         VolumeReason.EXTRA_SET -> stringResource(
-            R.string.volume_extra_message,
+            R.string.volume_extra_snackbar,
             suggestion.exerciseName,
             suggestion.plannedSets,
         )
 
-        VolumeReason.COMFORTABLE -> stringResource(R.string.volume_comfortable_message, suggestion.exerciseName)
+        VolumeReason.COMFORTABLE -> stringResource(R.string.volume_comfortable_snackbar, suggestion.exerciseName)
 
         null -> null
     }

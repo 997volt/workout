@@ -38,8 +38,11 @@ import com.example.androidapp.domain.model.ProgressionSetPrompt
 import com.example.androidapp.domain.model.ProgressionStep
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.Side
+import com.example.androidapp.domain.model.VolumeReason
+import com.example.androidapp.domain.model.VolumeSuggestion
 import com.example.androidapp.domain.model.jointSiteKey
 import com.example.androidapp.domain.model.pendingProgressionFor
+import com.example.androidapp.domain.repository.TemplateSetEdit
 import com.example.androidapp.ui.components.SetEdit
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.WriteOutcome
@@ -115,6 +118,13 @@ class ActiveWorkoutScreenTest {
          * than the screen's, so a test hands in exactly the question it wants drawn.
          */
         pendingProgression: PendingProgression? = null,
+        /** The finish's earned set, or null (N311, B445). */
+        volumeSuggestion: VolumeSuggestion? = null,
+        volumeUndo: String? = null,
+        onAddVolume: () -> Unit = {},
+        onDismissVolume: () -> Unit = {},
+        onUndoVolume: () -> Unit = {},
+        onDismissVolumeUndo: () -> Unit = {},
     ) {
         composeTestRule.setContent {
             ActiveWorkoutScreen(
@@ -150,6 +160,12 @@ class ActiveWorkoutScreenTest {
                 restTimerEnabled = restTimerEnabled,
                 defaultRestSeconds = defaultRestSeconds,
                 pendingProgression = pendingProgression,
+                volumeSuggestion = volumeSuggestion,
+                volumeUndo = volumeUndo,
+                onAddVolume = onAddVolume,
+                onDismissVolume = onDismissVolume,
+                onUndoVolume = onUndoVolume,
+                onDismissVolumeUndo = onDismissVolumeUndo,
                 onToggleProgression = actions.onToggleProgression,
                 onSelectAllProgression = actions.onSelectAllProgression,
                 onConfirmProgression = actions.onConfirmProgression,
@@ -165,6 +181,47 @@ class ActiveWorkoutScreenTest {
                 onSelectEveryProgression = actions.onSelectEveryProgression,
             )
         }
+    }
+
+    /**
+     * The finish's earned-set snackbar names the lift (B445).
+     *
+     * B443 removed the name from the shared card message and left this call passing a String into its
+     * `%1$d`, so composing an extra-set suggestion threw. Both reasons are rendered here.
+     */
+    private fun earnedSet(reason: VolumeReason) = VolumeSuggestion(
+        templateId = "t1",
+        templateExerciseId = "te1",
+        exerciseId = "back-squat",
+        exerciseName = "Back Squat",
+        reason = reason,
+        plannedSets = 3,
+        edit = TemplateSetEdit(
+            role = SetType.NORMAL,
+            targetWeightGrams = 100_000L,
+            targetRepsMin = 5,
+            targetRepsMax = 5,
+        ),
+    )
+
+    @Test
+    fun theEarnedSetSnackbar_namesTheLift_forAnExtraSet() {
+        setScreen(state(isFinished = true), volumeSuggestion = earnedSet(VolumeReason.EXTRA_SET))
+
+        composeTestRule.onNodeWithText(
+            "Back Squat: both of the last two sessions logged one more set than the plan's 3. Add a set?",
+            substring = true,
+        ).assertExists()
+    }
+
+    @Test
+    fun theEarnedSetSnackbar_namesTheLift_forAComfortablePlan() {
+        setScreen(state(isFinished = true), volumeSuggestion = earnedSet(VolumeReason.COMFORTABLE))
+
+        composeTestRule.onNodeWithText(
+            "Back Squat: every set earned a step for three sessions. Add a set?",
+            substring = true,
+        ).assertExists()
     }
 
     @Test
