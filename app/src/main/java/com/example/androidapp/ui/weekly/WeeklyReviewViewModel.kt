@@ -226,37 +226,53 @@ class WeeklyReviewViewModel @Inject constructor(
     private val _volumeUndo = MutableStateFlow<String?>(null)
     val volumeUndo: StateFlow<String?> = _volumeUndo.asStateFlow()
 
-    /** The card's Add, on the weekly review too (N311); undoable from the same snackbar. */
-    fun onAddVolume(suggestion: VolumeSuggestion) {
-        viewModelScope.launch {
-            when (val write = templateRepository.addSet(suggestion.templateExerciseId, suggestion.edit)) {
-                is DataResult.Success -> {
-                    _volumeUndo.value = write.data
-                    _state.update { state ->
-                        state.copy(
-                            volumeError = null,
-                            volumes = state.volumes.filterNot {
-                                it.templateExerciseId == suggestion.templateExerciseId
-                            },
-                        )
-                    }
-                }
+    /** One Add/Undo in flight at a time (B449): a second press would append or remove twice. */
+    private var volumeAddInFlight = false
+    private var volumeUndoInFlight = false
 
-                is DataResult.Failure -> _state.update { it.copy(volumeError = write.error) }
+    /** The card's Add, on the weekly review too (N311); one at a time (B449). */
+    fun onAddVolume(suggestion: VolumeSuggestion) {
+        if (volumeAddInFlight) return
+        volumeAddInFlight = true
+        viewModelScope.launch {
+            try {
+                when (val write = templateRepository.addSet(suggestion.templateExerciseId, suggestion.edit)) {
+                    is DataResult.Success -> {
+                        _volumeUndo.value = write.data
+                        _state.update { state ->
+                            state.copy(
+                                volumeError = null,
+                                volumes = state.volumes.filterNot {
+                                    it.templateExerciseId == suggestion.templateExerciseId
+                                },
+                            )
+                        }
+                    }
+
+                    is DataResult.Failure -> _state.update { it.copy(volumeError = write.error) }
+                }
+            } finally {
+                volumeAddInFlight = false
             }
         }
     }
 
     fun onUndoVolume() {
         val id = _volumeUndo.value ?: return
+        if (volumeUndoInFlight) return
+        volumeUndoInFlight = true
         viewModelScope.launch {
-            when (val write = templateRepository.removeSet(id)) {
-                is DataResult.Success -> {
-                    _volumeUndo.value = null
-                    load()
-                }
+            try {
+                when (val write = templateRepository.removeSet(id)) {
+                    is DataResult.Success -> {
+                        _volumeUndo.value = null
+                        load()
+                    }
 
-                is DataResult.Failure -> _state.update { it.copy(volumeError = write.error) }
+                    is DataResult.Failure -> _state.update { it.copy(volumeError = write.error) }
+                }
+            } finally {
+                volumeUndoInFlight = false
             }
         }
     }

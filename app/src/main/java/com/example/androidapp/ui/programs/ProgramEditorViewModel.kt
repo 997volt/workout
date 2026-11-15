@@ -552,22 +552,33 @@ class ProgramEditorViewModel @Inject constructor(
         }
     }
 
-    /** Writes the edit the confirm showed; the undo is the whole edit (N307, decision 4a). */
+    /**
+     * Writes the edit the confirm showed; the undo is the whole edit (N307, decision 4a).
+     *
+     * One confirm at a time (B449): the write recomputes the trim from the plan as it stands, so a second
+     * press while the first was in flight would deload the deloaded plan and leave an undo for neither.
+     */
     fun onConfirmDeload() {
         val prompt = _deloadPrompt.value ?: return
+        if (deloadInFlight) return
+        deloadInFlight = true
         viewModelScope.launch {
-            when (val read = templateRepository.deloadExercise(prompt.templateExerciseId, prompt.stepGrams)) {
-                is DataResult.Success -> {
-                    _deloadPrompt.value = null
-                    _deloadUndo.value = DeloadUndo(
-                        templateExerciseId = prompt.templateExerciseId,
-                        exerciseName = prompt.exerciseName,
-                        keptBefore = prompt.kept.map { it.before },
-                        removedSetIds = read.data.removedSetIds,
-                    )
-                    stallRefresh.update { it + 1 }
+            try {
+                when (val read = templateRepository.deloadExercise(prompt.templateExerciseId, prompt.stepGrams)) {
+                    is DataResult.Success -> {
+                        _deloadPrompt.value = null
+                        _deloadUndo.value = DeloadUndo(
+                            templateExerciseId = prompt.templateExerciseId,
+                            exerciseName = prompt.exerciseName,
+                            keptBefore = prompt.kept.map { it.before },
+                            removedSetIds = read.data.removedSetIds,
+                        )
+                        stallRefresh.update { it + 1 }
+                    }
+                    is DataResult.Failure -> error.value = read.error
                 }
-                is DataResult.Failure -> error.value = read.error
+            } finally {
+                deloadInFlight = false
             }
         }
     }
@@ -596,31 +607,48 @@ class ProgramEditorViewModel @Inject constructor(
     private val _volumeUndo = MutableStateFlow<String?>(null)
     val volumeUndo: StateFlow<String?> = _volumeUndo.asStateFlow()
 
-    /** Adds the card's set to the plan, after the reader chose it (N311). */
-    fun onAddVolume(suggestion: VolumeSuggestion) {
-        viewModelScope.launch {
-            when (val write = templateRepository.addSet(suggestion.templateExerciseId, suggestion.edit)) {
-                is DataResult.Success -> {
-                    error.value = null
-                    stallRefresh.update { it + 1 }
-                    _volumeUndo.value = write.data
-                }
+    /** One Add/Undo/confirm in flight at a time (B449): a second press would apply the edit twice. */
+    private var volumeAddInFlight = false
+    private var volumeUndoInFlight = false
+    private var deloadInFlight = false
 
-                is DataResult.Failure -> error.value = write.error
+    /** Adds the card's set to the plan, after the reader chose it (N311); one at a time (B449). */
+    fun onAddVolume(suggestion: VolumeSuggestion) {
+        if (volumeAddInFlight) return
+        volumeAddInFlight = true
+        viewModelScope.launch {
+            try {
+                when (val write = templateRepository.addSet(suggestion.templateExerciseId, suggestion.edit)) {
+                    is DataResult.Success -> {
+                        error.value = null
+                        stallRefresh.update { it + 1 }
+                        _volumeUndo.value = write.data
+                    }
+
+                    is DataResult.Failure -> error.value = write.error
+                }
+            } finally {
+                volumeAddInFlight = false
             }
         }
     }
 
     fun onUndoVolume() {
         val id = _volumeUndo.value ?: return
+        if (volumeUndoInFlight) return
+        volumeUndoInFlight = true
         viewModelScope.launch {
-            when (val write = templateRepository.removeSet(id)) {
-                is DataResult.Success -> {
-                    _volumeUndo.value = null
-                    stallRefresh.update { it + 1 }
-                }
+            try {
+                when (val write = templateRepository.removeSet(id)) {
+                    is DataResult.Success -> {
+                        _volumeUndo.value = null
+                        stallRefresh.update { it + 1 }
+                    }
 
-                is DataResult.Failure -> error.value = write.error
+                    is DataResult.Failure -> error.value = write.error
+                }
+            } finally {
+                volumeUndoInFlight = false
             }
         }
     }

@@ -439,8 +439,13 @@ internal class FakeTemplateRepository : TemplateRepository {
     /** Every set removal, so a volume undo can be checked (B436). */
     val removedSets = mutableListOf<String>()
 
-    override suspend fun addSet(templateExerciseId: String, edit: TemplateSetEdit): DataResult<String> =
-        DataResult.Success("new-set")
+    /** Every set the volume cards appended, so a double press can be told from one (B449). */
+    val addedSets = mutableListOf<Pair<String, TemplateSetEdit>>()
+
+    override suspend fun addSet(templateExerciseId: String, edit: TemplateSetEdit): DataResult<String> {
+        addedSets += templateExerciseId to edit
+        return DataResult.Success("new-set")
+    }
 
     override suspend fun updateSet(templateSetId: String, edit: TemplateSetEdit): DataResult<Unit> {
         updatedSets += templateSetId to edit

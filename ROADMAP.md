@@ -21,13 +21,6 @@ The review of everything unreleased at `ffcf0320` (N304–N311 and their fixes B
 below: the local gate and the full 510-test instrumented suite were green on the reviewed tree, so each row
 names a path the tests do not cover. The rows are ordered by severity.
 
-- **B449 — Plan edits can apply twice (minor).** The editor's and the weekly review's *Add* and the deload
-  confirm have no in-flight guard ([ProgramEditorViewModel.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramEditorViewModel.kt)
-  :556, :600; [WeeklyReviewViewModel.kt](app/src/main/java/com/example/androidapp/ui/weekly/WeeklyReviewViewModel.kt)
-  :230), so a double tap appends two sets or deloads twice, and only the last is undoable. `addSet` also reads
-  `maxSetIndex` outside a transaction ([RoomTemplateRepository.kt](app/src/main/java/com/example/androidapp/data/RoomTemplateRepository.kt)
-  :331), so overlapping Adds can share a set position. Apply B438's single-flight and identity rule here, wrap
-  the append in one transaction, and test an overlapping second press.
 - **B450 — The calibration prompt's top is the wrong set for assisted work (minor).**
   [ActiveWorkoutViewModel.kt](app/src/main/java/com/example/androidapp/ui/workout/ActiveWorkoutViewModel.kt)
   (:1464) takes `maxByOrNull { weightGrams }`; an assisted set stores weight 0, so the first set always wins and

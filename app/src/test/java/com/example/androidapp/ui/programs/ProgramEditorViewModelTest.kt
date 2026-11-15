@@ -363,24 +363,26 @@ class ProgramEditorViewModelTest {
             .that(editor.uiState.value.finderError).isNull()
     }
 
+    private fun earnedSet() = VolumeSuggestion(
+        templateId = "t1",
+        templateExerciseId = "te1",
+        exerciseId = "squat",
+        exerciseName = "Back Squat",
+        reason = VolumeReason.EXTRA_SET,
+        plannedSets = 3,
+        edit = TemplateSetEdit(
+            role = SetType.NORMAL,
+            targetWeightGrams = 100_000L,
+            targetRepsMin = 5,
+            targetRepsMax = 5,
+        ),
+    )
+
     @Test
     fun theVolumeAdd_usesTheRepositorysNewId_andUndoesIt() = runTest(dispatcher) {
         // B436: the undo id comes from the add's transaction, not a max-index read-back that can race.
         val viewModel = viewModel()
-        val suggestion = VolumeSuggestion(
-            templateId = "t1",
-            templateExerciseId = "te1",
-            exerciseId = "squat",
-            exerciseName = "Back Squat",
-            reason = VolumeReason.EXTRA_SET,
-            plannedSets = 3,
-            edit = TemplateSetEdit(
-                role = SetType.NORMAL,
-                targetWeightGrams = 100_000L,
-                targetRepsMin = 5,
-                targetRepsMax = 5,
-            ),
-        )
+        val suggestion = earnedSet()
 
         viewModel.onAddVolume(suggestion)
         advanceUntilIdle()
@@ -389,5 +391,40 @@ class ProgramEditorViewModelTest {
         viewModel.onUndoVolume()
         advanceUntilIdle()
         assertThat(templates.removedSets).containsExactly("new-set")
+    }
+
+    @Test
+    fun aSecondAdd_andASecondUndo_beforeTheWriteLands_areIgnored() = runTest(dispatcher) {
+        // B449: the guard is taken before the coroutine starts, so two presses in one frame are one write.
+        val viewModel = viewModel()
+        val suggestion = earnedSet()
+
+        viewModel.onAddVolume(suggestion)
+        viewModel.onAddVolume(suggestion)
+        advanceUntilIdle()
+        assertThat(templates.addedSets).hasSize(1)
+
+        viewModel.onUndoVolume()
+        viewModel.onUndoVolume()
+        advanceUntilIdle()
+        assertThat(templates.removedSets).hasSize(1)
+    }
+
+    @Test
+    fun aSecondConfirm_beforeTheDeloadLands_deloadsOnce() = runTest(dispatcher) {
+        // B449: the write recomputes the trim from the plan, so a second confirm would deload the deloaded
+        // plan and leave an undo for neither.
+        plannedSquat()
+        val viewModel = viewModel()
+        backgroundScope.launch { viewModel.uiState.collect {} }
+        advanceUntilIdle()
+        viewModel.onDeloadLift(PlanStall("Back Squat", 3, "t1", "te1", "squat"))
+        advanceUntilIdle()
+
+        viewModel.onConfirmDeload()
+        viewModel.onConfirmDeload()
+        advanceUntilIdle()
+
+        assertThat(templates.deloads).hasSize(1)
     }
 }

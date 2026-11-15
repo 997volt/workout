@@ -22,6 +22,7 @@ import com.example.androidapp.domain.model.rungLoad
 import com.example.androidapp.domain.model.rungWeightAt
 import com.example.androidapp.domain.model.warmUpRamp
 import com.example.androidapp.domain.repository.TemplateSetEdit
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -396,6 +397,29 @@ class TemplateRepositoryTest {
         val stored = repository.observeExercises(template).first().single().sets.single()
         assertNull(stored.targetWeightGrams)
         assertNull(stored.targetRepsMin)
+    }
+
+    @Test
+    fun twoAddsInFlight_landOnDifferentPositions() = runTest {
+        // B449: the position is read and used in one transaction, so two overlapping appends cannot both
+        // claim `maxSetIndex + 1` and leave two rows in one place.
+        val template = create("Legs")
+        val exercise = plannedExercise(template)
+        val edit = TemplateSetEdit(
+            role = SetType.NORMAL,
+            targetWeightGrams = 100_000L,
+            targetRepsMin = 5,
+            targetRepsMax = 5,
+        )
+
+        val first = async { repository.addSet(exercise, edit) }
+        val second = async { repository.addSet(exercise, edit) }
+
+        assertTrue(first.await() is DataResult.Success)
+        assertTrue(second.await() is DataResult.Success)
+        val sets = repository.observeSets(template).first()
+        assertEquals(2, sets.size)
+        assertEquals("each appended row has its own place", listOf(0, 1), sets.map { it.setIndex })
     }
 
     @Test

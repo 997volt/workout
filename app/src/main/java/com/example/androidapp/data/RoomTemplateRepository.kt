@@ -336,31 +336,35 @@ class RoomTemplateRepository @Inject constructor(
         val exercise = dao.findTemplateExercise(templateExerciseId)
             ?: throw NotFoundException("template exercise $templateExerciseId")
         val now = timeSource.nowEpochMillis()
-        val row = TemplateSetEntity(
-            id = UUID.randomUUID().toString(),
-            templateExerciseId = templateExerciseId,
-            // Appended, so the plan reads in the order it was written.
-            setIndex = setDao.maxSetIndex(templateExerciseId) + 1,
-            role = edit.role,
-            targetWeightGrams = edit.targetWeightGrams,
-            targetAssistanceGrams = edit.targetAssistanceGrams,
-            targetRepsMin = edit.targetRepsMin,
-            targetRepsMax = edit.targetRepsMax,
-            targetRepsCurrent = edit.targetRepsCurrent,
-            dropValueGrams = edit.dropValueGrams,
-            targetDurationSeconds = edit.targetDurationSeconds,
-            note = edit.note?.trim()?.ifEmpty { null },
-            createdAt = now,
-            updatedAt = now,
-            deletedAt = null,
-        )
-        // The rung rules are about the *run* this row joins, so they are checked with the exercise's
-        // own sets in hand rather than on the row alone (ROADMAP N79): the stored list is what says
-        // which problems this write *creates* rather than which ones it inherits (B59).
-        val sets = plannedSetsOf(exercise)
-        validateRun(stored = sets, after = sets + row.toDomain())
-        setDao.insertTemplateSet(row)
-        row.id
+        // One transaction (B449): the position is read and used in the same transaction, so two Adds that
+        // overlap cannot both claim the same `maxSetIndex + 1`.
+        database.withTransaction {
+            val row = TemplateSetEntity(
+                id = UUID.randomUUID().toString(),
+                templateExerciseId = templateExerciseId,
+                // Appended, so the plan reads in the order it was written.
+                setIndex = setDao.maxSetIndex(templateExerciseId) + 1,
+                role = edit.role,
+                targetWeightGrams = edit.targetWeightGrams,
+                targetAssistanceGrams = edit.targetAssistanceGrams,
+                targetRepsMin = edit.targetRepsMin,
+                targetRepsMax = edit.targetRepsMax,
+                targetRepsCurrent = edit.targetRepsCurrent,
+                dropValueGrams = edit.dropValueGrams,
+                targetDurationSeconds = edit.targetDurationSeconds,
+                note = edit.note?.trim()?.ifEmpty { null },
+                createdAt = now,
+                updatedAt = now,
+                deletedAt = null,
+            )
+            // The rung rules are about the *run* this row joins, so they are checked with the exercise's
+            // own sets in hand rather than on the row alone (ROADMAP N79): the stored list is what says
+            // which problems this write *creates* rather than which ones it inherits (B59).
+            val sets = plannedSetsOf(exercise)
+            validateRun(stored = sets, after = sets + row.toDomain())
+            setDao.insertTemplateSet(row)
+            row.id
+        }
     }
 
     override suspend fun updateSet(templateSetId: String, edit: TemplateSetEdit): DataResult<Unit> =

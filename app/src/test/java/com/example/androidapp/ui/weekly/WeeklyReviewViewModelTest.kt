@@ -342,6 +342,35 @@ class WeeklyReviewViewModelTest {
         assertThat(templates.removedSets).containsExactly("new-set")
     }
 
+    @Test
+    fun aSecondAdd_andASecondUndo_beforeTheWriteLands_areIgnored() = runTest(dispatcher) {
+        // B449: the card's Add is one tap; two before the write lands must append one set, and its undo one.
+        val (programs, templates) = twoEarnedPlans()
+        val trends = trendsFor(mapOf("t1" to earnedSessions("squat")))
+        val fake = FakeWeekly(
+            history = emptyList(),
+            occurrences = emptyMap(),
+            programs = listOf(program()),
+        )
+        val viewModel = reviewViewModel(
+            fake,
+            planVolumeFinder = PlanVolumeFinder(programs, templates, trends),
+            templateRepository = templates,
+        )
+        advanceUntilIdle()
+        val suggestion = viewModel.state.value.volumes.single()
+
+        viewModel.onAddVolume(suggestion)
+        viewModel.onAddVolume(suggestion)
+        advanceUntilIdle()
+        assertThat(templates.addedSets).hasSize(1)
+
+        viewModel.onUndoVolume()
+        viewModel.onUndoVolume()
+        advanceUntilIdle()
+        assertThat(templates.removedSets).hasSize(1)
+    }
+
     /** Two followed weekly programs, each naming one movement, for the earned-set reads (N312). */
     private fun twoEarnedPlans(): Pair<FakeProgramRepository, FakeTemplateRepository> {
         val templates = FakeTemplateRepository().apply {
