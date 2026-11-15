@@ -11,6 +11,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
 import com.example.androidapp.domain.Weight
@@ -101,24 +103,47 @@ private fun CalibrationNoticeLine(
                 color = MaterialTheme.colorScheme.error,
             )
         }
+        CalibrationAnswers(notice, failed, onUse, onSkip, onClose)
+    }
+}
+
+/** One lift's buttons, each tagged and named for that lift (B447). */
+@Composable
+private fun CalibrationAnswers(
+    notice: CalibrationNotice,
+    failed: Boolean,
+    onUse: (CalibrationNotice) -> Unit,
+    onSkip: (CalibrationNotice) -> Unit,
+    onClose: (CalibrationNotice) -> Unit,
+) {
+    val skipDescription = stringResource(R.string.calibration_skip_for, notice.exerciseName)
+    val useDescription = stringResource(R.string.calibration_use_for, notice.exerciseName)
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             AppTextButton(
                 onClick = { onSkip(notice) },
-                modifier = Modifier.testTag(TestTags.CALIBRATION_SKIP),
+                modifier = Modifier
+                    .testTag(TestTags.calibrationSkip(notice.templateExerciseId))
+                    .semantics { contentDescription = skipDescription },
             ) {
                 Text(stringResource(R.string.calibration_skip))
             }
             AppTextButton(
                 onClick = { onUse(notice) },
-                modifier = Modifier.testTag(TestTags.CALIBRATION_USE),
+                modifier = Modifier
+                    .testTag(TestTags.calibrationUse(notice.templateExerciseId))
+                    .semantics { contentDescription = useDescription },
             ) {
                 Text(stringResource(R.string.calibration_use))
             }
         }
         if (failed) {
+            val closeDescription = stringResource(R.string.calibration_close_for, notice.exerciseName)
             AppTextButton(
                 onClick = { onClose(notice) },
-                modifier = Modifier.testTag(TestTags.CALIBRATION_CLOSE),
+                modifier = Modifier
+                    .testTag(TestTags.calibrationClose(notice.templateExerciseId))
+                    .semantics { contentDescription = closeDescription },
             ) {
                 Text(stringResource(R.string.calibration_close))
             }

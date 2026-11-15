@@ -235,11 +235,19 @@ internal interface WorkoutTags {
     /** The stalled lifts a finished workout is told about (ROADMAP N305). */
     val STALL_DIALOG: String get() = "workout_stall_dialog"
     val CALIBRATION_DIALOG: String get() = "workout_calibration_dialog"
-    val CALIBRATION_USE: String get() = "workout_calibration_use"
-    val CALIBRATION_SKIP: String get() = "workout_calibration_skip"
-    val CALIBRATION_CLOSE: String get() = "workout_calibration_close"
-    val STALL_DIALOG_DELOAD: String get() = "workout_stall_dialog_deload"
-    val STALL_DIALOG_REPLACE: String get() = "workout_stall_dialog_replace"
+
+    /**
+     * One answered lift's controls, tagged and named for that lift (B447).
+     *
+     * Both dialogs can list several lifts, so one tag or one label for every copy left TalkBack repeating
+     * itself and a test able to address only the first row.
+     */
+    fun calibrationUse(templateExerciseId: String) = "workout_calibration_use_$templateExerciseId"
+    fun calibrationSkip(templateExerciseId: String) = "workout_calibration_skip_$templateExerciseId"
+    fun calibrationClose(templateExerciseId: String) = "workout_calibration_close_$templateExerciseId"
+
+    fun stallDialogDeload(templateExerciseId: String) = "workout_stall_dialog_deload_$templateExerciseId"
+    fun stallDialogReplace(templateExerciseId: String) = "workout_stall_dialog_replace_$templateExerciseId"
 
     val STALL_DONE: String get() = "workout_stall_done"
 

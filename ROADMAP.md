@@ -21,13 +21,6 @@ The review of everything unreleased at `ffcf0320` (N304–N311 and their fixes B
 below: the local gate and the full 510-test instrumented suite were green on the reviewed tree, so each row
 names a path the tests do not cover. The rows are ordered by severity.
 
-- **B447 — B443's multi-lift dialogs still share one name per action (should fix).**
-  [WorkoutStallDialog.kt](app/src/main/java/com/example/androidapp/ui/workout/WorkoutStallDialog.kt) (:54) and
-  [CalibrationDialog.kt](app/src/main/java/com/example/androidapp/ui/workout/CalibrationDialog.kt) (:104) give
-  every lift the same test tag and the same accessible label (`STALL_DIALOG_DELOAD`/`REPLACE`,
-  `CALIBRATION_USE`/`SKIP`), so with two lifts TalkBack repeats itself and a test can address only the first
-  node. B443's own row named these two dialogs; the fix touched only the card. Tag and describe each control by
-  its lift, and click the second of two.
 - **B448 — A failed stall read still says "No plan has stopped moving." (should fix).**
   [WeeklyReviewScreen.kt](app/src/main/java/com/example/androidapp/ui/weekly/WeeklyReviewScreen.kt) (:397) draws
   the empty-state sentence whenever `stalls` is empty, including when B439's advisory error is set (:226), so a

@@ -1,5 +1,6 @@
 package com.example.androidapp.ui.workout
 
+import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -26,10 +27,18 @@ class CalibrationDialogTest {
         onSkip: (CalibrationNotice) -> Unit = {},
         errorNotice: CalibrationNotice? = null,
         onClose: (CalibrationNotice) -> Unit = {},
+    ) = showAll(listOf(notice), onUse, onSkip, errorNotice, onClose)
+
+    private fun showAll(
+        notices: List<CalibrationNotice>,
+        onUse: (CalibrationNotice) -> Unit = {},
+        onSkip: (CalibrationNotice) -> Unit = {},
+        errorNotice: CalibrationNotice? = null,
+        onClose: (CalibrationNotice) -> Unit = {},
     ) {
         composeTestRule.setContent {
             CalibrationDialog(
-                listOf(notice),
+                notices,
                 onUse = onUse,
                 onSkip = onSkip,
                 errorNotice = errorNotice,
@@ -58,11 +67,39 @@ class CalibrationDialogTest {
             .assertIsDisplayed()
         composeTestRule.onNodeWithText("3 sets, top 65 kg").assertIsDisplayed()
 
-        composeTestRule.onNodeWithTag(TestTags.CALIBRATION_USE).performClick()
-        composeTestRule.onNodeWithTag(TestTags.CALIBRATION_SKIP).performClick()
+        composeTestRule.onNodeWithTag(TestTags.calibrationUse(notice.templateExerciseId)).performClick()
+        composeTestRule.onNodeWithTag(TestTags.calibrationSkip(notice.templateExerciseId)).performClick()
 
         assertThat(used).isEqualTo(notice)
         assertThat(skipped).isEqualTo(notice)
+    }
+
+    @Test
+    fun eachMarkedPlan_hasItsOwnNamedAnswers() {
+        // B447: one line per marked plan; the second line's answers must be addressable and named.
+        val bench = CalibrationNotice(
+            templateExerciseId = "te1",
+            exerciseName = "Bench Press",
+            setCount = 3,
+            topWeightGrams = 65_000L,
+            topAssistanceGrams = 0L,
+            weightUnit = WeightUnit.KILOGRAMS,
+            targets = emptyList(),
+        )
+        val squat = bench.copy(templateExerciseId = "te2", exerciseName = "Back Squat", topWeightGrams = 110_000L)
+        var used: CalibrationNotice? = null
+        var skipped: CalibrationNotice? = null
+        showAll(listOf(bench, squat), onUse = { used = it }, onSkip = { skipped = it })
+
+        composeTestRule.onNodeWithTag(TestTags.calibrationUse("te2"))
+            .assertContentDescriptionEquals("Use today's weights for Back Squat")
+            .performClick()
+        composeTestRule.onNodeWithTag(TestTags.calibrationSkip("te2"))
+            .assertContentDescriptionEquals("Not now for Back Squat")
+            .performClick()
+
+        assertThat(used).isEqualTo(squat)
+        assertThat(skipped).isEqualTo(squat)
     }
 
     @Test
@@ -82,7 +119,7 @@ class CalibrationDialogTest {
 
         composeTestRule.onNodeWithText("The plan could not be saved", substring = true)
             .assertIsDisplayed()
-        composeTestRule.onNodeWithTag(TestTags.CALIBRATION_CLOSE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.calibrationClose(notice.templateExerciseId)).performClick()
 
         assertThat(closed).isEqualTo(notice)
     }

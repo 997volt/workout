@@ -1,5 +1,6 @@
 package com.example.androidapp.ui.workout
 
+import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -73,6 +74,27 @@ class WorkoutStallDialogTest {
     }
 
     @Test
+    fun eachStalledLift_hasItsOwnNamedButtons() {
+        // B447: the dialog lists every lift (N310); one tag and one label for all of them left TalkBack
+        // repeating itself and a test able to press only the first.
+        val first = stall("Back Squat", "te1", "squat")
+        val second = stall("Bench Press", "te2", "bench")
+        var deloaded: PlanStall? = null
+        var replaced: PlanStall? = null
+        show(listOf(first, second), onDeload = { deloaded = it }, onReplace = { replaced = it })
+
+        composeTestRule.onNodeWithTag(TestTags.stallDialogReplace("te2"))
+            .assertContentDescriptionEquals("Replace Bench Press")
+            .performClick()
+        composeTestRule.onNodeWithTag(TestTags.stallDialogDeload("te2"))
+            .assertContentDescriptionEquals("Deload Bench Press")
+            .performClick()
+
+        assertThat(replaced).isEqualTo(second)
+        assertThat(deloaded).isEqualTo(second)
+    }
+
+    @Test
     fun done_dismisses() {
         var done = false
         show(
@@ -92,6 +114,14 @@ class WorkoutStallDialogTest {
 
         assertThat(done).isTrue()
     }
+
+    private fun stall(name: String, templateExerciseId: String, exerciseId: String) = PlanStall(
+        exerciseName = name,
+        sessions = 3,
+        templateId = "t1",
+        templateExerciseId = templateExerciseId,
+        exerciseId = exerciseId,
+    )
 
     private fun show(
         stalls: List<PlanStall>,
@@ -131,8 +161,8 @@ class WorkoutStallDialogTest {
             onReplace = { replaced = it },
         )
 
-        composeTestRule.onNodeWithTag(TestTags.STALL_DIALOG_DELOAD).performClick()
-        composeTestRule.onNodeWithTag(TestTags.STALL_DIALOG_REPLACE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.stallDialogDeload(stall.templateExerciseId)).performClick()
+        composeTestRule.onNodeWithTag(TestTags.stallDialogReplace(stall.templateExerciseId)).performClick()
         composeTestRule.onNodeWithTag(TestTags.STALL_DONE).performClick()
 
         assertThat(deloaded).isEqualTo(stall)

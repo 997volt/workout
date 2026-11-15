@@ -1468,6 +1468,9 @@
     </plurals>
     <string name="calibration_use">Use</string>
     <string name="calibration_skip">Not now</string>
+    <string name="calibration_use_for">Use today\'s weights for %1$s</string>
+    <string name="calibration_skip_for">Not now for %1$s</string>
+    <string name="calibration_close_for">Close without saving %1$s</string>
     <string name="calibration_write_failed">The plan could not be saved. Close and try again from the plan.</string>
     <string name="calibration_close">Close</string>
     <string name="program_no_slots">No workouts yet</string>

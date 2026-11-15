@@ -11,6 +11,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
 import com.example.androidapp.domain.model.PlanStall
@@ -41,6 +43,8 @@ internal fun WorkoutStallDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 stalls.forEach { stall ->
+                    val replaceDescription = stringResource(R.string.program_stall_replace_lift_for, stall.exerciseName)
+                    val deloadDescription = stringResource(R.string.program_stall_deload_lift_for, stall.exerciseName)
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text(text = stall.exerciseName, style = MaterialTheme.typography.titleSmall)
                         Text(
@@ -54,13 +58,17 @@ internal fun WorkoutStallDialog(
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             AppTextButton(
                                 onClick = { onReplace(stall) },
-                                modifier = Modifier.testTag(TestTags.STALL_DIALOG_REPLACE),
+                                modifier = Modifier
+                                    .testTag(TestTags.stallDialogReplace(stall.templateExerciseId))
+                                    .semantics { contentDescription = replaceDescription },
                             ) {
                                 Text(stringResource(R.string.program_stall_replace_lift))
                             }
                             AppTextButton(
                                 onClick = { onDeload(stall) },
-                                modifier = Modifier.testTag(TestTags.STALL_DIALOG_DELOAD),
+                                modifier = Modifier
+                                    .testTag(TestTags.stallDialogDeload(stall.templateExerciseId))
+                                    .semantics { contentDescription = deloadDescription },
                             ) {
                                 Text(stringResource(R.string.program_stall_deload_lift))
                             }
