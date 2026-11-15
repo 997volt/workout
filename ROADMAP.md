@@ -15,6 +15,81 @@ work was planned, so they do not always run in order — and an id this file doe
 shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 [CHANGELOG-1.x.md](CHANGELOG-1.x.md) for the 1.x releases.
 
+## Next — the findings from the 2.30 review
+
+The review of everything unreleased at `ffcf0320` (N304–N311 and their fixes B420–B444) found one crash in the
+batch, one pre-existing crash found while checking its strings, three correctness/accessibility defects and the
+smaller gaps below. The local gate and the full 510-test instrumented suite were green on the reviewed tree, so
+each row names a path the tests do not cover. The rows are ordered by severity; **B445 is the must-fix**.
+
+- **B445 — The finish's earned-set snackbar crashes (must fix).** B443 removed the exercise name from
+  `volume_extra_message`, but [ActiveWorkoutScreen.kt](app/src/main/java/com/example/androidapp/ui/workout/ActiveWorkoutScreen.kt)
+  still passes `(exerciseName, plannedSets)` into the one-`%d` string at :295, so the first *Done* that earns an
+  extra set throws `IllegalFormatConversionException` during composition. The comfortable line passes the name
+  into a placeholder-free string, so that snackbar no longer names the lift either (the comment at :292 still
+  says it does). Give the finish its own name-bearing strings, and render the screen with a suggestion in a
+  Compose test.
+- **B446 — The finders use the first session row of a movement (should fix).**
+  [PlanStallFinder.kt](app/src/main/java/com/example/androidapp/domain/PlanStallFinder.kt) (:77) and
+  [PlanVolumeFinder.kt](app/src/main/java/com/example/androidapp/domain/PlanVolumeFinder.kt) (:224) pair a plan
+  row by `exerciseId` alone, so a plan naming the same movement twice reads the first row's history for both.
+  Through `stallsForTemplate` the finish can offer *Deload*/*Replace* for the row that did not stall, and the
+  card's *Add* can append the other row's numbers. B428 fixed the calibration and the Done's suggestion; the
+  card reads were left. Pair the nth row with the nth performed entry of that movement, as `planEntriesFor`
+  already does, and test both card paths.
+- **B447 — B443's multi-lift dialogs still share one name per action (should fix).**
+  [WorkoutStallDialog.kt](app/src/main/java/com/example/androidapp/ui/workout/WorkoutStallDialog.kt) (:54) and
+  [CalibrationDialog.kt](app/src/main/java/com/example/androidapp/ui/workout/CalibrationDialog.kt) (:104) give
+  every lift the same test tag and the same accessible label (`STALL_DIALOG_DELOAD`/`REPLACE`,
+  `CALIBRATION_USE`/`SKIP`), so with two lifts TalkBack repeats itself and a test can address only the first
+  node. B443's own row named these two dialogs; the fix touched only the card. Tag and describe each control by
+  its lift, and click the second of two.
+- **B448 — A failed stall read still says "No plan has stopped moving." (should fix).**
+  [WeeklyReviewScreen.kt](app/src/main/java/com/example/androidapp/ui/weekly/WeeklyReviewScreen.kt) (:397) draws
+  the empty-state sentence whenever `stalls` is empty, including when B439's advisory error is set (:226), so a
+  section says both "couldn't read" and "nothing stalled". Suppress the sentence when `stallError != null`, and
+  render a state carrying it.
+- **B449 — Plan edits can apply twice (minor).** The editor's and the weekly review's *Add* and the deload
+  confirm have no in-flight guard ([ProgramEditorViewModel.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramEditorViewModel.kt)
+  :556, :600; [WeeklyReviewViewModel.kt](app/src/main/java/com/example/androidapp/ui/weekly/WeeklyReviewViewModel.kt)
+  :230), so a double tap appends two sets or deloads twice, and only the last is undoable. `addSet` also reads
+  `maxSetIndex` outside a transaction ([RoomTemplateRepository.kt](app/src/main/java/com/example/androidapp/data/RoomTemplateRepository.kt)
+  :331), so overlapping Adds can share a set position. Apply B438's single-flight and identity rule here, wrap
+  the append in one transaction, and test an overlapping second press.
+- **B450 — The calibration prompt's top is the wrong set for assisted work (minor).**
+  [ActiveWorkoutViewModel.kt](app/src/main/java/com/example/androidapp/ui/workout/ActiveWorkoutViewModel.kt)
+  (:1464) takes `maxByOrNull { weightGrams }`; an assisted set stores weight 0, so the first set always wins and
+  the dialog says "top -20 kg" when the best was -10 (a bodyweight plan says "top 0 kg"). Compare the signed load
+  (least assistance), as the app's own assisted-series rule does, and derive a notice from an assisted session.
+- **B451 — Undo of a two-block deload can reorder the plan (minor).**
+  [RoomTemplateRepository.kt](app/src/main/java/com/example/androidapp/data/RoomTemplateRepository.kt) (:753,
+  :794) restores every row that shares one deletion timestamp at the *first* block's anchor, so with
+  `[A,B,C,D,W,E]` (W a warm-up between the last removed work sets) the undo yields `[A,B,C,D,E,W]`. No rows are
+  lost, but the plan's order is the plan. Restore each block at its own `restoreAfterId`, and test that shape.
+- **B452 — A failed calibration read at the finish is silent (minor).**
+  [ActiveWorkoutViewModel.kt](app/src/main/java/com/example/androidapp/ui/workout/ActiveWorkoutViewModel.kt)
+  (:1487) sets `lastError` and the successful finish clears it (:1394), so the workout closes with no prompt and
+  no message while the marker stays. The next session's answer cannot carry this session's numbers. Say it
+  without blocking the close.
+- **B453 — The import preview's "and N more" crashes (pre-existing).** Found while checking the batch's format
+  strings: [ImportPreviewDialog.kt](app/src/main/java/com/example/androidapp/ui/transfer/ImportPreviewDialog.kt)
+  (:101) passes no format argument for a `%1$d` plural item, so a file with more than three problems throws
+  `MissingFormatArgumentException` when the preview opens. Pass the count. It predates this batch.
+- **N313 — The review's missing tests.** B438's promised race tests never landed; B439's weekly failures have
+  none (`failStalls` is never flipped and no screen test carries `stallError`/`volumeError`); no Compose test
+  renders the workout's volume snackbar, which is why B445 shipped. Add those, and the second-row dialog test
+  B447 needs.
+- **N314 — `makeWeightless` has no production caller.** [TemplateRepository.kt](app/src/main/java/com/example/androidapp/domain/repository/TemplateRepository.kt)
+  (:250) and [RoomTemplateRepository.kt](app/src/main/java/com/example/androidapp/data/RoomTemplateRepository.kt)
+  (:633) are reached only by tests and fakes: the plan-editor toggle and *Empty* use `setExercisePlan(findWeight)`
+  and `replaceExercise(empty = true)`. Delete the port method and its overrides, or route the toggle through it.
+
+The review also verified what these rows do not touch: schema 25 equals schema 24 plus the defaulted marker
+(entity, JSON and migration agree), the backup carries it and the shared document drops it, B440's targeted
+update preserves it, the new plan writes are each one transaction, and the N310 hand-off, the
+calibration-before-stall order, the B422 close, the B442 filter, the B423 bound and the N306 signed-load delta
+all hold.
+
 ## Parked — deliberately not planned
 
 Each row is a product in its own right, contradicts "local-only", or both. Parking is a
