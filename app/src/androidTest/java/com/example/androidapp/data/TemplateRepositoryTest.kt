@@ -864,7 +864,16 @@ class TemplateRepositoryTest {
             ),
         )
 
-        assertTrue(repository.makeWeightless(exercise) is DataResult.Success)
+        assertTrue(
+            "the plan-editor switch is the same prescription",
+            repository.setExercisePlan(
+                exercise,
+                restSeconds = null,
+                techniqueNote = null,
+                targetRpeHalves = null,
+                findWeight = true,
+            ) is DataResult.Success,
+        )
 
         val weightless = repository.observeExercises(template).first().single()
         assertTrue("the plan is finding its weight", weightless.calibrationPending)
@@ -900,7 +909,16 @@ class TemplateRepositoryTest {
         )
         repository.addSet(lift, TemplateSetEdit(role = SetType.DROP, dropValueGrams = 1_000L))
 
-        assertTrue(repository.makeWeightless(lift) is DataResult.Success)
+        assertTrue(
+            "the plan-editor switch is the same prescription",
+            repository.setExercisePlan(
+                lift,
+                restSeconds = null,
+                techniqueNote = null,
+                targetRpeHalves = null,
+                findWeight = true,
+            ) is DataResult.Success,
+        )
         val weightless = repository.observeExercises(weights).first().single()
         assertNull("the load is gone", weightless.sets.first().targetWeightGrams)
         assertEquals("the ladder is kept", 1_000L, weightless.sets.last().dropValueGrams)
@@ -1112,7 +1130,16 @@ class TemplateRepositoryTest {
             ) as DataResult.Success
             ).data
 
-        assertTrue(repository.makeWeightless(lift) is DataResult.Success)
+        assertTrue(
+            "the plan-editor switch is the same prescription",
+            repository.setExercisePlan(
+                lift,
+                restSeconds = null,
+                techniqueNote = null,
+                targetRpeHalves = null,
+                findWeight = true,
+            ) is DataResult.Success,
+        )
         val plannedSets = repository.observeSets(template).first().filter { it.templateExerciseId == lift }
         val holdId = plannedSets.single { it.targetDurationSeconds == 45 }.id
         val countedId = plannedSets.single { it.targetDurationSeconds == null }.id

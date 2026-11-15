@@ -3679,9 +3679,6 @@ class ActiveWorkoutViewModelTest {
 
         override fun observeSets(templateId: String): Flow<List<TemplateSet>> =
             if (failReads) flow { throw IOException("locked") } else sets.map { it[templateId].orEmpty() }
-        override suspend fun makeWeightless(templateExerciseId: String): DataResult<Unit> {
-            return notUsed()
-        }
         override suspend fun setCalibration(
             templateExerciseId: String,
             pending: Boolean,

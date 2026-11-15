@@ -21,9 +21,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -554,11 +554,6 @@ class TemplateEditorViewModelTest {
 
         override fun observeExercises(templateId: String): Flow<List<TemplateExercise>> = exercises
         override fun observeSets(templateId: String): Flow<List<TemplateSet>> = flowOf(emptyList())
-        override suspend fun makeWeightless(templateExerciseId: String): DataResult<Unit> {
-            weightless += templateExerciseId
-            return DataResult.Success(Unit)
-        }
-
         override suspend fun setCalibration(
             templateExerciseId: String,
             pending: Boolean,

@@ -339,9 +339,6 @@ class TemplatesViewModelTest {
 
         override fun observeExercises(templateId: String): Flow<List<TemplateExercise>> = exercises
         override fun observeSets(templateId: String): Flow<List<TemplateSet>> = flowOf(emptyList())
-        override suspend fun makeWeightless(templateExerciseId: String): DataResult<Unit> {
-            error("these tests do not write a plan")
-        }
         override suspend fun setCalibration(
             templateExerciseId: String,
             pending: Boolean,
@@ -423,7 +420,7 @@ class TemplatesViewModelTest {
             restSeconds: Int?,
             techniqueNote: String?,
             targetRpeHalves: Int?,
-        findWeight: Boolean?,
+            findWeight: Boolean?,
         ): DataResult<Unit> {
             error("these tests do not write a plan")
         }

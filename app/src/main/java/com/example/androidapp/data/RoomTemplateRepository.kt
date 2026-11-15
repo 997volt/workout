@@ -420,7 +420,7 @@ class RoomTemplateRepository @Inject constructor(
         edit: TemplateSetEdit,
         /**
          * Whether the run rules may refuse this write. The deliberate weightless transitions (N309's
-         * makeWeightless, N307's deload) set it false: they can leave a kept rung with nothing to take off
+         * setExercisePlan(findWeight), N307's deload) set it false: they can leave a kept rung with nothing to take off
          * (B421), and the stored problem is then the editor's to show, not this transition's to refuse.
          */
         validate: Boolean = true,
@@ -634,13 +634,6 @@ class RoomTemplateRepository @Inject constructor(
         if (dao.setCalibration(templateExerciseId, pending, timeSource.nowEpochMillis()) == 0) {
             throw NotFoundException("template exercise $templateExerciseId")
         }
-    }
-
-    override suspend fun makeWeightless(templateExerciseId: String): DataResult<Unit> = dataResultOf {
-        val exercise = dao.findTemplateExercise(templateExerciseId)
-            ?: throw NotFoundException("template exercise $templateExerciseId")
-        val now = timeSource.nowEpochMillis()
-        database.withTransaction { writeWeightless(exercise, now) }
     }
 
     /** The weightless transition's writes, inside the caller's transaction (N309, B421, B426). */

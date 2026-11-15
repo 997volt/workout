@@ -15,23 +15,6 @@ work was planned, so they do not always run in order — and an id this file doe
 shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 [CHANGELOG-1.x.md](CHANGELOG-1.x.md) for the 1.x releases.
 
-## Next — the findings from the 2.30 review
-
-The review of everything unreleased at `ffcf0320` (N304–N311 and their fixes B420–B444) found the findings
-below: the local gate and the full 510-test instrumented suite were green on the reviewed tree, so each row
-names a path the tests do not cover. The rows are ordered by severity.
-
-- **N314 — `makeWeightless` has no production caller.** [TemplateRepository.kt](app/src/main/java/com/example/androidapp/domain/repository/TemplateRepository.kt)
-  (:250) and [RoomTemplateRepository.kt](app/src/main/java/com/example/androidapp/data/RoomTemplateRepository.kt)
-  (:633) are reached only by tests and fakes: the plan-editor toggle and *Empty* use `setExercisePlan(findWeight)`
-  and `replaceExercise(empty = true)`. Delete the port method and its overrides, or route the toggle through it.
-
-The review also verified what these rows do not touch: schema 25 equals schema 24 plus the defaulted marker
-(entity, JSON and migration agree), the backup carries it and the shared document drops it, B440's targeted
-update preserves it, the new plan writes are each one transaction, and the N310 hand-off, the
-calibration-before-stall order, the B422 close, the B442 filter, the B423 bound and the N306 signed-load delta
-all hold.
-
 ## Parked — deliberately not planned
 
 Each row is a product in its own right, contradicts "local-only", or both. Parking is a

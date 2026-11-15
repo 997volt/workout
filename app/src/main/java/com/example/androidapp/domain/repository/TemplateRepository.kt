@@ -242,12 +242,6 @@ interface TemplateRepository {
     /** Marks or clears the one-shot find-the-weight state on a plan's exercise (ROADMAP N309). */
     suspend fun setCalibration(templateExerciseId: String, pending: Boolean): DataResult<Unit>
 
-    /**
-     * The same weightless prescription Empty writes, for a plan that already exists (N309): the working
-     * sets lose their load, the warm-ups lose every target, the reps and target effort stay, and the marker
-     * is set. One transaction, so the plan and its marker cannot disagree.
-     */
-    suspend fun makeWeightless(templateExerciseId: String): DataResult<Unit>
 
     /**
      * Adopts the performed work sets' weights into the plan's own work sets and clears the marker, in one
