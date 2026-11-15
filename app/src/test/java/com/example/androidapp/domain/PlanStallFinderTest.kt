@@ -42,6 +42,29 @@ class PlanStallFinderTest {
     }
 
     @Test
+    fun aDuplicateMovement_readsItsOwnRowsHistory() = runTest {
+        // B446: a plan may name the same movement twice; the second row's history is its own. Here the first
+        // row missed for three sessions and the second met the plan, so only the first is stalled.
+        val templates = FakeTemplateRepository().apply {
+            exercises.value = mapOf(
+                "t1" to listOf(exercise(id = "te1", name = "Squat A"), exercise(id = "te2", name = "Squat B")),
+            )
+        }
+        val trends = FakeTrendsRepository().apply {
+            templateSessions = DataResult.Success(
+                List(3) { index ->
+                    aSessionWithBothRows().copy(sessionId = "dup-$index")
+                },
+            )
+        }
+        val finder = PlanStallFinder(FakeProgramRepository(), templates, trends)
+
+        val stalls = finder.stallsForTemplate("t1").getOrNull().orEmpty()
+
+        assertThat(stalls.map { it.templateExerciseId }).containsExactly("te1")
+    }
+
+    @Test
     fun aFailedHistoryRead_isAFailure() = runTest {
         val templates = FakeTemplateRepository().apply {
             exercises.value = mapOf("t1" to listOf(exercise()))
@@ -59,12 +82,15 @@ class PlanStallFinderTest {
         assertThat(finder.stallsForProgram("p1")).isInstanceOf(DataResult.Failure::class.java)
     }
 
-    private fun exercise() = TemplateExercise(
-        id = "te1",
+    private fun exercise(
+        id: String = "te1",
+        name: String = "Back Squat",
+    ) = TemplateExercise(
+        id = id,
         templateId = "t1",
         exerciseId = "squat",
         position = 0,
-        exerciseName = "Back Squat",
+        exerciseName = name,
         primaryMuscle = null,
         equipment = null,
         targetRpeHalves = 16,
@@ -79,6 +105,22 @@ class PlanStallFinderTest {
                 targetRepsMax = 5,
             )
         },
+    )
+
+    /** One session with the movement twice: the first row missed, the second met its plan (B446). */
+    private fun aSessionWithBothRows() = TemplateSession(
+        sessionId = "both",
+        startedAt = Instant.parse("2026-09-28T07:00:00Z"),
+        performed = listOf(
+            PerformedExercise(
+                exerciseId = "squat",
+                sets = List(3) { ProgressionPerformance(reps = 3, weightGrams = 100_000L) },
+            ),
+            PerformedExercise(
+                exerciseId = "squat",
+                sets = List(3) { ProgressionPerformance(reps = 5, weightGrams = 100_000L) },
+            ),
+        ),
     )
 
     private fun aSessionThatMissed() = TemplateSession(

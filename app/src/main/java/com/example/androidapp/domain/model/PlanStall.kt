@@ -45,6 +45,16 @@ data class TemplateSession(
 )
 
 /**
+ * The [occurrence]th performed entry for a movement in this session (B446), or null.
+ *
+ * A session's rows are in the order the plan prescribed, and a plan may name the same movement twice (N54).
+ * The nth plan row's history is therefore the nth entry of that movement, not whichever came first (B428's
+ * rule for the finish, applied to the card reads).
+ */
+fun TemplateSession.performedOccurrence(exerciseId: String, occurrence: Int): PerformedExercise? =
+    performed.filter { it.exerciseId == exerciseId }.getOrNull(occurrence)
+
+/**
  * One exercise's plan next to what its last few sessions did with it (ROADMAP N237).
  *
  * [performedBySession] is **oldest first**, one entry per finished session that trained the movement, and the

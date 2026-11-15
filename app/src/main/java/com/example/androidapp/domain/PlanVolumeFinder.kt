@@ -10,6 +10,7 @@ import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSession
 import com.example.androidapp.domain.model.VolumeReason
 import com.example.androidapp.domain.model.VolumeSuggestion
+import com.example.androidapp.domain.model.performedOccurrence
 import com.example.androidapp.domain.model.progressionPromptFor
 import com.example.androidapp.domain.model.progressionSets
 import com.example.androidapp.domain.model.stall
@@ -66,7 +67,13 @@ class PlanVolumeFinder @Inject constructor(
                 is DataResult.Failure -> throw read.error.asThrowable()
                 is DataResult.Success -> read.data
             }
-            plan.mapNotNull { exercise -> planSuggestion(exercise, sessions) }
+            // Each plan row reads its own occurrence of the movement (B446): a plan may name it twice.
+            val occurrences = mutableMapOf<String, Int>()
+            plan.mapNotNull { exercise ->
+                val occurrence = occurrences.getOrDefault(exercise.exerciseId, 0)
+                occurrences[exercise.exerciseId] = occurrence + 1
+                planSuggestion(exercise, occurrence, sessions)
+            }
         }
 
     /**
@@ -91,15 +98,19 @@ class PlanVolumeFinder @Inject constructor(
             is DataResult.Failure -> throw read.error.asThrowable()
             is DataResult.Success -> read.data
         }
+        // The row's occurrence among the plan's rows of that movement (B446), so a duplicate reads its own
+        // history rather than the first row's.
+        val occurrence = plan.takeWhile { it.id != exercise.id }
+            .count { it.exerciseId == exercise.exerciseId }
         // The previous history is the sessions that trained the movement (B429): a vacation or a
         // substitution is absence, not a session that failed to earn the pattern.
         val trained = sessions.mapNotNull { session ->
-            session.performedFor(exercise)?.let { session to it }
+            session.performedOccurrence(exercise.exerciseId, occurrence)?.let { session to it.sets }
         }
         doneSuggestion(
             exercise = exercise,
             current = current,
-            previous = trained.map { (session, _) -> promptFor(exercise, session) },
+            previous = trained.map { (session, _) -> promptFor(exercise, occurrence, session) },
             performedBySession = trained.map { it.second } + listOf(currentPerformed),
         )
     }
@@ -156,17 +167,19 @@ class PlanVolumeFinder @Inject constructor(
     @Suppress("ReturnCount")
     private fun planSuggestion(
         exercise: TemplateExercise,
+        occurrence: Int,
         sessions: List<TemplateSession>,
     ): VolumeSuggestion? {
         val planned = exercise.progressionSets()
         val work = planned.workSets()
         // Only sessions that trained the movement take part (B429): absence is neither evidence nor a break.
+        // The row's own occurrence is the one read (B446).
         val trained = sessions.mapNotNull { session ->
-            session.performedFor(exercise)?.let { session to it }
+            session.performedOccurrence(exercise.exerciseId, occurrence)?.let { session to it.sets }
         }
         if (!isOpen(work, exercise, trained.map { it.second })) return null
 
-        val prompts = trained.map { (session, _) -> promptFor(exercise, session, planned) }
+        val prompts = trained.map { (session, _) -> promptFor(exercise, occurrence, session, planned) }
         if (prompts.takeLast(EXTRA_SESSIONS).size == EXTRA_SESSIONS &&
             prompts.takeLast(EXTRA_SESSIONS).all { it.extraCount() == 1 }
         ) {
@@ -221,15 +234,16 @@ class PlanVolumeFinder @Inject constructor(
         ).stall()
     }
 
-    private fun TemplateSession.performedFor(exercise: TemplateExercise): List<ProgressionPerformance>? =
-        performed.firstOrNull { it.exerciseId == exercise.exerciseId }?.sets
-
     private fun promptFor(
         exercise: TemplateExercise,
+        occurrence: Int,
         session: TemplateSession,
         planned: List<ProgressionPlanSet> = exercise.progressionSets(),
     ): ProgressionPrompt =
-        progressionPromptFor(planned, session.performedFor(exercise).orEmpty())
+        progressionPromptFor(
+            planned,
+            session.performedOccurrence(exercise.exerciseId, occurrence)?.sets.orEmpty(),
+        )
 
     @Suppress("ReturnCount")
     private fun suggestion(

@@ -21,14 +21,6 @@ The review of everything unreleased at `ffcf0320` (N304–N311 and their fixes B
 below: the local gate and the full 510-test instrumented suite were green on the reviewed tree, so each row
 names a path the tests do not cover. The rows are ordered by severity.
 
-- **B446 — The finders use the first session row of a movement (should fix).**
-  [PlanStallFinder.kt](app/src/main/java/com/example/androidapp/domain/PlanStallFinder.kt) (:77) and
-  [PlanVolumeFinder.kt](app/src/main/java/com/example/androidapp/domain/PlanVolumeFinder.kt) (:224) pair a plan
-  row by `exerciseId` alone, so a plan naming the same movement twice reads the first row's history for both.
-  Through `stallsForTemplate` the finish can offer *Deload*/*Replace* for the row that did not stall, and the
-  card's *Add* can append the other row's numbers. B428 fixed the calibration and the Done's suggestion; the
-  card reads were left. Pair the nth row with the nth performed entry of that movement, as `planEntriesFor`
-  already does, and test both card paths.
 - **B447 — B443's multi-lift dialogs still share one name per action (should fix).**
   [WorkoutStallDialog.kt](app/src/main/java/com/example/androidapp/ui/workout/WorkoutStallDialog.kt) (:54) and
   [CalibrationDialog.kt](app/src/main/java/com/example/androidapp/ui/workout/CalibrationDialog.kt) (:104) give

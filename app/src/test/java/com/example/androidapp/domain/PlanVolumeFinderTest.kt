@@ -132,8 +132,9 @@ class PlanVolumeFinderTest {
         val trends = FakeTrendsRepository().apply {
             templateSessions = DataResult.Success(
                 listOf(
-                    session(List(3) { performed() }),
-                    session(List(4) { performed() }),
+                    // Both rows were trained; the first row logged its three sets, the second four.
+                    duplicateSession(first = List(3) { performed() }, second = List(3) { performed() }),
+                    duplicateSession(first = List(3) { performed() }, second = List(4) { performed() }),
                 ),
             )
         }
@@ -145,6 +146,41 @@ class PlanVolumeFinderTest {
         assertThat(suggestion?.templateExerciseId).isEqualTo("te2")
         assertThat(suggestion?.exerciseName).isEqualTo("Squat B")
     }
+
+    @Test
+    fun theCard_readsTheRowsOwnPerformedEntry_ofADuplicateMovement() = runTest {
+        // B446: the card read still matched by exerciseId alone, so a plan naming the same movement twice
+        // read the first row's sets for both. Only the row that logged four sets earned the extra one.
+        val first = exercise().copy(id = "te1", exerciseName = "Squat A")
+        val second = exercise().copy(id = "te2", exerciseName = "Squat B")
+        val templates = FakeTemplateRepository().apply { exercises.value = mapOf("t1" to listOf(first, second)) }
+        val trends = FakeTrendsRepository().apply {
+            templateSessions = DataResult.Success(
+                listOf(
+                    duplicateSession(first = List(3) { performed() }, second = List(4) { performed() }),
+                    duplicateSession(first = List(3) { performed() }, second = List(4) { performed() }),
+                ),
+            )
+        }
+        val finder = PlanVolumeFinder(FakeProgramRepository(), templates, trends)
+
+        val suggestions = finder.suggestionsForTemplate("t1").getOrNull().orEmpty()
+
+        assertThat(suggestions.map { it.templateExerciseId }).containsExactly("te2")
+        assertThat(suggestions.single().reason).isEqualTo(VolumeReason.EXTRA_SET)
+    }
+
+    private fun duplicateSession(
+        first: List<ProgressionPerformance>,
+        second: List<ProgressionPerformance>,
+    ) = TemplateSession(
+        sessionId = "dup-${first.size}-${second.size}-${System.identityHashCode(first)}",
+        startedAt = Instant.parse("2026-09-01T07:00:00Z"),
+        performed = listOf(
+            PerformedExercise(exerciseId = "squat", sets = first),
+            PerformedExercise(exerciseId = "squat", sets = second),
+        ),
+    )
 
     private fun session(
         sets: List<com.example.androidapp.domain.model.ProgressionPerformance>,

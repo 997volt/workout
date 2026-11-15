@@ -4,6 +4,7 @@ import com.example.androidapp.domain.model.PlanStall
 import com.example.androidapp.domain.model.PrescriptionHistory
 import com.example.androidapp.domain.model.STALL_SESSIONS
 import com.example.androidapp.domain.model.progressionSets
+import com.example.androidapp.domain.model.performedOccurrence
 import com.example.androidapp.domain.model.stall
 import com.example.androidapp.domain.repository.ProgramRepository
 import com.example.androidapp.domain.repository.TemplateRepository
@@ -72,12 +73,15 @@ class PlanStallFinder @Inject constructor(
         }
         // Three sessions is the rule's own threshold (N237), and a plan with fewer cannot have one yet.
         if (planned.isEmpty() || sessions.size < STALL_SESSIONS) return@dataResultOf emptyList()
+        // Each plan row reads its own occurrence of the movement (B446): a plan may name it twice (N54), and
+        // the second row's history is not the first row's.
+        val occurrences = mutableMapOf<String, Int>()
         planned.mapNotNull { exercise ->
+            val occurrence = occurrences.getOrDefault(exercise.exerciseId, 0)
+            occurrences[exercise.exerciseId] = occurrence + 1
             // One entry per session that **trained** the movement: absence is not a failure.
             val performed = sessions.mapNotNull { session ->
-                session.performed
-                    .firstOrNull { it.exerciseId == exercise.exerciseId }
-                    ?.sets
+                session.performedOccurrence(exercise.exerciseId, occurrence)?.sets
             }
             PrescriptionHistory(
                 exerciseName = exercise.exerciseName,
