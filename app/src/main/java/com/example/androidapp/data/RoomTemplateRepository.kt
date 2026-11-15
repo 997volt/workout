@@ -520,12 +520,14 @@ class RoomTemplateRepository @Inject constructor(
         val plan = deloadOf(plannedSetsOf(exercise), stepGrams)
         val now = timeSource.nowEpochMillis()
         database.withTransaction {
-            plan.removedSetIds.forEach { id ->
+            plan.removedSetIds.forEachIndexed { index, id ->
                 val sets = plannedSetsOf(exercise)
-                val index = sets.indexOfFirst { it.id == id }
-                if (index < 0) return@forEach
-                val aboveId = sets.getOrNull(index - 1)?.id
-                removalBlock(sets, index).forEach { setDao.softDeleteTemplateSet(it, now, aboveId) }
+                val indexInPlan = sets.indexOfFirst { it.id == id }
+                if (indexInPlan < 0) return@forEachIndexed
+                val aboveId = sets.getOrNull(indexInPlan - 1)?.id
+                // Each removed block gets its own timestamp (B451): one timestamp for all of them made the
+                // undo restore every block at the first block's anchor, reordering the plan.
+                removalBlock(sets, indexInPlan).forEach { setDao.softDeleteTemplateSet(it, now + index, aboveId) }
             }
             // Renumber once: every removal captured the set above it while the old indexes were intact.
             setDao.findTemplateSets(exercise.templateId)
@@ -759,8 +761,12 @@ class RoomTemplateRepository @Inject constructor(
         keptBefore: List<TemplateSet>,
     ): DataResult<Unit> = dataResultOf {
         database.withTransaction {
-            // One removed id restores the whole removal: the deload's rows share one deletion timestamp.
-            removedSetIds.firstOrNull()?.let { restoreSetBlock(it) }
+            // Each block has its own timestamp (B451); restore them last-first so every block goes back
+            // after the anchor it was removed from. An older deload shares one stamp, and its first restore
+            // takes the whole removal, so a later id that is already live is skipped.
+            removedSetIds.asReversed().forEach { id ->
+                if (setDao.findTemplateSetWithPlan(id)?.deletedAt != null) restoreSetBlock(id)
+            }
             keptBefore.forEach { before ->
                 updateSetRow(
                     before.id,

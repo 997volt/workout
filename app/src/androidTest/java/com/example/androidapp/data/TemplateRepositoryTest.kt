@@ -16,7 +16,6 @@ import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.ReplacementSeed
 import com.example.androidapp.domain.model.SetType
-import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.runAt
 import com.example.androidapp.domain.model.rungLoad
 import com.example.androidapp.domain.model.rungWeightAt
@@ -725,16 +724,52 @@ class TemplateRepositoryTest {
         assertEquals(92_500L, after.first().targetWeightGrams)
         assertEquals(5, after.first().targetRepsCurrent)
 
-        // The undo, as the editor performs it: one removed id takes the whole removal back, then the
-        // kept targets are rewritten from the before-state.
-        assertTrue(repository.restoreSet(plan.removedSetIds.first()) is DataResult.Success)
-        plan.kept.forEach { kept ->
-            val original = before.first { it.id == kept.setId }
-            assertTrue(repository.updateSet(kept.setId, original.toEdit()) is DataResult.Success)
-        }
+        // The undo, as the editor performs it: every removed block and every kept target in one write
+        // (B432, B451).
+        val keptBefore = before.filter { set -> plan.kept.any { it.setId == set.id } }
+        assertTrue(repository.undoDeload(plan.removedSetIds, keptBefore) is DataResult.Success)
         val undone = repository.observeSets(template).first()
         assertEquals(5, undone.size)
         assertEquals(100_000L, undone.first().targetWeightGrams)
+    }
+
+    @Test
+    fun theUndoOfATwoBlockDeload_putsThePlanBackInOrder() = runTest {
+        // B451: the trim removes the later working sets, and a warm-up can sit between two of them. The
+        // blocks share one write, but the undo must put each back after its own anchor, not both after the
+        // first one.
+        val template = create("Legs")
+        val exercise = plannedExercise(template)
+        val work = TemplateSetEdit(
+            role = SetType.NORMAL,
+            targetWeightGrams = 100_000L,
+            targetRepsMin = 5,
+            targetRepsMax = 5,
+        )
+        repository.addSet(exercise, work)
+        repository.addSet(exercise, work)
+        repository.addSet(exercise, work)
+        repository.addSet(exercise, work)
+        repository.addSet(
+            exercise,
+            TemplateSetEdit(
+                role = SetType.WARMUP,
+                targetWeightGrams = 60_000L,
+                targetRepsMax = 5,
+            ),
+        )
+        repository.addSet(exercise, work)
+        val before = repository.observeSets(template).first()
+        val keptBefore = before.filter { it.role.recordsEffort }.take(3)
+
+        val plan = (repository.deloadExercise(exercise, 2_500L) as DataResult.Success).data
+        assertEquals(2, plan.removedSetIds.size)
+
+        assertTrue(repository.undoDeload(plan.removedSetIds, keptBefore) is DataResult.Success)
+
+        val after = repository.observeSets(template).first()
+        assertEquals("every set is back, in the order it was written", before.map { it.id }, after.map { it.id })
+        assertEquals(before.map { it.setIndex }, after.map { it.setIndex })
     }
 
     @Test
@@ -1113,18 +1148,6 @@ class TemplateRepositoryTest {
             repository.observeExercises(template).first().first { it.id == lift }.calibrationPending,
         )
     }
-
-    private fun TemplateSet.toEdit() = TemplateSetEdit(
-        role = role,
-        targetWeightGrams = targetWeightGrams,
-        targetAssistanceGrams = targetAssistanceGrams,
-        targetRepsMin = targetRepsMin,
-        targetRepsMax = targetRepsMax,
-        targetRepsCurrent = targetRepsCurrent,
-        dropValueGrams = dropValueGrams,
-        targetDurationSeconds = targetDurationSeconds,
-        note = note,
-    )
 
     private suspend fun plannedExercise(templateId: String): String {
         repository.addExercise(templateId, "back-squat")

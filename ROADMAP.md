@@ -21,11 +21,6 @@ The review of everything unreleased at `ffcf0320` (N304–N311 and their fixes B
 below: the local gate and the full 510-test instrumented suite were green on the reviewed tree, so each row
 names a path the tests do not cover. The rows are ordered by severity.
 
-- **B451 — Undo of a two-block deload can reorder the plan (minor).**
-  [RoomTemplateRepository.kt](app/src/main/java/com/example/androidapp/data/RoomTemplateRepository.kt) (:753,
-  :794) restores every row that shares one deletion timestamp at the *first* block's anchor, so with
-  `[A,B,C,D,W,E]` (W a warm-up between the last removed work sets) the undo yields `[A,B,C,D,E,W]`. No rows are
-  lost, but the plan's order is the plan. Restore each block at its own `restoreAfterId`, and test that shape.
 - **B452 — A failed calibration read at the finish is silent (minor).**
   [ActiveWorkoutViewModel.kt](app/src/main/java/com/example/androidapp/ui/workout/ActiveWorkoutViewModel.kt)
   (:1487) sets `lastError` and the successful finish clears it (:1394), so the workout closes with no prompt and
