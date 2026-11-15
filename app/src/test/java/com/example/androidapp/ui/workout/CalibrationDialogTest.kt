@@ -103,6 +103,24 @@ class CalibrationDialogTest {
     }
 
     @Test
+    fun aBodyweightPlan_saysOnlyTheCount_noTop() {
+        // B450: a bodyweight or hold plan has no load to be "top" of, so the prompt must not claim 0 kg.
+        val notice = CalibrationNotice(
+            templateExerciseId = "te1",
+            exerciseName = "Plank",
+            setCount = 3,
+            topWeightGrams = 0L,
+            topAssistanceGrams = 0L,
+            weightUnit = WeightUnit.KILOGRAMS,
+            targets = emptyList(),
+        )
+        show(notice)
+
+        composeTestRule.onNodeWithText("3 sets").assertExists()
+        composeTestRule.onNodeWithText("top", substring = true).assertDoesNotExist()
+    }
+
+    @Test
     fun aFailedWrite_statesIt_andCloseMovesOnWithoutWriting() {
         // B422: the dialog used to have no exit when a write failed, so a stored workout could not close.
         val notice = CalibrationNotice(

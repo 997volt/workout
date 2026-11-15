@@ -1468,6 +1468,11 @@
         <item quantity="one">%1$d set, top %2$s</item>
         <item quantity="other">%1$d sets, top %2$s</item>
     </plurals>
+    <!-- A bodyweight or hold plan has no load to be "top" of; the count is the whole statement (B450). -->
+    <plurals name="calibration_detail_no_load">
+        <item quantity="one">%1$d set</item>
+        <item quantity="other">%1$d sets</item>
+    </plurals>
     <string name="calibration_use">Use</string>
     <string name="calibration_skip">Not now</string>
     <string name="calibration_use_for">Use today\'s weights for %1$s</string>

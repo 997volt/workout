@@ -1814,6 +1814,69 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
+    fun anAssistedPlan_isAskedForItsBestSet_notItsFirst() = runTest(dispatcher) {
+        // B450: an assisted set stores weight 0, so "top" is the least assistance, not whichever was logged
+        // first — the same rule the app uses to read an assisted series.
+        val repository = FakeWorkoutRepository()
+        repository.exercises.value = listOf(
+            aSessionExercise("pull-up", id = "se-pull", name = "Pull-Up"),
+        )
+        repository.sets.value = listOf(
+            SetEntry(
+                id = "e1",
+                sessionExerciseId = "se-pull",
+                setIndex = 0,
+                reps = 8,
+                weightGrams = 0L,
+                assistanceGrams = 20_000L,
+            ),
+            SetEntry(
+                id = "e2",
+                sessionExerciseId = "se-pull",
+                setIndex = 1,
+                reps = 8,
+                weightGrams = 0L,
+                assistanceGrams = 15_000L,
+            ),
+            SetEntry(
+                id = "e3",
+                sessionExerciseId = "se-pull",
+                setIndex = 2,
+                reps = 8,
+                weightGrams = 0L,
+                assistanceGrams = 10_000L,
+            ),
+        )
+        val marked = FakeTemplateRepository(
+            planned = listOf(
+                plannedExercise(
+                    position = 0,
+                    exerciseId = "pull-up",
+                    sets = (0 until 3).map { plannedSet(index = it, reps = 8, weightGrams = 0L) },
+                ).copy(calibrationPending = true, exerciseName = "Pull-Up"),
+            ),
+        )
+        marked.sets.value = mapOf(
+            "t1" to (0 until 3).map { plannedSet(index = it, reps = 8, weightGrams = 0L) },
+        )
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = marked,
+            trends = FakeTrendsRepository().apply { templateSessions = DataResult.Success(emptyList()) },
+        )
+        observe(viewModel)
+        settle()
+
+        viewModel.onFinish()
+        settle()
+
+        val notice = viewModel.calibrationNotice.value!!.single()
+        assertEquals("the least help is the best set", 10_000L, notice.topAssistanceGrams)
+        assertEquals(0L, notice.topWeightGrams)
+    }
+
+    @Test
     fun aMarkedTimedPlan_adoptsTheHoldItLogged() = runTest(dispatcher) {
         // N312 (B435): a marked timed movement's blank first set made *Use* calibrate the plan to 0. A timed
         // row that logged a real load is asked like any other, and its load is what the answer carries.

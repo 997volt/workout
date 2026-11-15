@@ -21,11 +21,6 @@ The review of everything unreleased at `ffcf0320` (N304–N311 and their fixes B
 below: the local gate and the full 510-test instrumented suite were green on the reviewed tree, so each row
 names a path the tests do not cover. The rows are ordered by severity.
 
-- **B450 — The calibration prompt's top is the wrong set for assisted work (minor).**
-  [ActiveWorkoutViewModel.kt](app/src/main/java/com/example/androidapp/ui/workout/ActiveWorkoutViewModel.kt)
-  (:1464) takes `maxByOrNull { weightGrams }`; an assisted set stores weight 0, so the first set always wins and
-  the dialog says "top -20 kg" when the best was -10 (a bodyweight plan says "top 0 kg"). Compare the signed load
-  (least assistance), as the app's own assisted-series rule does, and derive a notice from an assisted session.
 - **B451 — Undo of a two-block deload can reorder the plan (minor).**
   [RoomTemplateRepository.kt](app/src/main/java/com/example/androidapp/data/RoomTemplateRepository.kt) (:753,
   :794) restores every row that shares one deletion timestamp at the *first* block's anchor, so with

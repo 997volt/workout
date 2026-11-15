@@ -1461,7 +1461,9 @@ class ActiveWorkoutViewModel @Inject constructor(
                     it.templateExerciseId == exercise.id && it.role.recordsEffort
                 }
                 val count = minOf(performed.size, planned.size)
-                val top = performed.maxByOrNull { it.weightGrams } ?: return@mapNotNull null
+                // The top is the hardest set's *signed* load (B450): an assisted set stores weight 0, so its
+                // weight alone cannot tell -20 from -10, and the least help is the best set.
+                val top = performed.maxByOrNull { it.weightGrams - it.assistanceGrams } ?: return@mapNotNull null
                 if (count == 0) return@mapNotNull null
                 CalibrationNotice(
                     templateExerciseId = exercise.id,

@@ -78,22 +78,7 @@ private fun CalibrationNoticeLine(
             style = MaterialTheme.typography.bodyMedium,
         )
         Text(
-            text = pluralStringResource(
-                R.plurals.calibration_detail,
-                notice.setCount,
-                notice.setCount,
-                Weight.display(
-                    notice.topWeightGrams,
-                    notice.topAssistanceGrams,
-                    notice.weightUnit,
-                ) + " " + stringResource(
-                    if (notice.weightUnit == WeightUnit.KILOGRAMS) {
-                        R.string.suggestion_unit_kg
-                    } else {
-                        R.string.suggestion_unit_lb
-                    },
-                ),
-            ),
+            text = calibrationDetail(notice),
             style = MaterialTheme.typography.bodySmall,
         )
         if (failed) {
@@ -105,6 +90,28 @@ private fun CalibrationNoticeLine(
         }
         CalibrationAnswers(notice, failed, onUse, onSkip, onClose)
     }
+}
+
+/** The count and the top load, or only the count when there is no load to state (B450). */
+@Composable
+private fun calibrationDetail(notice: CalibrationNotice): String {
+    val bodyweight = notice.topWeightGrams == 0L && notice.topAssistanceGrams == 0L
+    if (bodyweight) {
+        return pluralStringResource(
+            R.plurals.calibration_detail_no_load,
+            notice.setCount,
+            notice.setCount,
+        )
+    }
+    val unitLabel = stringResource(
+        if (notice.weightUnit == WeightUnit.KILOGRAMS) R.string.suggestion_unit_kg else R.string.suggestion_unit_lb,
+    )
+    return pluralStringResource(
+        R.plurals.calibration_detail,
+        notice.setCount,
+        notice.setCount,
+        Weight.display(notice.topWeightGrams, notice.topAssistanceGrams, notice.weightUnit) + " " + unitLabel,
+    )
 }
 
 /** One lift's buttons, each tagged and named for that lift (B447). */
