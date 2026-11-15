@@ -125,6 +125,8 @@ class ActiveWorkoutScreenTest {
         onDismissVolume: () -> Unit = {},
         onUndoVolume: () -> Unit = {},
         onDismissVolumeUndo: () -> Unit = {},
+        calibrationReadFailed: Boolean = false,
+        onDismissCalibrationReadError: () -> Unit = {},
     ) {
         composeTestRule.setContent {
             ActiveWorkoutScreen(
@@ -174,8 +176,10 @@ class ActiveWorkoutScreenTest {
                 onDeloadStall = {},
                 onReplaceStall = {},
                 calibrationNotice = null,
+                calibrationReadFailed = calibrationReadFailed,
                 onUseCalibration = {},
                 onSkipCalibration = {},
+                onDismissCalibrationReadError = onDismissCalibrationReadError,
                 onEnterBodyweight = actions.onEnterBodyweight,
                 onDismissBodyweight = actions.onDismissBodyweight,
                 onSelectEveryProgression = actions.onSelectEveryProgression,
@@ -203,6 +207,23 @@ class ActiveWorkoutScreenTest {
             targetRepsMax = 5,
         ),
     )
+
+    @Test
+    fun aFailedCalibrationRead_isSaidOnce() {
+        // B452: the finish could not read the marked plans; the dialog says so and its OK lets the rest run.
+        var dismissed = false
+        setScreen(
+            state = state(isFinished = true),
+            calibrationReadFailed = true,
+            onDismissCalibrationReadError = { dismissed = true },
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.CALIBRATION_READ_ERROR).assertExists()
+        composeTestRule.onNodeWithText("Some plans couldn't be checked", substring = true).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.CALIBRATION_READ_OK).performClick()
+
+        assertTrue(dismissed)
+    }
 
     @Test
     fun theEarnedSetSnackbar_namesTheLift_forAnExtraSet() {

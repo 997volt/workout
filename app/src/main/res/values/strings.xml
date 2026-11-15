@@ -1480,6 +1480,9 @@
     <string name="calibration_close_for">Close without saving %1$s</string>
     <string name="calibration_write_failed">The plan could not be saved. Close and try again from the plan.</string>
     <string name="calibration_close">Close</string>
+    <string name="calibration_unread_title">Find the weight</string>
+    <string name="calibration_unread_body">Some plans couldn\'t be checked. Their weights will be asked for again next time.</string>
+    <string name="calibration_unread_ok">OK</string>
     <string name="program_no_slots">No workouts yet</string>
     <string name="program_no_slots_hint">Add the workouts you train, in order, and give each one a day.</string>
     <string name="program_add_slot">Add workout</string>

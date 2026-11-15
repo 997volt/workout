@@ -92,6 +92,7 @@ fun ActiveWorkoutRoute(
     val volumeUndo by viewModel.volumeUndo.collectAsStateWithLifecycle()
     val calibrationNotice by viewModel.calibrationNotice.collectAsStateWithLifecycle()
     val calibrationError by viewModel.calibrationError.collectAsStateWithLifecycle()
+    val calibrationReadError by viewModel.calibrationReadError.collectAsStateWithLifecycle()
     val personalRecord by viewModel.personalRecord.collectAsStateWithLifecycle()
     val autoStep by viewModel.autoStep.collectAsStateWithLifecycle()
     val setWriteOutcome by viewModel.setWriteOutcome.collectAsStateWithLifecycle()
@@ -117,9 +118,11 @@ fun ActiveWorkoutRoute(
         onDismissVolumeUndo = viewModel::onDismissVolumeUndo,
         calibrationNotice = calibrationNotice,
         calibrationError = calibrationError,
+        calibrationReadFailed = calibrationReadError != null,
         onUseCalibration = viewModel::onUseCalibration,
         onSkipCalibration = viewModel::onSkipCalibration,
         onCloseCalibration = viewModel::onCloseCalibration,
+        onDismissCalibrationReadError = viewModel::onDismissCalibrationReadError,
         personalRecord = personalRecord,
         autoStep = autoStep,
         onUndoAutoStep = viewModel::onUndoAutoStep,
@@ -227,6 +230,9 @@ fun ActiveWorkoutScreen(
     onDismissVolumeUndo: () -> Unit = {},
     calibrationError: CalibrationNotice? = null,
     onCloseCalibration: (CalibrationNotice) -> Unit = {},
+    /** True when the read that owed that prompt failed, so the finish says so once (B452). */
+    calibrationReadFailed: Boolean = false,
+    onDismissCalibrationReadError: () -> Unit = {},
     /**
      * True when dropping out is recorded against a program rather than reading as no workout at
      * all (ROADMAP N41): the discard prompt says so, because only a finished session settles a
@@ -275,6 +281,9 @@ fun ActiveWorkoutScreen(
             errorNotice = calibrationError,
             onClose = onCloseCalibration,
         )
+    }
+    if (calibrationReadFailed) {
+        CalibrationReadDialog(onDismiss = onDismissCalibrationReadError)
     }
     if (stallNotice != null) {
         WorkoutStallDialog(

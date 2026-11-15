@@ -251,6 +251,10 @@ internal interface WorkoutTags {
 
     val STALL_DONE: String get() = "workout_stall_done"
 
+    /** The finish could not read the plans it owed a find-the-weight question (B452). */
+    val CALIBRATION_READ_ERROR: String get() = "workout_calibration_read_error"
+    val CALIBRATION_READ_OK: String get() = "workout_calibration_read_ok"
+
     /**
      * The button that writes the next set (ROADMAP N59).
      *

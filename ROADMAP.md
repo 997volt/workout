@@ -21,11 +21,6 @@ The review of everything unreleased at `ffcf0320` (N304–N311 and their fixes B
 below: the local gate and the full 510-test instrumented suite were green on the reviewed tree, so each row
 names a path the tests do not cover. The rows are ordered by severity.
 
-- **B452 — A failed calibration read at the finish is silent (minor).**
-  [ActiveWorkoutViewModel.kt](app/src/main/java/com/example/androidapp/ui/workout/ActiveWorkoutViewModel.kt)
-  (:1487) sets `lastError` and the successful finish clears it (:1394), so the workout closes with no prompt and
-  no message while the marker stays. The next session's answer cannot carry this session's numbers. Say it
-  without blocking the close.
 - **B453 — The import preview's "and N more" crashes (pre-existing).** Found while checking the batch's format
   strings: [ImportPreviewDialog.kt](app/src/main/java/com/example/androidapp/ui/transfer/ImportPreviewDialog.kt)
   (:101) passes no format argument for a `%1$d` plural item, so a file with more than three problems throws

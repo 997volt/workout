@@ -84,6 +84,12 @@ data class CalibrationNotice(
     val targets: List<CalibrationTarget>,
 )
 
+/** The marked plans a finish owes a question, and the read's failure when it could not answer (B452). */
+private data class CalibrationRead(
+    val notices: List<CalibrationNotice>,
+    val error: DataError?,
+)
+
 /**
  * Where the finish's stall decision goes (ROADMAP N310): the plan screen, with the target it must open.
  *
@@ -273,6 +279,10 @@ class ActiveWorkoutViewModel @Inject constructor(
 
     /** The marked plan whose answer last failed to write, so the dialog can offer a way out (B422). */
     private val _calibrationError = MutableStateFlow<CalibrationNotice?>(null)
+
+    /** A finish that could not read the marked plans, held for one acknowledgement (B452). */
+    private val _calibrationReadError = MutableStateFlow<DataError?>(null)
+    val calibrationReadError: StateFlow<DataError?> = _calibrationReadError.asStateFlow()
     val calibrationError: StateFlow<CalibrationNotice?> = _calibrationError.asStateFlow()
 
     /** The plan's earned set, offered at *Done* (N311). */
@@ -1394,11 +1404,12 @@ class ActiveWorkoutViewModel @Inject constructor(
                     lastError.value = null
                     // The find-the-weight prompt comes first (N309); the stall is owed after it (N305).
                     val notice = finishStallNotice(templateId, trained)
-                    if (calibration.isEmpty()) {
+                    if (calibration.notices.isEmpty() && calibration.error == null) {
                         if (notice == null) closeSession() else showStalls(notice)
                     } else {
                         pendingStallNotice.value = notice
-                        _calibrationNotice.value = calibration
+                        _calibrationNotice.value = calibration.notices
+                        _calibrationReadError.value = calibration.error
                     }
                 }
 
@@ -1441,9 +1452,15 @@ class ActiveWorkoutViewModel @Inject constructor(
         closeSession()
     }
 
-    /** The plan's marked exercises, with the session's performed work sets by place (N309). */
-    private suspend fun calibrationNotices(): List<CalibrationNotice> {
-        val templateId = uiState.value.sessionTemplateId ?: return emptyList()
+    /**
+     * The plan's marked exercises, with the session's performed work sets by place (N309), and the read's
+     * failure when there was one (B452).
+     *
+     * A failure is not silently "no marked plans": the finish says so once and then carries on, because the
+     * stored workout must not become unclosable (B422's rule).
+     */
+    private suspend fun calibrationNotices(): CalibrationRead {
+        val templateId = uiState.value.sessionTemplateId ?: return CalibrationRead(emptyList(), null)
         val read = dataResultOf {
             val plan = templateRepository.observeExercises(templateId).first()
             val sets = templateRepository.observeSets(templateId).first()
@@ -1484,11 +1501,8 @@ class ActiveWorkoutViewModel @Inject constructor(
             }
         }
         return when (read) {
-            is DataResult.Success -> read.data
-            is DataResult.Failure -> {
-                lastError.value = read.error
-                emptyList()
-            }
+            is DataResult.Success -> CalibrationRead(read.data, null)
+            is DataResult.Failure -> CalibrationRead(emptyList(), read.error)
         }
     }
 
@@ -1525,6 +1539,16 @@ class ActiveWorkoutViewModel @Inject constructor(
     fun onCloseCalibration(notice: CalibrationNotice) {
         _calibrationError.value = null
         removeCalibration(notice)
+    }
+
+    /** The unreadable plans were acknowledged; the finish carries on with its stall or its close (B452). */
+    fun onDismissCalibrationReadError() {
+        _calibrationReadError.value = null
+        if (_calibrationNotice.value.isNullOrEmpty()) {
+            val stall = pendingStallNotice.value
+            pendingStallNotice.value = null
+            if (stall == null) closeSession() else showStalls(stall)
+        }
     }
 
     private fun removeCalibration(notice: CalibrationNotice) {
@@ -1604,6 +1628,7 @@ class ActiveWorkoutViewModel @Inject constructor(
         // Nothing of the finish outlives it (B430): a suggestion or an undo must not survive the screen.
         _volumeSuggestion.value = null
         _volumeUndo.value = null
+        _calibrationReadError.value = null
         _closed.value = true
     }
 

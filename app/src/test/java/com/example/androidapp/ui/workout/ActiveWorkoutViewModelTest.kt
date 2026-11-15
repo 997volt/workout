@@ -69,6 +69,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -1734,6 +1735,47 @@ class ActiveWorkoutViewModelTest {
         assertEquals("with the row the session followed", 110_000L, notice.topWeightGrams)
         assertEquals("and its own planned set", "ts-1", notice.targets.single().setId)
         assertEquals(110_000L, notice.targets.single().weightGrams)
+    }
+
+    @Test
+    fun aFailedCalibrationRead_isSaidOnce_andTheWorkoutStillCloses() = runTest(dispatcher) {
+        // B452: the finish must not close on a question it could not read, and must not strand the workout
+        // either — one acknowledgement, then the stall or the close.
+        val repository = FakeWorkoutRepository()
+        repository.exercises.value = listOf(aSessionExercise("back-squat"))
+        repository.sets.value = listOf(
+            SetEntry(id = "e1", sessionExerciseId = "se-back-squat", setIndex = 0, reps = 5, weightGrams = 100_000L),
+        )
+        val templates = FakeTemplateRepository(
+            planned = listOf(
+                plannedExercise(
+                    position = 0,
+                    sets = listOf(plannedSet(index = 0, reps = 5, weightGrams = 100_000L)),
+                ),
+            ),
+        )
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = templates,
+            trends = FakeTrendsRepository().apply { templateSessions = DataResult.Success(emptyList()) },
+        )
+        observe(viewModel)
+        settle()
+        // The screen loaded from the plan; the plan read fails only when the finish asks again (B452).
+        templates.failReads = true
+
+        viewModel.onFinish()
+        settle()
+
+        assertNotNull("the read's failure is held for one acknowledgement", viewModel.calibrationReadError.value)
+        assertFalse("the workout waits for that acknowledgement", viewModel.closed.value)
+
+        viewModel.onDismissCalibrationReadError()
+        settle()
+
+        assertNull(viewModel.calibrationReadError.value)
+        assertTrue("and then the finish carries on", viewModel.closed.value)
     }
 
     @Test
@@ -3603,8 +3645,12 @@ class ActiveWorkoutViewModelTest {
         override fun observeTemplateName(templateId: String): Flow<String?> = flowOf(null)
         override fun observeVersions(templateId: String): Flow<List<WorkoutTemplate>> = flowOf(emptyList())
         override suspend fun keepVersion(templateId: String): DataResult<Unit> = DataResult.Success(Unit)
+
+        /** Fails the plan reads, for the finish's unreadable-plans path (B452). */
+        var failReads = false
+
         override fun observeExercises(templateId: String): Flow<List<TemplateExercise>> =
-            flowOf(planned)
+            if (failReads) flow { throw IOException("locked") } else flowOf(planned)
 
         val sets = MutableStateFlow<Map<String, List<TemplateSet>>>(emptyMap())
 
@@ -3616,7 +3662,7 @@ class ActiveWorkoutViewModelTest {
         val calibrationMarks = mutableListOf<Pair<String, Boolean>>()
 
         override fun observeSets(templateId: String): Flow<List<TemplateSet>> =
-            sets.map { it[templateId].orEmpty() }
+            if (failReads) flow { throw IOException("locked") } else sets.map { it[templateId].orEmpty() }
         override suspend fun makeWeightless(templateExerciseId: String): DataResult<Unit> {
             return notUsed()
         }
