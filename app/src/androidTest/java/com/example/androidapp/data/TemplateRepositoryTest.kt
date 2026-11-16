@@ -893,6 +893,47 @@ class TemplateRepositoryTest {
     }
 
     @Test
+    fun aSecondFindTheWeightSave_keepsAWeightEnteredAfterTheSwitch() = runTest {
+        // B426: the switch is a state, not a command. Re-saving the same plan must not wipe a weight
+        // entered after the marker was set — the real-store case the ViewModel test's fake cannot prove.
+        val template = create("Legs")
+        val exercise = plannedExercise(template)
+        repository.addSet(
+            exercise,
+            TemplateSetEdit(
+                role = SetType.NORMAL,
+                targetWeightGrams = 100_000L,
+                targetRepsMin = 5,
+                targetRepsMax = 8,
+            ),
+        )
+        assertTrue(
+            repository.setExercisePlan(exercise, null, null, null, findWeight = true) is DataResult.Success,
+        )
+        val setId = repository.observeExercises(template).first().single().sets.single().id
+        assertTrue(
+            repository.updateSet(
+                setId,
+                TemplateSetEdit(
+                    role = SetType.NORMAL,
+                    targetWeightGrams = 120_000L,
+                    targetRepsMin = 5,
+                    targetRepsMax = 8,
+                ),
+            ) is DataResult.Success,
+        )
+
+        assertTrue(
+            "the same switch again asks for nothing",
+            repository.setExercisePlan(exercise, null, null, null, findWeight = true) is DataResult.Success,
+        )
+
+        val after = repository.observeExercises(template).first().single()
+        assertEquals("the entered weight survives", 120_000L, after.sets.single().targetWeightGrams)
+        assertTrue("the marker is still pending", after.calibrationPending)
+    }
+
+    @Test
     fun theWeightlessAndDeloadWrites_keepADropRun_thatTheAnchorsNewLoadCannotSupport() = runTest {
         // B421: the deliberate transitions may strand a kept rung. Refusing the write made Find the
         // weight unusable on a plan with a ladder and a deload of a light anchor fail.
