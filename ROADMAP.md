@@ -22,11 +22,7 @@ draws lead; the test-count gate follows them, because it is what would let a lat
 disappear unnoticed. Each row is one commit (or a small batch) with its id in the subject, and a
 row leaves this section for [CHANGELOG.md](CHANGELOG.md) when it ships.
 
-1. **N320 — Correct the two stale statements.** README's quoted release size no longer matches
-    the built artifact, and `RestTimer` still says its default is a constant until a settings
-    screen exists. Drop or derive the size, and update the comment.
-
-2. **N321 — Sweep the remaining low findings.** `IndexUsageTest` plans hand-written SQL rather
+1. **N321 — Sweep the remaining low findings.** `IndexUsageTest` plans hand-written SQL rather
     than the DAO's own queries; `MeasurementDayStateTest` reads the real clock; `remainingSeconds`
     can wrap a huge duration into a negative `Int`; and `recordBackupResult` permits success and
     failure at once. Fix or explicitly reject each.

@@ -14,8 +14,7 @@ import java.time.Instant
 object RestTimer {
 
     /**
-     * The default rest between sets. A user-configurable value is part of P1.4's
-     * "configurable default"; until there is a settings screen, one constant.
+     * The rest a device starts with, until the lifter chooses one in Settings (N21).
      */
     const val DEFAULT_SECONDS = 90
 
