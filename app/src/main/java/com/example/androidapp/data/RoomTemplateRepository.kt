@@ -39,7 +39,6 @@ import com.example.androidapp.domain.repository.TemplateRepository
 import com.example.androidapp.domain.repository.TemplateSetEdit
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.util.UUID
 import javax.inject.Inject
@@ -873,7 +872,7 @@ class RoomTemplateRepository @Inject constructor(
             database.withTransaction {
                 val row = dao.findTemplateExercise(templateExerciseId)
                     ?: throw NotFoundException("template exercise $templateExerciseId")
-                val ordered = dao.observeTemplateExercises(row.templateId).first()
+                val ordered = dao.findTemplateExercises(row.templateId)
                 val index = ordered.indexOfFirst { it.id == templateExerciseId }
                 val neighbour = ordered.getOrNull(index + delta)
                 // At the top or the bottom: nothing to do, and not an error.

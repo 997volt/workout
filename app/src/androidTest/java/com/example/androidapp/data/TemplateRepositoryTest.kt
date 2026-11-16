@@ -275,6 +275,27 @@ class TemplateRepositoryTest {
     }
 
     @Test
+    fun twoMovesInOneFrame_leaveEveryPositionDistinct() = runTest {
+        // B468: the read and the swap are one transaction now, so two moves cannot both act on the
+        // same order and leave a shared position.
+        database.exerciseDao().insertAll(listOf(exercise("deadlift")))
+        val id = create("Push day")
+        repository.addExercise(id, "back-squat")
+        repository.addExercise(id, "bench-press")
+        repository.addExercise(id, "deadlift")
+        val rows = repository.observeExercises(id).first()
+
+        val first = async { repository.moveExercise(rows[0].id, delta = 1) }
+        val second = async { repository.moveExercise(rows[1].id, delta = 1) }
+        assertTrue(first.await() is DataResult.Success)
+        assertTrue(second.await() is DataResult.Success)
+
+        val after = repository.observeExercises(id).first()
+        assertEquals("no row was lost", 3, after.size)
+        assertEquals("and no two share a place", 3, after.map { it.position }.distinct().size)
+    }
+
+    @Test
     fun movingAnUnknownExercise_isNotFound() = runTest {
         val failure = repository.moveExercise("no-such-row", delta = 1) as DataResult.Failure
 

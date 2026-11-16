@@ -37,8 +37,9 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 - **Template quick-add is single-flight** (B461). Two taps in one frame append one block, not two.
 - **A repeated workout-detail failure is said again** (B462). The error is acknowledged after its snackbar, so
   the same storage sentence can be shown a second time.
-- **A reorder is one transaction** (B463). The session, plan and program reorders read their order and write
-  the new one inside one boundary, so two quick taps cannot leave two rows on one position.
+- **A reorder is one transaction** (B463, B468). The session, plan and program reorders read their order and
+  write the new one inside one boundary, so two quick taps cannot leave two rows on one position. The plan
+  reorder reads once through the suspend DAO query, and a two-move test asserts every position stays distinct.
 - **Adherence day cells name their action** (B464). A scheduled cell announces *Open this day* rather than only
   what the day is.
 - **The custom-range dialog survives rotation** (B465). Its open flag and both picked dates are saveable.
