@@ -70,6 +70,32 @@ class PlanVolumeFinderTest {
     }
 
     @Test
+    fun anExtraRung_isNotAnExtraWorkingSet() {
+        // B454: a second drop is part of the group, not a working set the plan is short of.
+        val exercise = rungExercise()
+        val anchor = performed()
+        val drop = ProgressionPerformance(
+            reps = 8,
+            weightGrams = 80_000L,
+            rpeHalves = 16,
+            role = SetType.DROP,
+        )
+        val extraDrop = drop.copy(weightGrams = 60_000L)
+        val withoutExtra = prompt(exercise, listOf(anchor, drop))
+        // The anchor is short, so the only pattern the sessions make is the extra rung's; the drop is
+        // not a working set and must not turn that into an EXTRA_SET.
+        val withExtra = prompt(exercise, listOf(performed(reps = 3), drop, extraDrop))
+
+        val suggestion = finder.doneSuggestion(
+            exercise,
+            withExtra,
+            listOf(withoutExtra, withExtra),
+        )
+
+        assertThat(suggestion).isNull()
+    }
+
+    @Test
     fun theExtraSet_isNotSaidAgain_whenTheSessionBeforeThePairAlsoHeld() {
         val exercise = exercise()
         val missed = List(3) { performed(reps = 3) }
@@ -270,6 +296,36 @@ class PlanVolumeFinderTest {
                 targetRepsMax = 5,
             )
         },
+    )
+
+    /** A plan with one working set and one drop rung, for the rung-is-not-volume case (B454). */
+    private fun rungExercise() = TemplateExercise(
+        id = "te1",
+        templateId = "t1",
+        exerciseId = "squat",
+        position = 0,
+        exerciseName = "Back Squat",
+        primaryMuscle = null,
+        equipment = null,
+        targetRpeHalves = 16,
+        sets = listOf(
+            TemplateSet(
+                id = "s0",
+                templateExerciseId = "te1",
+                setIndex = 0,
+                role = SetType.NORMAL,
+                targetWeightGrams = 100_000L,
+                targetRepsMin = 5,
+                targetRepsMax = 5,
+            ),
+            TemplateSet(
+                id = "s1",
+                templateExerciseId = "te1",
+                setIndex = 1,
+                role = SetType.DROP,
+                dropValueGrams = 2_500L,
+            ),
+        ),
     )
 
     private fun performed(reps: Int = 5) = ProgressionPerformance(

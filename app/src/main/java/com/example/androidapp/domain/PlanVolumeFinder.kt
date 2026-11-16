@@ -5,6 +5,7 @@ import com.example.androidapp.domain.model.PrescriptionHistory
 import com.example.androidapp.domain.model.ProgressionPerformance
 import com.example.androidapp.domain.model.ProgressionPlanSet
 import com.example.androidapp.domain.model.ProgressionPrompt
+import com.example.androidapp.domain.model.ProgressionSetPrompt
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSession
@@ -293,10 +294,20 @@ class PlanVolumeFinder @Inject constructor(
     private fun List<ProgressionPlanSet>.workSets(): List<ProgressionPlanSet> =
         filter { it.role.isWork && !it.role.isRung }
 
-    private fun ProgressionPrompt.extraCount(): Int = sets.count { it.planned == null }
+    /**
+     * Work the plan does not name, which is one thing a plan can be short of.
+     *
+     * A rung is not one (B454): it is part of the group above it, so a second drop or cluster rung is
+     * extra work rather than an extra working set, and counting it here made the card promise a set the
+     * plan was not short of — and then append a `NORMAL` set at the rung's load.
+     */
+    private fun ProgressionPrompt.extraCount(): Int = sets.count { it.isExtraWorkingSet() }
 
     private fun ProgressionPrompt.extraPerformed(): ProgressionPerformance? =
-        sets.firstOrNull { it.planned == null }?.performed
+        sets.firstOrNull { it.isExtraWorkingSet() }?.performed
+
+    private fun ProgressionSetPrompt.isExtraWorkingSet(): Boolean =
+        planned == null && performed?.role?.isRung == false
 
     private fun ProgressionPrompt.everyWorkSetEarned(): Boolean {
         val work = sets.filter {
