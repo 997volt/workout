@@ -134,6 +134,7 @@ fun WorkoutDetailRoute(
         onScheduleTemplate = viewModel::onScheduleTemplate,
         movedDay = movedDay,
         onDismissMovedDay = viewModel::onDismissMovedDay,
+        onDismissError = viewModel::onErrorShown,
         setWriteOutcome = setWriteOutcome,
     )
 }
@@ -152,10 +153,18 @@ private fun DetailNotices(
     movedDay: LocalDate?,
     host: SnackbarHostState,
     onDismissMovedDay: () -> Unit,
+    onDismissError: () -> Unit,
 ) {
-    state.error?.let {
-        val message = dataErrorMessage(it)
-        LaunchedEffect(message) { host.showSnackbar(message) }
+    state.error?.let { error ->
+        val message = dataErrorMessage(error)
+        val currentOnDismiss by rememberUpdatedState(onDismissError)
+        // Keyed on the error, not only its sentence (B462): every storage failure maps to the same
+        // resource, so a second failure used to find the effect already completed and say nothing. The
+        // snackbar is acknowledged when it goes, so the next failure is a fresh key.
+        LaunchedEffect(error) {
+            host.showSnackbar(message)
+            currentOnDismiss()
+        }
     }
 
     val zone = state.session?.zoneIdOrNull() ?: ZoneId.systemDefault()
@@ -201,11 +210,12 @@ fun WorkoutDetailScreen(
     movedDay: LocalDate? = null,
     /** Called once that sentence has been read. */
     onDismissMovedDay: () -> Unit = {},
+    onDismissError: () -> Unit = {},
     /** The last set edit's answer, so its editor closes only on success (B350). */
     setWriteOutcome: SetWrite? = null,
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
-    DetailNotices(state, movedDay, snackbarHostState, onDismissMovedDay)
+    DetailNotices(state, movedDay, snackbarHostState, onDismissMovedDay, onDismissError)
 
     // The id, not the data class: a rotation must be able to reopen the same editor (B376), and the row
     // itself is derived from the loaded state so a write refresh keeps it current.

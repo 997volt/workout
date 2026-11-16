@@ -22,45 +22,41 @@ draws lead; the test-count gate follows them, because it is what would let a lat
 disappear unnoticed. Each row is one commit (or a small batch) with its id in the subject, and a
 row leaves this section for [CHANGELOG.md](CHANGELOG.md) when it ships.
 
-1. **B462 — Workout detail must acknowledge a repeated failure.** The snackbar is keyed to the
-    message and the error is cleared only by a success, so a second storage failure with the same
-    sentence is silent. Clear the error after showing it, as the other screens do.
-
-2. **B463 — A reorder is one read and one swap.** The read and the two-position swap are not one
+1. **B463 — A reorder is one read and one swap.** The read and the two-position swap are not one
     transaction or one guarded action, so two quick taps can leave two rows on one position. Wrap
     the whole read-and-swap in a transaction or serialize it.
 
-3. **B464 — Adherence day cells must name their action.** A scheduled cell is a button that opens
+2. **B464 — Adherence day cells must name their action.** A scheduled cell is a button that opens
     the correction dialog, but its description only states the day. Add the action label, and keep
     rest days non-actionable.
 
-4. **B465 — The custom-range dialog must survive rotation.** Its open flag and both picked dates
+3. **B465 — The custom-range dialog must survive rotation.** Its open flag and both picked dates
     are plain `remember`; make them saveable like the other open dialogs.
 
-5. **N316 — The deload confirm's numbers need a test.** The test named for them passes no kept
+4. **N316 — The deload confirm's numbers need a test.** The test named for them passes no kept
     set and asserts only that the dialog exists. Assert one set's before → after (weight,
     assistance or hold) and that confirming is the only write.
 
-6. **N317 — The find-the-weight guard needs the real store.** Its idempotence is implemented by
+5. **N317 — The find-the-weight guard needs the real store.** Its idempotence is implemented by
     the ViewModel test's fake, so the production condition can be deleted green. Save twice
     against a real repository with a weight entered in between, and assert it survives.
 
-7. **N318 — Exercise the new writes' failure paths.** Deload-in-place, replace and the backup
+6. **N318 — Exercise the new writes' failure paths.** Deload-in-place, replace and the backup
     merge are transactional, but nothing forces a failure after their first write; the screens'
     replace, editor and earned-set write failures are also unreachable from their fakes. Add the
     trigger-based rollback test the joint-rating path already has, and a failure return per branch
     that asserts the message is shown and the card or sheet stays usable.
 
-8. **N319 — Let the new fakes assert what they are told.** The replace fake ignores `seeds` and
+7. **N319 — Let the new fakes assert what they are told.** The replace fake ignores `seeds` and
     `empty`, the shared-plan fake ignores the template and program arguments, and no test plans
     the sharing query itself; N311's timed branch has no test at all. Assert the arguments, plan
     the query against two programs, and cover an earned hold.
 
-9. **N320 — Correct the two stale statements.** README's quoted release size no longer matches
+8. **N320 — Correct the two stale statements.** README's quoted release size no longer matches
     the built artifact, and `RestTimer` still says its default is a constant until a settings
     screen exists. Drop or derive the size, and update the comment.
 
-10. **N321 — Sweep the remaining low findings.** `IndexUsageTest` plans hand-written SQL rather
+9. **N321 — Sweep the remaining low findings.** `IndexUsageTest` plans hand-written SQL rather
     than the DAO's own queries; `MeasurementDayStateTest` reads the real clock; `remainingSeconds`
     can wrap a huge duration into a negative `Int`; and `recordBackupResult` permits success and
     failure at once. Fix or explicitly reject each.

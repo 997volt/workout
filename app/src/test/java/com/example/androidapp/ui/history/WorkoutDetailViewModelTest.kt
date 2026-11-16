@@ -165,6 +165,28 @@ class WorkoutDetailViewModelTest {
     }
 
     @Test
+    fun aFailedWrite_canBeAcknowledged_andASecondOneIsSaidAgain() = runTest(dispatcher) {
+        // B462: the same storage sentence twice must not be swallowed because the snackbar's key is
+        // still set.
+        val viewModel = viewModelFor()
+        observe(viewModel)
+        advanceUntilIdle()
+        repository.updateSetResult = DataResult.Failure(DataError.Storage(IllegalStateException("disk full")))
+
+        viewModel.onUpdateSet("set1", reps = 9, weightGrams = 100_000L)
+        advanceUntilIdle()
+        assertTrue(viewModel.uiState.value.error != null)
+        viewModel.onErrorShown()
+        advanceUntilIdle()
+        assertNull(viewModel.uiState.value.error)
+
+        repository.updateSetResult = DataResult.Failure(DataError.Storage(IllegalStateException("still full")))
+        viewModel.onUpdateSet("set1", reps = 8, weightGrams = 100_000L)
+        advanceUntilIdle()
+        assertTrue(viewModel.uiState.value.error != null)
+    }
+
+    @Test
     fun savingAsATemplate_passesTheName_andOffersTheNewPlan() = runTest(dispatcher) {
         // ROADMAP N31: this ViewModel's part is to hand the name over and surface what came back —
         // the copy itself is the repository's transaction, tested against a real database.
