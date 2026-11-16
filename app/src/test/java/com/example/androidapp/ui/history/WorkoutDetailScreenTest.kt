@@ -475,6 +475,47 @@ class WorkoutDetailScreenTest {
     }
 
     @Test
+    fun aSecondIdenticalWriteFailure_isSaidAgain() {
+        // B462/N323: the production effect is keyed on the error; this drives the screen, not only the
+        // ViewModel, and shows that clearing after one snackbar lets the identical sentence return.
+        val failure = mutableStateOf<DataError?>(null)
+        var dismissals = 0
+        composeTestRule.setContent {
+            WorkoutDetailScreen(
+                state = state.copy(error = failure.value),
+                onUpdateSet = { _, _, _, _, _, _, _, _ -> },
+                onDeleteSet = {},
+                onRateExercise = { _, _, _ -> },
+                onDeleteWorkout = {},
+                onMoveToDay = {},
+                onBack = {},
+                onOpenExerciseTrends = {},
+                onSaveAsTemplate = {},
+                onDismissSavedTemplate = {},
+                onOpenTemplate = {},
+                onScheduleTemplate = { _, _ -> },
+                onDismissMovedDay = {},
+                onDismissError = {
+                    dismissals++
+                    failure.value = null
+                },
+            )
+        }
+
+        failure.value = DataError.Storage(IllegalStateException("disk"))
+        composeTestRule.waitForIdle()
+        composeTestRule.mainClock.advanceTimeBy(6_000)
+        composeTestRule.waitForIdle()
+        assertEquals(1, dismissals)
+
+        failure.value = DataError.Storage(IllegalStateException("disk"))
+        composeTestRule.waitForIdle()
+        composeTestRule.mainClock.advanceTimeBy(6_000)
+        composeTestRule.waitForIdle()
+        assertEquals(2, dismissals)
+    }
+
+    @Test
     fun aRotation_keepsTheHistorySetEditorOpen() {
         // B376: the host used to hold the open HistorySet in a plain remember, so a rotation closed the
         // editor before its saveable draft could be seen. The id is saveable now; the row is derived.

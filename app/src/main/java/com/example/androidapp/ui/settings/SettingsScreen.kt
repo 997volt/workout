@@ -42,7 +42,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
-import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.BackupSchedule
@@ -53,7 +52,6 @@ import com.example.androidapp.ui.components.AppFilterChip
 import com.example.androidapp.ui.components.AppRow
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.ClearEverythingDialog
-import com.example.androidapp.ui.components.FailureMessage
 import com.example.androidapp.ui.components.IconTile
 import com.example.androidapp.ui.components.MessageSnackbar
 import com.example.androidapp.ui.components.SectionHeader
@@ -95,7 +93,9 @@ fun SettingsRoute(
     // The data actions report into a snackbar and a held failure, the shape the home screen used
     // before they moved (F7, F8). The clear runs in the ViewModel (B456), so its one-shot outcome is
     // observed here rather than awaited by a composition scope a rotation would cancel.
-    var message by remember { mutableStateOf<String?>(null) }
+    // Saveable so a rotation after the clear (or another transfer) has answered still shows the
+    // sentence (B456/N323): a String survives a Bundle; the DataError that produced it does not.
+    var message by rememberSaveable { mutableStateOf<String?>(null) }
     val clearing by transferViewModel.clearing.collectAsStateWithLifecycle()
     val clearOutcome by transferViewModel.clearOutcome.collectAsStateWithLifecycle()
     val transferActions = rememberDataTransferActions(transferViewModel) { message = it }
@@ -112,14 +112,14 @@ fun SettingsRoute(
         onDismissPassword = transferViewModel::onDismissPassword,
     )
     val clearedText = stringResource(R.string.clear_done)
-    var failure by remember { mutableStateOf<DataError?>(null) }
+    val notFoundText = stringResource(R.string.workout_error_not_found)
+    val storageText = stringResource(R.string.workout_error_storage)
     ClearOutcomeEffect(
         clearOutcome,
         { message = clearedText },
-        { failure = it },
+        { message = dataErrorMessage(it, notFound = notFoundText, storage = storageText) },
         transferViewModel::onClearOutcomeShown,
     )
-    FailureMessage(failure = failure, onMessage = { message = it }, onClear = { failure = null })
     val chooseBackupFolder = rememberBackupFolderPicker(
         currentFolder = state.backup.folder,
         onChoose = viewModel::onChooseBackupFolder,

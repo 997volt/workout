@@ -22,11 +22,7 @@ are the ones that can misreport data or hide a working screen; the fifth protect
 write that outlives its screen, and the rest are documentation and test gaps. Each row leaves
 this section for [CHANGELOG.md](CHANGELOG.md) when it ships.
 
-1. **N323 — Test the paths the fixes claim.** B465's restore test never picks a date, B462's test
-   stops at ViewModel state rather than the re-shown snackbar, and B456 has no test that a
-   recreated composition still shows the clear's outcome. Cover the three screen paths.
-
-2. **N324 — Plan the DAO's own SQL for index usage.** `IndexUsageTest` still copies the production
+1. **N324 — Plan the DAO's own SQL for index usage.** `IndexUsageTest` still copies the production
    query text. Capture the SQL the DAO actually runs (Room's `QueryCallback`) or otherwise remove
    the drift, and pin the session index the query is expected to choose.
 

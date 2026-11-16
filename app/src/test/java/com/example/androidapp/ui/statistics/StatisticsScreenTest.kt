@@ -402,16 +402,20 @@ class StatisticsScreenTest {
     }
 
     @Test
-    fun theOpenCustomRangeDialog_survivesAStateRestore() {
-        // B465: the open flag and both picked dates were plain remember, so a rotation closed the
-        // question and lost a half-chosen window.
+    fun theOpenCustomRangeDialog_andItsPickedFromDate_surviveAStateRestore() {
+        // B465/N323: the open flag and both picked dates were plain remember, so a rotation closed the
+        // question and lost a half-chosen window. This half picks From; the other test picks To.
         val tester = StateRestorationTester(composeTestRule)
         tester.setContent {
             AndroidAppTheme {
                 StatisticsScreen(
                     state = StatisticsUiState(
                         isLoading = false,
-                        range = StatisticsRange(RangeKind.LAST_MONTH),
+                        range = StatisticsRange(
+                            kind = RangeKind.CUSTOM,
+                            from = java.time.LocalDate.of(2026, 1, 10),
+                            to = java.time.LocalDate.of(2026, 3, 20),
+                        ),
                         series = series,
                     ),
                     onSelectRange = {},
@@ -429,11 +433,54 @@ class StatisticsScreenTest {
 
         composeTestRule.onNodeWithTag(TestTags.Statistics.RANGE_MORE).performClick()
         composeTestRule.onNodeWithTag(TestTags.Statistics.range(RangeKind.CUSTOM.name)).performClick()
-        composeTestRule.onNodeWithTag(TestTags.Statistics.CUSTOM_FROM).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.CUSTOM_FROM).performClick()
+        composeTestRule.onNodeWithText("January 15, 2026", substring = true).performClick()
+        composeTestRule.onNodeWithText("Save").performClick()
 
         tester.emulateSavedInstanceStateRestore()
 
         composeTestRule.onNodeWithTag(TestTags.Statistics.CUSTOM_FROM).assertExists()
+        composeTestRule.onNodeWithText("Jan 15, 2026", substring = true).assertExists()
+    }
+
+    @Test
+    fun theOpenCustomRangeDialog_andItsPickedToDate_surviveAStateRestore() {
+        val tester = StateRestorationTester(composeTestRule)
+        tester.setContent {
+            AndroidAppTheme {
+                StatisticsScreen(
+                    state = StatisticsUiState(
+                        isLoading = false,
+                        range = StatisticsRange(
+                            kind = RangeKind.CUSTOM,
+                            from = java.time.LocalDate.of(2026, 1, 10),
+                            to = java.time.LocalDate.of(2026, 3, 20),
+                        ),
+                        series = series,
+                    ),
+                    onSelectRange = {},
+                    onSelectMetric = {},
+                    onSelectExercise = {},
+                    onSelectRecent = {},
+                    onSelectFavourite = {},
+                    onToggleFavourite = {},
+                    onPinch = { _, _ -> },
+                    onSetGoal = {},
+                    onDismissSettingsError = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.RANGE_MORE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.range(RangeKind.CUSTOM.name)).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.CUSTOM_TO).performClick()
+        composeTestRule.onNodeWithText("March 25, 2026", substring = true).performClick()
+        composeTestRule.onNodeWithText("Save").performClick()
+
+        tester.emulateSavedInstanceStateRestore()
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.CUSTOM_TO).assertExists()
+        composeTestRule.onNodeWithText("Mar 25, 2026", substring = true).assertExists()
     }
 
     @Test

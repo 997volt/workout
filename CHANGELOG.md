@@ -22,9 +22,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   unpaired non-rung sets count now.
 - **The daily measurement shortcut is applied once** (B455). Saving a new entry from home reopened the same
   form in edit mode because the route's entry changed from none to the saved row; the form is a one-shot now.
-- **Delete-everything survives a rotation and a popped screen** (B456, B470). The write is non-cancellable and its
-  outcome lives in an app-scoped store, so neither a configuration change nor a Settings destination going away
-  can cancel the multi-step clear, leave automatic backup off, or hide what happened.
+- **Delete-everything survives a rotation and a popped screen** (B456, B470, N323). The write is non-cancellable,
+  its outcome lives in an app-scoped store, and the sentence itself is saveable, so neither a configuration change
+  nor a Settings destination going away can cancel the multi-step clear, leave automatic backup off, or hide what
+  happened.
 - **A counted set against a hold plan is a missed hold** (B457). It reported nothing measurable, so three such
   sessions reset the stall run instead of raising the deload.
 - **The streak is bounded by each program's own creation** (B458). A newly followed program no longer scores
@@ -36,14 +37,14 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   the page's error instead of drawing a trained lift with no readings. A failed library read does the same
   only when the chosen metric needs a lift, so a body chart is not hidden behind a picker it never uses.
 - **Template quick-add is single-flight** (B461). Two taps in one frame append one block, not two.
-- **A repeated workout-detail failure is said again** (B462). The error is acknowledged after its snackbar, so
+- **A repeated workout-detail failure is said again** (B462, N323). The error is acknowledged after its snackbar, so
   the same storage sentence can be shown a second time.
 - **A reorder is one transaction** (B463, B468). The session, plan and program reorders read their order and
   write the new one inside one boundary, so two quick taps cannot leave two rows on one position. The plan
   reorder reads once through the suspend DAO query, and a two-move test asserts every position stays distinct.
 - **Adherence day cells name their action** (B464). A scheduled cell announces *Open this day* rather than only
   what the day is.
-- **The custom-range dialog survives rotation** (B465). Its open flag and both picked dates are saveable.
+- **The custom-range dialog survives rotation** (B465, N323). Its open flag and both picked dates are saveable.
 - **A far-future rest cannot wrap negative, and a contradictory backup result is refused** (N321, B466). The
   timer clamps before narrowing, and `recordBackupResult` will not store a result that says both success and
   failure, or neither.

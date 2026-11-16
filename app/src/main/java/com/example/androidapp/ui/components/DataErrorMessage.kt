@@ -14,8 +14,15 @@ import com.example.androidapp.domain.DataError
  * newer version"), which is more useful than any generic wording here.
  */
 @Composable
-fun dataErrorMessage(error: DataError): String = when (error) {
-    DataError.NotFound -> stringResource(R.string.workout_error_not_found)
+fun dataErrorMessage(error: DataError): String = dataErrorMessage(
+    error = error,
+    notFound = stringResource(R.string.workout_error_not_found),
+    storage = stringResource(R.string.workout_error_storage),
+)
+
+/** The same answer when the caller already has the two strings, e.g. to keep a message saveable. */
+fun dataErrorMessage(error: DataError, notFound: String, storage: String): String = when (error) {
+    DataError.NotFound -> notFound
     is DataError.Invalid -> error.message
-    is DataError.Storage -> stringResource(R.string.workout_error_storage)
+    is DataError.Storage -> storage
 }
