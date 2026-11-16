@@ -22,40 +22,35 @@ are the ones that can misreport data or hide a working screen; the fifth protect
 write that outlives its screen, and the rest are documentation and test gaps. Each row leaves
 this section for [CHANGELOG.md](CHANGELOG.md) when it ships.
 
-1. **B466 — A backup result cannot be half a contradiction.** `recordBackupResult` refuses
-   `at != null && failed` but still accepts `at == null && failed == false`, so it can store "not
-   failed" with no success time. Reject the mirror case too, or replace the two signals with one
-   outcome, and correct the test and the Unreleased note.
-
-2. **B467 — A failed library read should not hide a body metric.** Statistics folds any library
+1. **B467 — A failed library read should not hide a body metric.** Statistics folds any library
    failure into the page error, so a body-weight chart disappears even though it never reads the
    lift picker. Limit the page error to metrics that need a lift, or surface the failure beside
    the picker, and test a body metric with a failed library read.
 
-3. **B468 — The template reorder should read once, and prove the race is closed.** The move uses
+2. **B468 — The template reorder should read once, and prove the race is closed.** The move uses
    `observeTemplateExercises(...).first()` inside its transaction while `TemplateDao` already has
    `findTemplateExercises`. Use the suspend read, and add a test that two moves in one frame leave
    distinct positions.
 
-4. **B469 — A null-offset session must share one fallback.** The weekly totals fall back to the
+3. **B469 — A null-offset session must share one fallback.** The weekly totals fall back to the
    current zone while "what moved" falls back to the week-start offset, so a DST week can bucket
    the same pre-N25 row twice. Use one fallback for both and pin it.
 
-5. **B470 — The clear must outlive more than a rotation.** The ViewModel scope protects a
+4. **B470 — The clear must outlive more than a rotation.** The ViewModel scope protects a
    configuration change, but a popped Settings destination can still cancel the multi-step clear
    and leave the backup switch off. Give the clear an app-scoped runner or a non-cancellable
    write plus a surviving outcome, and test the case.
 
-6. **N322 — Put the moved KDoc back.** The Statistics "four sources" comment now documents
+5. **N322 — Put the moved KDoc back.** The Statistics "four sources" comment now documents
    `Library` instead of `Sources`; the workout detail moved-to comment sits on `onErrorShown`
    instead of `onDismissMovedDay`; and `ProgressionMiss.HOLD` still says "the set was held" for a
    counted set that was not.
 
-7. **N323 — Test the paths the fixes claim.** B465's restore test never picks a date, B462's test
+6. **N323 — Test the paths the fixes claim.** B465's restore test never picks a date, B462's test
    stops at ViewModel state rather than the re-shown snackbar, and B456 has no test that a
    recreated composition still shows the clear's outcome. Cover the three screen paths.
 
-8. **N324 — Plan the DAO's own SQL for index usage.** `IndexUsageTest` still copies the production
+7. **N324 — Plan the DAO's own SQL for index usage.** `IndexUsageTest` still copies the production
    query text. Capture the SQL the DAO actually runs (Room's `QueryCallback`) or otherwise remove
    the drift, and pin the session index the query is expected to choose.
 

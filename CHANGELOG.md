@@ -41,8 +41,9 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 - **Adherence day cells name their action** (B464). A scheduled cell announces *Open this day* rather than only
   what the day is.
 - **The custom-range dialog survives rotation** (B465). Its open flag and both picked dates are saveable.
-- **A far-future rest cannot wrap negative, and a contradictory backup result is refused** (N321). The timer
-  clamps before narrowing, and `recordBackupResult` will not store a success and a failure at once.
+- **A far-future rest cannot wrap negative, and a contradictory backup result is refused** (N321, B466). The
+  timer clamps before narrowing, and `recordBackupResult` will not store a result that says both success and
+  failure, or neither.
 
 ### Changed
 

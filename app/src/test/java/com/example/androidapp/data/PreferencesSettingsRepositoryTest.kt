@@ -245,8 +245,10 @@ class PreferencesSettingsRepositoryTest {
         // N321: the two parameters could disagree; the store now refuses the contradiction.
         val at = Instant.parse("2026-09-28T08:00:00Z")
 
-        val result = repository().recordBackupResult(at = at, attemptAt = at, failed = true)
+        val successAndFailure = repository().recordBackupResult(at = at, attemptAt = at, failed = true)
+        val neither = repository().recordBackupResult(at = null, attemptAt = at, failed = false)
 
-        assertThat(result).isInstanceOf(DataResult.Failure::class.java)
+        assertThat(successAndFailure).isInstanceOf(DataResult.Failure::class.java)
+        assertThat(neither).isInstanceOf(DataResult.Failure::class.java)
     }
 }

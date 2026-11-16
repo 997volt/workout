@@ -377,11 +377,11 @@ class PreferencesSettingsRepository @Inject constructor(
         attemptAt: Instant,
         failed: Boolean,
     ): DataResult<Unit> = withContext(Dispatchers.IO) {
-        // One answer, two keys (N321): a caller that says "at this time" and "failed" at once is refused
-        // rather than stored as a row that is both.
-        if (at != null && failed) {
+        // One answer, two keys (N321, B466): the pair must name exactly one ending. `at != null` is a
+        // success and `failed` is a failure, so saying both — or neither — is refused rather than stored.
+        if ((at != null) == failed) {
             return@withContext DataResult.Failure(
-                DataError.Invalid("a backup cannot succeed and fail at the same time"),
+                DataError.Invalid("a backup must be either a success or a failure"),
             )
         }
         preferences.edit(commit = true) {
