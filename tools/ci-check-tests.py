@@ -12,6 +12,8 @@ What is checked, per suite:
   * every `@Test` sits inside a class — a **local** function annotated `@Test` compiles,
     is invisible to JUnit and is how B268's two superset tests never ran;
   * every declared class reported, and reported the tests it declares;
+  * the declared total equals the pinned count for the suite, so deleting a test file cannot
+    shrink `declared` and `executed` together and pass;
   * no test was skipped (`tests=` counts a skipped case, so it cannot be read alone);
   * no test failed (B193: a run that executed everything and failed is not a green suite);
   * the newest report is not older than the newest source file.
@@ -39,18 +41,30 @@ class Suite:
     sources: pathlib.Path
     results: pathlib.Path
     noun: str
+    # The count is pinned so a deleted test file cannot shrink both sides of the comparison and pass
+    # (N315). Update it in the same commit that adds or removes a test.
+    expected: int | None = None
 
+
+# The pinned totals (N315). A test file's deletion used to shrink `declared` and `executed` together
+# and report OK; these numbers are the fixed side of that comparison. Bump one in the commit that
+# changes the suite, and the checker prints the difference when it was forgotten.
+EXPECTED_UNIT_TESTS = 2307
+EXPECTED_INSTRUMENTED_TESTS = 512
+EXPECTED_SHARED_TESTS = 29
 
 SUITES = {
     "unit": Suite(
         sources=pathlib.Path("app/src/test"),
         results=pathlib.Path("app/build/test-results/testDebugUnitTest"),
         noun="unit",
+        expected=EXPECTED_UNIT_TESTS,
     ),
     "instrumented": Suite(
         sources=pathlib.Path("app/src/androidTest"),
         results=pathlib.Path("app/build/outputs/androidTest-results"),
         noun="instrumented",
+        expected=EXPECTED_INSTRUMENTED_TESTS,
     ),
 }
 
@@ -213,6 +227,17 @@ def check(suite: Suite) -> int:
 
     failed_check = False
 
+    # N315: the pinned total is the fixed side of the comparison, so deleting a test file cannot
+    # shrink `declared` and `executed` together and still report OK.
+    if suite.expected is not None and declared_total != suite.expected:
+        print(
+            f"\ndeclared {declared_total} {suite.noun} tests, expected {suite.expected}: a test was "
+            "added or removed. Update the pinned total in tools/ci-check-tests.py in the same commit, "
+            "so a deletion cannot pass by shrinking both sides.",
+            file=sys.stderr,
+        )
+        failed_check = True
+
     if unreachable:
         print(
             f"\n{len(unreachable)} `@Test` annotation(s) are where JUnit cannot reach them:",
@@ -276,6 +301,7 @@ def check_shared() -> int:
                 sources=SHARED_SOURCES,
                 results=results,
                 noun=results.name,
+                expected=EXPECTED_SHARED_TESTS,
             ),
         )
         if code != 0:
@@ -307,6 +333,7 @@ def main() -> int:
             sources=arguments.sources or suite.sources,
             results=arguments.results or suite.results,
             noun=suite.noun,
+            expected=None,
         )
     return check(suite)
 
