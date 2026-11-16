@@ -868,20 +868,24 @@ class RoomTemplateRepository @Inject constructor(
 
     override suspend fun moveExercise(templateExerciseId: String, delta: Int): DataResult<Unit> =
         dataResultOf {
-            val row = dao.findTemplateExercise(templateExerciseId)
-                ?: throw NotFoundException("template exercise $templateExerciseId")
-            val ordered = dao.observeTemplateExercises(row.templateId).first()
-            val index = ordered.indexOfFirst { it.id == templateExerciseId }
-            val neighbour = ordered.getOrNull(index + delta)
-            // At the top or the bottom: nothing to do, and not an error.
-            if (index >= 0 && neighbour != null) {
-                dao.swapPositions(
-                    firstId = row.id,
-                    firstPosition = neighbour.position,
-                    secondId = neighbour.id,
-                    secondPosition = row.position,
-                    at = timeSource.nowEpochMillis(),
-                )
+            // The read and the swap are one transaction (B463): two quick taps could both read the
+            // same order and leave one position shared.
+            database.withTransaction {
+                val row = dao.findTemplateExercise(templateExerciseId)
+                    ?: throw NotFoundException("template exercise $templateExerciseId")
+                val ordered = dao.observeTemplateExercises(row.templateId).first()
+                val index = ordered.indexOfFirst { it.id == templateExerciseId }
+                val neighbour = ordered.getOrNull(index + delta)
+                // At the top or the bottom: nothing to do, and not an error.
+                if (index >= 0 && neighbour != null) {
+                    dao.swapPositions(
+                        firstId = row.id,
+                        firstPosition = neighbour.position,
+                        secondId = neighbour.id,
+                        secondPosition = row.position,
+                        at = timeSource.nowEpochMillis(),
+                    )
+                }
             }
         }
 

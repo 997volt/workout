@@ -224,22 +224,26 @@ class RoomWorkoutRepository @Inject constructor(
 
     override suspend fun moveExercise(sessionExerciseId: String, delta: Int): DataResult<Unit> =
         dataResultOf {
-            // The row's own session is read from the row, so the sibling list and the swap cannot
-            // disagree about which list is being reordered (ROADMAP N54).
-            val exercise = sessionExerciseDao.findSessionExercise(sessionExerciseId)
-                ?: throw NotFoundException("session exercise $sessionExerciseId")
-            val ordered = sessionExerciseDao.findSessionExercisesInOrder(exercise.sessionId)
-            val index = ordered.indexOfFirst { it.id == sessionExerciseId }
-            val neighbour = ordered.getOrNull(index + delta)
-            // At the top or the bottom: nothing to do, and not an error.
-            if (index >= 0 && neighbour != null) {
-                sessionExerciseDao.swapPositions(
-                    firstId = exercise.id,
-                    firstPosition = neighbour.position,
-                    secondId = neighbour.id,
-                    secondPosition = exercise.position,
-                    at = timeSource.nowEpochMillis(),
-                )
+            // The read and the swap are one transaction (B463): two quick taps could both read the
+            // same order and then swap different pairs, leaving two rows on one position.
+            database.withTransaction {
+                // The row's own session is read from the row, so the sibling list and the swap cannot
+                // disagree about which list is being reordered (ROADMAP N54).
+                val exercise = sessionExerciseDao.findSessionExercise(sessionExerciseId)
+                    ?: throw NotFoundException("session exercise $sessionExerciseId")
+                val ordered = sessionExerciseDao.findSessionExercisesInOrder(exercise.sessionId)
+                val index = ordered.indexOfFirst { it.id == sessionExerciseId }
+                val neighbour = ordered.getOrNull(index + delta)
+                // At the top or the bottom: nothing to do, and not an error.
+                if (index >= 0 && neighbour != null) {
+                    sessionExerciseDao.swapPositions(
+                        firstId = exercise.id,
+                        firstPosition = neighbour.position,
+                        secondId = neighbour.id,
+                        secondPosition = exercise.position,
+                        at = timeSource.nowEpochMillis(),
+                    )
+                }
             }
         }
 
