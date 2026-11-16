@@ -15,13 +15,6 @@ work was planned, so they do not always run in order — and an id this file doe
 shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 [CHANGELOG-1.x.md](CHANGELOG-1.x.md) for the 1.x releases.
 
-## Next — ordered batch
-
-Follow-ups from reviewing the unreleased batch (`v2.30..HEAD`), in fix order. The first four
-are the ones that can misreport data or hide a working screen; the fifth protects a destructive
-write that outlives its screen, and the rest are documentation and test gaps. Each row leaves
-this section for [CHANGELOG.md](CHANGELOG.md) when it ships.
-
 ## Parked — deliberately not planned
 
 Each row is a product in its own right, contradicts "local-only", or both. Parking is a

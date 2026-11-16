@@ -63,6 +63,8 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   plan and program, the sharing query itself, and a held extra set.
 - **The stale docs are corrected** (N320): README no longer quotes APK sizes that drifted, and `RestTimer` says
   its default is what Settings can override.
+- **The moved KDoc is back** (N322): the Statistics sources comment names `Sources`, the workout detail moved-to
+  comment names `onDismissMovedDay`, and `ProgressionMiss.HOLD` describes a counted set against a hold plan.
 - **The index test plans the DAO's own SQL** (N321, N324): the query is a constant shared with the DAO annotation, and it pins the started-at index for sessions and the measured-at index for the day read. The measurement day test no longer reads the real clock.
 
 ## [2.30] — 2026-11-15 (versionCode 51)
