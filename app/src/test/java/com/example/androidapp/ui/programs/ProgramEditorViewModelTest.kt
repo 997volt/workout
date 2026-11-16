@@ -411,6 +411,24 @@ class ProgramEditorViewModelTest {
     }
 
     @Test
+    fun aFailedDeload_keepsTheConfirm_andSaysWhy() = runTest(dispatcher) {
+        // N318: the write's failure branch, with the sheet still usable for a retry.
+        plannedSquat()
+        templates.failDeload = true
+        val viewModel = viewModel()
+        backgroundScope.launch { viewModel.uiState.collect {} }
+        advanceUntilIdle()
+        viewModel.onDeloadLift(PlanStall("Back Squat", 3, "t1", "te1", "squat"))
+        advanceUntilIdle()
+
+        viewModel.onConfirmDeload()
+        advanceUntilIdle()
+
+        assertThat(viewModel.deloadPrompt.value).isNotNull()
+        assertThat(viewModel.uiState.value.error).isNotNull()
+    }
+
+    @Test
     fun aSecondConfirm_beforeTheDeloadLands_deloadsOnce() = runTest(dispatcher) {
         // B449: the write recomputes the trim from the plan, so a second confirm would deload the deloaded
         // plan and leave an undo for neither.

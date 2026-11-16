@@ -466,10 +466,14 @@ internal class FakeTemplateRepository : TemplateRepository {
         return DataResult.Success(Unit)
     }
 
+    /** Refuses the next deload, for the editor's failure path (N318). */
+    var failDeload = false
+
     override suspend fun deloadExercise(
         templateExerciseId: String,
         stepGrams: Long,
     ): DataResult<com.example.androidapp.domain.model.ExerciseDeload> {
+        if (failDeload) return DataResult.Failure(DataError.Storage(java.io.IOException("locked")))
         val planned = sets.value.values.flatten().filter { it.templateExerciseId == templateExerciseId }
         val plan = com.example.androidapp.domain.model.deloadOf(planned, stepGrams)
         deloads += templateExerciseId to plan

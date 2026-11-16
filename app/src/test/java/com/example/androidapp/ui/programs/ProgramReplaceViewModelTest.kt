@@ -2,6 +2,7 @@ package com.example.androidapp.ui.programs
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.PreviousPerformance
@@ -137,6 +138,24 @@ class ProgramReplaceViewModelTest {
         advanceUntilIdle()
 
         assertThat(viewModel.state.value.suggestions).isEmpty()
+    }
+
+    @Test
+    fun aFailedReplace_keepsTheSheet_andSaysWhy() = runTest(dispatcher) {
+        // N318: the failure branch was unreachable from the fake before it could be told to fail.
+        val failure = DataError.Storage(IllegalStateException("disk"))
+        templates.replaceResult = DataResult.Failure(failure)
+        val viewModel = viewModel()
+        advanceUntilIdle()
+        viewModel.select("front-squat")
+        advanceUntilIdle()
+
+        viewModel.confirm()
+        advanceUntilIdle()
+
+        assertThat(viewModel.state.value.error).isEqualTo(failure)
+        assertThat(viewModel.state.value.replaced).isNull()
+        assertThat(viewModel.state.value.selected?.id).isEqualTo("front-squat")
     }
 
     private fun exercise(

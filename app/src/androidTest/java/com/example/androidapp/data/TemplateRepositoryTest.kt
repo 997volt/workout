@@ -934,6 +934,76 @@ class TemplateRepositoryTest {
     }
 
     @Test
+    fun aFailedDeload_rollsBackTheRemovalsAndTheTargets() = runTest {
+        // B345's rule, exercised on N307: a failure after the removals must leave the whole plan as it was.
+        val template = create("Legs")
+        val exercise = plannedExercise(template)
+        repeat(3) { index ->
+            repository.addSet(
+                exercise,
+                TemplateSetEdit(
+                    role = SetType.NORMAL,
+                    targetWeightGrams = 100_000L,
+                    targetRepsMin = 5,
+                    targetRepsMax = 5,
+                ),
+            )
+        }
+        val before = repository.observeExercises(template).first().single().sets
+        database.openHelper.writableDatabase.execSQL(
+            "CREATE TRIGGER fail_deload_update BEFORE UPDATE OF setIndex, targetWeightGrams " +
+                "ON template_sets BEGIN SELECT RAISE(ABORT, 'fail'); END",
+        )
+        try {
+            assertTrue(repository.deloadExercise(exercise, stepGrams = 2_500L) is DataResult.Failure)
+        } finally {
+            database.openHelper.writableDatabase.execSQL("DROP TRIGGER fail_deload_update")
+        }
+
+        val after = repository.observeExercises(template).first().single().sets
+        assertEquals("every set is still live", before.map { it.id }, after.map { it.id })
+        assertEquals("at its original load", before.map { it.targetWeightGrams }, after.map { it.targetWeightGrams })
+    }
+
+    @Test
+    fun aFailedReplace_leavesTheOldMovementAndItsSets() = runTest {
+        val template = create("Legs")
+        val exercise = plannedExercise(template)
+        repeat(2) {
+            repository.addSet(
+                exercise,
+                TemplateSetEdit(
+                    role = SetType.NORMAL,
+                    targetWeightGrams = 100_000L,
+                    targetRepsMin = 5,
+                    targetRepsMax = 5,
+                ),
+            )
+        }
+        val before = repository.observeExercises(template).first().single()
+        database.openHelper.writableDatabase.execSQL(
+            "CREATE TRIGGER fail_replace_update BEFORE UPDATE ON template_exercises " +
+                "BEGIN SELECT RAISE(ABORT, 'fail'); END",
+        )
+        try {
+            assertTrue(
+                repository.replaceExercise(
+                    exercise,
+                    newExerciseId = "bench-press",
+                    seeds = emptyList(),
+                    empty = false,
+                ) is DataResult.Failure,
+            )
+        } finally {
+            database.openHelper.writableDatabase.execSQL("DROP TRIGGER fail_replace_update")
+        }
+
+        val after = repository.observeExercises(template).first().single()
+        assertEquals("the old row is still the one live row", before.id, after.id)
+        assertEquals("with its own sets", before.sets.map { it.id }, after.sets.map { it.id })
+    }
+
+    @Test
     fun theWeightlessAndDeloadWrites_keepADropRun_thatTheAnchorsNewLoadCannotSupport() = runTest {
         // B421: the deliberate transitions may strand a kept rung. Refusing the write made Find the
         // weight unusable on a plan with a ladder and a deload of a light anchor fail.

@@ -2017,6 +2017,19 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
+    fun aFailedEarnedSetAdd_dismissesTheCard_andSaysWhy() = runTest(dispatcher) {
+        // N318: the add failure branch, which the fake used to answer only with success.
+        val (viewModel, templates) = earnedSetWorkout()
+        templates.failAddSet = true
+
+        viewModel.onAddVolume()
+        settle()
+
+        assertNull("a retry would need a second snackbar", viewModel.volumeSuggestion.value)
+        assertNotNull(viewModel.uiState.value.error)
+    }
+
+    @Test
     fun takingTheDoneBack_dismissesTheSetItEarned() = runTest(dispatcher) {
         // B430: reopening *is* undoing that Done. The question it asked and the set it earned both go.
         val (viewModel, _) = earnedSetWorkout()
@@ -3742,10 +3755,14 @@ class ActiveWorkoutViewModelTest {
         val addedSets = mutableListOf<Pair<String, TemplateSetEdit>>()
         val removedSets = mutableListOf<String>()
 
+        /** Refuses the next earned-set Add, for N318. */
+        var failAddSet = false
+
         override suspend fun addSet(
             templateExerciseId: String,
             edit: TemplateSetEdit,
         ): DataResult<String> {
+            if (failAddSet) return DataResult.Failure(DataError.Storage(IOException("locked")))
             addedSets += templateExerciseId to edit
             return DataResult.Success("new-set")
         }

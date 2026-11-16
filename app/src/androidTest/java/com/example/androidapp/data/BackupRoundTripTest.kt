@@ -130,6 +130,24 @@ class BackupRoundTripTest {
     }
 
     @Test
+    fun aFailedMerge_rollsBackWhatItHadAlreadyWritten() = runTest {
+        seedAWorkout()
+        val json = exportedJson()
+        database.clearAllTables()
+        database.openHelper.writableDatabase.execSQL(
+            "CREATE TRIGGER fail_merge_set BEFORE INSERT ON set_entries " +
+                "BEGIN SELECT RAISE(ABORT, 'fail'); END",
+        )
+        try {
+            assertTrue(repository.import(json) is DataResult.Failure)
+        } finally {
+            database.openHelper.writableDatabase.execSQL("DROP TRIGGER fail_merge_set")
+        }
+
+        assertEquals("the transaction took every row with it", 0, counts().total)
+    }
+
+    @Test
     fun importingTheSameFileTwice_addsNothingTheSecondTime() = runTest {
         seedAWorkout()
         val json = exportedJson()
