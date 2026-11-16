@@ -30,7 +30,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -63,10 +62,8 @@ import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.components.label
 import com.example.androidapp.ui.theme.TileAccent
-import com.example.androidapp.ui.transfer.ClearOutcome
 import com.example.androidapp.ui.transfer.DataTransferViewModel
 import com.example.androidapp.ui.transfer.rememberDataTransferActions
-import kotlinx.coroutines.launch
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -96,10 +93,11 @@ fun SettingsRoute(
     val decrypting by transferViewModel.decrypting.collectAsStateWithLifecycle()
 
     // The data actions report into a snackbar and a held failure, the shape the home screen used
-    // before they moved (F7, F8). The clear is suspending and its sentence is a resource, so it
-    // needs a scope and a string resolved during composition.
+    // before they moved (F7, F8). The clear runs in the ViewModel (B456), so its one-shot outcome is
+    // observed here rather than awaited by a composition scope a rotation would cancel.
     var message by remember { mutableStateOf<String?>(null) }
-    val scope = rememberCoroutineScope()
+    val clearing by transferViewModel.clearing.collectAsStateWithLifecycle()
+    val clearOutcome by transferViewModel.clearOutcome.collectAsStateWithLifecycle()
     val transferActions = rememberDataTransferActions(transferViewModel) { message = it }
     SettingsTransferDialogs(
         pendingImport = pendingImport,
@@ -115,6 +113,12 @@ fun SettingsRoute(
     )
     val clearedText = stringResource(R.string.clear_done)
     var failure by remember { mutableStateOf<DataError?>(null) }
+    ClearOutcomeEffect(
+        clearOutcome,
+        { message = clearedText },
+        { failure = it },
+        transferViewModel::onClearOutcomeShown,
+    )
     FailureMessage(failure = failure, onMessage = { message = it }, onClear = { failure = null })
     val chooseBackupFolder = rememberBackupFolderPicker(
         currentFolder = state.backup.folder,
@@ -138,14 +142,7 @@ fun SettingsRoute(
         onEncryptExport = transferViewModel::onRequestExportPassword,
         onImportData = transferActions.import,
         onOpenDiagnostics = onOpenDiagnostics,
-        onClearData = {
-            scope.launch {
-                when (val outcome = transferViewModel.clearEverything()) {
-                    is ClearOutcome.Cleared -> message = clearedText
-                    is ClearOutcome.Failed -> failure = outcome.error
-                }
-            }
-        },
+        onClearData = transferViewModel::startClear, clearing = clearing,
         message = message,
         onDismissMessage = { message = null },
         onDismissError = viewModel::onErrorShown,
@@ -174,6 +171,8 @@ fun SettingsScreen(
     onOpenDiagnostics: () -> Unit,
     onDismissMessage: () -> Unit,
     modifier: Modifier = Modifier,
+    /** A clear is running; the data row is disabled until it answers (B456). */
+    clearing: Boolean = false,
     message: String? = null,
     onBackupNow: () -> Unit = {},
     onDismissError: () -> Unit = {},
@@ -192,7 +191,7 @@ fun SettingsScreen(
     )
 
     ClearConfirmation(
-        visible = confirmingClear,
+        visible = confirmingClear && !clearing,
         onExport = onExportData,
         onConfirm = {
             confirmingClear = false
@@ -226,6 +225,7 @@ fun SettingsScreen(
             onImportData = onImportData,
             onClearData = { confirmingClear = true },
             onOpenDiagnostics = onOpenDiagnostics,
+            clearing = clearing,
             modifier = Modifier.padding(innerPadding),
         )
     }
@@ -257,6 +257,7 @@ private fun SettingsBody(
     onClearData: () -> Unit,
     onOpenDiagnostics: () -> Unit,
     modifier: Modifier = Modifier,
+    clearing: Boolean = false,
 ) {
     Column(
         modifier = modifier
@@ -301,6 +302,7 @@ private fun SettingsBody(
             onEncryptExport = onEncryptExport,
             onImport = onImportData,
             onClear = onClearData,
+            clearing = clearing,
         )
     }
 }
@@ -362,6 +364,7 @@ private fun DataSection(
     onEncryptExport: () -> Unit,
     onImport: () -> Unit,
     onClear: () -> Unit,
+    clearing: Boolean,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
@@ -398,7 +401,7 @@ private fun DataSection(
                 headline = stringResource(R.string.clear_menu),
                 supporting = stringResource(R.string.settings_data_clear_hint),
                 leading = { IconTile(icon = Icons.Filled.Delete, accent = TileAccent.Coral) },
-                onClick = onClear,
+                onClick = onClear.takeUnless { clearing },
                 onClickLabel = stringResource(R.string.clear_menu),
                 testTag = TestTags.SETTINGS_CLEAR_DATA,
                 headlineColor = MaterialTheme.colorScheme.error,

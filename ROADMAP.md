@@ -22,78 +22,73 @@ draws lead; the test-count gate follows them, because it is what would let a lat
 disappear unnoticed. Each row is one commit (or a small batch) with its id in the subject, and a
 row leaves this section for [CHANGELOG.md](CHANGELOG.md) when it ships.
 
-1. **B456 — "Delete everything" must not lose its answer to a rotation.** The clear runs in the
-   composition's coroutine scope, so a configuration change cancels the sentence and can leave
-   the automatic-backup switch off. Move it to the ViewModel's scope, publish a one-shot outcome,
-   and disable the action while it runs.
-
-2. **B457 — A counted set against a hold plan is a missed hold.** It currently reports nothing
+1. **B457 — A counted set against a hold plan is a missed hold.** It currently reports nothing
    measurable, so three such sessions reset the stall run instead of raising the deload. Read a
    missing duration as the hold miss, the same answer the progression offer gives, and pin the
    three-session case.
 
-3. **B458 — A slot before its program existed is not an occurrence.** The streak uses one `since`
+2. **B458 — A slot before its program existed is not an occurrence.** The streak uses one `since`
    for every active program, so a newly followed program's earlier weekday can break an existing
    run. Bound occurrences by each program's own creation, and test two programs started weeks
    apart.
 
-4. **N315 — The test-count gate must see a deleted test.** The checker compares only names that
+3. **N315 — The test-count gate must see a deleted test.** The checker compares only names that
    still exist, so removing a test file leaves the declared and executed totals equal and green.
    Pin an absolute count or otherwise fail when the tested inventory shrinks; prove it by deleting
    a test file in a scratch checkout.
 
-5. **B459 — The weekly review must use one week.** Its totals take each session's own zone, while
+4. **B459 — The weekly review must use one week.** Its totals take each session's own zone, while
    "what moved" takes the device's week; a session near a boundary can count in one and not the
    other. Bucket the movement read per session zone, or settle the review on the device week in
    both and record why.
 
-6. **B460 — A failed statistics read must not draw as empty.** A failed per-lift series or library
+5. **B460 — A failed statistics read must not draw as empty.** A failed per-lift series or library
    read is flattened to an empty list, so a trained lift draws an empty chart and the picker goes
    blank with no error. Carry the failure into the screen's state like the weekly advisories do.
 
-7. **B461 — Template quick-add is not single-flight.** Two taps inside the write append the block
+6. **B461 — Template quick-add is not single-flight.** Two taps inside the write append the block
    twice. Guard it the way the workout log, plan editor and volume Add already are, and test two
    clicks.
 
-8. **B462 — Workout detail must acknowledge a repeated failure.** The snackbar is keyed to the
+7. **B462 — Workout detail must acknowledge a repeated failure.** The snackbar is keyed to the
     message and the error is cleared only by a success, so a second storage failure with the same
     sentence is silent. Clear the error after showing it, as the other screens do.
 
-9. **B463 — A reorder is one read and one swap.** The read and the two-position swap are not one
+8. **B463 — A reorder is one read and one swap.** The read and the two-position swap are not one
     transaction or one guarded action, so two quick taps can leave two rows on one position. Wrap
     the whole read-and-swap in a transaction or serialize it.
 
-10. **B464 — Adherence day cells must name their action.** A scheduled cell is a button that opens
+9. **B464 — Adherence day cells must name their action.** A scheduled cell is a button that opens
     the correction dialog, but its description only states the day. Add the action label, and keep
     rest days non-actionable.
 
-11. **B465 — The custom-range dialog must survive rotation.** Its open flag and both picked dates
+10. **B465 — The custom-range dialog must survive rotation.** Its open flag and both picked dates
     are plain `remember`; make them saveable like the other open dialogs.
 
-12. **N316 — The deload confirm's numbers need a test.** The test named for them passes no kept
+11. **N316 — The deload confirm's numbers need a test.** The test named for them passes no kept
     set and asserts only that the dialog exists. Assert one set's before → after (weight,
     assistance or hold) and that confirming is the only write.
 
-13. **N317 — The find-the-weight guard needs the real store.** Its idempotence is implemented by
+12. **N317 — The find-the-weight guard needs the real store.** Its idempotence is implemented by
     the ViewModel test's fake, so the production condition can be deleted green. Save twice
     against a real repository with a weight entered in between, and assert it survives.
 
-14. **N318 — Exercise the new writes' failure paths.** Deload-in-place, replace and the backup
+13. **N318 — Exercise the new writes' failure paths.** Deload-in-place, replace and the backup
     merge are transactional, but nothing forces a failure after their first write; the screens'
     replace, editor and earned-set write failures are also unreachable from their fakes. Add the
     trigger-based rollback test the joint-rating path already has, and a failure return per branch
     that asserts the message is shown and the card or sheet stays usable.
 
-15. **N319 — Let the new fakes assert what they are told.** The replace fake ignores `seeds` and
+14. **N319 — Let the new fakes assert what they are told.** The replace fake ignores `seeds` and
     `empty`, the shared-plan fake ignores the template and program arguments, and no test plans
     the sharing query itself; N311's timed branch has no test at all. Assert the arguments, plan
     the query against two programs, and cover an earned hold.
 
-16. **N320 — Correct the two stale statements.** README's quoted release size no longer matches
+15. **N320 — Correct the two stale statements.** README's quoted release size no longer matches
     the built artifact, and `RestTimer` still says its default is a constant until a settings
     screen exists. Drop or derive the size, and update the comment.
 
-17. **N321 — Sweep the remaining low findings.** `IndexUsageTest` plans hand-written SQL rather
+16. **N321 — Sweep the remaining low findings.** `IndexUsageTest` plans hand-written SQL rather
     than the DAO's own queries; `MeasurementDayStateTest` reads the real clock; `remainingSeconds`
     can wrap a huge duration into a negative `Int`; and `recordBackupResult` permits success and
     failure at once. Fix or explicitly reject each.

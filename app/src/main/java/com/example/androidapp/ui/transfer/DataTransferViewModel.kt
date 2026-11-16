@@ -79,6 +79,16 @@ class DataTransferViewModel @Inject constructor(
     /** The last transfer's result, or null while there is nothing to say. Cleared by [onOutcomeShown]. */
     val outcome: StateFlow<TransferOutcome?> = _outcome.asStateFlow()
 
+    private val _clearing = MutableStateFlow(false)
+
+    /** Whether a clear is running, so the action can be disabled and a second call ignored. */
+    val clearing: StateFlow<Boolean> = _clearing.asStateFlow()
+
+    private val _clearOutcome = MutableStateFlow<ClearOutcome?>(null)
+
+    /** The last clear's result, or null while there is nothing to say. Cleared by [onClearOutcomeShown]. */
+    val clearOutcome: StateFlow<ClearOutcome?> = _clearOutcome.asStateFlow()
+
     /** The JSON to write, or null if it could not be produced. */
     suspend fun export(): ExportOutcome = when (val result = backupRepository.export()) {
         is DataResult.Success -> ExportOutcome.Ready(result.data)
@@ -88,9 +98,32 @@ class DataTransferViewModel @Inject constructor(
     /**
      * Deletes everything the user made (ROADMAP N18).
      *
-     * Irreversible, which is why the screen asks for a typed confirmation before calling
-     * it: "Delete everything" is a button someone presses exactly once by accident.
+     * Irreversible, which is why the screen asks for a typed confirmation before calling it: "Delete
+     * everything" is a button someone presses exactly once by accident.
+     *
+     * It runs in [viewModelScope] rather than the composition's (B456): a rotation disposes the
+     * composition but not this ViewModel, and the clear is a multi-step write whose outcome must not be
+     * lost half-way. [clearing] is the single-flight gate; [clearOutcome] carries the answer to
+     * [onClearOutcomeShown].
      */
+    fun startClear() {
+        if (_clearing.value) return
+        _clearing.value = true
+        viewModelScope.launch {
+            try {
+                _clearOutcome.value = clearEverything()
+            } finally {
+                _clearing.value = false
+            }
+        }
+    }
+
+    /** The clear's answer has been shown, so the next one starts from empty. */
+    fun onClearOutcomeShown() {
+        _clearOutcome.value = null
+    }
+
+    /** The clear itself, exposed for the tests that assert the result the ViewModel publishes. */
     suspend fun clearEverything(): ClearOutcome =
         when (val result = backupRepository.clearAllUserData()) {
             is DataResult.Success -> ClearOutcome.Cleared

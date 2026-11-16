@@ -397,6 +397,25 @@ class DataTransferViewModelTest {
     }
 
     @Test
+    fun startClear_runsInTheViewModel_andReportsOnce() = runTest(dispatcher) {
+        // B456: the clear is a multi-step write, so it must not depend on a composition scope that a
+        // rotation disposes. startClear is single-flight and publishes the answer for the screen.
+        val viewModel = viewModel()
+
+        viewModel.startClear()
+        assertThat(viewModel.clearing.value).isTrue()
+        viewModel.startClear()
+        advanceUntilIdle()
+
+        assertThat(viewModel.clearing.value).isFalse()
+        assertThat(viewModel.clearOutcome.value).isEqualTo(ClearOutcome.Cleared)
+        assertThat(repository.clearCalls).isEqualTo(1)
+
+        viewModel.onClearOutcomeShown()
+        assertThat(viewModel.clearOutcome.value).isNull()
+    }
+
+    @Test
     fun showingTheOutcome_clearsIt() = runTest(dispatcher) {
         val viewModel = viewModel()
         viewModel.writeBackup(context, uri)
@@ -445,6 +464,7 @@ private class FakeBackupRepository : BackupRepository {
     )
     var importResult: DataResult<ImportSummary> = DataResult.Success(ImportSummary(added = 0, restored = 0))
     var clearResult: DataResult<Unit> = DataResult.Success(Unit)
+    var clearCalls: Int = 0
 
     val imported = mutableListOf<String>()
     val previewed = mutableListOf<String>()
@@ -461,5 +481,8 @@ private class FakeBackupRepository : BackupRepository {
         return importResult
     }
 
-    override suspend fun clearAllUserData(): DataResult<Unit> = clearResult
+    override suspend fun clearAllUserData(): DataResult<Unit> {
+        clearCalls += 1
+        return clearResult
+    }
 }

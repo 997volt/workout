@@ -1,6 +1,7 @@
 package com.example.androidapp.ui.settings
 
 import androidx.compose.ui.test.assertContentDescriptionEquals
+import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -52,7 +53,11 @@ class SettingsScreenTest {
     private var folderPicks = 0
     private var backupsNow = 0
 
-    private fun show(state: SettingsUiState, message: String? = null) {
+    private fun show(
+        state: SettingsUiState,
+        message: String? = null,
+        clearing: Boolean = false,
+    ) {
         composeTestRule.setContent {
             SettingsScreen(
                 state = state,
@@ -74,6 +79,7 @@ class SettingsScreenTest {
                 onSetKeepScreenOn = { _ -> },
                 onDismissMessage = {},
                 onBackupNow = { backupsNow++ },
+                clearing = clearing,
             )
         }
     }
@@ -84,6 +90,18 @@ class SettingsScreenTest {
         show(SettingsUiState(error = DataError.Invalid("The write did not land.")))
 
         composeTestRule.onNodeWithText("The write did not land.").assertExists()
+    }
+
+    @Test
+    fun aRunningClear_disablesTheClearRow() {
+        // B456: the clear runs in the ViewModel, so the row must not offer a second one while it is
+        // in flight.
+        show(SettingsUiState(), clearing = true)
+
+        composeTestRule.onNodeWithTag(TestTags.SETTINGS_CLEAR_DATA)
+            .performScrollTo()
+            .assertHasNoClickAction()
+        assertEquals(0, cleared)
     }
 
     @Test
