@@ -259,7 +259,6 @@ class StatisticsViewModel @Inject constructor(
         pendingRange,
     ) { stored, pending -> pending ?: stored }
 
-    /** The four sources, gathered before they are combined: five flows is the typed combine's limit. */
     /** The two library reads, with the failure the picker must not hide (B460). */
     private data class Library(
         val summaries: List<WorkoutSummary>,
@@ -267,6 +266,7 @@ class StatisticsViewModel @Inject constructor(
         val error: DataError?,
     )
 
+    /** The sources, gathered before they are combined: the typed combine has a five-flow limit. */
     private data class Sources(
         val range: StatisticsRange,
         val selection: StatisticsSelection,

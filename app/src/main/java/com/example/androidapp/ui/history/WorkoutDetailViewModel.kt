@@ -524,12 +524,12 @@ class WorkoutDetailViewModel @Inject constructor(
         }
     }
 
-    /** Called once the moved-to sentence has been read (N267). */
     /** The failure's snackbar has been read, so the same sentence can be said again (B462). */
     fun onErrorShown() {
         lastError.value = null
     }
 
+    /** Called once the moved-to sentence has been read (N267). */
     fun onDismissMovedDay() {
         _movedDay.value = null
     }

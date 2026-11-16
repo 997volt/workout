@@ -127,10 +127,11 @@ enum class ProgressionMiss {
     NO_REP_TARGET,
 
     /**
-     * The set was held, and a hold is not measured in reps (ROADMAP N220, B243).
+     * The plan prescribed a hold, and the logged set had no duration — it was counted, not held
+     * (ROADMAP N220, B243, B457).
      *
-     * The plan's rep target does not apply to it — a timed movement inside a plan ignores that target — so
-     * this says why no step was earned rather than reporting the hold as "zero reps done".
+     * The plan's rep target does not apply to a hold — a timed movement inside a plan ignores that target — so
+     * this says why no step was earned rather than reporting the counted set as "zero reps done".
      */
     HOLD,
 
