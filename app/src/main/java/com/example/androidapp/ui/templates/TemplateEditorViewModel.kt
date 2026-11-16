@@ -172,21 +172,33 @@ class TemplateEditorViewModel @Inject constructor(
     fun onAddSet(templateExerciseId: String, edit: TemplateSetEdit) =
         writeSet(ADDING_SET_ID) { repository.addSet(templateExerciseId, edit) }
 
+    /** One quick block in flight at a time, so a second tap cannot append the same block twice (B461). */
+    private var addingSets = false
+
     /**
      * Appends [count] planned sets that share one set of targets (P3.18).
      *
      * The plan's quick entry. Each set is its own row, so this is the single add repeated; a failure
      * part-way leaves the rows it managed and reports the error, the same shape a lifter sees if they add
-     * three by hand and the third fails.
+     * three by hand and the third fails. The flag is taken before the coroutine starts, so two taps in one
+     * frame see the first one.
      */
-    fun onAddSets(templateExerciseId: String, count: Int, edit: TemplateSetEdit) = write {
-        var failure: DataError? = null
-        repeat(count.coerceIn(1, MAX_QUICK_SETS)) {
-            if (failure == null) {
-                failure = (repository.addSet(templateExerciseId, edit) as? DataResult.Failure)?.error
+    fun onAddSets(templateExerciseId: String, count: Int, edit: TemplateSetEdit) {
+        if (addingSets) return
+        addingSets = true
+        viewModelScope.launch {
+            try {
+                var failure: DataError? = null
+                repeat(count.coerceIn(1, MAX_QUICK_SETS)) {
+                    if (failure == null) {
+                        failure = (repository.addSet(templateExerciseId, edit) as? DataResult.Failure)?.error
+                    }
+                }
+                error.value = failure
+            } finally {
+                addingSets = false
             }
         }
-        if (failure != null) DataResult.Failure(failure) else DataResult.Success(Unit)
     }
 
     /**

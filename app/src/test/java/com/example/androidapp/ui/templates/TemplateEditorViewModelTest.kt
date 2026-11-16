@@ -728,6 +728,28 @@ class TemplateEditorViewModelTest {
     }
 
     @Test
+    fun twoQuickAddTaps_writeOneBlock() = runTest(dispatcher) {
+        // B461: the quick entry appends a block of sets; a second tap in the same frame used to append
+        // it again.
+        val repository = FakeTemplateRepository()
+        val viewModel = viewModelFor(repository)
+        observe(viewModel)
+        advanceUntilIdle()
+        val edit = TemplateSetEdit(
+            role = SetType.NORMAL,
+            targetWeightGrams = 100_000L,
+            targetRepsMin = 5,
+            targetRepsMax = 5,
+        )
+
+        viewModel.onAddSets("te1", count = 3, edit = edit)
+        viewModel.onAddSets("te1", count = 3, edit = edit)
+        advanceUntilIdle()
+
+        assertEquals("one block, not two", 3, repository.addedSets.size)
+    }
+
+    @Test
     fun addingAPlannedSet_passesItsTargetsToTheRepository() = runTest(dispatcher) {
         // The plan editor's whole job: what the dialog collected is what is stored
         // (ROADMAP N14).
