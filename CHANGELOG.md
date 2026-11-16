@@ -22,9 +22,9 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   unpaired non-rung sets count now.
 - **The daily measurement shortcut is applied once** (B455). Saving a new entry from home reopened the same
   form in edit mode because the route's entry changed from none to the saved row; the form is a one-shot now.
-- **Delete-everything survives a rotation** (B456). The clear runs in the ViewModel with a one-shot outcome
-  and a single-flight flag, so a configuration change cannot cancel the sentence, leave automatic backup off,
-  or hide what happened.
+- **Delete-everything survives a rotation and a popped screen** (B456, B470). The write is non-cancellable and its
+  outcome lives in an app-scoped store, so neither a configuration change nor a Settings destination going away
+  can cancel the multi-step clear, leave automatic backup off, or hide what happened.
 - **A counted set against a hold plan is a missed hold** (B457). It reported nothing measurable, so three such
   sessions reset the stall run instead of raising the deload.
 - **The streak is bounded by each program's own creation** (B458). A newly followed program no longer scores

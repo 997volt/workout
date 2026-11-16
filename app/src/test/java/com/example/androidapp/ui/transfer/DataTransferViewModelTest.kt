@@ -41,6 +41,7 @@ class DataTransferViewModelTest {
     private val uri: Uri = Uri.parse("content://test/backup.json")
     private val repository = FakeBackupRepository()
     private val io = FakeDocumentIo()
+    private val clearStore = DataClearStore()
 
     @Before
     fun setUp() = Dispatchers.setMain(dispatcher)
@@ -48,7 +49,7 @@ class DataTransferViewModelTest {
     @After
     fun tearDown() = Dispatchers.resetMain()
 
-    private fun viewModel() = DataTransferViewModel(repository, io).apply {
+    private fun viewModel() = DataTransferViewModel(repository, io, clearStore).apply {
         cryptoDispatcher = dispatcher
     }
 
@@ -413,6 +414,20 @@ class DataTransferViewModelTest {
 
         viewModel.onClearOutcomeShown()
         assertThat(viewModel.clearOutcome.value).isNull()
+    }
+
+    @Test
+    fun aClearOutcome_outlivesTheViewModel() = runTest(dispatcher) {
+        // B470: a new Settings ViewModel reads the same store, so a popped destination cannot erase
+        // the sentence the clear produced.
+        viewModel().startClear()
+        advanceUntilIdle()
+
+        val replacement = viewModel()
+
+        assertThat(replacement.clearOutcome.value).isEqualTo(ClearOutcome.Cleared)
+        replacement.onClearOutcomeShown()
+        assertThat(replacement.clearOutcome.value).isNull()
     }
 
     @Test

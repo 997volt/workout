@@ -14,6 +14,7 @@ import com.example.androidapp.platform.DocumentIo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -64,6 +65,7 @@ sealed interface TransferOutcome {
 class DataTransferViewModel @Inject constructor(
     private val backupRepository: BackupRepository,
     private val documentIo: DocumentIo,
+    private val clearStore: DataClearStore,
 ) : ViewModel() {
 
     /**
@@ -79,15 +81,11 @@ class DataTransferViewModel @Inject constructor(
     /** The last transfer's result, or null while there is nothing to say. Cleared by [onOutcomeShown]. */
     val outcome: StateFlow<TransferOutcome?> = _outcome.asStateFlow()
 
-    private val _clearing = MutableStateFlow(false)
-
-    /** Whether a clear is running, so the action can be disabled and a second call ignored. */
-    val clearing: StateFlow<Boolean> = _clearing.asStateFlow()
-
-    private val _clearOutcome = MutableStateFlow<ClearOutcome?>(null)
+    /** Whether a clear is running, so the action can be disabled and a second call ignored (B470). */
+    val clearing: StateFlow<Boolean> = clearStore.clearing
 
     /** The last clear's result, or null while there is nothing to say. Cleared by [onClearOutcomeShown]. */
-    val clearOutcome: StateFlow<ClearOutcome?> = _clearOutcome.asStateFlow()
+    val clearOutcome: StateFlow<ClearOutcome?> = clearStore.outcome
 
     /** The JSON to write, or null if it could not be produced. */
     suspend fun export(): ExportOutcome = when (val result = backupRepository.export()) {
@@ -107,20 +105,21 @@ class DataTransferViewModel @Inject constructor(
      * [onClearOutcomeShown].
      */
     fun startClear() {
-        if (_clearing.value) return
-        _clearing.value = true
+        if (!clearStore.begin()) return
         viewModelScope.launch {
             try {
-                _clearOutcome.value = clearEverything()
+                // The write and its answer must not be cancelled by a popped destination (B470): the
+                // ViewModel can go, the half-cleared store cannot come back.
+                withContext(NonCancellable) { clearStore.publish(clearEverything()) }
             } finally {
-                _clearing.value = false
+                clearStore.end()
             }
         }
     }
 
     /** The clear's answer has been shown, so the next one starts from empty. */
     fun onClearOutcomeShown() {
-        _clearOutcome.value = null
+        clearStore.forget()
     }
 
     /** The clear itself, exposed for the tests that assert the result the ViewModel publishes. */
