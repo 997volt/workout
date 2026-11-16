@@ -53,7 +53,8 @@ class ProgramRepositoryTest {
     /** The adherence reads moved to their own repository at P3.13; the fixtures are shared. */
     private lateinit var adherence: RoomAdherenceRepository
 
-    private val clock = TimeSource { Instant.parse("2026-10-07T12:00:00Z") }
+    private var now = Instant.parse("2026-10-07T12:00:00Z")
+    private val clock = TimeSource { now }
 
     // A Wednesday, so Tuesday's slot is behind it and Friday's is ahead.
     private val today = LocalDate.of(2026, 10, 7)
@@ -777,8 +778,9 @@ class ProgramRepositoryTest {
 
     @Test
     fun aRunOfDoneOccurrences_isCountedFromTheProgramsFirstWeek() = runTest {
-        // ROADMAP P3.15: occurrences, not days. The program was created today, so the walk starts
-        // at this week's Monday and Tuesday the 6th is the only occurrence in it.
+        // ROADMAP P3.15: occurrences, not days. B458: the program must exist before the day it is
+        // scored on, so it is created on this week's Monday and Tuesday the 6th is its first occurrence.
+        now = Instant.parse("2026-10-05T12:00:00Z")
         val program = create("Upper/Lower")
         val template = createTemplate("Heavy lower")
         repository.addSlot(program, template, DayOfWeek.TUESDAY)
