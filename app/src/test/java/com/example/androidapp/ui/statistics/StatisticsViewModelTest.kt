@@ -340,6 +340,37 @@ class StatisticsViewModelTest {
     }
 
     @Test
+    fun aFailedLiftRead_isAnErrorNotAnEmptyChart() = runTest(dispatcher) {
+        // B460: the failed per-lift read was flattened to an empty series, so a trained lift drew nothing.
+        val failure = DataError.Storage(IllegalStateException("trends"))
+        val trends = FakeTrendsRepository().apply { exerciseFailure = failure }
+        val viewModel = viewModel(
+            range = StatisticsRange(RangeKind.ALL),
+            lifts = listOf(lift("back-squat", "Back Squat")),
+            trends = trends,
+        )
+        observe(viewModel)
+        advanceUntilIdle()
+
+        viewModel.onSelectMetric(MetricKey.Exercise(ExerciseTrendMetric.VOLUME))
+        viewModel.onSelectExercise("back-squat")
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.error).isEqualTo(failure)
+    }
+
+    @Test
+    fun aFailedLibraryRead_isAnErrorRatherThanAnEmptyPicker() = runTest(dispatcher) {
+        val failure = DataError.Storage(IllegalStateException("library"))
+        val exercises = FakeExerciseRepository(emptyList()).apply { failureResult = failure }
+        val viewModel = viewModel(range = StatisticsRange(RangeKind.ALL), exercises = exercises)
+        observe(viewModel)
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.error).isEqualTo(failure)
+    }
+
+    @Test
     fun thePlanLines_areReadOverTheSameFamily_asTheSeries() = runTest(dispatcher) {
         // B143: a metric that accepts a head draws its whole family, so its plan lines have to be read over
         // that family — a set never names a category, and querying the chosen id alone drew the family's
@@ -414,6 +445,7 @@ class StatisticsViewModelTest {
             },
         ),
         statistics: FakeStatisticsRepository = FakeStatisticsRepository(sessions, records),
+        exercises: FakeExerciseRepository = FakeExerciseRepository(lifts),
     ) = StatisticsViewModel(
         settings = settings,
         goals = goalRepository,
@@ -421,7 +453,7 @@ class StatisticsViewModelTest {
             statistics = statistics,
             trends = trends,
             measurements = FakeMeasurementRepository(body),
-            exercises = FakeExerciseRepository(lifts),
+            exercises = exercises,
         ),
         timeSource = TimeSource { now },
         savedStateHandle = SavedStateHandle(),
@@ -1090,6 +1122,8 @@ private class FakeTrendsRepository(
     private val points: List<TrendPoint> = emptyList(),
     private val exercisePoints: List<ExerciseTrendPoint> = emptyList(),
 ) : TrendsRepository {
+    /** A failed per-lift read, when a test is about B460. */
+    var exerciseFailure: DataError? = null
     var askedFor: List<String>? = null
         private set
 
@@ -1107,7 +1141,8 @@ private class FakeTrendsRepository(
         limit: Int,
     ): Flow<DataResult<List<ExerciseTrendPoint>>> {
         askedFor = exerciseIds
-        return flowOf(DataResult.Success(exercisePoints))
+        return exerciseFailure?.let { flowOf(DataResult.Failure(it)) }
+            ?: flowOf(DataResult.Success(exercisePoints))
     }
 }
 
@@ -1131,7 +1166,11 @@ private class FakeMeasurementRepository(
 }
 
 private class FakeExerciseRepository(private val lifts: List<Exercise>) : ExerciseRepository {
-    override fun observeExercises(): Flow<DataResult<List<Exercise>>> = flowOf(DataResult.Success(lifts))
+    /** A failed library read, when a test is about B460. */
+    var failureResult: DataError? = null
+
+    override fun observeExercises(): Flow<DataResult<List<Exercise>>> =
+        failureResult?.let { flowOf(DataResult.Failure(it)) } ?: flowOf(DataResult.Success(lifts))
 
     override suspend fun getExercise(id: String): DataResult<Exercise?> =
         DataResult.Success(lifts.firstOrNull { it.id == id })

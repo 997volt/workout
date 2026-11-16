@@ -260,6 +260,13 @@ class StatisticsViewModel @Inject constructor(
     ) { stored, pending -> pending ?: stored }
 
     /** The four sources, gathered before they are combined: five flows is the typed combine's limit. */
+    /** The two library reads, with the failure the picker must not hide (B460). */
+    private data class Library(
+        val summaries: List<WorkoutSummary>,
+        val exercises: List<Exercise>,
+        val error: DataError?,
+    )
+
     private data class Sources(
         val range: StatisticsRange,
         val selection: StatisticsSelection,
@@ -270,6 +277,8 @@ class StatisticsViewModel @Inject constructor(
         val workoutPoints: DataResult<List<TrendPoint>>,
         val measurements: List<BodyMeasurement>,
         val lifts: List<Exercise>,
+        /** A failed library read, so an empty picker cannot read as "no lifts" (B460). */
+        val libraryError: DataError?,
         /** Whether the chosen metric reads a head as a family (ROADMAP N97, B98). */
         val acceptsHead: Boolean,
     )
@@ -283,7 +292,11 @@ class StatisticsViewModel @Inject constructor(
         repositories.statistics.observeWorkoutSummaries(),
         repositories.exercises.observeExercises(),
     ) { summaries, result ->
-        summaries to (result as? DataResult.Success)?.data.orEmpty()
+        Library(
+            summaries = summaries,
+            exercises = (result as? DataResult.Success)?.data.orEmpty(),
+            error = (result as? DataResult.Failure)?.error,
+        )
     }
 
     /**
@@ -326,14 +339,14 @@ class StatisticsViewModel @Inject constructor(
     ) { range, chosen, library, points, body ->
         val selection = chosen.selection
         val acceptsHead = MetricRegistry.entryFor(selection.metric).acceptsHead
-        val rows = library.second
+        val rows = library.exercises
         Sources(
             range = range,
             selection = selection,
             recentSeries = chosen.recent,
             favouriteSeries = chosen.favourites,
             settingsError = chosen.error,
-            summaries = library.first,
+            summaries = library.summaries,
             // A head is offered only where the chosen metric **reads** one (ROADMAP N97, B98), and only where
             // it actually heads something: a category a lifter has made and not yet filed anything under is
             // not a family, and choosing it would draw an empty chart under a label promising one. For the
@@ -346,6 +359,7 @@ class StatisticsViewModel @Inject constructor(
                 rows.filter { it.rowKind.isLoggable }
             },
             acceptsHead = acceptsHead,
+            libraryError = library.error,
             workoutPoints = points,
             measurements = body,
         )
@@ -357,7 +371,7 @@ class StatisticsViewModel @Inject constructor(
      * The library is combined in because the *subject* is a question about the library's shape rather than
      * about the selection: a head reads its own ids plus everything filed under it (ROADMAP N97).
      */
-    private val exercisePoints = combine(selection, library) { chosen, lib -> chosen to lib.second }
+    private val exercisePoints = combine(selection, library) { chosen, lib -> chosen to lib.exercises }
         .flatMapLatest { (chosen, exercises) ->
             val metric = chosen.metric
             val exerciseId = chosen.exerciseId
@@ -429,7 +443,7 @@ class StatisticsViewModel @Inject constructor(
      * same lift does not re-query the plan's tables.
      */
     private val planTargets: Flow<List<PlanTarget>> =
-        combine(selection, library) { chosen, lib -> chosen to lib.second }
+        combine(selection, library) { chosen, lib -> chosen to lib.exercises }
             .map { (chosen, exercises) ->
                 val exerciseId = chosen.exerciseId
                 if (exerciseId == null || !MetricRegistry.entryFor(chosen.metric).needsExercise) {
@@ -465,13 +479,18 @@ class StatisticsViewModel @Inject constructor(
             } else {
                 current?.value
             }
-            if (workoutPoints is DataResult.Failure) {
+            // A failed series or library read is the same refusal as a failed totals read (B460): the
+            // chart would otherwise draw an empty lift, and the picker a lift-less library, both silently.
+            val readFailure = (workoutPoints as? DataResult.Failure)?.error
+                ?: (points as? DataResult.Failure)?.error
+                ?: sources.libraryError
+            if (readFailure != null) {
                 StatisticsUiState(
                     isLoading = false,
                     range = sources.range,
                     selection = sources.selection,
                     recentSeries = sources.recentSeries,
-                    error = workoutPoints.error,
+                    error = readFailure,
                     settingsError = sources.settingsError,
                     lifts = sources.lifts,
                     goal = levelGoal,
@@ -485,7 +504,7 @@ class StatisticsViewModel @Inject constructor(
                 val allReadings = metricSeries(
                     key = sources.selection.metric,
                     workouts = (workoutPoints as DataResult.Success).data,
-                    exercises = (points as? DataResult.Success)?.data.orEmpty(),
+                    exercises = (points as DataResult.Success).data,
                     measurements = sources.measurements,
                 ).readings
                 val body = sources.range.inWindow(
