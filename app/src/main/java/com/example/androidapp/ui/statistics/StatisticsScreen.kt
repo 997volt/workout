@@ -137,7 +137,8 @@ fun StatisticsScreen(
     /** Pins or unpins the current series. */
     onToggleFavourite: () -> Unit = {},
 ) {
-    var choosingDates by remember { mutableStateOf(false) }
+    // A rotation must not close a half-chosen window (B465).
+    var choosingDates by rememberSaveable { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     SettingsErrorSnackbar(state, snackbarHostState, onDismissSettingsError)
     if (choosingDates) {
@@ -667,9 +668,12 @@ private fun CustomRangeDialog(
     onDismiss: () -> Unit,
     onConfirm: (StatisticsRange) -> Unit,
 ) {
-    var from by remember { mutableStateOf(initial.from) }
-    var to by remember { mutableStateOf(initial.to) }
-    var picking by remember { mutableStateOf<Boolean?>(null) }
+    // Stored as days rather than LocalDate, which has no bundle saver (B465).
+    var fromDay by rememberSaveable { mutableStateOf(initial.from?.toString()) }
+    var toDay by rememberSaveable { mutableStateOf(initial.to?.toString()) }
+    var picking by rememberSaveable { mutableStateOf<Boolean?>(null) }
+    val from = fromDay?.let(LocalDate::parse)
+    val to = toDay?.let(LocalDate::parse)
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -710,7 +714,7 @@ private fun CustomRangeDialog(
             initial = if (choosing) from else to,
             onDismiss = { picking = null },
             onPick = { date ->
-                if (choosing) from = date else to = date
+                if (choosing) fromDay = date.toString() else toDay = date.toString()
                 picking = null
             },
         )

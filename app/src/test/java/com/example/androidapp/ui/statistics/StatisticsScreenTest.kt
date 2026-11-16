@@ -13,6 +13,7 @@ import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onChildren
@@ -398,6 +399,41 @@ class StatisticsScreenTest {
         composeTestRule.onNodeWithTag(TestTags.Statistics.CUSTOM_FROM).assertExists()
         composeTestRule.onNodeWithTag(TestTags.Statistics.CUSTOM_TO).assertExists()
         composeTestRule.onNodeWithTag(TestTags.Statistics.CUSTOM_APPLY).assertIsNotEnabled()
+    }
+
+    @Test
+    fun theOpenCustomRangeDialog_survivesAStateRestore() {
+        // B465: the open flag and both picked dates were plain remember, so a rotation closed the
+        // question and lost a half-chosen window.
+        val tester = StateRestorationTester(composeTestRule)
+        tester.setContent {
+            AndroidAppTheme {
+                StatisticsScreen(
+                    state = StatisticsUiState(
+                        isLoading = false,
+                        range = StatisticsRange(RangeKind.LAST_MONTH),
+                        series = series,
+                    ),
+                    onSelectRange = {},
+                    onSelectMetric = {},
+                    onSelectExercise = {},
+                    onSelectRecent = {},
+                    onSelectFavourite = {},
+                    onToggleFavourite = {},
+                    onPinch = { _, _ -> },
+                    onSetGoal = {},
+                    onDismissSettingsError = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.RANGE_MORE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.range(RangeKind.CUSTOM.name)).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.CUSTOM_FROM).assertExists()
+
+        tester.emulateSavedInstanceStateRestore()
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.CUSTOM_FROM).assertExists()
     }
 
     @Test

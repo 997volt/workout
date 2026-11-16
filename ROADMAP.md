@@ -22,33 +22,30 @@ draws lead; the test-count gate follows them, because it is what would let a lat
 disappear unnoticed. Each row is one commit (or a small batch) with its id in the subject, and a
 row leaves this section for [CHANGELOG.md](CHANGELOG.md) when it ships.
 
-1. **B465 — The custom-range dialog must survive rotation.** Its open flag and both picked dates
-    are plain `remember`; make them saveable like the other open dialogs.
-
-2. **N316 — The deload confirm's numbers need a test.** The test named for them passes no kept
+1. **N316 — The deload confirm's numbers need a test.** The test named for them passes no kept
     set and asserts only that the dialog exists. Assert one set's before → after (weight,
     assistance or hold) and that confirming is the only write.
 
-3. **N317 — The find-the-weight guard needs the real store.** Its idempotence is implemented by
+2. **N317 — The find-the-weight guard needs the real store.** Its idempotence is implemented by
     the ViewModel test's fake, so the production condition can be deleted green. Save twice
     against a real repository with a weight entered in between, and assert it survives.
 
-4. **N318 — Exercise the new writes' failure paths.** Deload-in-place, replace and the backup
+3. **N318 — Exercise the new writes' failure paths.** Deload-in-place, replace and the backup
     merge are transactional, but nothing forces a failure after their first write; the screens'
     replace, editor and earned-set write failures are also unreachable from their fakes. Add the
     trigger-based rollback test the joint-rating path already has, and a failure return per branch
     that asserts the message is shown and the card or sheet stays usable.
 
-5. **N319 — Let the new fakes assert what they are told.** The replace fake ignores `seeds` and
+4. **N319 — Let the new fakes assert what they are told.** The replace fake ignores `seeds` and
     `empty`, the shared-plan fake ignores the template and program arguments, and no test plans
     the sharing query itself; N311's timed branch has no test at all. Assert the arguments, plan
     the query against two programs, and cover an earned hold.
 
-6. **N320 — Correct the two stale statements.** README's quoted release size no longer matches
+5. **N320 — Correct the two stale statements.** README's quoted release size no longer matches
     the built artifact, and `RestTimer` still says its default is a constant until a settings
     screen exists. Drop or derive the size, and update the comment.
 
-7. **N321 — Sweep the remaining low findings.** `IndexUsageTest` plans hand-written SQL rather
+6. **N321 — Sweep the remaining low findings.** `IndexUsageTest` plans hand-written SQL rather
     than the DAO's own queries; `MeasurementDayStateTest` reads the real clock; `remainingSeconds`
     can wrap a huge duration into a negative `Int`; and `recordBackupResult` permits success and
     failure at once. Fix or explicitly reject each.
