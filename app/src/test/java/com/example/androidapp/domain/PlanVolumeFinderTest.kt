@@ -53,6 +53,31 @@ class PlanVolumeFinderTest {
     }
 
     @Test
+    fun anExtraHold_isWrittenAsAHold() {
+        // N319: the earned-set edit carried reps unconditionally for a counted plan, and this branch
+        // (a held extra set) had no test at all.
+        val exercise = exercise()
+        val hold = ProgressionPerformance(
+            reps = 0,
+            weightGrams = 20_000L,
+            rpeHalves = 16,
+            durationSeconds = 45,
+        )
+        val current = prompt(exercise, List(3) { performed() } + hold)
+        val previous = listOf(
+            prompt(exercise, List(3) { performed() }),
+            prompt(exercise, List(3) { performed() } + hold),
+        )
+
+        val suggestion = finder.doneSuggestion(exercise, current, previous)
+
+        assertThat(suggestion?.reason).isEqualTo(VolumeReason.EXTRA_SET)
+        assertThat(suggestion?.edit?.targetDurationSeconds).isEqualTo(45)
+        assertThat(suggestion?.edit?.targetRepsMin).isNull()
+        assertThat(suggestion?.edit?.targetRepsMax).isNull()
+    }
+
+    @Test
     fun theComfortableSet_copiesTheLastTarget_whenThreeSessionsEarnedEveryStep() {
         val exercise = exercise()
         val current = prompt(exercise, List(3) { performed() })

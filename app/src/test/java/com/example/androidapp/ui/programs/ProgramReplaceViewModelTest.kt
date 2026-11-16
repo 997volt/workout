@@ -127,6 +127,37 @@ class ProgramReplaceViewModelTest {
         advanceUntilIdle()
 
         assertThat(viewModel.state.value.sharedProgramNames).containsExactly("Full Body")
+        assertThat(programs.otherProgramNameReads.single()).isEqualTo(listOf("t1") to "p1")
+    }
+
+    @Test
+    fun theSeedsAndTheEmptyChoice_reachTheWrite() = runTest(dispatcher) {
+        // N319: the fake recorded neither argument, so choosing Empty with stale seeds could not fail.
+        val viewModel = viewModel()
+        advanceUntilIdle()
+        viewModel.select("front-squat")
+        advanceUntilIdle()
+
+        viewModel.confirm()
+        advanceUntilIdle()
+
+        assertThat(templates.replacementSeeds.single()).hasSize(2)
+        assertThat(templates.replacementEmpty).containsExactly(false)
+    }
+
+    @Test
+    fun theEmptyChoice_writesEmptySeeds() = runTest(dispatcher) {
+        val viewModel = viewModel()
+        advanceUntilIdle()
+        viewModel.select("front-squat")
+        advanceUntilIdle()
+        viewModel.setEmpty(true)
+
+        viewModel.confirm()
+        advanceUntilIdle()
+
+        assertThat(templates.replacementSeeds.single()).isEmpty()
+        assertThat(templates.replacementEmpty).containsExactly(true)
     }
 
     @Test

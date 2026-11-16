@@ -811,6 +811,26 @@ class ProgramRepositoryTest {
     }
 
     @Test
+    fun theSharingRead_namesOnlyTheOtherLiveProgramsOnThePlan() = runTest {
+        // N319: the confirm's warning had no test of the query it reads.
+        val template = createTemplate("Heavy lower")
+        val otherTemplate = createTemplate("Other")
+        val one = create("One")
+        val two = create("Two")
+        val three = create("Three")
+        repository.addSlot(one, template, DayOfWeek.MONDAY)
+        repository.addSlot(two, template, DayOfWeek.TUESDAY)
+        repository.addSlot(three, otherTemplate, DayOfWeek.MONDAY)
+
+        val before = repository.otherProgramNamesUsingTemplates(listOf(template), one).getOrNull()
+        assertEquals(listOf("Two"), before)
+
+        repository.deleteProgram(two)
+        val after = repository.otherProgramNamesUsingTemplates(listOf(template), one).getOrNull()
+        assertEquals("a deleted program is not sharing the plan", emptyList<String>(), after)
+    }
+
+    @Test
     fun theRatioHistory_endsWithThisMonth_andAgreesWithTheGrid() = runTest {
         // ROADMAP P3.16: a point and the grid it came from cannot disagree.
         val program = create("Upper/Lower")

@@ -49,8 +49,8 @@ class Suite:
 # The pinned totals (N315). A test file's deletion used to shrink `declared` and `executed` together
 # and report OK; these numbers are the fixed side of that comparison. Bump one in the commit that
 # changes the suite, and the checker prints the difference when it was forgotten.
-EXPECTED_UNIT_TESTS = 2316
-EXPECTED_INSTRUMENTED_TESTS = 517
+EXPECTED_UNIT_TESTS = 2319
+EXPECTED_INSTRUMENTED_TESTS = 518
 EXPECTED_SHARED_TESTS = 29
 
 SUITES = {

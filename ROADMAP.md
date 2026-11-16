@@ -22,16 +22,11 @@ draws lead; the test-count gate follows them, because it is what would let a lat
 disappear unnoticed. Each row is one commit (or a small batch) with its id in the subject, and a
 row leaves this section for [CHANGELOG.md](CHANGELOG.md) when it ships.
 
-1. **N319 — Let the new fakes assert what they are told.** The replace fake ignores `seeds` and
-    `empty`, the shared-plan fake ignores the template and program arguments, and no test plans
-    the sharing query itself; N311's timed branch has no test at all. Assert the arguments, plan
-    the query against two programs, and cover an earned hold.
-
-2. **N320 — Correct the two stale statements.** README's quoted release size no longer matches
+1. **N320 — Correct the two stale statements.** README's quoted release size no longer matches
     the built artifact, and `RestTimer` still says its default is a constant until a settings
     screen exists. Drop or derive the size, and update the comment.
 
-3. **N321 — Sweep the remaining low findings.** `IndexUsageTest` plans hand-written SQL rather
+2. **N321 — Sweep the remaining low findings.** `IndexUsageTest` plans hand-written SQL rather
     than the DAO's own queries; `MeasurementDayStateTest` reads the real clock; `remainingSeconds`
     can wrap a huge duration into a negative `Int`; and `recordBackupResult` permits success and
     failure at once. Fix or explicitly reject each.

@@ -255,10 +255,16 @@ internal class FakeProgramRepository : ProgramRepository {
     var otherProgramNames: List<String> = emptyList()
     var otherProgramNamesResult: DataResult<List<String>>? = null
 
+    /** Every sharing read, so a test can assert which plan and program were asked about (N319). */
+    val otherProgramNameReads = mutableListOf<Pair<List<String>, String>>()
+
     override suspend fun otherProgramNamesUsingTemplates(
         templateIds: List<String>,
         programId: String,
-    ): DataResult<List<String>> = otherProgramNamesResult ?: DataResult.Success(otherProgramNames)
+    ): DataResult<List<String>> {
+        otherProgramNameReads += templateIds to programId
+        return otherProgramNamesResult ?: DataResult.Success(otherProgramNames)
+    }
 
     override fun observeSlots(programId: String): Flow<List<ProgramSlot>> =
         slotsByProgram[programId]?.let { flowOf(it) } ?: slots
@@ -380,6 +386,10 @@ internal class FakeTemplateRepository : TemplateRepository {
     /** Every replace as the old exercise row and the new movement's id (N308). */
     val replacements = mutableListOf<Pair<String, String>>()
 
+    /** What the write was told to seed and whether Empty was chosen (N319). */
+    val replacementSeeds = mutableListOf<List<com.example.androidapp.domain.model.ReplacementSeed?>>()
+    val replacementEmpty = mutableListOf<Boolean>()
+
     /** Every replace the undo took back. */
     val undoneReplacements = mutableListOf<com.example.androidapp.domain.model.ReplaceOutcome>()
 
@@ -487,6 +497,8 @@ internal class FakeTemplateRepository : TemplateRepository {
         empty: Boolean,
     ): DataResult<com.example.androidapp.domain.model.ReplaceOutcome> {
         replacements += templateExerciseId to newExerciseId
+        replacementSeeds += seeds
+        replacementEmpty += empty
         return replaceResult
             ?: DataResult.Success(
                 com.example.androidapp.domain.model.ReplaceOutcome(
