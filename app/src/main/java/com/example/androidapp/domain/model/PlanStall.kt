@@ -105,14 +105,25 @@ fun measurableKinds(
     }
 }
 
-/** The same two questions asked of a hold: was it long enough, and was it inside the effort (N242). */
+/**
+ * The same three questions asked of a hold: was the set a hold at all, was it long enough, and was it
+ * inside the effort (N242, B457).
+ *
+ * A counted set is not a hold. Leaving that case out let it count as "met the plan" — there was no
+ * short duration to measure and no effort to fault — so three sessions of reps against a plan of
+ * seconds reset the stall run instead of raising the deload. The offer already calls the same input
+ * [ProgressionMiss.HOLD].
+ */
 private fun holdKinds(
     planned: ProgressionPlanSet,
     done: ProgressionPerformance,
     plannedHold: Int,
 ): Set<ProgressionMiss> = buildSet {
     val held = done.durationSeconds
-    if (held != null && held < plannedHold) add(ProgressionMiss.HOLD_SHORT)
+    when {
+        held == null -> add(ProgressionMiss.HOLD)
+        held < plannedHold -> add(ProgressionMiss.HOLD_SHORT)
+    }
     if (overEffort(planned, done)) add(ProgressionMiss.OVER_TARGET_RPE)
 }
 

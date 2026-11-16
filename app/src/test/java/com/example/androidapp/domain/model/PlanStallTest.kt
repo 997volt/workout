@@ -199,6 +199,21 @@ class PlanStallTest {
     }
 
     @Test
+    fun aCountedSetAgainstAPlanOfHolds_isAMiss() {
+        // B457: the plan measured seconds; reps answer nothing, so the session is not progress.
+        val history = history(
+            planned = listOf(planSet(reps = null, hold = 45)),
+            sessions = listOf(
+                listOf(performed(reps = 10, hold = null)),
+                listOf(performed(reps = 12, hold = null)),
+                listOf(performed(reps = 15, hold = null)),
+            ),
+        )
+
+        assertEquals(3, history.stall()?.sessions)
+    }
+
+    @Test
     fun aPlanOfWarmUpsOnly_hasNothingToStall() {
         val history = history(
             planned = listOf(planSet(reps = 5, role = SetType.WARMUP)),
