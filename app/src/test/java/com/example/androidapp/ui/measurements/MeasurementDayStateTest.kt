@@ -1,5 +1,6 @@
 package com.example.androidapp.ui.measurements
 
+import com.example.androidapp.domain.TimeSource
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import java.time.Instant
@@ -30,8 +31,12 @@ class MeasurementDayStateTest {
 
     @Test
     fun aNewEntry_startsOnTheDayItWasOpened() {
-        val state = MeasurementDayState(initial = null, zone = berlin)
+        val state = MeasurementDayState(
+            initial = null,
+            zone = berlin,
+            now = TimeSource { Instant.parse("2026-10-12T06:30:00Z") },
+        )
 
-        assertThat(state.day).isEqualTo(Instant.now().atZone(berlin).toLocalDate())
+        assertThat(state.day).isEqualTo(LocalDate.of(2026, 10, 12))
     }
 }

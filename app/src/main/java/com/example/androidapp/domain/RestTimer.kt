@@ -54,7 +54,8 @@ object RestTimer {
     /** Whole seconds left, never negative. 0 means the rest is over or not running. */
     fun remainingSeconds(restEndsAt: Instant?, now: Instant): Int {
         val endsAt = restEndsAt ?: return 0
-        return Duration.between(now, endsAt).seconds.coerceAtLeast(0L).toInt()
+        // Clamp before narrowing: a far-future instant is legal and its seconds do not fit an Int (N321).
+        return Duration.between(now, endsAt).seconds.coerceIn(0L, Int.MAX_VALUE.toLong()).toInt()
     }
 
     fun isRunning(restEndsAt: Instant?, now: Instant): Boolean =

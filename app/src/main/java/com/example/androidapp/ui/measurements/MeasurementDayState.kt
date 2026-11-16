@@ -3,6 +3,7 @@ package com.example.androidapp.ui.measurements
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.model.withDay
 import java.time.Instant
 import java.time.LocalDate
@@ -16,9 +17,13 @@ import java.time.ZoneId
  * Robolectric. The dialog builds its draft from [measuredAt], so this is the whole of the pick → save path that
  * is not Compose.
  */
-internal class MeasurementDayState(initial: Instant?, private val zone: ZoneId) {
+internal class MeasurementDayState(
+    initial: Instant?,
+    private val zone: ZoneId,
+    now: TimeSource = TimeSource { Instant.now() },
+) {
     /** The record's instant; the day is read from it in [zone], as it is everywhere else. */
-    var measuredAt by mutableStateOf(initial ?: Instant.now())
+    var measuredAt by mutableStateOf(initial ?: now.now())
         private set
 
     /** The day the record now belongs to, in [zone]. */

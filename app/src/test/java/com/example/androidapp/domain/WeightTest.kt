@@ -1,9 +1,9 @@
 package com.example.androidapp.domain
 
 import com.google.common.truth.Truth.assertThat
+import org.junit.Test
 import java.time.Duration
 import java.time.Instant
-import org.junit.Test
 
 /**
  * JVM tests for weight storage and parsing (ROADMAP P1.3).
@@ -179,6 +179,13 @@ class RestTimerTest {
     }
 
     @Test
+    fun aFarFutureRest_clampsAtTheLargestInt() {
+        // A stored/imported instant decades ahead used to wrap to a negative Int and read as not running.
+        assertThat(RestTimer.remainingSeconds(now.plusSeconds(3_000_000_000L), now))
+            .isEqualTo(Int.MAX_VALUE)
+    }
+
+    @Test
     fun remaining_truncatesPartialSeconds() {
         assertThat(RestTimer.remainingSeconds(now.plusMillis(999), now)).isEqualTo(0)
     }
@@ -220,6 +227,5 @@ class RestTimerTest {
         // Assistance wins when both are set, which the editor cannot produce: it is
         // the number that changes how the set reads.
         assertThat(Weight.display(20_000L, 20_000L)).isEqualTo("-20")
-    
-}
+    }
 }

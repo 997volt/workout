@@ -22,11 +22,6 @@ draws lead; the test-count gate follows them, because it is what would let a lat
 disappear unnoticed. Each row is one commit (or a small batch) with its id in the subject, and a
 row leaves this section for [CHANGELOG.md](CHANGELOG.md) when it ships.
 
-1. **N321 — Sweep the remaining low findings.** `IndexUsageTest` plans hand-written SQL rather
-    than the DAO's own queries; `MeasurementDayStateTest` reads the real clock; `remainingSeconds`
-    can wrap a huge duration into a negative `Int`; and `recordBackupResult` permits success and
-    failure at once. Fix or explicitly reject each.
-
 ## Parked — deliberately not planned
 
 Each row is a product in its own right, contradicts "local-only", or both. Parking is a

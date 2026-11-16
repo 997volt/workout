@@ -161,6 +161,9 @@ interface SettingsRepository {
      * overwriting that with the moment it stopped working would answer a different question. The attempt is
      * recorded for both endings because it is the retry's clock (B249): a folder that is gone is tried at the
      * period's pace rather than on every launch.
+     *
+     * **[at] and [failed] are one answer, not two**: a non-null [at] is a success, and the implementation
+     * refuses a call that says both. They stay two parameters because the store writes them as two keys.
      */
     suspend fun recordBackupResult(at: Instant?, attemptAt: Instant, failed: Boolean): DataResult<Unit>
 

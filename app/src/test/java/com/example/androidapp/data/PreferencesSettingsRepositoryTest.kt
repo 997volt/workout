@@ -239,4 +239,14 @@ class PreferencesSettingsRepositoryTest {
         assertThat(stored.failed).isTrue()
         assertThat(stored.lastSuccessAt).isEqualTo(at)
     }
+
+    @Test
+    fun aBackupResultThatSucceedsAndFailsAtOnce_isRefused() = runTest {
+        // N321: the two parameters could disagree; the store now refuses the contradiction.
+        val at = Instant.parse("2026-09-28T08:00:00Z")
+
+        val result = repository().recordBackupResult(at = at, attemptAt = at, failed = true)
+
+        assertThat(result).isInstanceOf(DataResult.Failure::class.java)
+    }
 }

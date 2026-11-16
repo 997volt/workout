@@ -377,6 +377,13 @@ class PreferencesSettingsRepository @Inject constructor(
         attemptAt: Instant,
         failed: Boolean,
     ): DataResult<Unit> = withContext(Dispatchers.IO) {
+        // One answer, two keys (N321): a caller that says "at this time" and "failed" at once is refused
+        // rather than stored as a row that is both.
+        if (at != null && failed) {
+            return@withContext DataResult.Failure(
+                DataError.Invalid("a backup cannot succeed and fail at the same time"),
+            )
+        }
         preferences.edit(commit = true) {
             if (at != null) putLong(KEY_BACKUP_LAST_SUCCESS, at.toEpochMilli())
             putLong(KEY_BACKUP_LAST_ATTEMPT, attemptAt.toEpochMilli())
