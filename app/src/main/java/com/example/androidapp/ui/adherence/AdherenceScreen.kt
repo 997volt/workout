@@ -704,8 +704,12 @@ private fun DayCell(day: CalendarDay?, onSelect: (LocalDate) -> Unit, modifier: 
             )
             .testTag(TestTags.Adherence.dayCell(day.date.toString()))
             // A scheduled day is the way into the correction dialog; a rest day has nothing to
-            // correct, so it is not offered as a control (ROADMAP P3.13).
-            .clickable(enabled = day.scheduled) { onSelect(day.date) }
+            // correct, so it is not offered as a control (ROADMAP P3.13). The label names the action
+            // (B464): the description only says what the day is, not what tapping it does.
+            .clickable(
+                enabled = day.scheduled,
+                onClickLabel = if (day.scheduled) stringResource(R.string.adherence_day_open) else null,
+            ) { onSelect(day.date) }
             .semantics { contentDescription = description },
         contentAlignment = Alignment.Center,
     ) {

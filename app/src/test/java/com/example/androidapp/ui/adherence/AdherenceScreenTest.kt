@@ -1,5 +1,9 @@
 package com.example.androidapp.ui.adherence
 
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
@@ -662,4 +666,19 @@ class AdherenceScreenTest {
 
         assertThat(dismissed).isTrue()
     }
+
+    @Test
+    fun aScheduledDay_namesTheActionNotJustTheDay() {
+        // B464: the cell is a button, so TalkBack has to say what tapping it does.
+        setScreen()
+
+        composeTestRule.onNodeWithTag(TestTags.Adherence.dayCell("2026-10-06"))
+            .assert(hasClickLabel("Open this day"))
+    }
 }
+
+/** True when the node's click action carries [label]. */
+private fun hasClickLabel(label: String): SemanticsMatcher =
+    SemanticsMatcher("click label is $label") { node ->
+        node.config.getOrNull(SemanticsActions.OnClick)?.label == label
+    }

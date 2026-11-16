@@ -660,6 +660,7 @@
     <string name="adherence_day_activity">%1$s, activity</string>
     <string name="adherence_day_scheduled">%1$s, scheduled</string>
     <string name="adherence_day_rest">%1$s, rest</string>
+    <string name="adherence_day_open">Open this day</string>
     <!-- Marking a week as a deload (ROADMAP P3.10): exempt from the ratio, not the calendar. -->
     <string name="adherence_deload_title">Exempt weeks</string>
     <string name="adherence_deload_hint">An exempt week is not scored — its days count as neither done, skipped nor missed — but they stay on the calendar. A deload week is a lighter plan you build.</string>
