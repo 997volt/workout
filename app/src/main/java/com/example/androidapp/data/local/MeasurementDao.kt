@@ -85,13 +85,7 @@ interface MeasurementDao {
      * instead of a second source of truth. The kind is part of the key because a day holds **one entry
      * of each** (N113): a tape day edits its own row rather than the one the scale wrote.
      */
-    @Query(
-        """
-        SELECT * FROM measurements
-        WHERE measuredAt >= :from AND measuredAt < :to AND deletedAt IS NULL AND kind = :kind
-        ORDER BY measuredAt DESC LIMIT 1
-        """,
-    )
+    @Query(QuerySql.FIND_MEASUREMENT_ON_DAY)
     suspend fun findOnDay(from: Long, to: Long, kind: String): MeasurementEntity?
 
     /** Rewrites one day's weight, leaving its tape, body fat, muscle and sore rows untouched (B255). */

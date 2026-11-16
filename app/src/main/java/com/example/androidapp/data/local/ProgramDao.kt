@@ -527,20 +527,7 @@ interface ProgramDao {
      * belong to a week the device's own clock does not. The exact bucketing happens in
      * Kotlin, where the zone is known per row.
      */
-    @Query(
-        """
-        SELECT id AS sessionId,
-               templateId AS templateId,
-               startedAt AS startedAt,
-               zoneOffsetMinutes AS zoneOffsetMinutes
-        FROM workout_sessions
-        WHERE templateId IS NOT NULL
-          AND deletedAt IS NULL
-          AND startedAt >= :fromMillis
-          AND startedAt < :toMillis
-        ORDER BY startedAt ASC
-        """,
-    )
+    @Query(QuerySql.SESSIONS_STARTED_BETWEEN)
     suspend fun sessionsStartedBetween(fromMillis: Long, toMillis: Long): List<ProgramSessionRow>
 
     /**

@@ -22,10 +22,6 @@ are the ones that can misreport data or hide a working screen; the fifth protect
 write that outlives its screen, and the rest are documentation and test gaps. Each row leaves
 this section for [CHANGELOG.md](CHANGELOG.md) when it ships.
 
-1. **N324 — Plan the DAO's own SQL for index usage.** `IndexUsageTest` still copies the production
-   query text. Capture the SQL the DAO actually runs (Room's `QueryCallback`) or otherwise remove
-   the drift, and pin the session index the query is expected to choose.
-
 ## Parked — deliberately not planned
 
 Each row is a product in its own right, contradicts "local-only", or both. Parking is a
