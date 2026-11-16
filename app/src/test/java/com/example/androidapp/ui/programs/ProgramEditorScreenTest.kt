@@ -10,6 +10,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.androidapp.domain.model.DeloadedSet
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.PlanStall
@@ -241,14 +242,33 @@ class ProgramEditorScreenTest {
     fun theDeloadConfirm_showsTheNumbersAndWritesNothingUntilConfirmed() {
         // N307: the confirm is the plan's before -> after; the write belongs to confirming.
         var confirmed = false
+        val before = TemplateSet(
+            id = "ts0",
+            templateExerciseId = "te1",
+            setIndex = 0,
+            role = SetType.NORMAL,
+            targetWeightGrams = 100_000L,
+            targetRepsMin = 5,
+            targetRepsMax = 5,
+        )
         setScreen(
             state = twoSlots,
             deloadPrompt = DeloadPrompt(
                 templateExerciseId = "te1",
                 exerciseName = "Back Squat",
-                kept = emptyList(),
+                kept = listOf(
+                    DeloadPreviewSet(
+                        before = before,
+                        after = DeloadedSet(
+                            setId = "ts0",
+                            weightGrams = 92_500L,
+                            assistanceGrams = null,
+                            repsCurrent = null,
+                        ),
+                    ),
+                ),
                 removedCount = 2,
-                sharedProgramNames = emptyList(),
+                sharedProgramNames = listOf("Full Body"),
                 stepGrams = 2_500L,
                 weightUnit = null,
             ),
@@ -256,6 +276,11 @@ class ProgramEditorScreenTest {
         )
 
         composeTestRule.onNodeWithTag(TestTags.Programs.DELOAD_LIFT_DIALOG).assertExists()
+        composeTestRule.onNodeWithText("Working sets: 3 → 1").assertExists()
+        composeTestRule.onNodeWithText("5 × 100 → 5 × 92.5").assertExists()
+        composeTestRule.onNodeWithText("Also changes: Full Body").assertExists()
+        assertThat(confirmed).isFalse() // confirming is the only write
+
         composeTestRule.onNodeWithText("Deload").performClick()
 
         assertThat(confirmed).isTrue()
