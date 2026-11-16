@@ -36,6 +36,17 @@ class WeeklyReviewTest {
     }
 
     @Test
+    fun aSessionWithoutAZone_usesTheWeekStartOffset() {
+        // B469: the week of 23 March 2026 starts on CET (+1) and ends after the DST switch (+2). The
+        // no-offset row at 22:30Z is 23:30 Sunday under the week's own offset, so it belongs to the
+        // previous week, matching the movement read's fallback.
+        val weekStart = LocalDate.of(2026, 3, 23)
+        val row = session(id = "no-zone", at = "2026-03-22T22:30:00Z", sets = 1, volume = 100)
+
+        assertThat(weekTotals(listOf(row), weekStart, zone)).isEqualTo(WeekTotals(0, 0, 0))
+    }
+
+    @Test
     fun aSession_isCountedInItsOwnWeek_notTheReaders() {
         // B344: 00:30 UTC on the Monday is 01:30 in Berlin (this week) but 20:30 Sunday in New York
         // (the previous week). The session's own offset is the frame, as it is in history and adherence.

@@ -39,9 +39,12 @@ data class ReviewDay(
  */
 fun weekTotals(sessions: List<WorkoutSummary>, weekStart: LocalDate, zone: ZoneId): WeekTotals {
     val end = weekStart.plusDays(DAYS_IN_WEEK)
+    // A row with no stored offset is read in the week-start offset, the same fallback the movement read
+    // uses (B469): the two halves of the review must not disagree in a DST week.
+    val fallback = weekStart.atStartOfDay(zone).offset
     val inWeek = sessions.filter { session ->
         // The session's own zone, not the reader's (B344): the same rule history and adherence read.
-        val day = session.startedAt.atZone(session.zoneIdOrNull() ?: zone).toLocalDate()
+        val day = session.startedAt.atZone(session.zoneIdOrNull() ?: fallback).toLocalDate()
         !day.isBefore(weekStart) && day.isBefore(end)
     }
     return WeekTotals(

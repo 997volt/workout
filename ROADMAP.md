@@ -22,25 +22,21 @@ are the ones that can misreport data or hide a working screen; the fifth protect
 write that outlives its screen, and the rest are documentation and test gaps. Each row leaves
 this section for [CHANGELOG.md](CHANGELOG.md) when it ships.
 
-1. **B469 — A null-offset session must share one fallback.** The weekly totals fall back to the
-   current zone while "what moved" falls back to the week-start offset, so a DST week can bucket
-   the same pre-N25 row twice. Use one fallback for both and pin it.
-
-2. **B470 — The clear must outlive more than a rotation.** The ViewModel scope protects a
+1. **B470 — The clear must outlive more than a rotation.** The ViewModel scope protects a
    configuration change, but a popped Settings destination can still cancel the multi-step clear
    and leave the backup switch off. Give the clear an app-scoped runner or a non-cancellable
    write plus a surviving outcome, and test the case.
 
-3. **N322 — Put the moved KDoc back.** The Statistics "four sources" comment now documents
+2. **N322 — Put the moved KDoc back.** The Statistics "four sources" comment now documents
    `Library` instead of `Sources`; the workout detail moved-to comment sits on `onErrorShown`
    instead of `onDismissMovedDay`; and `ProgressionMiss.HOLD` still says "the set was held" for a
    counted set that was not.
 
-4. **N323 — Test the paths the fixes claim.** B465's restore test never picks a date, B462's test
+3. **N323 — Test the paths the fixes claim.** B465's restore test never picks a date, B462's test
    stops at ViewModel state rather than the re-shown snackbar, and B456 has no test that a
    recreated composition still shows the clear's outcome. Cover the three screen paths.
 
-5. **N324 — Plan the DAO's own SQL for index usage.** `IndexUsageTest` still copies the production
+4. **N324 — Plan the DAO's own SQL for index usage.** `IndexUsageTest` still copies the production
    query text. Capture the SQL the DAO actually runs (Room's `QueryCallback`) or otherwise remove
    the drift, and pin the session index the query is expected to choose.
 

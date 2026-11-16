@@ -29,8 +29,9 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   sessions reset the stall run instead of raising the deload.
 - **The streak is bounded by each program's own creation** (B458). A newly followed program no longer scores
   an earlier weekday as a miss and breaks a run built by another program.
-- **The weekly review uses one week** (B459). "What moved" buckets each session by its own stored offset, the
-  same week the totals above it use, so a session near a boundary cannot count in one and vanish from the other.
+- **The weekly review uses one week** (B459, B469). "What moved" buckets each session by its own stored offset,
+  the same week the totals above it use, so a session near a boundary cannot count in one and vanish from the
+  other. A row without an offset uses the week-start offset in both reads, so a DST week cannot split them.
 - **A failed statistics read is an error, not an empty chart** (B460, B467). A failed per-lift series reaches
   the page's error instead of drawing a trained lift with no readings. A failed library read does the same
   only when the chosen metric needs a lift, so a body chart is not hidden behind a picker it never uses.
