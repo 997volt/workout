@@ -172,6 +172,52 @@ class MeasurementsScreenTest {
     }
 
     @Test
+    fun savingTheDailyShortcut_doesNotReopenItAsAnEdit() {
+        // B455: the route's initial entry goes null -> the saved row once the repository emits, and an
+        // input-keyed rememberSaveable reopened the form on that change. The shortcut is applied once.
+        var entries by mutableStateOf(emptyList<BodyMeasurement>())
+        var initialAdd by mutableStateOf<MeasurementKind?>(MeasurementKind.DAILY)
+        var initialEdit by mutableStateOf<BodyMeasurement?>(null)
+        var saved: BodyMeasurement? = null
+        composeTestRule.setContent {
+            AndroidAppTheme {
+                MeasurementsScreen(
+                    state = MeasurementsUiState(
+                        isLoading = false,
+                        entries = entries,
+                        todayEntry = initialEdit,
+                    ),
+                    onSave = { written ->
+                        saved = written
+                        entries = listOf(written)
+                        initialAdd = null
+                        initialEdit = written
+                    },
+                    onDelete = {},
+                    onBack = {},
+                    onDismissError = {},
+                    onUndo = {},
+                    onDismissUndo = {},
+                    onDismissRateVerdict = {},
+                    onSaveGoalPeriod = { _, _, _, _ -> },
+                    onRemoveGoalPeriod = {},
+                    onDismissGoalSave = {},
+                    initialAdd = initialAdd,
+                    initialEdit = initialEdit,
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(TestTags.Measurements.WEIGHT).performTextInput("80")
+        composeTestRule.onNodeWithTag(TestTags.Measurements.CONFIRM).performClick()
+        composeTestRule.waitForIdle()
+
+        assertTrue("the save reached the route", saved != null)
+        composeTestRule.onNodeWithTag(TestTags.Measurements.EDIT_DATE).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.Measurements.row(requireNotNull(saved).id)).assertExists()
+    }
+
+    @Test
     fun arrivingOnADayAlreadyWritten_editsTheDay_ratherThanOpeningABlankForm() {
         // B182: the shortcut's blank form would replace the day's numbers on save, because the repository
         // keys a daily entry by its day rather than by id — so an entry that exists is opened as the edit

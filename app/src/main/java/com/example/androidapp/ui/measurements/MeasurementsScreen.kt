@@ -35,6 +35,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -204,16 +205,17 @@ fun MeasurementsScreen(
     /**
      * The blank form to open on arrival, or null (ROADMAP N114).
      *
-     * Read once, as `rememberSaveable`'s initial value: dismissing the form sets it back to null, and a
-     * rotation keeps that dismissal rather than reopening what the lifter just closed. The home shortcut
-     * passes it only on a day with no entry — an entry is [initialEdit] (B182).
+     * Applied once when it first arrives (B455), so a rotation or a save that changes the route's
+     * state does not reopen the form; dismissing it sets it back to null. The home shortcut passes it
+     * only on a day with no entry — an entry is [initialEdit] (B182).
      */
     initialAdd: MeasurementKind? = null,
     /**
      * The record to open for editing on arrival, or null (B182).
      *
      * Resolved by the route, which can wait for the list: today's entry when the day has one, so the
-     * shortcut edits the day instead of opening a blank form whose save would replace it.
+     * shortcut edits the day instead of opening a blank form whose save would replace it. Applied once
+     * when it first arrives (B455), for the same reason as [initialAdd].
      */
     initialEdit: BodyMeasurement? = null,
     /** The entry a delete just took, awaiting the snackbar's undo, or null (ROADMAP N133). */
@@ -227,17 +229,27 @@ fun MeasurementsScreen(
     // Two steps rather than one: the record is two records, so *Add* asks which before it opens a form
     // (N113). Null is "no form open"; `choosing` is the question.
     var choosing by remember { mutableStateOf(false) }
-    // B382: the route first composes this screen with a null initial form while the list loads. Keying
-    // the state on the form means the daily form arrives when the answer does; an input that stays the
-    // same does not reopen a form the lifter dismissed.
-    var adding by rememberSaveable(initialAdd) { mutableStateOf(initialAdd) }
+    // B382: the route first composes this screen with a null initial form while the list loads, so the
+    // form arrives when the answer does. It is applied once rather than keyed to the live form (B455):
+    // after a save the route's entry changes from null to the saved row, and an input that changed
+    // under `rememberSaveable` reopened the form the lifter had just dismissed.
+    var adding by rememberSaveable { mutableStateOf<MeasurementKind?>(null) }
     // Whether the list is in its edit mode, the one that offers a delete (N132). Saveable so a rotation
     // does not drop the lifter out of the mode they deliberately entered, or worse, back into it.
     var editing by rememberSaveable { mutableStateOf(false) }
     // The read-only record is a look at one row rather than a mode, so it is not restored (the request in
     // use); the record being corrected is, by id, so a rotation keeps the form and its saveable draft (B376).
     var openEntry by remember { mutableStateOf<BodyMeasurement?>(null) }
-    var editingEntryId by rememberSaveable(initialEdit?.id) { mutableStateOf(initialEdit?.id) }
+    var editingEntryId by rememberSaveable { mutableStateOf<String?>(null) }
+    var shortcutApplied by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(initialAdd, initialEdit?.id) {
+        if (shortcutApplied) return@LaunchedEffect
+        if (initialAdd != null || initialEdit != null) {
+            adding = initialAdd
+            editingEntryId = initialEdit?.id
+            shortcutApplied = true
+        }
+    }
     val editingEntry = editingEntryId?.let { id ->
         state.entries.firstOrNull { it.id == id } ?: initialEdit?.takeIf { it.id == id }
     }
