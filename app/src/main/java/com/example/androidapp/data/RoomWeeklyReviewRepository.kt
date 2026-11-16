@@ -36,12 +36,18 @@ class RoomWeeklyReviewRepository @Inject constructor(
         weekStart: LocalDate,
         zone: ZoneId,
     ): DataResult<List<MovementGain>> = dataResultOf {
-        val from = weekStart.atStartOfDay(zone).toInstant().toEpochMilli()
-        val to = weekStart.plusDays(DAYS_IN_WEEK).atStartOfDay(zone).toInstant().toEpochMilli()
+        // Each session is bucketed by its own stored offset, not the device's week (B459): the review's
+        // totals already read a session's own day, and the two halves of one screen must agree.
+        val fallbackOffset = weekStart.atStartOfDay(zone).offset.totalSeconds / SECONDS_PER_MINUTE
         // The roles come from the rule, not from the query (B17, N79, B331): `recordsEffort` is the one place
         // that decides what may be a best, and the SQL gets the stored names it compares against.
         val recordableRoles = SetType.entries.filter { it.recordsEffort }.map { it.name }
-        database.weeklyReviewDao().movementGains(from, to, recordableRoles)
+        database.weeklyReviewDao().movementGains(
+            fromDay = weekStart.toString(),
+            toDay = weekStart.plusDays(DAYS_IN_WEEK).toString(),
+            fallbackOffsetMinutes = fallbackOffset,
+            recordableRoles = recordableRoles,
+        )
             .mapNotNull { it.toGainOrNull() }
             .sortedBy { it.name.lowercase() }
     }
@@ -69,6 +75,7 @@ class RoomWeeklyReviewRepository @Inject constructor(
 
     private companion object {
         const val DAYS_IN_WEEK = 7L
+        const val SECONDS_PER_MINUTE = 60
     }
 }
 

@@ -6,9 +6,10 @@ import androidx.room.Query
 /**
  * The week's per-movement read (ROADMAP N251).
  *
- * It answers one question the history and the summary cannot: which lifts actually moved this week. The week
- * boundaries arrive in milliseconds because the caller owns the zone; a session performed abroad still counts
- * on the device's week here, which is the one the review is about.
+ * It answers one question the history and the summary cannot: which lifts actually moved this week. The
+ * boundaries arrive as local days, and each session's own stored offset turns its instant into the day it
+ * happened on — the same answer the review's totals use (B344, B459). A session without an offset (a row
+ * written before N25) is read in the caller's fallback.
  */
 @Dao
 interface WeeklyReviewDao {
@@ -23,29 +24,43 @@ interface WeeklyReviewDao {
      */
     @Query(
         """
-        SELECT se.exerciseId AS exerciseId,
-               e.name AS name,
-               MAX(CASE WHEN ws.startedAt >= :from AND ws.startedAt < :to THEN s.weightGrams ELSE 0 END) AS weekTop,
-               MAX(CASE WHEN ws.startedAt < :from THEN s.weightGrams ELSE 0 END) AS beforeTop,
-               SUM(CASE WHEN ws.startedAt >= :from AND ws.startedAt < :to THEN 1 ELSE 0 END) AS weekSets,
-               SUM(CASE WHEN ws.startedAt < :from THEN 1 ELSE 0 END) AS priorSets
-        FROM set_entries s
-        JOIN session_exercises se ON se.id = s.sessionExerciseId
-        JOIN workout_sessions ws ON ws.id = se.sessionId
-        JOIN exercises e ON e.id = se.exerciseId
-        WHERE ws.finishedAt IS NOT NULL
-          AND ws.deletedAt IS NULL
-          AND se.deletedAt IS NULL
-          AND s.deletedAt IS NULL
-          AND e.deletedAt IS NULL
-          AND s.setType IN (:recordableRoles)
-        GROUP BY se.exerciseId, e.name
+        WITH scored AS (
+            SELECT se.exerciseId AS exerciseId,
+                   e.name AS name,
+                   s.weightGrams AS weightGrams,
+                   date(
+                       (ws.startedAt + COALESCE(ws.zoneOffsetMinutes, :fallbackOffsetMinutes) * 60000) / 1000,
+                       'unixepoch'
+                   ) AS localDay
+            FROM set_entries s
+            JOIN session_exercises se ON se.id = s.sessionExerciseId
+            JOIN workout_sessions ws ON ws.id = se.sessionId
+            JOIN exercises e ON e.id = se.exerciseId
+            WHERE ws.finishedAt IS NOT NULL
+              AND ws.deletedAt IS NULL
+              AND se.deletedAt IS NULL
+              AND s.deletedAt IS NULL
+              AND e.deletedAt IS NULL
+              AND s.setType IN (:recordableRoles)
+        )
+        SELECT exerciseId AS exerciseId,
+               name AS name,
+               MAX(CASE WHEN localDay >= :fromDay AND localDay < :toDay THEN weightGrams ELSE 0 END) AS weekTop,
+               MAX(CASE WHEN localDay < :fromDay THEN weightGrams ELSE 0 END) AS beforeTop,
+               SUM(CASE WHEN localDay >= :fromDay AND localDay < :toDay THEN 1 ELSE 0 END) AS weekSets,
+               SUM(CASE WHEN localDay < :fromDay THEN 1 ELSE 0 END) AS priorSets
+        FROM scored
+        GROUP BY exerciseId, name
         HAVING weekSets > 0
         """,
     )
     suspend fun movementGains(
-        from: Long,
-        to: Long,
+        /** The week's first day, ISO-8601, in each session's own zone. */
+        fromDay: String,
+        /** The day after its last, ISO-8601. */
+        toDay: String,
+        /** The zone a session without a stored offset is read in. */
+        fallbackOffsetMinutes: Int,
         recordableRoles: List<String>,
     ): List<WeeklyMovementRow>
 }

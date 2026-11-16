@@ -21,12 +21,13 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.time.Instant
 
 /**
  * The week's per-movement aggregate against a real database (ROADMAP N251).
  *
- * The boundaries are raw milliseconds here because the repository, not the query, owns the zone; this pins
- * that "before the week" and "this week" are two halves of the same row rather than two reads.
+ * The boundaries are local days and each session's own stored offset picks its day (B459); this pins that
+ * "before the week" and "this week" are two halves of the same row rather than two reads.
  */
 @RunWith(AndroidJUnit4::class)
 class WeeklyReviewDaoTest {
@@ -54,13 +55,14 @@ class WeeklyReviewDaoTest {
         database.exerciseDao().insertAll(
             listOf(exercise("squat", "Back Squat"), exercise("press", "Overhead Press")),
         )
-        set(session = "last", at = 500L, exercise = "squat", weightGrams = 100_000)
+        set(session = "last", at = -1_000L, exercise = "squat", weightGrams = 100_000)
         set(session = "this", at = 1_500L, exercise = "squat", weightGrams = 105_000)
         set(session = "press", at = 1_600L, exercise = "press", weightGrams = 60_000)
 
         val rows = database.weeklyReviewDao().movementGains(
-            from = 1_000L,
-            to = 2_000L,
+            fromDay = "1970-01-01",
+            toDay = "1970-01-02",
+            fallbackOffsetMinutes = 0,
             recordableRoles = recordableRoles,
         )
 
@@ -90,8 +92,9 @@ class WeeklyReviewDaoTest {
         set(session = "live", at = 1_600L, exercise = "squat", weightGrams = 100_000)
 
         val rows = database.weeklyReviewDao().movementGains(
-            from = 1_000L,
-            to = 2_000L,
+            fromDay = "1970-01-01",
+            toDay = "1970-01-02",
+            fallbackOffsetMinutes = 0,
             recordableRoles = recordableRoles,
         )
 
@@ -103,19 +106,45 @@ class WeeklyReviewDaoTest {
         // B17, B331: a heavy warm-up is not a best, so it can neither raise this week's top nor become the
         // "before" the next week is measured against.
         database.exerciseDao().insertAll(listOf(exercise("squat", "Back Squat")))
-        set(session = "last", at = 500L, exercise = "squat", weightGrams = 100_000)
+        set(session = "last", at = -1_000L, exercise = "squat", weightGrams = 100_000)
         set(session = "ramp", at = 1_500L, exercise = "squat", weightGrams = 120_000, setType = SetType.WARMUP)
         set(session = "work", at = 1_600L, exercise = "squat", weightGrams = 100_000)
 
         val row = database.weeklyReviewDao().movementGains(
-            from = 1_000L,
-            to = 2_000L,
+            fromDay = "1970-01-01",
+            toDay = "1970-01-02",
+            fallbackOffsetMinutes = 0,
             recordableRoles = recordableRoles,
         ).single()
 
         assertEquals("the warm-up is not the week's top", 100_000L, row.weekTop)
         assertEquals("and it is not one of the week's sets", 1, row.weekSets)
         assertNull("a repeat of the best is not a gain", row.toGainOrNull())
+    }
+
+    @Test
+    fun aSessionInAnotherZone_belongsToItsOwnDay() = runTest {
+        // B459: a session performed in Auckland on Monday morning is Sunday in UTC. The review's
+        // totals read it on Monday, so the movement read must too.
+        database.exerciseDao().insertAll(listOf(exercise("squat", "Back Squat")))
+        val mondayInAuckland = Instant.parse("2026-11-08T12:30:00Z") // Mon 01:30 +13:00
+        set(
+            session = "auckland",
+            at = mondayInAuckland.toEpochMilli(),
+            exercise = "squat",
+            weightGrams = 100_000,
+            zoneOffsetMinutes = 13 * 60,
+        )
+
+        val row = database.weeklyReviewDao().movementGains(
+            fromDay = "2026-11-09",
+            toDay = "2026-11-16",
+            fallbackOffsetMinutes = 0,
+            recordableRoles = recordableRoles,
+        ).single()
+
+        assertEquals("the week's own Monday", 1, row.weekSets)
+        assertEquals("nothing before it", 0, row.priorSets)
     }
 
     @Test
@@ -127,8 +156,9 @@ class WeeklyReviewDaoTest {
         set(session = "this", at = 1_500L, exercise = "squat", weightGrams = 100_000)
 
         val rows = database.weeklyReviewDao().movementGains(
-            from = 1_000L,
-            to = 2_000L,
+            fromDay = "1970-01-01",
+            toDay = "1970-01-02",
+            fallbackOffsetMinutes = 0,
             recordableRoles = recordableRoles,
         )
 
@@ -143,6 +173,7 @@ class WeeklyReviewDaoTest {
         setType: SetType = SetType.TOP_SET,
         deletedAt: Long? = null,
         sessionDeletedAt: Long? = null,
+        zoneOffsetMinutes: Int? = null,
     ) {
         val sessionExerciseId = "se-$session-$exercise"
         database.workoutDao().insertSession(
@@ -153,6 +184,7 @@ class WeeklyReviewDaoTest {
                 notes = null,
                 restEndsAt = null,
                 readinessNote = null,
+                zoneOffsetMinutes = zoneOffsetMinutes,
                 createdAt = at,
                 updatedAt = at,
                 deletedAt = sessionDeletedAt,
