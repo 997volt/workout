@@ -360,14 +360,38 @@ class StatisticsViewModelTest {
     }
 
     @Test
-    fun aFailedLibraryRead_isAnErrorRatherThanAnEmptyPicker() = runTest(dispatcher) {
+    fun aFailedLibraryRead_isAnErrorWhenTheMetricNeedsALift() = runTest(dispatcher) {
         val failure = DataError.Storage(IllegalStateException("library"))
         val exercises = FakeExerciseRepository(emptyList()).apply { failureResult = failure }
-        val viewModel = viewModel(range = StatisticsRange(RangeKind.ALL), exercises = exercises)
+        val viewModel = viewModel(
+            range = StatisticsRange(RangeKind.ALL),
+            exercises = exercises,
+            lifts = listOf(lift("back-squat", "Back Squat")),
+        )
         observe(viewModel)
+        advanceUntilIdle()
+        viewModel.onSelectMetric(MetricKey.Exercise(ExerciseTrendMetric.VOLUME))
         advanceUntilIdle()
 
         assertThat(viewModel.uiState.value.error).isEqualTo(failure)
+    }
+
+    @Test
+    fun aFailedLibraryRead_doesNotHideABodyMetric() = runTest(dispatcher) {
+        // B467: a body chart does not read the picker, so the library failure must not replace it.
+        val exercises = FakeExerciseRepository(emptyList()).apply {
+            failureResult = DataError.Storage(IllegalStateException("library"))
+        }
+        val viewModel = viewModel(
+            range = StatisticsRange(RangeKind.ALL),
+            body = listOf(measurement(daysAgo(1), weight = 82_000L)),
+            exercises = exercises,
+        )
+        observe(viewModel)
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.error).isNull()
+        assertThat(viewModel.uiState.value.series).isNotNull()
     }
 
     @Test

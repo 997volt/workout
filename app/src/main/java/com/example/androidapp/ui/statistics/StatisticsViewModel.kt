@@ -479,11 +479,13 @@ class StatisticsViewModel @Inject constructor(
             } else {
                 current?.value
             }
-            // A failed series or library read is the same refusal as a failed totals read (B460): the
-            // chart would otherwise draw an empty lift, and the picker a lift-less library, both silently.
+            // A failed series is the same refusal as a failed totals read (B460). A failed library is
+            // only this page's problem when the chosen metric needs a lift (B467): a body chart must not
+            // disappear because the picker it does not use could not be read.
+            val needsLibrary = MetricRegistry.entryFor(sources.selection.metric).needsExercise
             val readFailure = (workoutPoints as? DataResult.Failure)?.error
                 ?: (points as? DataResult.Failure)?.error
-                ?: sources.libraryError
+                ?: sources.libraryError.takeIf { needsLibrary }
             if (readFailure != null) {
                 StatisticsUiState(
                     isLoading = false,

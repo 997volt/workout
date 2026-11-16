@@ -31,8 +31,9 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   an earlier weekday as a miss and breaks a run built by another program.
 - **The weekly review uses one week** (B459). "What moved" buckets each session by its own stored offset, the
   same week the totals above it use, so a session near a boundary cannot count in one and vanish from the other.
-- **A failed statistics read is an error, not an empty chart** (B460). A failed per-lift series or library read
-  now reaches the page's error instead of drawing a trained lift with no readings and a blank picker.
+- **A failed statistics read is an error, not an empty chart** (B460, B467). A failed per-lift series reaches
+  the page's error instead of drawing a trained lift with no readings. A failed library read does the same
+  only when the chosen metric needs a lift, so a body chart is not hidden behind a picker it never uses.
 - **Template quick-add is single-flight** (B461). Two taps in one frame append one block, not two.
 - **A repeated workout-detail failure is said again** (B462). The error is acknowledged after its snackbar, so
   the same storage sentence can be shown a second time.
