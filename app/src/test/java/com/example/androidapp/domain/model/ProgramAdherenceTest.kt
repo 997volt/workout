@@ -32,9 +32,10 @@ class ProgramAdherenceTest {
         weekday: DayOfWeek?,
         position: Int = 0,
         templateId: String = "t-$id",
+        programId: String = "p1",
     ) = ProgramSlot(
         id = id,
-        programId = "p1",
+        programId = programId,
         templateId = templateId,
         position = position,
         weekday = weekday,
@@ -657,6 +658,31 @@ class ProgramAdherenceTest {
 
         assertThat(streak?.count).isEqualTo(3)
         assertThat(streak?.startedOn).isEqualTo(monday.minusWeeks(2).plusDays(1))
+    }
+
+    @Test
+    fun aSlotBeforeItsOwnProgramExisted_isNotAnOccurrence() {
+        // B458: `since` can only bound the earliest program. A second program activated after its
+        // weekday had passed must not break the first program's run with a day it never scheduled.
+        val first = slot("tue", DayOfWeek.TUESDAY)
+        val second = slot("b-tue", DayOfWeek.TUESDAY, templateId = "t-b-tue", programId = "p2")
+        val streak = ProgramSchedule.streak(
+            slots = listOf(first, second),
+            sessions = listOf(
+                session("t-tue", monday.minusWeeks(2).plusDays(1)),
+                session("t-tue", monday.minusWeeks(1).plusDays(1)),
+                session("t-tue", monday.plusDays(1)),
+            ),
+            skips = emptyList(),
+            since = monday.minusWeeks(2),
+            today = today,
+            programCreatedAt = mapOf(
+                "p1" to monday.minusWeeks(2),
+                "p2" to today,
+            ),
+        )
+
+        assertThat(streak?.count).isEqualTo(3)
     }
 
     @Test

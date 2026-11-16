@@ -473,10 +473,11 @@ object ProgramSchedule {
      * week (P3.10) neither extends nor breaks it, because it is not scored at all.
      *
      * Today's occurrence is the one case that is neither: it has not been passed over yet, so an
-     * untrained today is skipped over rather than counted as a break. [since] bounds the walk — the
-     * Monday the earliest active program was created, because a slot day before the program existed
-     * was not an occurrence — and a program with no weekday slot returns null rather than zero: an
-     * order-only program has no days to run, and the pins carry no skip record to trust.
+     * untrained today is skipped over rather than counted as a break. [since] bounds the walk from
+     * the earliest active program, and [programCreatedAt] keeps a later program's own days from
+     * counting before it existed — a slot day before its program was not an occurrence. A program
+     * with no weekday slot returns null rather than zero: an order-only program has no days to run,
+     * and the pins carry no skip record to trust.
      */
     fun streak(
         slots: List<ProgramSlot>,
@@ -490,6 +491,15 @@ object ProgramSchedule {
         substitutions: List<RecordedSubstitution> = emptyList(),
         /** The slots scheduled in each week; absent falls back to [slots] (N292). */
         slotsByWeek: Map<LocalDate, List<ProgramSlot>> = emptyMap(),
+        /**
+         * The day each program was created, by program id (B458).
+         *
+         * A slot day before its own program existed was not an occurrence. [since] can only bound the
+         * earliest program, so a second active program would otherwise be scored against days it
+         * could not have scheduled; absent means every slot has always existed, which is the shape
+         * the pure tests and a single-program caller have.
+         */
+        programCreatedAt: Map<String, LocalDate> = emptyMap(),
     ): Streak? {
         if (slots.none { it.weekday != null }) return null
 
@@ -510,7 +520,8 @@ object ProgramSchedule {
         val recorded = Recorded(resolved = resolved, skipped = skipped, deloaded = deloaded)
         var count = 0
         var startedOn: LocalDate? = null
-        for ((date, week, slot) in streakOccurrences(slots, since, today, slotsByWeek).asReversed()) {
+        val occurrences = streakOccurrences(slots, since, today, slotsByWeek, programCreatedAt)
+        for ((date, week, slot) in occurrences.asReversed()) {
             when (streakStep(date, week, slot, recorded, today)) {
                 StreakStep.DONE -> {
                     count++
@@ -536,6 +547,7 @@ object ProgramSchedule {
         since: LocalDate,
         today: LocalDate,
         slotsByWeek: Map<LocalDate, List<ProgramSlot>> = emptyMap(),
+        programCreatedAt: Map<String, LocalDate> = emptyMap(),
     ): List<Triple<LocalDate, LocalDate, ProgramSlot>> {
         val occurrences = mutableListOf<Triple<LocalDate, LocalDate, ProgramSlot>>()
         generateSequence(weekStartOf(since)) { it.plusWeeks(1) }
@@ -545,6 +557,8 @@ object ProgramSchedule {
                     val weekday = slot.weekday ?: return@forEach
                     val date = occurrenceDate(week, weekday)
                     if (date.isAfter(today)) return@forEach
+                    val created = programCreatedAt[slot.programId]
+                    if (created != null && date.isBefore(created)) return@forEach
                     occurrences += Triple(date, week, slot)
                 }
             }

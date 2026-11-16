@@ -218,6 +218,11 @@ class RoomAdherenceRepository @Inject constructor(
 
         val slots = allActiveSlots(active)
         val slotsByWeek = slotsByWeek(active, weeksBetween(since, lastWeek), zone)
+        // A second program activated later must not be scored against days before it existed (B458):
+        // the single `since` above can only be the earliest one.
+        val programCreatedAt = active.associate { program ->
+            program.id to Instant.ofEpochMilli(program.createdAt).atZone(zone).toLocalDate()
+        }
         ProgramSchedule.streak(
             slots = slots,
             sessions = programDao.finishedSessionsBetween(from, to).map { it.toAdherenceSession(zone) },
@@ -229,6 +234,7 @@ class RoomAdherenceRepository @Inject constructor(
             deloads = deloadsBetween(since, lastWeek),
             substitutions = substitutionsBetween(since, lastWeek),
             slotsByWeek = slotsByWeek,
+            programCreatedAt = programCreatedAt,
         )
     }
 
