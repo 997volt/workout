@@ -13,6 +13,53 @@ repeated here.
 **1.0–1.18 live in [CHANGELOG-1.x.md](CHANGELOG-1.x.md)**, kept whole rather than deleted because the
 id a 1.x commit names is still looked up by it. This file carries the current release.
 
+## [Unreleased]
+
+### Fixed
+
+- **An unpaired rung is not an extra working set** (B454). The earned-set card counted a second drop or
+  cluster rung as the plan's missing set, and its *Add* appended a normal set at the rung's load. Only
+  unpaired non-rung sets count now.
+- **The daily measurement shortcut is applied once** (B455). Saving a new entry from home reopened the same
+  form in edit mode because the route's entry changed from none to the saved row; the form is a one-shot now.
+- **Delete-everything survives a rotation** (B456). The clear runs in the ViewModel with a one-shot outcome
+  and a single-flight flag, so a configuration change cannot cancel the sentence, leave automatic backup off,
+  or hide what happened.
+- **A counted set against a hold plan is a missed hold** (B457). It reported nothing measurable, so three such
+  sessions reset the stall run instead of raising the deload.
+- **The streak is bounded by each program's own creation** (B458). A newly followed program no longer scores
+  an earlier weekday as a miss and breaks a run built by another program.
+- **The weekly review uses one week** (B459). "What moved" buckets each session by its own stored offset, the
+  same week the totals above it use, so a session near a boundary cannot count in one and vanish from the other.
+- **A failed statistics read is an error, not an empty chart** (B460). A failed per-lift series or library read
+  now reaches the page's error instead of drawing a trained lift with no readings and a blank picker.
+- **Template quick-add is single-flight** (B461). Two taps in one frame append one block, not two.
+- **A repeated workout-detail failure is said again** (B462). The error is acknowledged after its snackbar, so
+  the same storage sentence can be shown a second time.
+- **A reorder is one transaction** (B463). The session, plan and program reorders read their order and write
+  the new one inside one boundary, so two quick taps cannot leave two rows on one position.
+- **Adherence day cells name their action** (B464). A scheduled cell announces *Open this day* rather than only
+  what the day is.
+- **The custom-range dialog survives rotation** (B465). Its open flag and both picked dates are saveable.
+- **A far-future rest cannot wrap negative, and a contradictory backup result is refused** (N321). The timer
+  clamps before narrowing, and `recordBackupResult` will not store a success and a failure at once.
+
+### Changed
+
+- **The test-count gate pins each suite's total** (N315). A deleted test file can no longer shrink the declared
+  and executed counts together and pass; the pinned totals move with the tests.
+- **The deload confirm's test asserts its numbers** (N316): the working-set counts, a kept set's before → after,
+  and the sharing line, and that the write waits for the confirm.
+- **The find-the-weight idempotence is tested against the real store** (N317), including a weight entered
+  between two saves of the same plan.
+- **The new writes' failure paths are exercised** (N318). Trigger-based tests roll back a failed deload, replace
+  and backup merge, and the replace, editor and earned-set screens handle a failed write.
+- **The newer fakes assert their arguments** (N319): the replace seeds and Empty choice, the sharing read's
+  plan and program, the sharing query itself, and a held extra set.
+- **The stale docs are corrected** (N320): README no longer quotes APK sizes that drifted, and `RestTimer` says
+  its default is what Settings can override.
+- **The index test plans the DAO queries** (N321), and the measurement day test no longer reads the real clock.
+
 ## [2.30] — 2026-11-15 (versionCode 51)
 
 ### Added

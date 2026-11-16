@@ -15,13 +15,6 @@ work was planned, so they do not always run in order — and an id this file doe
 shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 [CHANGELOG-1.x.md](CHANGELOG-1.x.md) for the 1.x releases.
 
-## Next — ordered batch
-
-Findings from the whole-app review, in fix order. The rows that change what the app records or
-draws lead; the test-count gate follows them, because it is what would let a later regression
-disappear unnoticed. Each row is one commit (or a small batch) with its id in the subject, and a
-row leaves this section for [CHANGELOG.md](CHANGELOG.md) when it ships.
-
 ## Parked — deliberately not planned
 
 Each row is a product in its own right, contradicts "local-only", or both. Parking is a
