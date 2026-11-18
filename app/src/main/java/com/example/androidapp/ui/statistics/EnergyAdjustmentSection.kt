@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
 import com.example.androidapp.domain.model.MAINTENANCE_CORRIDOR_GRAMS
 import com.example.androidapp.domain.model.WeightGoal
+import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.history.HistoryFormat
 import java.time.LocalDate
@@ -35,9 +36,10 @@ import java.time.ZoneId
  *
  * **The rate is derived, and this row shows it** (N135). It used to be a second number the lifter typed beside
  * the target, which is exactly the pair that could disagree; now the goal states what is wanted and the rate
- * follows from it and the weight the lifter is now, so there is nothing here to press — the goal row above is
- * where the number that sets it is chosen. A **maintenance** goal states no rate at all, and the row says the
- * corridor it holds instead of drawing a zero the first glass of water would break.
+ * follows from it and the weight the lifter is now, so there is nothing here to type. A **maintenance** goal
+ * states no rate at all, and the row says the corridor it holds instead of drawing a zero the first glass of
+ * water would break. When no goal is set, the target row is the way to the editor on Measurements (B486); a
+ * goal that exists is read-only here.
  *
  * The number is a **relative** adjustment and the note under it says so, because the absolute target needs
  * intake and this app stores none. A goal that is not set says nothing at all beyond the row that sets it: an
@@ -55,6 +57,11 @@ fun EnergyAdjustmentSection(
     targetDate: LocalDate? = null,
     /** True when that target is already reached, so the row says so instead of dating it (N151). */
     targetReached: Boolean = false,
+    /**
+     * Opens the weight goal editor when no goal is set (B486). Null leaves the target as a plain value,
+     * which is what a caller with no route to the editor should show.
+     */
+    onSetGoal: (() -> Unit)? = null,
 ) {
     if (metric.key != MetricKey.Body(BodyMetric.WEIGHT)) return
 
@@ -62,26 +69,16 @@ fun EnergyAdjustmentSection(
         modifier = modifier.fillMaxWidth().testTag(TestTags.Statistics.ENERGY),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = stringResource(R.string.statistics_energy_target),
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            Text(
-                text = targetText(
-                    metric = metric,
-                    weightGoal = weightGoal,
-                    rateTarget = rateTarget,
-                    targetReached = targetReached,
-                ),
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.testTag(TestTags.Statistics.ENERGY_TARGET),
-            )
-        }
+        EnergyTargetRow(
+            target = targetText(
+                metric = metric,
+                weightGoal = weightGoal,
+                rateTarget = rateTarget,
+                targetReached = targetReached,
+            ),
+            actionable = weightGoal == null,
+            onSetGoal = onSetGoal,
+        )
 
         // A target's date is what its rate implies, never the input (N151). A reached target says so.
         TargetDateLine(targetDate = targetDate)
@@ -118,6 +115,39 @@ fun EnergyAdjustmentSection(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+    }
+}
+
+/** The target row: a value, or — when no goal is set — the way to the editor that sets one (B486). */
+@Composable
+private fun EnergyTargetRow(
+    target: String,
+    actionable: Boolean,
+    onSetGoal: (() -> Unit)?,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = stringResource(R.string.statistics_energy_target),
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        if (actionable && onSetGoal != null) {
+            AppTextButton(
+                onClick = onSetGoal,
+                modifier = Modifier.testTag(TestTags.Statistics.ENERGY_TARGET),
+            ) {
+                Text(text = target, style = MaterialTheme.typography.bodyMedium)
+            }
+        } else {
+            Text(
+                text = target,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.testTag(TestTags.Statistics.ENERGY_TARGET),
+            )
+        }
     }
 }
 

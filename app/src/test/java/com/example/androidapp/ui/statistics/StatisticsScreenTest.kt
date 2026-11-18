@@ -7,6 +7,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
@@ -1162,6 +1163,21 @@ class StatisticsScreenTest {
         composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY).assertExists()
         composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_TARGET).assertTextEquals("Set a goal")
         composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_STATEMENT).assertDoesNotExist()
+    }
+
+    @Test
+    fun theNoGoalWeightSection_opensTheGoalEditor() {
+        // B486: "Set a goal" was a plain value, so the one screen that showed it offered no way to act.
+        var opened = false
+        setScreen(onOpenMeasurements = { opened = true })
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_TARGET)
+            .assertHasClickAction()
+            .performScrollTo()
+            .performClick()
+        composeTestRule.waitForIdle()
+
+        assertTrue("the target row opens the goal editor's screen", opened)
     }
 
     @Test

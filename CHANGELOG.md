@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **"Set a goal" on the weight chart opens the goal editor** (B486). The target row was a plain value, so the
+  one screen that told a lifter to set a goal offered nothing to press; the editor lives on Measurements. The
+  no-goal target row is now the button that opens that screen, and the section's KDoc no longer claims a goal
+  row that is not there.
 - **A restore does not lay a second goal boundary on a day** (B485). The goal-period import merged by id only,
   so a file row for a day the device already had under another id created two boundaries the editor's day
   rules could not address; a future start or a second undated row could arrive the same way. The validator

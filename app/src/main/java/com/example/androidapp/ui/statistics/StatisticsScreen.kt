@@ -190,6 +190,7 @@ fun StatisticsScreen(
                     onSelectExercise = onSelectExercise,
                     onPinch = onPinch,
                     onSetGoal = onSetGoal,
+                    onOpenMeasurements = onOpenMeasurements,
                 )
             }
         }
@@ -209,6 +210,7 @@ private fun StatisticsLoadedContent(
     onSelectExercise: (String) -> Unit,
     onPinch: (scale: Float, focus: Float) -> Unit,
     onSetGoal: (Double?) -> Unit,
+    onOpenMeasurements: (() -> Unit)? = null,
 ) {
     Column(
         modifier = Modifier
@@ -244,6 +246,7 @@ private fun StatisticsLoadedContent(
             onSelectExercise = onSelectExercise,
             onPinch = onPinch,
             onSetGoal = onSetGoal,
+            onOpenMeasurements = onOpenMeasurements,
         )
         // The records are the page's own story rather than a reading of the selected series, so they follow
         // the series' evidence rather than interrupting it (N290).
@@ -264,6 +267,7 @@ private fun StatisticsBody(
     onSelectExercise: (String) -> Unit,
     onPinch: (scale: Float, focus: Float) -> Unit,
     onSetGoal: (Double?) -> Unit,
+    onOpenMeasurements: (() -> Unit)? = null,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         // The picker is drawn whenever the metric is about a lift, not only when nothing is chosen yet.
@@ -300,7 +304,8 @@ private fun StatisticsBody(
             // live inside the readings' disclosure, so the page hid its own answer behind a list of weigh-ins.
             SeriesSummary(series = series, metric = entry)
             // A weight goal is set on the measurements screen now, where the body is recorded (a request in
-            // use; no roadmap id covers the move) — the chart still draws it from the goal's periods.
+            // use; no roadmap id covers the move) — the chart still draws it from the goal's periods, and
+            // the no-goal target row below is the route back to that editor (B486).
             if (entry.key != MetricKey.Body(BodyMetric.WEIGHT)) {
                 GoalRow(goal = state.goal, metric = entry, onSetGoal = onSetGoal)
             }
@@ -316,6 +321,7 @@ private fun StatisticsBody(
                 rateBand = state.rateBand,
                 targetDate = state.targetDate,
                 targetReached = state.targetReached,
+                onSetGoal = onOpenMeasurements,
             )
         }
         // The three numbers sit after the figure rather than above it (N208): they summarise the window, and the

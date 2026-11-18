@@ -29,16 +29,6 @@ they cost.
 
 ### Before 2.32
 
-- **B486 — The calorie section says "Set a goal" without a way to set one.** The weight goal is edited on
-  Measurements; [StatisticsScreen.kt](app/src/main/java/com/example/androidapp/ui/statistics/StatisticsScreen.kt)
-  hides `GoalRow` for the weight metric, and
-  [EnergyAdjustmentSection.kt](app/src/main/java/com/example/androidapp/ui/statistics/EnergyAdjustmentSection.kt)
-  renders the target as a plain `Text`. A lifter on the weight chart reads "Set a goal" as a control and
-  cannot press it; the section's KDoc still says "the goal row above is where the number that sets it is
-  chosen", and the row it names is not on this screen. Fixed means the target row opens the goal editor or
-  navigates to Measurements, or the goal row returns here; a screen test that the control saves a goal, and
-  copy that matches the screen.
-
 ### Coverage
 
 - **N327 — The goal-history reader is weight-only under a generic name.**
