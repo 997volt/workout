@@ -344,8 +344,8 @@ class ActiveWorkoutViewModel @Inject constructor(
     /** True while the banner's undo is running, so a second tap cannot run the batch twice (B473). */
     private var autoUndoInFlight = false
 
-    /** Exercises whose auto finish is still writing; a second *Done* waits for it (B474). */
-    private val autoFinishing = mutableSetOf<String>()
+    /** Exercises with a finish in flight; a second *Done* waits for it (B474, B491). */
+    private val finishing = mutableSetOf<String>()
 
     /** Emits true once a finish or discard succeeds, so the screen can leave. */
     private val _closed = MutableStateFlow(false)
@@ -591,7 +591,9 @@ class ActiveWorkoutViewModel @Inject constructor(
             questionOpen -> {
                 // *Not now* finishes the exercise, and **records what was offered** (ROADMAP N236): the
                 // offer was frozen from the plan as it stood, so nothing can recompute it once the plan
-                // moves on.
+                // moves on. The guard is taken before the question is cleared, so a tap after this one
+                // cannot take the auto branch while the decline and finish are still writing (B491).
+                if (!finishing.add(sessionExerciseId)) return
                 val pending = _pendingProgression.value
                 val declined = pending?.sets
                     .orEmpty()
@@ -604,39 +606,36 @@ class ActiveWorkoutViewModel @Inject constructor(
                 }
                 _pendingProgression.value = null
                 viewModelScope.launch {
-                    // A failed record does not stop the finish: the lifter declined, and the exercise is
-                    // done either way. The failure is stated **after** the finish, because finishing
-                    // clears the error channel on success — saying it before is saying it to nobody
-                    // (B309).
-                    val declineError = if (declined.isNotEmpty()) {
-                        (workoutRepository.declineProgression(sessionExerciseId, declined) as? DataResult.Failure)
-                            ?.error
-                    } else {
-                        null
+                    try {
+                        // A failed record does not stop the finish: the lifter declined, and the exercise
+                        // is done either way. The failure is stated **after** the finish, because
+                        // finishing clears the error channel on success — saying it before is saying it
+                        // to nobody (B309).
+                        val declineError = if (declined.isNotEmpty()) {
+                            (workoutRepository.declineProgression(sessionExerciseId, declined) as? DataResult.Failure)
+                                ?.error
+                        } else {
+                            null
+                        }
+                        finishExercise(sessionExerciseId, prompt)
+                        if (declineError != null && lastError.value == null) lastError.value = declineError
+                    } finally {
+                        finishing.remove(sessionExerciseId)
                     }
-                    finishExercise(sessionExerciseId, prompt)
-                    if (declineError != null && lastError.value == null) lastError.value = declineError
                 }
             }
 
-            isDeload -> viewModelScope.launch { finishExercise(sessionExerciseId, row.progression) }
+            isDeload -> launchFinish(sessionExerciseId) {
+                finishExercise(sessionExerciseId, row.progression)
+            }
 
             movementMode != null -> finishWithMode(sessionExerciseId, row, movementMode)
-            row?.progression?.hasPlan != true ->
-                viewModelScope.launch { finishExercise(sessionExerciseId, row?.progression) }
+            row?.progression?.hasPlan != true -> launchFinish(sessionExerciseId) {
+                finishExercise(sessionExerciseId, row?.progression)
+            }
 
-            else -> {
-                // One finish per exercise (B474): a second tap before the first write lands would
-                // build the same prompt from the same pre-write plan, and the loser of the race is
-                // refused by `requireBeforeMatches` with a caller-level sentence.
-                if (!autoFinishing.add(sessionExerciseId)) return
-                viewModelScope.launch {
-                    try {
-                        resolveAutoAndFinish(sessionExerciseId, row)
-                    } finally {
-                        autoFinishing.remove(sessionExerciseId)
-                    }
-                }
+            else -> launchFinish(sessionExerciseId) {
+                resolveAutoAndFinish(sessionExerciseId, row)
             }
         }
     }
@@ -668,7 +667,27 @@ class ActiveWorkoutViewModel @Inject constructor(
         if (autoProgram != null) {
             applyAutoProgression(sessionExerciseId, row, autoProgram)
         } else {
-            finishWithMode(sessionExerciseId, row, progressionMode.value)
+            // The auto branch already holds the finish guard, so this fallback finish must not take it
+            // again (B491).
+            finishWithMode(sessionExerciseId, row, progressionMode.value, alreadyGuarded = true)
+        }
+    }
+
+    /**
+     * Runs one finish for an exercise, or drops the tap if one is already writing (B474, B491).
+     *
+     * Every branch that starts a finish goes through this, not only the auto one: a second *Done* after
+     * *Not now* would otherwise see no question and take the auto branch while the decline and finish
+     * were still in flight, and write a step the lifter had just refused.
+     */
+    private fun launchFinish(sessionExerciseId: String, block: suspend () -> Unit) {
+        if (!finishing.add(sessionExerciseId)) return
+        viewModelScope.launch {
+            try {
+                block()
+            } finally {
+                finishing.remove(sessionExerciseId)
+            }
         }
     }
 
@@ -677,6 +696,7 @@ class ActiveWorkoutViewModel @Inject constructor(
         sessionExerciseId: String,
         row: SessionExerciseRow?,
         mode: ProgressionMode,
+        alreadyGuarded: Boolean = false,
     ) {
         if (mode != ProgressionMode.OFF && row?.progression?.hasPlan == true) {
             val question = pendingProgressionFor(
@@ -692,8 +712,11 @@ class ActiveWorkoutViewModel @Inject constructor(
             } else {
                 question
             }
-        } else {
+        } else if (alreadyGuarded) {
+            // The caller's guard covers this launch; taking it again would deadlock the finish.
             viewModelScope.launch { finishExercise(sessionExerciseId, row?.progression) }
+        } else {
+            launchFinish(sessionExerciseId) { finishExercise(sessionExerciseId, row?.progression) }
         }
     }
 

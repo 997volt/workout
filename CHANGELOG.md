@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A second Done after *Not now* cannot write an auto step** (B491). The finish-in-flight guard lived only
+  on the auto branch; the question-open branch started its decline and finish without it, so a second tap in
+  the same frame saw no question and took the auto branch. Every branch that starts a finish now shares one
+  guard, and the auto branch's own fallback does not take it again.
 - **A failed shared-plan read no longer takes the auto switch away** (B488). The progression screen read the
   names of other programs sharing a plan in the same snapshot as the switch, so a failure replaced the whole
   screen and left auto on with no control. The failure is now only the reset dialog's sentence; the switch

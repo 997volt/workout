@@ -1096,6 +1096,44 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
+    fun aSecondDoneAfterNotNow_doesNotStartAnAutoBatch() = runTest(dispatcher) {
+        // B491: the question-open branch starts the decline and finish, but only the auto branch held
+        // `autoFinishing`; a second tap in the same frame saw no question and took the auto branch,
+        // writing a step after the lifter had just said Not now.
+        val repository = FakeWorkoutRepository()
+        val templates = answeredPlan()
+        val progression = FakeProgressionRepository()
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = templates,
+            progression = progression,
+        )
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        val id = viewModel.uiState.value.exercises.single().id
+        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
+
+        // No auto program yet, so the first Done opens the question.
+        viewModel.onFinishExercise(id)
+        settle()
+        assertNotNull(viewModel.pendingProgression.value)
+
+        // The switch is turned on after the question opened; the next tap is still Not now.
+        progression.autoPrograms["t1"] = "p1"
+        viewModel.onFinishExercise(id)
+        viewModel.onFinishExercise(id)
+        settle()
+
+        assertEquals("the decline won the race", 1, repository.declined.size)
+        assertEquals("no step was written after Not now", emptyList<String>(), templates.progressionWrites)
+        assertTrue("the first tap finished the exercise", viewModel.uiState.value.exercises.single().isFinished)
+        assertNull("the second tap wrote nothing to refuse", viewModel.uiState.value.error)
+    }
+
+    @Test
     fun aMovementThatSaysOff_isNotAdjustedByTheProgramsAutoProgression() = runTest(dispatcher) {
         // N235 still wins: the program's switch is below the movement's own answer, so a movement set
         // to Off is finished without a write and without a question.

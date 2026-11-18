@@ -25,13 +25,6 @@ hold. The findings are the edges the fixes left: a block that can still be switc
 that can take away the off control, a double *Done* after *Not now*, a legacy boundary whose range lies, and
 three backup/snapshot edges. Nothing was fixed during the read; the rows are ordered by what they cost.
 
-- **B491 — A double Done after *Not now* can still write an auto step.** The question-open branch clears
-  `_pendingProgression` and launches its decline and finish without the `autoFinishing` guard
-  ([ActiveWorkoutViewModel.kt](app/src/main/java/com/example/androidapp/ui/workout/ActiveWorkoutViewModel.kt)).
-  A second tap in the same frame sees no question, the row still live, and takes the auto branch, so a step
-  can be written after the lifter declined and race the finish. The B474 test only double-taps from the auto
-  branch. Fixed means a finish-in-flight guard covers every branch that starts one (at least the question-open
-  one), with a test that taps twice around *Not now*.
 - **B492 — A legacy clock-time boundary makes the history's range lie.** N328 subtracts a day from the next
   start's date, but `GoalOutcomes.readingsWithin`
   ([GoalOutcomes.kt](app/src/main/java/com/example/androidapp/ui/statistics/GoalOutcomes.kt)) clips by the
