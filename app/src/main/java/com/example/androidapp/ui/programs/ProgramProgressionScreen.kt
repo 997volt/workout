@@ -147,6 +147,7 @@ fun ProgramProgressionScreen(
     if (state.confirmReset) {
         ResetConfirmDialog(
             sharedProgramNames = state.sharedProgramNames,
+            sharedReadFailed = state.sharedReadFailed,
             onConfirm = onConfirmReset,
             onDismiss = onDismissReset,
         )
@@ -432,6 +433,7 @@ private fun blockedHint(rule: ProgressionRule): Int? = when (rule) {
 @Composable
 private fun ResetConfirmDialog(
     sharedProgramNames: List<String>,
+    sharedReadFailed: Boolean,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -441,7 +443,9 @@ private fun ResetConfirmDialog(
         text = {
             Column {
                 Text(stringResource(R.string.program_progression_reset_text))
-                if (sharedProgramNames.isNotEmpty()) {
+                if (sharedReadFailed) {
+                    Text(stringResource(R.string.program_progression_reset_shared_unknown))
+                } else if (sharedProgramNames.isNotEmpty()) {
                     Text(
                         stringResource(
                             R.string.program_progression_reset_shared,

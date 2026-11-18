@@ -7,7 +7,6 @@ import androidx.navigation.toRoute
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.NotFoundException
-import com.example.androidapp.domain.asThrowable
 import com.example.androidapp.domain.dataResultOf
 import com.example.androidapp.domain.getOrNull
 import com.example.androidapp.domain.model.AutoProgressionCheck
@@ -46,6 +45,8 @@ data class ProgramProgressionUiState(
     val confirmReset: Boolean = false,
     /** Other programs that schedule a template this program shares, so Reset changes them too (B476). */
     val sharedProgramNames: List<String> = emptyList(),
+    /** The sharing read failed, so the reset can name no one — but the switch still works (B488). */
+    val sharedReadFailed: Boolean = false,
     /** Sets the last reset restored, for the one message it is worth saying. */
     val restored: Int? = null,
 ) {
@@ -95,6 +96,7 @@ class ProgramProgressionViewModel @Inject constructor(
                         checks = snapshot.checks,
                         baselineAt = snapshot.baselineAt,
                         sharedProgramNames = snapshot.sharedProgramNames,
+                        sharedReadFailed = snapshot.sharedReadFailed,
                         error = null,
                     )
                 }
@@ -118,12 +120,18 @@ class ProgramProgressionViewModel @Inject constructor(
         val templateIds = slots.map { it.templateId }.distinct()
         // A failed sharing read is the screen's failure, not "nobody else uses this plan": the reset
         // confirmation would otherwise promise a program-only rewrite it cannot prove (B476).
+        var sharedReadFailed = false
         val shared = if (templateIds.isEmpty()) {
             emptyList()
         } else {
             when (val names = programs.otherProgramNamesUsingTemplates(templateIds, programId)) {
                 is DataResult.Success -> names.data
-                is DataResult.Failure -> throw names.error.asThrowable()
+                is DataResult.Failure -> {
+                    // The window is only the reset confirmation's sentence, not the screen (B488): the
+                    // switch has to stay usable, especially the direction that turns writes off.
+                    sharedReadFailed = true
+                    emptyList()
+                }
             }
         }
         return Snapshot(
@@ -133,6 +141,7 @@ class ProgramProgressionViewModel @Inject constructor(
             checks = autoProgressionPreflight(slots, byTemplate).checks,
             baselineAt = progression.baselineCapturedAt(programId).getOrNull()?.let(Instant::ofEpochMilli),
             sharedProgramNames = shared,
+            sharedReadFailed = sharedReadFailed,
         )
     }
 
@@ -212,5 +221,6 @@ class ProgramProgressionViewModel @Inject constructor(
         val checks: List<AutoProgressionCheck>,
         val baselineAt: Instant?,
         val sharedProgramNames: List<String>,
+        val sharedReadFailed: Boolean,
     )
 }

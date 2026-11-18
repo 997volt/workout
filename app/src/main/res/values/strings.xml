@@ -1309,6 +1309,7 @@
     <string name="program_progression_reset_text">Every planned set in this program goes back to the target it held when auto progression was turned on. Sets you have deleted stay deleted.</string>
     <!-- Named only when another program schedules one of these workouts, because the plan is one plan
          and this reset rewinds its targets for that program too (B476). -->
+    <string name="program_progression_reset_shared_unknown">Could not read whether another program uses this plan; the reset may rewind one.</string>
     <string name="program_progression_reset_shared">Also rewinds the plan used by %1$s.</string>
     <string name="program_progression_reset_confirm">Reset</string>
     <string name="program_progression_empty">This program has no planned exercises, so there is nothing to adjust.</string>

@@ -25,13 +25,6 @@ hold. The findings are the edges the fixes left: a block that can still be switc
 that can take away the off control, a double *Done* after *Not now*, a legacy boundary whose range lies, and
 three backup/snapshot edges. Nothing was fixed during the read; the rows are ordered by what they cost.
 
-- **B488 — A failed shared-plan read takes away the way to turn auto off.**
-  [ProgramProgressionViewModel.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramProgressionViewModel.kt)'s
-  `snapshot()` reads `otherProgramNamesUsingTemplates` unconditionally and throws its failure, so the screen's
-  read failure replaces the switch. The shared names are only needed by the reset confirmation (B476), while
-  the off action is the immediate safety valve; a read failure therefore leaves auto on with no control.
-  Fixed means the failure is scoped to the reset (the dialog says the read failed and the switch stays), or
-  the names are read on demand; a test with a failing sharing read still shows the switch and turns it off.
 - **B491 — A double Done after *Not now* can still write an auto step.** The question-open branch clears
   `_pendingProgression` and launches its decline and finish without the `autoFinishing` guard
   ([ActiveWorkoutViewModel.kt](app/src/main/java/com/example/androidapp/ui/workout/ActiveWorkoutViewModel.kt)).

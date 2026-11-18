@@ -215,6 +215,24 @@ class ProgramProgressionScreenTest {
     }
 
     @Test
+    fun theResetConfirmation_saysWhenTheSharingReadFailed() {
+        // B488: the screen and the switch stay; only the sentence about who else is affected changes.
+        setScreen(
+            state = state(
+                auto = true,
+                baselineAt = Instant.ofEpochMilli(1_700_000_000_000L),
+                confirmReset = true,
+                sharedReadFailed = true,
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.AUTO_SWITCH).assertExists()
+        composeTestRule
+            .onNodeWithText("Could not read whether another program uses this plan; the reset may rewind one.")
+            .assertExists()
+    }
+
+    @Test
     fun theResetConfirmation_namesAnotherProgramSharingThePlan() {
         // B476: the plan is shared, so the dialog names the program the same write rewinds.
         setScreen(
@@ -264,6 +282,7 @@ class ProgramProgressionScreenTest {
         confirmReset: Boolean = false,
         writing: Boolean = false,
         sharedProgramNames: List<String> = emptyList(),
+        sharedReadFailed: Boolean = false,
         isSequence: Boolean = false,
     ) = ProgramProgressionUiState(
         isLoading = false,
@@ -276,5 +295,6 @@ class ProgramProgressionScreenTest {
         confirmReset = confirmReset,
         writing = writing,
         sharedProgramNames = sharedProgramNames,
+        sharedReadFailed = sharedReadFailed,
     )
 }

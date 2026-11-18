@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A failed shared-plan read no longer takes the auto switch away** (B488). The progression screen read the
+  names of other programs sharing a plan in the same snapshot as the switch, so a failure replaced the whole
+  screen and left auto on with no control. The failure is now only the reset dialog's sentence; the switch
+  stays, and turning writes off is always available.
 - **A block cannot have auto progression switched on** (B487). The editor hid the switch, but the progression
   screen and the repository did not check the program's kind; a stale route, or a restore that made the
   program a block, could still set the flag the resolver ignores until a later conversion back to weekly

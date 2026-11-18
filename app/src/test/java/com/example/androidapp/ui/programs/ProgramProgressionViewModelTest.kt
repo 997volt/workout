@@ -2,6 +2,8 @@ package com.example.androidapp.ui.programs
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.androidapp.domain.DataError
+import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.WorkoutProgram
@@ -121,6 +123,33 @@ class ProgramProgressionViewModelTest {
         advanceUntilIdle()
 
         assertThat(viewModel.uiState.value.notFound).isTrue()
+    }
+
+    @Test
+    fun aFailedSharingRead_keepsTheSwitch_andSaysTheResetCannotKnow() = runTest(dispatcher) {
+        // B488: the names are only the reset dialog's sentence; a failure there used to replace the whole
+        // screen and take away the switch — including the off direction that stops writes.
+        programs.slots.value = listOf(
+            ProgramSlot(
+                id = "s1",
+                programId = PROGRAM_ID,
+                templateId = "t1",
+                position = 0,
+                templateName = "Day A",
+            ),
+        )
+        programs.otherProgramNamesResult = DataResult.Failure(DataError.Storage(java.io.IOException("locked")))
+
+        val viewModel = viewModel()
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.error).isNull()
+        assertThat(viewModel.uiState.value.sharedReadFailed).isTrue()
+        assertThat(viewModel.uiState.value.sharedProgramNames).isEmpty()
+
+        viewModel.onSetAuto(false)
+        advanceUntilIdle()
+        assertThat(progression.toggles).containsExactly(PROGRAM_ID to false)
     }
 
     @Test
