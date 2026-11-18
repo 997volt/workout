@@ -15,6 +15,75 @@ work was planned, so they do not always run in order — and an id this file doe
 shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 [CHANGELOG-1.x.md](CHANGELOG-1.x.md) for the 1.x releases.
 
+## Next — the unreleased-changes review
+
+Everything since 2.31 was read as one batch — the auto-progression fixes (B472–B477), the rep-range line
+(B478), the session-plan snapshot (B471), N325, and the weight-goal/calorie batch (B479–B486, N327, N328) —
+rather than as the separate reviews that produced them. The earlier rows were read in isolation; this read is
+the seams between them. The auto-progression writes, the snapshot schema and the goal/calorie arithmetic
+hold. The findings are the edges the fixes left: a block that can still be switched on, a secondary read
+that can take away the off control, a double *Done* after *Not now*, a legacy boundary whose range lies, and
+three backup/snapshot edges. Nothing was fixed during the read; the rows are ordered by what they cost.
+
+- **B487 — A block can still be switched on through the progression screen.** The editor menu hides *Auto
+  progression* for a block (N303), but
+  [ProgramProgressionScreen.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramProgressionScreen.kt)
+  does not know the program's kind, and
+  [RoomProgressionRepository.kt](app/src/main/java/com/example/androidapp/data/RoomProgressionRepository.kt)'s
+  `setAutoProgression` checks only that the row is live. A progression route left on the back stack, or one
+  open while a document or backup restore turns the program into a block, can still set the flag. The
+  resolver ignores it (`kind = 'WEEKLY'`), so it does nothing and the editor hides it — until a later
+  conversion back to weekly resumes the writes, which is B475 one path over. Fixed means the repository
+  refuses enabling for a non-weekly program and the screen does not draw the switch for one; tests for the
+  block state and the write.
+- **B488 — A failed shared-plan read takes away the way to turn auto off.**
+  [ProgramProgressionViewModel.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramProgressionViewModel.kt)'s
+  `snapshot()` reads `otherProgramNamesUsingTemplates` unconditionally and throws its failure, so the screen's
+  read failure replaces the switch. The shared names are only needed by the reset confirmation (B476), while
+  the off action is the immediate safety valve; a read failure therefore leaves auto on with no control.
+  Fixed means the failure is scoped to the reset (the dialog says the read failed and the switch stays), or
+  the names are read on demand; a test with a failing sharing read still shows the switch and turns it off.
+- **B491 — A double Done after *Not now* can still write an auto step.** The question-open branch clears
+  `_pendingProgression` and launches its decline and finish without the `autoFinishing` guard
+  ([ActiveWorkoutViewModel.kt](app/src/main/java/com/example/androidapp/ui/workout/ActiveWorkoutViewModel.kt)).
+  A second tap in the same frame sees no question, the row still live, and takes the auto branch, so a step
+  can be written after the lifter declined and race the finish. The B474 test only double-taps from the auto
+  branch. Fixed means a finish-in-flight guard covers every branch that starts one (at least the question-open
+  one), with a test that taps twice around *Not now*.
+- **B492 — A legacy clock-time boundary makes the history's range lie.** N328 subtracts a day from the next
+  start's date, but `GoalOutcomes.readingsWithin`
+  ([GoalOutcomes.kt](app/src/main/java/com/example/androidapp/ui/statistics/GoalOutcomes.kt)) clips by the
+  *instant*: a period whose next boundary is 08:00 owns that morning's weigh-in, while the range in
+  [GoalRow.kt](app/src/main/java/com/example/androidapp/ui/statistics/GoalRow.kt) says it ended the day
+  before. The N328 test's own periods are 08:00, so it pins the shape without a boundary-morning reading.
+  Fixed means the last day is derived from the instant (subtract only for a local-midnight boundary, or show
+  the time), with a test whose reading sits on the boundary morning.
+- **B489 — The backup preview does not count the plan snapshots.** The import writes `sessionPlanSets` and
+  counts them in its summary (B471), but
+  [BackupRepository.kt](app/src/main/java/com/example/androidapp/domain/repository/BackupRepository.kt)'s
+  `BackupPreview` has no field for them and
+  [RoomBackupRepository.kt](app/src/main/java/com/example/androidapp/data/RoomBackupRepository.kt)'s
+  `preview()` never reads them. A file whose only new rows are snapshots previews as no change, then the
+  restore reports one added. The preview's four kinds are the question it answers, but a collection the merge
+  now writes belongs in it. Fixed means a snapshot count (or the session count that contains them) and a
+  snapshot-only test.
+- **B490 — The switch is cleared without its baseline on the B475 paths.** B477 made disabling drop the
+  baseline in `RoomProgressionRepository.setAutoProgression`, but converting to a block
+  ([RoomProgramRepository.kt](app/src/main/java/com/example/androidapp/data/RoomProgramRepository.kt)),
+  deleting ([ProgramDao.kt](app/src/main/java/com/example/androidapp/data/local/ProgramDao.kt)), restoring a
+  document ([ProgramBackupDao.kt](app/src/main/java/com/example/androidapp/data/local/ProgramBackupDao.kt))
+  and importing a block
+  ([ProgramBackupMappers.kt](app/src/main/java/com/example/androidapp/data/transfer/ProgramBackupMappers.kt))
+  clear only the flag. The rows stay hidden and exported, and "off drops it" is true on one of the four off
+  paths. Fixed means those paths clear the baseline too (or go through the one repository method), with tests
+  for each.
+- **B493 — Duplicate plan snapshot rows are dropped in silence.** `session_plan_sets` is keyed by
+  `(sessionExerciseId,setIndex)` and the backup import inserts with IGNORE, but
+  [BackupValidator.kt](app/src/main/java/com/example/androidapp/data/transfer/BackupValidator.kt)'s
+  `validateSessionPlanSets` never checks the pair for a duplicate. A hand-edited or corrupt file loses one
+  row without a problem, and the one kept may be the wrong plan. The other tables' ids have the same class of
+  check. Fixed means the validator refuses a duplicate pair, with the import tested.
+
 ## Parked — deliberately not planned
 
 Each row is a product in its own right, contradicts "local-only", or both. Parking is a
