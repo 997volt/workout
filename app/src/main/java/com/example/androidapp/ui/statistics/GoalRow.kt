@@ -400,18 +400,18 @@ private fun GoalHistoryRow(
     testTag: String,
     onClick: () -> Unit,
 ) {
-    val start = outcome.period.startedAt
+    val zone = ZoneId.systemDefault()
+    val startDay = outcome.period.startedAt?.atZone(zone)?.toLocalDate()
+    val nextDay = nextStart?.atZone(zone)?.toLocalDate()
     val range = when {
-        start == null -> stringResource(R.string.statistics_goal_from_unknown)
-        nextStart == null -> stringResource(
-            R.string.statistics_goal_from,
-            goalDayText(start.atZone(ZoneId.systemDefault()).toLocalDate()),
-        )
-        else -> stringResource(
-            R.string.statistics_goal_range,
-            goalDayText(start.atZone(ZoneId.systemDefault()).toLocalDate()),
-            goalDayText(nextStart.atZone(ZoneId.systemDefault()).toLocalDate()),
-        )
+        startDay == null -> stringResource(R.string.statistics_goal_from_unknown)
+        nextDay == null -> stringResource(R.string.statistics_goal_from, goalDayText(startDay))
+        else -> {
+            // The next boundary belongs to the next period (N215); the last day this one owns is the day
+            // before it, so the range does not appear to include a weigh-in it does not judge (N328).
+            val end = if (nextDay > startDay) nextDay.minusDays(1) else startDay
+            stringResource(R.string.statistics_goal_range, goalDayText(startDay), goalDayText(end))
+        }
     }
     Column(
         modifier = Modifier
@@ -572,10 +572,9 @@ private fun GoalPeriodFields(metric: MetricEntry, draft: GoalPeriodDraft) {
                 modifier = Modifier.testTag(TestTags.Statistics.GOAL_PERIOD_END),
             ) {
                 Text(
-                    stringResource(
-                        R.string.statistics_goal_period_until,
-                        draft.end?.let(::goalDayText) ?: stringResource(R.string.statistics_goal_period_ongoing),
-                    ),
+                    draft.end?.let {
+                        stringResource(R.string.statistics_goal_period_until, goalDayText(it))
+                    } ?: stringResource(R.string.statistics_goal_period_ongoing),
                 )
             }
         }

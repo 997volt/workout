@@ -589,7 +589,7 @@
     <string name="statistics_goal_period_add_title">Add a past goal</string>
     <string name="statistics_goal_period_edit_title">Goal period</string>
     <string name="statistics_goal_period_since">Since %1$s</string>
-    <string name="statistics_goal_period_until">Until %1$s</string>
+    <string name="statistics_goal_period_until">Next starts %1$s</string>
     <string name="statistics_goal_period_ongoing">Ongoing</string>
     <string name="statistics_goal_period_remove">Remove</string>
     <string name="statistics_goal_period_edit">Edit this goal period</string>

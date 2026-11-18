@@ -15,29 +15,6 @@ work was planned, so they do not always run in order — and an id this file doe
 shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 [CHANGELOG-1.x.md](CHANGELOG-1.x.md) for the 1.x releases.
 
-## Next — the weight goal and calorie review
-
-The weight goal (N135, N137, N149, N151, N215) and the energy adjustment it feeds (N98, N136) were read
-against those decisions: the kind and the rate derived from it, the period store and its editor/history,
-the target date and the reached state, the kcal sentence on Statistics and the prompt after a weigh-in, and
-the backup. The model is sound — a kind rather than a second number, days rather than moments, a relative
-adjustment against intake the app deliberately never stores — and the rate arithmetic is right. The
-findings are at the edges: a reached target that still reads as a rate to chase, maintenance that speaks
-below N98's floor, a zero weight accepted as a goal, an open period judged as missed, and a backup that can
-restore rows the write path would refuse. Nothing was fixed during the read; the rows are ordered by what
-they cost.
-
-### Before 2.32
-
-### Coverage
-
-- **N328 — The history prints the next period's start as this period's end.** A period runs to the next
-  boundary, exclusive; [GoalRow.kt](app/src/main/java/com/example/androidapp/ui/statistics/GoalRow.kt)'s
-  history row prints the next start as the second date (`"%1$s – %2$s"`), and the editor's "Until %1$s"
-  names the same day. A weigh-in on that day belongs to the next goal, not the one whose range appears to
-  include it. Fixed means the labels say "until" or show the last day the period owns, and a test with a
-  reading on the boundary.
-
 ## Parked — deliberately not planned
 
 Each row is a product in its own right, contradicts "local-only", or both. Parking is a

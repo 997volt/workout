@@ -41,6 +41,7 @@ import com.example.androidapp.domain.repository.GoalPeriod
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.statistics.EnergyAdjustment
 import com.example.androidapp.ui.statistics.MetricReading
+import com.example.androidapp.ui.statistics.goalDayText
 import com.example.androidapp.ui.statistics.weightGoalOutcomes
 import com.example.androidapp.ui.theme.AndroidAppTheme
 import org.junit.Assert.assertEquals
@@ -319,6 +320,33 @@ class MeasurementsScreenTest {
 
         composeTestRule.onNodeWithText("Missed so far").assertExists()
         composeTestRule.onNodeWithText("Missed").assertExists()
+    }
+
+    @Test
+    fun theGoalHistory_endsAPeriodTheDayBeforeTheNextStarts() {
+        // N328: the next boundary starts the next goal; printing that day as the closed period's end made a
+        // weigh-in on it look judged by the wrong goal. The editor names the same day as the next start.
+        val start = Instant.parse("2026-01-01T08:00:00Z")
+        val next = Instant.parse("2026-09-10T08:00:00Z")
+        val zone = ZoneId.systemDefault()
+        val startDay = start.atZone(zone).toLocalDate()
+        val nextDay = next.atZone(zone).toLocalDate()
+        val lastDay = nextDay.minusDays(1)
+        setScreen(
+            state = stateWithGoal(
+                goal = WeightGoal.Target(75_000L),
+                periods = listOf(
+                    GoalPeriod(id = "p0", startedAt = start, kind = "TARGET", value = 75_000.0),
+                    GoalPeriod(id = "p1", startedAt = next, kind = "TARGET", value = 75_000.0),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_HISTORY).performClick()
+
+        composeTestRule.onNodeWithText("${goalDayText(startDay)} – ${goalDayText(lastDay)}").assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.goalOutcome(1)).performClick()
+        composeTestRule.onNodeWithText("Next starts ${goalDayText(nextDay)}").assertExists()
     }
 
     @Test

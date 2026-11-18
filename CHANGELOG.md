@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A goal period's range ends the day before the next starts** (N328). The history printed the next period's
+  start as this period's end, so a weigh-in on that day looked judged by the wrong goal. The range now names
+  the last day the period owns — the next start's day minus one — and the editor's "Until" says "Next starts"
+  so the boundary day is not read as included.
 - **"Set a goal" on the weight chart opens the goal editor** (B486). The target row was a plain value, so the
   one screen that told a lifter to set a goal offered nothing to press; the editor lives on Measurements. The
   no-goal target row is now the button that opens that screen, and the section's KDoc no longer claims a goal
