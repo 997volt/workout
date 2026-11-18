@@ -22,8 +22,8 @@ import com.example.androidapp.ui.statistics.MetricKey
 import com.example.androidapp.ui.statistics.MetricReading
 import com.example.androidapp.ui.statistics.MetricSeries
 import com.example.androidapp.ui.statistics.WEIGHT_METRIC_ID
-import com.example.androidapp.ui.statistics.weightGoalOutcomes
 import com.example.androidapp.ui.statistics.weighInVerdict
+import com.example.androidapp.ui.statistics.weightGoalOutcomes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
