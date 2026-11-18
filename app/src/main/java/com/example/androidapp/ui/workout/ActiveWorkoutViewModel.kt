@@ -709,10 +709,9 @@ class ActiveWorkoutViewModel @Inject constructor(
             repository = templateRepository,
             onWritten = { steps += it },
         )
-        if (failure != null) {
-            lastError.value = failure
-            return
-        }
+        // What landed is shown before a later failure is said (B472): the plan has moved past those
+        // sets, so this banner is the only reader of their write ids. The exercise stays open for the
+        // rest, which is why the failure still returns without finishing.
         if (steps.isNotEmpty()) {
             showAutoStep(
                 AutoProgressionMoment(
@@ -721,6 +720,10 @@ class ActiveWorkoutViewModel @Inject constructor(
                     steps = steps,
                 ),
             )
+        }
+        if (failure != null) {
+            lastError.value = failure
+            return
         }
         finishExercise(sessionExerciseId, row.progression)
         // A step was taken, so an earlier *Not now* no longer describes this exercise (B310).

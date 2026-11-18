@@ -52,17 +52,6 @@ the write apart for the same reason.
   rejecting it no longer holds. A write-log-only fix was rejected too: it would know the auto steps and
   not the manual ones, which is two rules for one fact.
 
-- **B472 — A partial auto batch lands without its undo banner.** `applyAutoProgression` returns as soon
-  as `writeAutoProgressionSteps` reports a failure
-  ([ActiveWorkoutViewModel.kt](app/src/main/java/com/example/androidapp/ui/workout/ActiveWorkoutViewModel.kt)),
-  before `showAutoStep`, although the loop has already recorded every landed step in `steps`. Those rows
-  no longer offer anything — the plan has moved past them — the exercise stays open for the rest, and the
-  banner that is the only caller of `ProgressionRepository.undo` never shows them. A storage failure on
-  the second of three sets therefore leaves the first two applied with no way back. B402's roadmap row
-  named this half explicitly; the fix that shipped queued completed batches only. Fixed means the landed
-  steps are shown with their undo before the failure is said (the exercise still stays open), plus a test
-  whose second apply fails.
-
 - **B473 — The banner's undo stops at the first refusal and can skip the next batch.** `onUndoAutoStep`
   walks the batch newest-first but wraps each call in `if (failure == null)`
   ([ActiveWorkoutViewModel.kt](app/src/main/java/com/example/androidapp/ui/workout/ActiveWorkoutViewModel.kt)),
@@ -130,12 +119,11 @@ the write apart for the same reason.
 
 - **N325 — The auto progression seams that let these through are uncovered.** No test presses *Done* on
   an exercise that earned two steps (the banner's plural message, the per-step writes and the batch
-  undo), a second-write failure (B472), a refused or double undo (B473), a double *Done* (B474), a reset
-  after a schedule change or over a shared plan (B476), the switch across a kind change or a
-  delete/restore (B475), or a weekly program with the switch on next to a block that names the same
-  template. The enablement text and the baseline line have screen tests only for their presence. Fixed
-  means those cases are asserted, and B471's historical plan is pinned at whichever level the decision
-  puts it.
+  undo), a refused or double undo (B473), a double *Done* (B474), a reset after a schedule change or over
+  a shared plan (B476), the switch across a kind change or a delete/restore (B475), or a weekly program
+  with the switch on next to a block that names the same template. The enablement text and the baseline
+  line have screen tests only for their presence. Fixed means those cases are asserted, and B471's
+  historical plan is pinned at whichever level the decision puts it.
 
 - **N326 — Which sessions count as the program's?** N299 resolves a session to a program through its
   **template**, so the switch applies to (a) a weekly program's workout started from the library when

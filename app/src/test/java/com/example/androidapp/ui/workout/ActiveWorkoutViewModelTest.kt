@@ -285,6 +285,20 @@ class ActiveWorkoutViewModelTest {
         ),
     )
 
+    /** One exercise with two answered work sets, so one *Done* can take two steps (B472). */
+    private fun twoSetAnsweredPlan() = FakeTemplateRepository(
+        planned = listOf(
+            plannedExercise(
+                position = 0,
+                targetRpeHalves = 8,
+                sets = listOf(
+                    plannedSet(index = 0, reps = 5, weightGrams = 100_000L),
+                    plannedSet(index = 1, reps = 5, weightGrams = 100_000L),
+                ),
+            ),
+        ),
+    )
+
     @Test
     fun startsASessionOnEntry_soNothingCanBeLostBeforeItExists() = runTest(dispatcher) {
         val repository = FakeWorkoutRepository()
@@ -928,6 +942,40 @@ class ActiveWorkoutViewModelTest {
         settle()
 
         assertEquals("the second batch is next", "w-2", viewModel.autoStep.value?.steps?.single()?.writeId)
+    }
+
+    @Test
+    fun aPartialAutoBatch_showsTheStepThatLanded_beforeTheFailureIsSaid() = runTest(dispatcher) {
+        // B472: two sets earned a load step, and the second write failed. The first write is already
+        // in the plan, so the offer it earned is gone; the banner is the only reader of its write id,
+        // and the old code returned before showing it. The exercise stays open for the rest.
+        val repository = FakeWorkoutRepository()
+        val templates = twoSetAnsweredPlan()
+        val progression = FakeProgressionRepository().apply { autoPrograms["t1"] = "p1" }
+        templates.failProgressionAfter = 1
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = templates,
+            progression = progression,
+        )
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        val id = viewModel.uiState.value.exercises.single().id
+        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
+        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
+
+        viewModel.onFinishExercise(id)
+        settle()
+
+        assertEquals("only the first step landed", 1, templates.progressionWrites.size)
+        val moment = viewModel.autoStep.value
+        assertEquals("the landed step is readable", 1, moment?.steps?.size)
+        assertEquals("and addressable by its write id", "w-1", moment?.steps?.single()?.writeId)
+        assertFalse("the rest waits for a retry", viewModel.uiState.value.exercises.single().isFinished)
+        assertTrue("the failure is still said", viewModel.uiState.value.error is DataError.Storage)
     }
 
     @Test
@@ -3664,6 +3712,14 @@ class ActiveWorkoutViewModelTest {
 
         /** Set to refuse the next write, so a dropped step can be asserted (N50). */
         var failUpdates = false
+
+        /**
+         * Refuses an auto step once this many have landed, for a partial batch (B472).
+         *
+         * Null is no limit. The plan is not moved by this fake, so a test using it asserts what the
+         * failure left behind rather than retrying the write over an unchanged plan.
+         */
+        var failProgressionAfter: Int? = null
         override suspend fun setSupersetGroup(
             templateExerciseIds: List<String>,
             group: Int?,
@@ -3781,10 +3837,14 @@ class ActiveWorkoutViewModelTest {
             edit: TemplateSetEdit,
             write: ProgressionSetWrite,
         ): DataResult<String> {
-            if (failUpdates) return DataResult.Failure(DataError.Storage(IOException("disk full")))
-            updates += templateSetId to edit
-            progressionWrites += templateSetId
-            return DataResult.Success("w-${progressionWrites.size}")
+            val refused = failUpdates || failProgressionAfter?.let { progressionWrites.size >= it } == true
+            return if (refused) {
+                DataResult.Failure(DataError.Storage(IOException("disk full")))
+            } else {
+                updates += templateSetId to edit
+                progressionWrites += templateSetId
+                DataResult.Success("w-${progressionWrites.size}")
+            }
         }
 
         override suspend fun removeSet(templateSetId: String): DataResult<Unit> {

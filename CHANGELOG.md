@@ -22,6 +22,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   next session's plan line said only "Plan 5 reps @ 102.5 kg" — the 10 the lifter could still climb to
   was gone from the screen. The line now states the authored range ("Plan 5–10 reps @ 102.5 kg") while
   the fields keep the current place.
+- **A partial auto progression batch keeps its undo** (B472). When a later set's write failed, the
+  steps that had already landed were returned from before the banner that reads them back, so the plan
+  carried writes with no way to undo them. The landed steps are now shown with their undo before the
+  failure is said; the exercise still stays open for the rest.
 
 ## [2.31] — 2026-11-17 (versionCode 52)
 
