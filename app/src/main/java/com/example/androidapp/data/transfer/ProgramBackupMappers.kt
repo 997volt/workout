@@ -9,6 +9,7 @@ import com.example.androidapp.data.local.ProgramSubstitutionEntity
 import com.example.androidapp.data.local.ProgressionBaselineEntity
 import com.example.androidapp.data.local.ProgressionWriteEntity
 import com.example.androidapp.data.local.RetiredMovementEntity
+import com.example.androidapp.domain.model.ProgramKind
 
 /** The merge memory the backup carries (B347): one retired id and its survivor. */
 internal fun RetiredMovementEntity.toDto() = RetiredMovementDto(id = id, survivorId = survivorId)
@@ -44,7 +45,10 @@ internal fun ProgramDto.toEntity() = ProgramEntity(
     position = position,
     kind = kind,
     startDate = startDate,
-    autoProgression = autoProgression,
+    // A block never carries the switch (N303), so a file written before B475 cannot re-arm one
+    // the editor will not offer. This is the one place the field-for-field rule is deliberately
+    // broken: the file's value describes a shape the app cannot show.
+    autoProgression = autoProgression && kind == ProgramKind.WEEKLY,
     createdAt = createdAt,
     updatedAt = updatedAt,
     deletedAt = deletedAt,

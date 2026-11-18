@@ -252,6 +252,54 @@ class ProgramRepositoryTest {
     }
 
     @Test
+    fun turningAProgramIntoABlock_clearsItsAutoSwitch() = runTest {
+        // B475: a sequence is never offered the switch, and the resolver ignores it. Leaving the flag
+        // on hid the control that would turn it off and silently re-armed writes if it became weekly.
+        val program = create("Upper/Lower")
+        database.programDao().setAutoProgression(program, true, now.toEpochMilli())
+
+        repository.setProgramKind(program, ProgramKind.SEQUENCE)
+
+        assertFalse(
+            "a block never carries the switch",
+            database.programDao().findProgram(program)!!.autoProgression,
+        )
+    }
+
+    @Test
+    fun deletingAProgram_clearsItsAutoSwitch() = runTest {
+        // B475: deleting is not a consent to keep adjusting, and a document that un-hides the row
+        // must not bring the write authorization back.
+        val program = create("Upper/Lower")
+        database.programDao().setAutoProgression(program, true, now.toEpochMilli())
+
+        repository.deleteProgram(program)
+
+        assertFalse(
+            "the hidden row keeps no switch",
+            database.programBackupDao().allPrograms().single { it.id == program }.autoProgression,
+        )
+    }
+
+    @Test
+    fun restoringVisibility_clearsTheAutoSwitchTheDeviceKept() = runTest {
+        // B475: an older build could leave a hidden row with the switch on. A document merge only
+        // un-hides, so that write is where it must be cleared.
+        val program = create("Upper/Lower")
+        val live = database.programBackupDao().allPrograms().single { it.id == program }
+        database.programBackupDao().restorePrograms(
+            listOf(live.copy(deletedAt = now.toEpochMilli(), autoProgression = true)),
+        )
+
+        database.programBackupDao().restoreProgramVisibility(program, now.toEpochMilli())
+
+        assertFalse(
+            "a restored program starts manual",
+            database.programDao().findProgram(program)!!.autoProgression,
+        )
+    }
+
+    @Test
     fun deletingTheActiveProgram_leavesNoneActive() = runTest {
         val program = create("Upper/Lower")
         repository.activateProgram(program)

@@ -70,11 +70,15 @@ interface ProgramBackupDao {
      * name, the position and the follow state stay the device's. Deleting cleared `isActive`, and a
      * restore that wrote the document's row back could re-follow a program that was set down on
      * purpose — the reasons the backup's row-by-row restore is not reused here.
+     *
+     * The auto switch is cleared for the same reason (B475): deleting a program is not a consent to
+     * keep adjusting its plans, and a restored row the editor can no longer offer the switch for must
+     * not write.
      */
     @Query(
         """
         UPDATE programs
-        SET deletedAt = NULL, updatedAt = :at
+        SET deletedAt = NULL, autoProgression = 0, updatedAt = :at
         WHERE id = :id AND deletedAt IS NOT NULL
         """,
     )

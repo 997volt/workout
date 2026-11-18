@@ -35,6 +35,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   pre-write plan and both launched the write, so the loser of the race was refused by the repository
   with a caller-level sentence — or the finish's success cleared it before it was drawn. The finish is
   now in flight per exercise, and a second tap waits for the first.
+- **A program that leaves the weekly shape cannot keep its auto switch** (B475). Converting a weekly
+  program to a block left the flag on while the editor hid the switch, and turning it back into a
+  weekly program silently resumed writes; deleting a program also kept the flag, which a document
+  restore could bring back. The switch is cleared on the conversion, the delete and the document
+  restore, and a backup importing a block drops a flag the resolver ignores.
 
 ## [2.31] — 2026-11-17 (versionCode 52)
 

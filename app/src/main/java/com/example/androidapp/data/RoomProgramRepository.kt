@@ -133,6 +133,9 @@ class RoomProgramRepository @Inject constructor(
             database.withTransaction {
                 val updated = dao.setProgramKind(id = programId, kind = kind, at = now)
                 if (updated == 0) throw NotFoundException("program $programId")
+                // A block is never offered the switch (N303), so a weekly program that becomes one
+                // cannot keep a flag the editor can no longer show and the resolver ignores (B475).
+                if (kind == ProgramKind.SEQUENCE) dao.setAutoProgression(programId, enabled = false, at = now)
                 // A block needs a beginning, and the toggle is where one is chosen (B196): without a
                 // date the start falls back to the program's creation, which for a program that has
                 // been trained for months would make the block arrive already under way.

@@ -366,11 +366,15 @@ interface ProgramDao {
      * Clearing [ProgramEntity.isActive] here matters: a deleted program that stayed
      * active would make "no program is active" false while the home screen, which only
      * reads live rows, showed nothing.
+     *
+     * Clearing [ProgramEntity.autoProgression] matters for the same reason (B475): a switch the editor
+     * can no longer show must not write if a document brings the row back, and deleting a program is
+     * not a consent to keep adjusting its plans.
      */
     @Query(
         """
         UPDATE programs
-        SET deletedAt = :at, isActive = 0, updatedAt = :at
+        SET deletedAt = :at, isActive = 0, autoProgression = 0, updatedAt = :at
         WHERE id = :id AND deletedAt IS NULL
         """,
     )

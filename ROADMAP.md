@@ -54,21 +54,6 @@ the write apart for the same reason.
 
 ### The rest of the review
 
-- **B475 — A program's auto switch can survive in a shape the editor cannot show.** A weekly program
-  converted to a block keeps `autoProgression = 1` in its row —
-  [RoomProgramRepository.setProgramKind](app/src/main/java/com/example/androidapp/data/RoomProgramRepository.kt)
-  writes only the kind — while the overflow entry that opens the switch is hidden for a sequence
-  ([ProgramEditorScreen.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramEditorScreen.kt)).
-  The resolver ignores it because the kind is no longer weekly (N303), and converting back to weekly
-  silently re-arms a switch the lifter has not seen since before the conversion. A block restored from a
-  backup can arrive with the flag on and has no way to turn it off, because the backup restores the whole
-  program row. Deleting a program has the same gap: `softDeleteProgram` clears `isActive` but not
-  `autoProgression` ([ProgramDao.kt](app/src/main/java/com/example/androidapp/data/local/ProgramDao.kt)),
-  and a program document that un-hides the row restores the device's flag, so the row writes again
-  without a new consent. Fixed means the switch is cleared when the program leaves the weekly shape or is
-  deleted (the same reason `isActive` is cleared), and a restored or converted row cannot carry a flag
-  the resolver ignores; the document path must not re-arm it.
-
 - **B476 — Reset writes more than "every planned set in this program".** `resetToBaseline` reads the
   program's baseline rows and rewrites every live set they name
   ([RoomProgressionRepository.kt](app/src/main/java/com/example/androidapp/data/RoomProgressionRepository.kt)),
@@ -97,11 +82,10 @@ the write apart for the same reason.
 
 - **N325 — The auto progression seams that let these through are uncovered.** No test asserts the
   banner's plural message for a batch of two steps (the per-step writes and batch undo now have tests),
-  a reset after a schedule change or over a shared plan (B476), the switch across a kind change or a
-  delete/restore (B475), or a weekly program with the switch on next to a block that names the same
-  template. The enablement text and the baseline line have screen tests only for their presence. Fixed
-  means those cases are asserted, and B471's historical plan is pinned at whichever level the decision
-  puts it.
+  a reset after a schedule change or over a shared plan (B476), or a weekly program with the switch on
+  next to a block that names the same template. The enablement text and the baseline line have screen
+  tests only for their presence. Fixed means those cases are asserted, and B471's historical plan is
+  pinned at whichever level the decision puts it.
 
 - **N326 — Which sessions count as the program's?** N299 resolves a session to a program through its
   **template**, so the switch applies to (a) a weekly program's workout started from the library when

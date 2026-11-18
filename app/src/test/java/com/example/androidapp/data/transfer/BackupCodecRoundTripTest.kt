@@ -25,6 +25,7 @@ import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.MeasurementKind
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.Side
 import com.google.common.truth.Truth.assertThat
@@ -313,6 +314,22 @@ class BackupCodecRoundTripTest {
         )
 
         assertThat(entity.toDto().toEntity()).isEqualTo(entity)
+    }
+
+    @Test
+    fun aBlocksAutoSwitch_isDroppedOnRestore() {
+        // B475: a block is never offered the switch, so a file written before the rule cannot arm one
+        // the editor has no control for. A weekly program's switch still travels (the test above).
+        val dto = ProgramDto(
+            id = "p1",
+            name = "Base block",
+            kind = ProgramKind.SEQUENCE,
+            autoProgression = true,
+            createdAt = 1_600_000_000_000L,
+            updatedAt = 1_600_000_000_001L,
+        )
+
+        assertThat(dto.toEntity().autoProgression).isFalse()
     }
 
     @Test
