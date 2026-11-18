@@ -193,10 +193,11 @@ private fun energyStatement(series: MetricSeries?, weightGoal: WeightGoal?, rate
         adjustment == null -> stringResource(R.string.statistics_energy_waiting)
         adjustment.isOnTarget -> stringResource(R.string.statistics_energy_on_target)
         else -> stringResource(
-            if (adjustment.eatsMore) {
-                R.string.statistics_energy_more
-            } else {
-                R.string.statistics_energy_less
+            when {
+                adjustment.capped && adjustment.eatsMore -> R.string.statistics_energy_more_beyond
+                adjustment.capped -> R.string.statistics_energy_less_beyond
+                adjustment.eatsMore -> R.string.statistics_energy_more
+                else -> R.string.statistics_energy_less
             },
             adjustmentBandText(adjustment.magnitude),
         )

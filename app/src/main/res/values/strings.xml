@@ -608,6 +608,9 @@
     <string name="statistics_energy_needs_weigh_in">Needs a weigh-in</string>
     <string name="statistics_energy_less">About %1$s kcal a day less than you are eating now</string>
     <string name="statistics_energy_more">About %1$s kcal a day more than you are eating now</string>
+    <!-- A gap larger than a week's pace (B482): the figure is a floor, not an estimate. -->
+    <string name="statistics_energy_less_beyond">More than %1$s kcal a day less than you are eating now</string>
+    <string name="statistics_energy_more_beyond">More than %1$s kcal a day more than you are eating now</string>
     <string name="statistics_energy_on_target">Your trend is where you asked it to be</string>
     <string name="statistics_energy_waiting">Not enough weigh-ins yet</string>
     <string name="statistics_energy_note">From your weight trend, not from what you eat. This app keeps no food data, and the number to eat is yours to set where you log it.</string>

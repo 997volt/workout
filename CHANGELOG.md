@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A large maintenance gap is a lower bound, not a daily number** (B482). The corridor arithmetic quoted a
+  multi-kilogram gap at a week's pace, so 10 kg outside the corridor read as 11,000 kcal a day. Figures
+  beyond 1,500 kcal a day are now capped and the sentence says "More than", on both the statistics section
+  and the weigh-in prompt; the 1.2 kg case (1,320) is unchanged.
 - **A weight goal must be a weight** (B481). Zero was a valid parse in the goal editor and a valid
   non-negative value in the store and the backup; a 0 kg target is a goal years away, and a 0 kg
   maintenance corridor made the kcal sentence quote tens of thousands of calories. The editor, the

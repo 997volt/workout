@@ -118,6 +118,15 @@ internal fun ShowRateVerdict(
 @Composable
 internal fun adjustmentText(adjustment: EnergyAdjustment): String = when {
     adjustment.isOnTarget -> stringResource(R.string.statistics_energy_on_target)
+    adjustment.capped -> stringResource(
+        if (adjustment.eatsMore) {
+            R.string.statistics_energy_more_beyond
+        } else {
+            R.string.statistics_energy_less_beyond
+        },
+        adjustmentBandText(adjustment.magnitude),
+    )
+
     adjustment.eatsMore ->
         stringResource(R.string.statistics_energy_more, adjustmentBandText(adjustment.magnitude))
 

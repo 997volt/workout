@@ -799,6 +799,18 @@ class MeasurementsScreenTest {
     }
 
     @Test
+    fun aCappedWeighIn_saysMoreThan_ratherThanAnImpossibleNumber() {
+        // B482: the corridor quote is capped; the prompt says "more than" instead of pretending 43,000 is
+        // a daily change.
+        setScreen(rateVerdict = EnergyAdjustment(-1_500, -1_500, capped = true))
+
+        composeTestRule.onNodeWithText(
+            ApplicationProvider.getApplicationContext<Context>()
+                .getString(R.string.statistics_energy_less_beyond, "1500"),
+        ).assertExists()
+    }
+
+    @Test
     fun anOnTargetWeighIn_saysSo() {
         setScreen(rateVerdict = EnergyAdjustment(lowKcal = -40, highKcal = 30))
 

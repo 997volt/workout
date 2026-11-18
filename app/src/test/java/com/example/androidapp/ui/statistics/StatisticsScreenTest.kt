@@ -1326,6 +1326,21 @@ class StatisticsScreenTest {
     }
 
     @Test
+    fun aMaintenanceGapBeyondTheCap_saysMoreThan_ratherThanAWeekNumber() {
+        // B482: the section and the weigh-in prompt share one wording; this is the statistics half.
+        val heavy = (0L..7L).map { week ->
+            MetricReading(Instant.parse("2026-01-01T08:00:00Z").plus(Duration.ofDays(week * 7)), 120_000.0)
+        }
+        setScreen(
+            state = stateWithGoal(WeightGoal.Maintain(80_000L)).copy(goalReadings = heavy),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_STATEMENT).assertTextEquals(
+            "More than 1500 kcal a day less than you are eating now",
+        )
+    }
+
+    @Test
     fun aMaintenanceGoal_belowTheFloor_saysWaiting_ratherThanQuotingANumber() {
         // B480: the default two weigh-ins are below N98's floor; the corridor branch used to quote a figure
         // from them while the rate branch and the weigh-in prompt both refused.

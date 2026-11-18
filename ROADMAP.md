@@ -29,13 +29,6 @@ they cost.
 
 ### Before 2.32
 
-- **B482 — A large maintenance gap is quoted as one week's calorie change.**
-  `energyAdjustmentToCorridor` multiplies the whole gap by the same 1.1 kcal a day per gram a week (B335).
-  1.2 kg outside the corridor is 1,320 kcal — the test currently asserts that — and 10 kg is 11,000, in a
-  sentence that says "about X kcal a day less than you are eating now". The rate branch cannot reach those
-  figures because the band bounds the target rate; the corridor branch has no bound and no second pace to
-  say "this is more than a week's change". Fixed means the sentence stays useful for a multi-kilogram gap —
-  a cap, a different wording that names the longer horizon, or both — with a test for the large gap.
 - **B483 — The goal still in force is reported as "Missed".** `goalOutcomes` runs the last period to the end
   of the series and gives it the same Met/Missed verdict as a closed one;
   [GoalRow.kt](app/src/main/java/com/example/androidapp/ui/statistics/GoalRow.kt)'s history lists that open

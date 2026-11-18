@@ -163,6 +163,18 @@ class EnergyAdjustmentTest {
     }
 
     @Test
+    fun aCorridorGapBeyondTheCap_isALowerBound_ratherThanAWeekNumber() {
+        // B482: 120 kg against an 80 kg corridor is 39 kg outside it, 42,900 kcal at a week's pace. The
+        // sentence must not print that as a daily change; it says "more than" the cap instead.
+        val huge = series(*(0L..7L).map { week -> (week * 7) to 120_000.0 }.toTypedArray())
+            .energyAdjustmentToCorridor(targetGrams = 80_000.0)!!
+
+        assertThat(huge.capped).isTrue()
+        assertThat(huge.eatsMore).isFalse()
+        assertThat(huge.magnitude).isEqualTo(EnergyAdjustment.MAX_KCAL..EnergyAdjustment.MAX_KCAL)
+    }
+
+    @Test
     fun aCorridorWithNothingWeighed_isSilent() {
         assertThat(series(0L to null).energyAdjustmentToCorridor(targetGrams = 80_000.0)).isNull()
     }

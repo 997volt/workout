@@ -21,7 +21,17 @@ import kotlin.math.roundToInt
  *
  * [lowKcal] and [highKcal] are signed: negative is *eat less*, positive is *eat more*.
  */
-data class EnergyAdjustment(val lowKcal: Int, val highKcal: Int) {
+data class EnergyAdjustment(
+    val lowKcal: Int,
+    val highKcal: Int,
+    /**
+     * True when the real figure is beyond [MAX_KCAL] and this is a lower bound, not a week's estimate (B482).
+     *
+     * The corridor branch quotes a level gap at a week's pace; a multi-kilogram gap at that pace is not a
+     * daily change anybody makes, so the sentence says "more than" the cap rather than a number it cannot mean.
+     */
+    val capped: Boolean = false,
+) {
 
     /** The trend is already inside the target, so nothing needs to change. */
     val isOnTarget: Boolean get() = lowKcal <= 0 && highKcal >= 0
@@ -32,6 +42,22 @@ data class EnergyAdjustment(val lowKcal: Int, val highKcal: Int) {
     /** The band as an ordered magnitude, for the sentence — a range, never a point estimate. */
     val magnitude: IntRange
         get() = minOf(abs(lowKcal), abs(highKcal))..maxOf(abs(lowKcal), abs(highKcal))
+
+    companion object {
+        /** The largest daily change the sentence will name; beyond it the figure becomes a lower bound. */
+        const val MAX_KCAL = 1_500
+
+        /** The corridor's signed gap bounded to [MAX_KCAL], flagged when the real gap was larger. */
+        fun atMost(kcal: Int): EnergyAdjustment {
+            val capped = kcal > MAX_KCAL || kcal < -MAX_KCAL
+            val value = when {
+                kcal > MAX_KCAL -> MAX_KCAL
+                kcal < -MAX_KCAL -> -MAX_KCAL
+                else -> kcal
+            }
+            return EnergyAdjustment(value, value, capped = capped)
+        }
+    }
 }
 
 /**
@@ -169,7 +195,7 @@ fun MetricSeries.energyAdjustmentToCorridor(
     }
     // One conversion for both branches: the gap is a mass, and quoting it per day needs the week's pace (B335).
     val kcal = (gapGrams * KCAL_PER_GRAM_PER_WEEK).roundToInt()
-    return EnergyAdjustment(lowKcal = kcal, highKcal = kcal)
+    return EnergyAdjustment.atMost(kcal)
 }
 
 /**
