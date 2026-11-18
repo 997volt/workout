@@ -341,6 +341,9 @@ class ActiveWorkoutViewModel @Inject constructor(
     /** Moments waiting behind the one on screen, oldest first (B402). Main-thread only. */
     private val queuedAutoSteps = ArrayDeque<AutoProgressionMoment>()
 
+    /** True while the banner's undo is running, so a second tap cannot run the batch twice (B473). */
+    private var autoUndoInFlight = false
+
     /** Emits true once a finish or discard succeeds, so the screen can leave. */
     private val _closed = MutableStateFlow(false)
     val closed: StateFlow<Boolean> = _closed
@@ -740,29 +743,49 @@ class ActiveWorkoutViewModel @Inject constructor(
         }
     }
 
-    /** The banner was read or undone, so the next write's news takes its place (B402). */
-    private fun advanceAutoStep() {
+    /**
+     * The banner was read or undone, so the next write's news takes its place (B402).
+     *
+     * [moment] is the banner the action was for. A slow undo that finishes after another action has
+     * already advanced must not advance again and pop the moment now on screen (B473).
+     */
+    private fun advanceAutoStep(moment: AutoProgressionMoment) {
+        if (_autoStep.value !== moment) return
         _autoStep.value = queuedAutoSteps.removeFirstOrNull()
     }
 
-    /** Takes back the auto steps the banner names, newest first (ROADMAP N299). */
+    /**
+     * Takes back the auto steps the banner names, newest first (ROADMAP N299).
+     *
+     * **Every step is attempted** (B473): one refusal because the plan changed must not strand the
+     * older writes whose targets still match, and the first refusal is what the lifter is told. The
+     * guard is the same rule for a second tap over a slow undo — one batch is one action.
+     */
     fun onUndoAutoStep() {
+        if (autoUndoInFlight) return
         val moment = _autoStep.value ?: return
+        autoUndoInFlight = true
         viewModelScope.launch {
-            var failure: DataError? = null
-            moment.steps.asReversed().forEach { step ->
-                if (failure == null) {
-                    failure = (progressionRepository.undo(step.writeId) as? DataResult.Failure)?.error
+            try {
+                var failure: DataError? = null
+                moment.steps.asReversed().forEach { step ->
+                    val result = progressionRepository.undo(step.writeId)
+                    if (result is DataResult.Failure && failure == null) failure = result.error
                 }
+                advanceAutoStep(moment)
+                if (failure != null) lastError.value = failure
+            } finally {
+                autoUndoInFlight = false
             }
-            advanceAutoStep()
-            if (failure != null) lastError.value = failure
         }
     }
 
     /** The banner has been read, so it is not shown again (ROADMAP N299). */
     fun onDismissAutoStep() {
-        advanceAutoStep()
+        // A tap while the undo is writing is not a second read of the same news (B473).
+        if (autoUndoInFlight) return
+        val moment = _autoStep.value ?: return
+        advanceAutoStep(moment)
     }
 
     /**

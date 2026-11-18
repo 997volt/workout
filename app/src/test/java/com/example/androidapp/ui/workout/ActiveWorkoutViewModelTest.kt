@@ -63,6 +63,7 @@ import com.example.androidapp.ui.components.WriteOutcome
 import com.example.androidapp.ui.testing.FakeDeloadRepository
 import com.example.androidapp.ui.testing.FakeProgressionRepository
 import com.example.androidapp.ui.testing.FakeTrendsRepository
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -976,6 +977,89 @@ class ActiveWorkoutViewModelTest {
         assertEquals("and addressable by its write id", "w-1", moment?.steps?.single()?.writeId)
         assertFalse("the rest waits for a retry", viewModel.uiState.value.exercises.single().isFinished)
         assertTrue("the failure is still said", viewModel.uiState.value.error is DataError.Storage)
+    }
+
+    @Test
+    fun aRefusedAutoUndo_attemptsTheRestOfTheBatch_andSaysTheFirstFailure() = runTest(dispatcher) {
+        // B473: the reverse walk stopped at the first refusal, so an older step whose plan still
+        // matched was left applied while the banner — its only undo — advanced away.
+        val repository = FakeWorkoutRepository()
+        val templates = twoSetAnsweredPlan()
+        val progression = FakeProgressionRepository().apply { autoPrograms["t1"] = "p1" }
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = templates,
+            progression = progression,
+        )
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        val id = viewModel.uiState.value.exercises.single().id
+        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
+        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
+        viewModel.onFinishExercise(id)
+        settle()
+        assertEquals("the batch wrote both sets", 2, viewModel.autoStep.value?.steps?.size)
+
+        progression.undoFailureFor = setOf("w-2")
+        viewModel.onUndoAutoStep()
+        settle()
+
+        assertEquals("newest first, and the older step is still attempted", listOf("w-2", "w-1"), progression.undone)
+        assertNull("the batch is answered, so the banner goes", viewModel.autoStep.value)
+        assertTrue("the first refusal is said", viewModel.uiState.value.error is DataError.Storage)
+    }
+
+    @Test
+    fun aSecondUndoTap_doesNotRunTheBatchTwice_orSkipTheNextMoment() = runTest(dispatcher) {
+        // B473: two taps over a slow undo ran the batch twice; the second run advanced again and popped
+        // the next queued moment without showing it, making that batch un-undoable (B402's failure).
+        val repository = FakeWorkoutRepository()
+        val templates = twoAnsweredPlans()
+        val progression = FakeProgressionRepository().apply { autoPrograms["t1"] = "p1" }
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = templates,
+            progression = progression,
+        )
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        viewModel.onAddExercise("back-squat")
+        settle()
+        val rows = viewModel.uiState.value.exercises
+        rows.forEach { row ->
+            logAnsweredSet(
+                viewModel,
+                repository,
+                reps = 5,
+                weightGrams = 100_000L,
+                rpe = 7,
+                sessionExerciseId = row.id,
+            )
+        }
+        viewModel.onFinishExercise(rows[0].id)
+        settle()
+        viewModel.onFinishExercise(rows[1].id)
+        settle()
+        assertEquals("w-1", viewModel.autoStep.value?.steps?.single()?.writeId)
+
+        val gate = CompletableDeferred<Unit>()
+        progression.undoGate = gate
+        viewModel.onUndoAutoStep()
+        viewModel.onUndoAutoStep()
+        gate.complete(Unit)
+        settle()
+
+        assertEquals("one undo of the visible batch", listOf("w-1"), progression.undone)
+        assertEquals(
+            "the next batch is still what the banner shows",
+            "w-2",
+            viewModel.autoStep.value?.steps?.single()?.writeId,
+        )
     }
 
     @Test

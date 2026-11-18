@@ -52,20 +52,6 @@ the write apart for the same reason.
   rejecting it no longer holds. A write-log-only fix was rejected too: it would know the auto steps and
   not the manual ones, which is two rules for one fact.
 
-- **B473 — The banner's undo stops at the first refusal and can skip the next batch.** `onUndoAutoStep`
-  walks the batch newest-first but wraps each call in `if (failure == null)`
-  ([ActiveWorkoutViewModel.kt](app/src/main/java/com/example/androidapp/ui/workout/ActiveWorkoutViewModel.kt)),
-  so one "the plan has changed" refusal leaves the older steps applied while `advanceAutoStep` drops the
-  banner anyway. The undo is safe to attempt per write and the lifter asked for the whole batch, so every
-  step should be attempted with the first failure reported. The same method has no single-flight guard:
-  two taps over a slow undo run the batch twice, the second run advances again, and the next queued moment
-  is popped without being shown — which is the un-undoable batch B402 set out to prevent. Dismiss has the
-  same advance. Fixed means every step is attempted, the first failure is said, and an advance only
-  happens for the moment it was for (a guard or an identity check), with tests for the refused step and
-  the double tap.
-
-### The rest of the review
-
 - **B474 — A double *Done* launches two auto writes.** `onFinishExercise` hands the auto path to
   `viewModelScope.launch` with no in-flight guard
   ([ActiveWorkoutViewModel.kt](app/src/main/java/com/example/androidapp/ui/workout/ActiveWorkoutViewModel.kt)),
@@ -117,13 +103,13 @@ the write apart for the same reason.
 
 ### Coverage and one scope question
 
-- **N325 — The auto progression seams that let these through are uncovered.** No test presses *Done* on
-  an exercise that earned two steps (the banner's plural message, the per-step writes and the batch
-  undo), a refused or double undo (B473), a double *Done* (B474), a reset after a schedule change or over
-  a shared plan (B476), the switch across a kind change or a delete/restore (B475), or a weekly program
-  with the switch on next to a block that names the same template. The enablement text and the baseline
-  line have screen tests only for their presence. Fixed means those cases are asserted, and B471's
-  historical plan is pinned at whichever level the decision puts it.
+- **N325 — The auto progression seams that let these through are uncovered.** No test asserts the
+  banner's plural message for a batch of two steps (the per-step writes and batch undo now have tests),
+  a double *Done* (B474), a reset after a schedule change or over a shared plan (B476), the switch across
+  a kind change or a delete/restore (B475), or a weekly program with the switch on next to a block that
+  names the same template. The enablement text and the baseline line have screen tests only for their
+  presence. Fixed means those cases are asserted, and B471's historical plan is pinned at whichever level
+  the decision puts it.
 
 - **N326 — Which sessions count as the program's?** N299 resolves a session to a program through its
   **template**, so the switch applies to (a) a weekly program's workout started from the library when

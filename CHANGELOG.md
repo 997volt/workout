@@ -26,6 +26,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   steps that had already landed were returned from before the banner that reads them back, so the plan
   carried writes with no way to undo them. The landed steps are now shown with their undo before the
   failure is said; the exercise still stays open for the rest.
+- **The auto progression banner's undo is one batch, and every step is tried** (B473). A refusal from
+  one step stopped the reverse walk while the banner advanced away, stranding the older steps whose
+  plans still matched; two taps over a slow undo ran the batch twice and could skip the next batch's
+  banner. Every step is attempted, the first failure is said, the undo is single-flight, and the banner
+  only advances for the moment it was shown for.
 
 ## [2.31] — 2026-11-17 (versionCode 52)
 

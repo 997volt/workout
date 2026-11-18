@@ -751,6 +751,12 @@ internal class FakeProgressionRepository : ProgressionRepository {
     var resetResult: DataResult<Int> = DataResult.Success(0)
     var undoResult: DataResult<Unit> = DataResult.Success(Unit)
 
+    /** Write ids whose undo is refused, for the batch's partial path (B473). */
+    var undoFailureFor: Set<String> = emptySet()
+
+    /** Held to make a second Undo tap overlap the first (B473); null completes immediately. */
+    var undoGate: kotlinx.coroutines.CompletableDeferred<Unit>? = null
+
     val toggles = mutableListOf<Pair<String, Boolean>>()
     val undone = mutableListOf<String>()
     var resets = 0
@@ -773,6 +779,11 @@ internal class FakeProgressionRepository : ProgressionRepository {
 
     override suspend fun undo(writeId: String): DataResult<Unit> {
         undone += writeId
-        return undoResult
+        undoGate?.await()
+        return if (writeId in undoFailureFor) {
+            DataResult.Failure(DataError.Storage(java.io.IOException("locked")))
+        } else {
+            undoResult
+        }
     }
 }
