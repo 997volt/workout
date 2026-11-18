@@ -6,6 +6,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -90,6 +91,28 @@ class ProgressionMigrationTest {
             cursor.moveToFirst()
             assertEquals(100_000L, cursor.getLong(0))
             assertEquals(8, cursor.getInt(1))
+        }
+    }
+
+    @Test
+    fun thePlanSnapshotTable_isCreatedAt26() = runTest {
+        // B471: the snapshot starts empty on every existing install; there is no prescription the
+        // app could invent for sessions trained before it existed.
+        val db = database.openHelper.writableDatabase
+        db.execSQL("DROP TABLE session_plan_sets")
+
+        MIGRATION_25_26.migrate(db)
+
+        db.query(
+            "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'session_plan_sets'",
+        ).use { cursor ->
+            assertTrue("the table is back", cursor.moveToFirst())
+        }
+        db.query(
+            "SELECT name FROM sqlite_master WHERE type = 'index' " +
+                "AND name = 'index_session_plan_sets_sessionExerciseId'",
+        ).use { cursor ->
+            assertTrue("and its foreign-key index", cursor.moveToFirst())
         }
     }
 }

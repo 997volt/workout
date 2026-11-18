@@ -62,6 +62,7 @@ interface TemplateSetDao {
     )
     fun observeTemplateSets(templateId: String): Flow<List<TemplateSetEntity>>
 
+    /** One live planned set by id. */
     @Query("SELECT * FROM template_sets WHERE id = :id AND deletedAt IS NULL")
     suspend fun findTemplateSet(id: String): TemplateSetEntity?
 

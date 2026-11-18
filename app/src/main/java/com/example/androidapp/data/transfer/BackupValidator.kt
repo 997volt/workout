@@ -39,6 +39,7 @@ internal object BackupValidator {
         validateSessions(file.sessions, this)
         validateSessionExercises(file.sessionExercises, this, strict)
         validateSets(file.sets, this, strict)
+        validateSessionPlanSets(file, this, strict)
         validateRatings(file, this)
         validateMeasurements(file, this, strict)
         validateGoals(file, this)
@@ -168,6 +169,82 @@ internal object BackupValidator {
             if (row.durationSeconds < 1 || (strict && row.durationSeconds > MAX_SET_SECONDS)) {
                 out += BackupProblem(where, "A hold must be between 1 second and a day.")
             }
+        }
+    }
+
+    /**
+     * The plan each session exercise started under (ROADMAP B471).
+     *
+     * This is what the stall and volume rules read, so a bad target here is a bad judgement later.
+     * The parent must be in the file: the import's foreign key says so, and a snapshot for a session
+     * exercise the file does not carry could not be restored anyway.
+     */
+    private fun validateSessionPlanSets(
+        file: BackupFile,
+        out: MutableList<BackupProblem>,
+        strict: Boolean,
+    ) {
+        val sessionExerciseIds = file.sessionExercises.mapTo(mutableSetOf()) { it.id }
+        file.sessionPlanSets.forEachIndexed { index, row ->
+            val where = "Session plan set ${index + 1}"
+            row.sessionExerciseId.required(out, where)
+            if (row.sessionExerciseId !in sessionExerciseIds) {
+                out += BackupProblem(where, "The session exercise is not in this file.")
+            }
+            if (row.setIndex < 0) out += BackupProblem(where, "A set index cannot be negative.")
+            row.targetWeightGrams?.load(out, where, strict)
+            row.targetAssistanceGrams?.load(out, where, strict)
+            validatePlanTerms(row, where, out, strict)
+        }
+    }
+
+    private fun validatePlanTerms(
+        row: SessionPlanSetDto,
+        where: String,
+        out: MutableList<BackupProblem>,
+        strict: Boolean,
+    ) {
+        validatePlanReps(row, where, out, strict)
+        validatePlanHold(row, where, out, strict)
+        row.targetRpeHalves?.let {
+            if (!Rpe.isValid(it)) out += BackupProblem(where, "RPE must be between 1 and 10 in half steps.")
+        }
+    }
+
+    private fun validatePlanReps(
+        row: SessionPlanSetDto,
+        where: String,
+        out: MutableList<BackupProblem>,
+        strict: Boolean,
+    ) {
+        listOfNotNull(row.targetRepsMin, row.targetRepsMax, row.targetRepsCurrent).forEach {
+            if (it < 1 || (strict && it > MAX_REPS)) {
+                out += BackupProblem(where, "Prescribed reps must be between 1 and $MAX_REPS.")
+            }
+        }
+        val min = row.targetRepsMin
+        val max = row.targetRepsMax
+        if (min != null && max != null && min > max) {
+            out += BackupProblem(where, "A rep range cannot end below its start.")
+        }
+        row.targetRepsCurrent?.let { current ->
+            if (min != null && current < min) out += BackupProblem(where, "The current rep is below its range.")
+            if (max != null && current > max) out += BackupProblem(where, "The current rep is above its range.")
+        }
+    }
+
+    private fun validatePlanHold(
+        row: SessionPlanSetDto,
+        where: String,
+        out: MutableList<BackupProblem>,
+        strict: Boolean,
+    ) {
+        val duration = row.targetDurationSeconds ?: return
+        if (duration < 1 || (strict && duration > MAX_SET_SECONDS)) {
+            out += BackupProblem(where, "A hold must be between 1 second and a day.")
+        }
+        if (row.targetRepsMin != null || row.targetRepsMax != null || row.targetRepsCurrent != null) {
+            out += BackupProblem(where, "A prescribed set cannot state reps and a hold together.")
         }
     }
 

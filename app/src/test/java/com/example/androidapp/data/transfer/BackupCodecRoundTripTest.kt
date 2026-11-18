@@ -14,6 +14,7 @@ import com.example.androidapp.data.local.ProgressionBaselineEntity
 import com.example.androidapp.data.local.ProgressionWriteEntity
 import com.example.androidapp.data.local.SessionExerciseEntity
 import com.example.androidapp.data.local.SessionExerciseJointEntity
+import com.example.androidapp.data.local.SessionPlanSetEntity
 import com.example.androidapp.data.local.SessionSoreMuscleEntity
 import com.example.androidapp.data.local.SetEntryEntity
 import com.example.androidapp.data.local.TemplateEntity
@@ -167,6 +168,26 @@ class BackupCodecRoundTripTest {
             createdAt = 1_600_000_000_000L,
             updatedAt = 1_600_000_000_001L,
             deletedAt = null,
+        )
+
+        assertThat(entity.toDto().toEntity()).isEqualTo(entity)
+    }
+
+    @Test
+    fun aSessionPlanSet_survivesTheCodec() {
+        // B471: the prescription travels with the session. A dropped field here would make a
+        // restored session be judged against a different plan than the one it was trained under.
+        val entity = SessionPlanSetEntity(
+            sessionExerciseId = "se1",
+            setIndex = 2,
+            role = SetType.TOP_SET,
+            targetWeightGrams = 102_500L,
+            targetAssistanceGrams = 20_000L,
+            targetRepsMin = 5,
+            targetRepsMax = 10,
+            targetRepsCurrent = 7,
+            targetDurationSeconds = null,
+            targetRpeHalves = 16,
         )
 
         assertThat(entity.toDto().toEntity()).isEqualTo(entity)

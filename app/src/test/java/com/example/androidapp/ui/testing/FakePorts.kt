@@ -718,6 +718,21 @@ internal class FakeTrendsRepository : com.example.androidapp.domain.repository.T
         limit: Int,
     ): DataResult<List<TemplateSession>> =
         sessionsByTemplate[templateId] ?: templateSessions ?: unused()
+
+    /** The prescription each session exercise started under, for the rules that read history (B471). */
+    var prescriptions: Map<String, List<com.example.androidapp.domain.model.ProgressionPlanSet>> = emptyMap()
+
+    /** Every prescription read's ids, so a test can assert which sessions were asked about. */
+    val prescriptionReads = mutableListOf<List<String>>()
+
+    override suspend fun prescriptions(
+        sessionExerciseIds: List<String>,
+    ): DataResult<Map<String, List<com.example.androidapp.domain.model.ProgressionPlanSet>>> {
+        prescriptionReads += sessionExerciseIds
+        return DataResult.Success(
+            sessionExerciseIds.mapNotNull { id -> prescriptions[id]?.let { id to it } }.toMap(),
+        )
+    }
 }
 
 /** The document port, proving a write without a content resolver. */

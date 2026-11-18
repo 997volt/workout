@@ -4,6 +4,7 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.data.local.ExerciseEntity
+import com.example.androidapp.data.local.SessionPlanSetEntity
 import com.example.androidapp.data.local.SetEntryEntity
 import com.example.androidapp.data.local.SessionExerciseEntity
 import com.example.androidapp.data.local.SessionExerciseJointEntity
@@ -55,6 +56,37 @@ class RoomTrendsRepositoryTest {
     @After
     fun tearDown() {
         database.close()
+    }
+
+    @Test
+    fun thePrescription_isReadBySessionExercise() = runTest {
+        // B471: the rule reads the plan the session started under, so the read has to come back
+        // keyed by the session exercise and in the plan's own order.
+        seedSession("s1", startedAt = 1_000L, rpeHalves = listOf(16))
+        database.sessionPlanSetDao().insertAll(
+            listOf(
+                SessionPlanSetEntity(
+                    sessionExerciseId = "s1-se",
+                    setIndex = 0,
+                    role = SetType.NORMAL,
+                    targetWeightGrams = 100_000L,
+                    targetAssistanceGrams = null,
+                    targetRepsMin = 5,
+                    targetRepsMax = 10,
+                    targetRepsCurrent = 7,
+                    targetDurationSeconds = null,
+                    targetRpeHalves = 16,
+                ),
+            ),
+        )
+
+        val plans = (repository.prescriptions(listOf("s1-se")) as DataResult.Success).data
+
+        val plan = plans.getValue("s1-se").single()
+        assertEquals(100_000L, plan.targetWeightGrams)
+        assertEquals(7, plan.targetRepsCurrent)
+        assertEquals(10, plan.targetRepsMax)
+        assertEquals(16, plan.targetRpeHalves)
     }
 
     @Test

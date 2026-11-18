@@ -114,13 +114,14 @@ import androidx.room.TypeConverters
         ProgramSubstitutionEntity::class,
         ProgressionWriteEntity::class,
         ProgressionBaselineEntity::class,
+        SessionPlanSetEntity::class,
         SessionSoreMuscleEntity::class,
         SessionExerciseJointEntity::class,
         MeasurementSoreMuscleEntity::class,
         MetricGoalEntity::class,
         RetiredMovementEntity::class,
     ],
-    version = 25,
+    version = 26,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -153,6 +154,9 @@ abstract class WorkoutDatabase : RoomDatabase() {
 
     /** The write log and baselines auto progression keeps (ROADMAP N299). */
     abstract fun progressionDao(): ProgressionDao
+
+    /** The plan each session exercise started under (ROADMAP B471). */
+    abstract fun sessionPlanSetDao(): SessionPlanSetDao
 
     /** The writes a duplicate merge makes, and the ids it retired (ROADMAP N238). */
     abstract fun movementMergeDao(): MovementMergeDao

@@ -277,6 +277,28 @@ interface TemplateDao {
     suspend fun findPlannedExercises(templateId: String): List<PlannedExercise>
 
     /**
+     * The plan's live exercises with the ids and effort a **session snapshot** needs (ROADMAP B471).
+     *
+     * The same library join as [findPlannedExercises] (B156), plus the template exercise's own id and
+     * target effort. Seeding uses this one so the session row and its prescription come from one
+     * ordered read rather than two that could disagree about a removed movement.
+     */
+    @Query(
+        """
+        SELECT te.id AS templateExerciseId, te.exerciseId AS exerciseId,
+               te.restSeconds AS restSeconds, te.techniqueNote AS techniqueNote,
+               te.supersetGroup AS supersetGroup, te.targetRpeHalves AS targetRpeHalves
+        FROM template_exercises te
+        JOIN exercises e ON e.id = te.exerciseId
+        WHERE te.templateId = :templateId
+          AND te.deletedAt IS NULL
+          AND e.deletedAt IS NULL
+        ORDER BY te.position ASC
+        """,
+    )
+    suspend fun findSeededPlanExercises(templateId: String): List<SeededPlanExercise>
+
+    /**
      * A plan's exercise rows, raw and in order (ROADMAP N47).
      *
      * The entity rather than [PlannedExercise]: a program document carries every column, and the
@@ -313,6 +335,17 @@ interface TemplateDao {
         val techniqueNote: String?,
         /** The superset this exercise is planned in, or null (ROADMAP N24, B16). */
         val supersetGroup: Int?,
+    )
+
+    /** One exercise of a plan, as seeding and its plan snapshot need it (ROADMAP B471). */
+    @Suppress("LongParameterList")
+    data class SeededPlanExercise(
+        val templateExerciseId: String,
+        val exerciseId: String,
+        val restSeconds: Int?,
+        val techniqueNote: String?,
+        val supersetGroup: Int?,
+        val targetRpeHalves: Int?,
     )
 
     /** Writes a template exercise's prescribed rest, cue and target effort (ROADMAP N14, N59). */

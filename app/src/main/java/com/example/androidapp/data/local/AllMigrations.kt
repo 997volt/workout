@@ -38,4 +38,5 @@ internal val ALL_MIGRATIONS: List<Migration> = listOf(
     MIGRATION_22_23,
     MIGRATION_23_24,
     MIGRATION_24_25,
+    MIGRATION_25_26,
 )

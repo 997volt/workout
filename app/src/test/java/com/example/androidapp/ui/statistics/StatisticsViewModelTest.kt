@@ -1160,6 +1160,12 @@ private class FakeTrendsRepository(
         limit: Int,
     ): DataResult<List<TemplateSession>> = DataResult.Success(emptyList())
 
+    /** The session prescriptions (B471); this screen never asks for them either. */
+    override suspend fun prescriptions(
+        sessionExerciseIds: List<String>,
+    ): DataResult<Map<String, List<com.example.androidapp.domain.model.ProgressionPlanSet>>> =
+        DataResult.Success(emptyMap())
+
     override fun observeExerciseTrends(
         exerciseIds: List<String>,
         limit: Int,

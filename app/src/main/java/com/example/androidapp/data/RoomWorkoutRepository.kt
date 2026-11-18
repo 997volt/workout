@@ -4,7 +4,10 @@ import androidx.room.withTransaction
 import com.example.androidapp.data.local.ExerciseTrendRowEntity
 import com.example.androidapp.data.local.SessionExerciseEntity
 import com.example.androidapp.data.local.SessionExerciseJointEntity
+import com.example.androidapp.data.local.SessionPlanSetDao
+import com.example.androidapp.data.local.SessionPlanSetEntity
 import com.example.androidapp.data.local.SetEntryEntity
+import com.example.androidapp.data.local.TemplateSetEntity
 import com.example.androidapp.data.local.WorkoutDao
 import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.data.local.encodedDirections
@@ -75,6 +78,12 @@ class RoomWorkoutRepository @Inject constructor(
     /** Read only when a workout is started from a template (ROADMAP N3). */
     private val templateDao = database.templateDao()
 
+    /** The plan's sets, for the prescription a seeded session writes (ROADMAP B471). */
+    private val templateSetDao = database.templateSetDao()
+
+    /** The plan each seeded exercise starts under (ROADMAP B471). */
+    private val planSets = database.sessionPlanSetDao()
+
     /** The session's sore-muscle rows (ROADMAP N62), and their half of the backup. */
     private val soreMuscleDao = database.sessionSoreMuscleDao()
 
@@ -137,22 +146,32 @@ class RoomWorkoutRepository @Inject constructor(
                     templateId = templateId,
                 )
                 if (start.created && templateId != null) {
-                    templateDao.findPlannedExercises(templateId).forEach { planned ->
+                    val planned = templateDao.findSeededPlanExercises(templateId)
+                    val setsByExercise = templateSetDao.findTemplateSets(templateId)
+                        .groupBy { it.templateExerciseId }
+                    planned.forEach { exercise ->
                         // The plan's rest and cue come with it (ROADMAP N14): a plan
                         // that says "3m break" and a workout counting 90 seconds is
                         // the plan being ignored. Null leaves the library's showing
                         // through, which is the fallback N5 established. The template is
                         // the only plan there is since N73: a slot is a schedule over it.
-                        appendExercise(
+                        val sessionExerciseId = appendExercise(
                             dao = dao,
                             now = timeSource.nowEpochMillis(),
                             sessionId = start.session.id,
-                            exerciseId = planned.exerciseId,
-                            restSeconds = planned.restSeconds,
-                            techniqueNote = planned.techniqueNote,
+                            exerciseId = exercise.exerciseId,
+                            restSeconds = exercise.restSeconds,
+                            techniqueNote = exercise.techniqueNote,
                             // A plan that prescribes a superset must arrive as one, or the
                             // grouping can only ever be made by hand (ROADMAP B16).
-                            supersetGroup = planned.supersetGroup,
+                            supersetGroup = exercise.supersetGroup,
+                        )
+                        // The session is judged against the plan it starts with, not a later one (B471).
+                        snapshotPlan(
+                            planSets = planSets,
+                            sessionExerciseId = sessionExerciseId,
+                            targetRpeHalves = exercise.targetRpeHalves,
+                            sets = setsByExercise[exercise.templateExerciseId].orEmpty(),
                         )
                     }
                 }
@@ -178,9 +197,18 @@ class RoomWorkoutRepository @Inject constructor(
                 if (start.created) {
                     // The same append path every other start uses (ROADMAP N3, N29), so a repeated
                     // exercise is an ordinary one — its rest, note and grouping rules included.
+                    val sourcePlans = if (source.templateId == null) {
+                        emptyList()
+                    } else {
+                        val exercises = templateDao.findSeededPlanExercises(source.templateId)
+                        val sets = templateSetDao.findTemplateSets(source.templateId)
+                            .groupBy { it.templateExerciseId }
+                        exercises.map { it to sets[it.templateExerciseId].orEmpty() }
+                    }
+                    val occurrences = mutableMapOf<String, Int>()
                     database.sessionExerciseDao().findLiveSessionExercises(sessionId)
                         .forEach { past ->
-                            appendExercise(
+                            val sessionExerciseId = appendExercise(
                                 dao = dao,
                                 now = timeSource.nowEpochMillis(),
                                 sessionId = start.session.id,
@@ -191,6 +219,20 @@ class RoomWorkoutRepository @Inject constructor(
                                 techniqueNote = past.techniqueNote,
                                 supersetGroup = past.supersetGroup,
                             )
+                            // A repeat starts from the template's plan today, matched by movement
+                            // occurrence as the plan names it (B471).
+                            val occurrence = occurrences.getOrDefault(past.exerciseId, 0)
+                            occurrences[past.exerciseId] = occurrence + 1
+                            sourcePlans.filter { (plan, _) -> plan.exerciseId == past.exerciseId }
+                                .getOrNull(occurrence)
+                                ?.let { (plan, sets) ->
+                                    snapshotPlan(
+                                        planSets = planSets,
+                                        sessionExerciseId = sessionExerciseId,
+                                        targetRpeHalves = plan.targetRpeHalves,
+                                        sets = sets,
+                                    )
+                                }
                         }
                 }
                 StartedSession(id = start.session.id, isNew = start.created)
@@ -810,10 +852,11 @@ private suspend fun appendExercise(
     restSeconds: Int? = null,
     techniqueNote: String? = null,
     supersetGroup: Int? = null,
-) {
+): String {
+    val id = UUID.randomUUID().toString()
     dao.insertSessionExercise(
         SessionExerciseEntity(
-            id = UUID.randomUUID().toString(),
+            id = id,
             sessionId = sessionId,
             exerciseId = exerciseId,
             position = dao.maxPosition(sessionId) + 1,
@@ -824,6 +867,39 @@ private suspend fun appendExercise(
             updatedAt = now,
             deletedAt = null,
         ),
+    )
+    return id
+}
+
+/**
+ * Freezes the plan a just-seeded session exercise was started under (ROADMAP B471).
+ *
+ * The snapshot is the whole plan, warm-ups and rungs included, because the rules filter by role
+ * themselves and a partial copy would not be the plan. A plan with no sets writes nothing: there is
+ * no prescription to judge, and the finders fall back to the living template for that session.
+ */
+private suspend fun snapshotPlan(
+    planSets: SessionPlanSetDao,
+    sessionExerciseId: String,
+    targetRpeHalves: Int?,
+    sets: List<TemplateSetEntity>,
+) {
+    if (sets.isEmpty()) return
+    planSets.insertAll(
+        sets.map { set ->
+            SessionPlanSetEntity(
+                sessionExerciseId = sessionExerciseId,
+                setIndex = set.setIndex,
+                role = set.role,
+                targetWeightGrams = set.targetWeightGrams,
+                targetAssistanceGrams = set.targetAssistanceGrams,
+                targetRepsMin = set.targetRepsMin,
+                targetRepsMax = set.targetRepsMax,
+                targetRepsCurrent = set.targetRepsCurrent,
+                targetDurationSeconds = set.targetDurationSeconds,
+                targetRpeHalves = targetRpeHalves,
+            )
+        },
     )
 }
 

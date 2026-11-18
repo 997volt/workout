@@ -7,6 +7,7 @@ import com.example.androidapp.data.local.ExerciseEntity
 import com.example.androidapp.data.local.SessionSoreMuscleEntity
 import com.example.androidapp.data.local.TemplateEntity
 import com.example.androidapp.data.local.TemplateExerciseEntity
+import com.example.androidapp.data.local.TemplateSetEntity
 import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
@@ -15,6 +16,7 @@ import com.example.androidapp.domain.ZoneOffsetSource
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.repository.StartedSession
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -335,6 +337,7 @@ class RoomWorkoutSessionTest {
         exerciseIds: List<String>,
         restSeconds: Int? = null,
         techniqueNote: String? = null,
+        targetRpeHalves: Int? = null,
     ) {
         database.templateDao().insertTemplate(
             TemplateEntity(
@@ -355,6 +358,7 @@ class RoomWorkoutSessionTest {
                     position = index,
                     restSeconds = restSeconds,
                     techniqueNote = techniqueNote,
+                    targetRpeHalves = targetRpeHalves,
                     createdAt = 1_000L,
                     updatedAt = 1_000L,
                     deletedAt = null,
@@ -391,6 +395,42 @@ class RoomWorkoutSessionTest {
 
     private suspend fun start(templateId: String? = null): StartedSession =
         (repository.startOrResumeSession(templateId) as DataResult.Success).data
+
+    @Test
+    fun startingFromAPlan_snapshotsThePlanItStartsUnder() = runTest {
+        // B471: the session is judged against the plan it started with. The snapshot carries the
+        // whole prescription, including the range's current place and the exercise's effort.
+        seedTemplate("t1", listOf("back-squat"), targetRpeHalves = 16)
+        database.templateSetDao().insertTemplateSet(
+            TemplateSetEntity(
+                id = "ts1",
+                templateExerciseId = "t1-back-squat",
+                setIndex = 0,
+                role = SetType.NORMAL,
+                targetWeightGrams = 100_000L,
+                targetAssistanceGrams = null,
+                targetRepsMin = 5,
+                targetRepsMax = 10,
+                targetRepsCurrent = 8,
+                dropValueGrams = null,
+                targetDurationSeconds = null,
+                note = null,
+                createdAt = 1_000L,
+                updatedAt = 1_000L,
+                deletedAt = null,
+            ),
+        )
+
+        val started = start("t1")
+        val row = repository.observeSessionExercises(started.id).first().single()
+        val snapshot = database.sessionPlanSetDao().findFor(listOf(row.id)).single()
+
+        assertEquals(100_000L, snapshot.targetWeightGrams)
+        assertEquals(8, snapshot.targetRepsCurrent)
+        assertEquals(10, snapshot.targetRepsMax)
+        assertEquals(16, snapshot.targetRpeHalves)
+        assertEquals(SetType.NORMAL, snapshot.role)
+    }
 
     @Test
     fun startingFromAPlan_carriesItsRestAndCueOntoTheSession() = runTest {

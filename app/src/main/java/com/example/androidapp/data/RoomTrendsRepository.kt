@@ -1,6 +1,7 @@
 package com.example.androidapp.data
 
 import com.example.androidapp.data.local.JointPainSiteRow
+import com.example.androidapp.data.local.SessionPlanSetEntity
 import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.data.local.toTemplateSessions
 import com.example.androidapp.domain.DataResult
@@ -8,6 +9,7 @@ import com.example.androidapp.domain.dataResultOf
 import com.example.androidapp.domain.model.ExerciseTrendPoint
 import com.example.androidapp.domain.model.ExerciseTrendRow
 import com.example.androidapp.domain.model.Joint
+import com.example.androidapp.domain.model.ProgressionPlanSet
 import com.example.androidapp.domain.model.Rpe
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.Side
@@ -57,6 +59,9 @@ class RoomTrendsRepository @Inject constructor(
 ) : TrendsRepository {
 
     private val dao = database.trendsDao()
+
+    /** The prescriptions the stall and volume rules read (ROADMAP B471). */
+    private val plans = database.sessionPlanSetDao()
 
     /**
      * The per-site pain read serves every lift at once, so exercises outside the chosen window arrive too
@@ -137,7 +142,36 @@ class RoomTrendsRepository @Inject constructor(
     ): DataResult<List<TemplateSession>> = dataResultOf {
         dao.findTemplateSessionSets(templateId, limit).toTemplateSessions()
     }
+
+    override suspend fun prescriptions(
+        sessionExerciseIds: List<String>,
+    ): DataResult<Map<String, List<ProgressionPlanSet>>> = dataResultOf {
+        // Room's IN () has no rows rather than an empty set; a session with nothing to ask about is
+        // the same answer without a query (B471).
+        if (sessionExerciseIds.isEmpty()) {
+            emptyMap()
+        } else {
+            plans.findFor(sessionExerciseIds)
+                .groupBy { it.sessionExerciseId }
+                .mapValues { (id, rows) -> rows.sortedBy { it.setIndex }.map { it.toPlanSet(id) } }
+        }
+    }
 }
+
+/** One stored snapshot row as the plan the rule reads, with a synthetic id scoped to its session. */
+private fun SessionPlanSetEntity.toPlanSet(sessionExerciseId: String) = ProgressionPlanSet(
+    setId = "$sessionExerciseId-$setIndex",
+    setIndex = setIndex,
+    role = role,
+    targetWeightGrams = targetWeightGrams,
+    targetAssistanceGrams = targetAssistanceGrams,
+    targetRepsMin = targetRepsMin,
+    targetRepsMax = targetRepsMax,
+    targetRepsCurrent = targetRepsCurrent,
+    targetDurationSeconds = targetDurationSeconds,
+    targetRpeHalves = targetRpeHalves,
+    note = null,
+)
 
 /**
  * The per-site rows as one map per session, keyed by [jointSiteKey] (ROADMAP N130).

@@ -2,6 +2,7 @@ package com.example.androidapp.domain.repository
 
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.model.ExerciseTrendPoint
+import com.example.androidapp.domain.model.ProgressionPlanSet
 import com.example.androidapp.domain.model.TemplateSession
 import com.example.androidapp.domain.model.TrendPoint
 import kotlinx.coroutines.flow.Flow
@@ -48,6 +49,19 @@ interface TrendsRepository {
         templateId: String,
         limit: Int = 12,
     ): DataResult<List<TemplateSession>>
+
+    /**
+     * The prescribed sets each of these session exercises was started under (ROADMAP B471), keyed by
+     * session exercise.
+     *
+     * The stall and volume rules read a past session against **this** plan, not the living template
+     * that progression has since moved. An id missing from the result is a session from before the
+     * snapshot existed; the caller falls back to today's plan for that one rather than inventing a
+     * prescription.
+     */
+    suspend fun prescriptions(
+        sessionExerciseIds: List<String>,
+    ): DataResult<Map<String, List<ProgressionPlanSet>>>
 
     companion object {
         /**

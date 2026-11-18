@@ -35,6 +35,10 @@ interface BackupDao {
     @Query("SELECT * FROM set_entries")
     suspend fun allSets(): List<SetEntryEntity>
 
+    /** The plan each session exercise started under (ROADMAP B471). */
+    @Query("SELECT * FROM session_plan_sets")
+    suspend fun allSessionPlanSets(): List<SessionPlanSetEntity>
+
     /** Templates ride along too (ROADMAP N3): a plan is data like any other. */
     @Query("SELECT * FROM templates")
     suspend fun allTemplates(): List<TemplateEntity>
@@ -113,6 +117,9 @@ interface BackupDao {
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertSets(rows: List<SetEntryEntity>): List<Long>
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertSessionPlanSets(rows: List<SessionPlanSetEntity>): List<Long>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertTemplates(rows: List<TemplateEntity>): List<Long>

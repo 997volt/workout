@@ -51,6 +51,15 @@ data class BackupFile(
     val sessionExercises: List<SessionExerciseDto>,
     val sets: List<SetDto>,
     /**
+     * The plan each session exercise was prescribed from (ROADMAP B471).
+     *
+     * Defaulted like every added collection: a file written before the snapshot existed still
+     * decodes, and its sessions fall back to the living plan for their judgement, exactly as the
+     * pre-B471 build read them. It must be here in the same change as the table, or an export would
+     * silently carry none of it.
+     */
+    val sessionPlanSets: List<SessionPlanSetDto> = emptyList(),
+    /**
      * The muscles each session reported sore, each with its own score (ROADMAP N62).
      *
      * Defaulted like every added collection: a file written before the list existed still decodes,
@@ -472,6 +481,29 @@ data class SetDto(
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,
+)
+
+/**
+ * One set of the plan a session exercise started under (ROADMAP B471).
+ *
+ * The whole prescription, not a verdict: history is editable, so a corrected set must still be
+ * judged against the plan it actually answered. A pre-B471 file has no rows here; the rules then use
+ * today's plan for that session.
+ */
+@Serializable
+data class SessionPlanSetDto(
+    val sessionExerciseId: String,
+    /** The plan's own order, which is what the rule pairs by class and position. */
+    val setIndex: Int,
+    val role: SetType,
+    val targetWeightGrams: Long? = null,
+    val targetAssistanceGrams: Long? = null,
+    val targetRepsMin: Int? = null,
+    val targetRepsMax: Int? = null,
+    val targetRepsCurrent: Int? = null,
+    val targetDurationSeconds: Int? = null,
+    /** The exercise's one target effort in half-points, as the plan read it (N59). */
+    val targetRpeHalves: Int? = null,
 )
 
 /**
