@@ -423,7 +423,9 @@ the rule; that one argues it.
   the session logged N+1, in the session just done and the previous finished one — so the suggestion is that
   the plan is one set short rather than that a day ran long. **The comfortable plan**: in the session just
   done and the two before it, every working set *earned a step* through the progression offer's own gate,
-  not a fresh reading of the RPE field (decision 1b), with no stall open. The gates are shared: no open stall
+  not a fresh reading of the RPE field (decision 1b), with no stall open. **The offer each session is measured
+  by is the one it was trained under** (B471), so a plan auto progression has moved does not hide the pattern
+  the sessions earned. The gates are shared: no open stall
   (a deload answers a stall, not more work), the plan's work-set count below **six** (decision 8b; the
   editor can still add more by hand), and a deload workout earns neither. The finish says one at a time, the
   extra set first because it is the lifter's own work, and only when the pattern **reaches** its threshold:
@@ -555,11 +557,14 @@ the rule; that one argues it.
   one prescribed working set, and it is a **no-progress** session when *every* logged prescribed set missed for
   a measurable reason (reps, effort, load, hold); a session with any logged set that met the plan is progress
   and ends the run, **including a set that topped out** — the plan has nothing left to raise there, and a lifter
-  doing exactly what it asks must not be told to deload for ever. The pairing is still the offer's (B305), so a
-  logged rung is extra rather than the stand-in for a work set; a session that logged no prescribed set is
-  absence and neither counts nor breaks the run (B304). **Only a plan that can progress is judged** — no target
-  effort, no reps, or nothing to move are `ProgressionRule.progresses == false`, and the fix for those is a
-  plan, not a deload. **A movement whose own answer is Off is never counted** (N235): the app was told not to
+  doing exactly what it asks must not be told to deload for ever. **The plan a session is measured against is
+  the one it started under** (B471): the prescription is stored with the session exercise when it is seeded,
+  because auto progression moves the living template at *Done* and would otherwise turn every session that
+  earned a step into a miss; a session from before the snapshot falls back to today's plan. The pairing is
+  still the offer's (B305), so a logged rung is extra rather than the stand-in for a work set; a session that
+  logged no prescribed set is absence and neither counts nor breaks the run (B304). **Only a plan that can
+  progress is judged** — no target effort, no reps, or nothing to move are
+  `ProgressionRule.progresses == false`, and the fix for those is a plan, not a deload. **A movement whose own answer is Off is never counted** (N235): the app was told not to
   touch this lift's plan, and that is a different statement from the device-wide setting, which is a preference
   about offers rather than a decision about this lift. Rejected: keeping the reason on the card — with several
   sets and reasons the sentence would have to pick one, and the deload it suggests is addressed to the exercise.

@@ -49,6 +49,12 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 - **The auto progression baseline has one story** (B477). Disabling kept a snapshot that no screen could
   read — Reset is drawn only while the switch is on — and re-enabling recaptured it anyway. Disabling now
   drops the rows, a later enabling captures the targets the lifter has then, and both KDocs say so.
+- **A session is judged against the plan it started under** (B471). The stall rule and the volume card
+  read the living template, so auto progression — which moves the plan at Done — made a lift that had
+  moved every week look three sessions short, raised a false deload card, and withheld the
+  comfortable-set suggestion. Each session exercise now stores its prescription when it is seeded (schema
+  26), and the rules read that, falling back to today's plan only for sessions from before the snapshot.
+  The backup carries the rows and validates them; the migration starts every existing install empty.
 
 ## [2.31] — 2026-11-17 (versionCode 52)
 

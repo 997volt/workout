@@ -230,6 +230,7 @@ interface TrendsDao {
         """
         SELECT ws.id AS sessionId,
                ws.startedAt AS startedAt,
+               se.id AS sessionExerciseId,
                se.exerciseId AS exerciseId,
                se.position AS position,
                s.weightGrams AS weightGrams,
@@ -264,6 +265,7 @@ interface TrendsDao {
 data class TemplateSessionSetRow(
     val sessionId: String,
     val startedAt: Long,
+    val sessionExerciseId: String,
     val exerciseId: String,
     val position: Int,
     val weightGrams: Long?,
@@ -380,11 +382,11 @@ internal fun List<TemplateSessionSetRow>.toTemplateSessions(): List<TemplateSess
                 sessionId = session.first,
                 startedAt = Instant.ofEpochMilli(session.second),
                 performed = sets
-                    .groupBy { it.exerciseId to it.position }
-                    .toSortedMap(compareBy({ it.second }, { it.first }))
-                    .map { (exercise, logged) ->
+                    .groupBy { it.sessionExerciseId }
+                    .map { (sessionExerciseId, logged) ->
                         PerformedExercise(
-                            exerciseId = exercise.first,
+                            exerciseId = logged.first().exerciseId,
+                            sessionExerciseId = sessionExerciseId,
                             sets = logged.mapNotNull { it.toPerformance() },
                         )
                     },

@@ -31,6 +31,8 @@ data class PlanStall(
 data class PerformedExercise(
     val exerciseId: String,
     val sets: List<ProgressionPerformance>,
+    /** The session exercise these sets belong to, or null in a test/older read (B471). */
+    val sessionExerciseId: String? = null,
 )
 
 /**
@@ -66,8 +68,19 @@ fun TemplateSession.performedOccurrence(exerciseId: String, occurrence: Int): Pe
  */
 data class PrescriptionHistory(
     val exerciseName: String,
+    /**
+     * The plan as it stands today, used for the exercise's eligibility and as the fallback for a
+     * session that predates the snapshot.
+     */
     val planned: List<ProgressionPlanSet>,
     val performedBySession: List<List<ProgressionPerformance>>,
+    /**
+     * The prescription each session was trained under, aligned with [performedBySession] (B471).
+     *
+     * A null entry is a session from before the snapshot existed; it falls back to [planned], which
+     * is the old behaviour. Empty means the same for every session.
+     */
+    val plannedBySession: List<List<ProgressionPlanSet>?> = emptyList(),
     val progressionMode: ProgressionMode? = null,
     /** The plan's identity, carried through to the [PlanStall] so its answer can find the row (N307). */
     val templateId: String,
@@ -162,15 +175,7 @@ fun PrescriptionHistory.stall(threshold: Int = STALL_SESSIONS): PlanStall? {
     // set above it (N79, B305) and a targetless set has nothing to measure (B420): either would read as a
     // set that "met" the plan because `measurableKinds` has nothing to report, resetting a run it never
     // answered. A session that logged only those is absent, not progress.
-    val plannedWork = planned
-        .filter { set ->
-            set.role.isWork && !set.role.isRung &&
-                (
-                    set.targetRepsCurrent ?: set.targetRepsMin ?: set.targetRepsMax != null ||
-                        set.targetDurationSeconds != null
-                    )
-        }
-        .sortedBy { it.setIndex }
+    val plannedWork = planned.judgeableWork()
     // The exercise's effort is carried onto every prescribed set (N59), so any work set answers for the plan.
     val eligible = progressionMode != ProgressionMode.OFF &&
         plannedWork.isNotEmpty() &&
@@ -178,16 +183,22 @@ fun PrescriptionHistory.stall(threshold: Int = STALL_SESSIONS): PlanStall? {
     if (!eligible) return null
 
     var run = 0
-    performedBySession.forEach { session ->
+    performedBySession.forEachIndexed { index, session ->
+        // The prescription this session was trained under, not the plan that has moved since (B471).
+        // A missing snapshot falls back to the living plan, which is how older sessions are judged.
+        val sessionPlan = plannedBySession.getOrNull(index) ?: planned
+        val sessionWork = sessionPlan.judgeableWork()
+        // A session with no prescribed work set says nothing either way (B304).
+        if (sessionWork.isEmpty()) return@forEachIndexed
         // The offer's own pairing (B305): a logged rung is extra, never the stand-in for a work set the
         // session did not log, and now never a working set of its own (B420).
-        val paired = pairedPerformances(planned, session)
-        val logged = plannedWork.mapNotNull { plannedSet ->
+        val paired = pairedPerformances(sessionPlan, session)
+        val logged = sessionWork.mapNotNull { plannedSet ->
             paired.bySetId[plannedSet.setId]?.let { done -> plannedSet to done }
         }
         // A session that logged no prescribed work set says nothing either way (B304): it can neither start
         // nor break a run it was never part of.
-        if (logged.isEmpty()) return@forEach
+        if (logged.isEmpty()) return@forEachIndexed
         val missedEverywhere = logged.all { (plannedSet, done) -> measurableKinds(plannedSet, done).isNotEmpty() }
         run = if (missedEverywhere) run + 1 else 0
     }
@@ -202,6 +213,17 @@ fun PrescriptionHistory.stall(threshold: Int = STALL_SESSIONS): PlanStall? {
         )
     }
 }
+
+/** The sets a stall can judge: stand-alone work with a rep or hold number, in the plan's order. */
+private fun List<ProgressionPlanSet>.judgeableWork(): List<ProgressionPlanSet> = this
+    .filter { set ->
+        set.role.isWork && !set.role.isRung &&
+            (
+                set.targetRepsCurrent ?: set.targetRepsMin ?: set.targetRepsMax != null ||
+                    set.targetDurationSeconds != null
+                )
+    }
+    .sortedBy { it.setIndex }
 
 /** How many sessions in a row make a stall: three, the rule the roadmap sets (N237, N304). */
 const val STALL_SESSIONS: Int = 3

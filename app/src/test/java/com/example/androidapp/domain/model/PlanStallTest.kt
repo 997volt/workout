@@ -59,6 +59,28 @@ class PlanStallTest {
     }
 
     @Test
+    fun aPlanThatMovedSinceTheSession_doesNotTurnTheWorkItAnsweredIntoAMiss() {
+        // B471: after three autoprogressed rep steps the current plan asks 8, so comparing the old
+        // sessions to it made a lift that moved every week look stalled. Each session met the plan
+        // it started under (5, 6, 7), which is the prescription the rule must read.
+        val history = history(
+            planned = listOf(planSet(reps = 8)),
+            plannedBySession = listOf(
+                listOf(planSet(reps = 5)),
+                listOf(planSet(reps = 6)),
+                listOf(planSet(reps = 7)),
+            ),
+            sessions = listOf(
+                listOf(performed(reps = 5, rpe = 7)),
+                listOf(performed(reps = 6, rpe = 7)),
+                listOf(performed(reps = 7, rpe = 7)),
+            ),
+        )
+
+        assertNull("each session answered the plan it was trained under", history.stall())
+    }
+
+    @Test
     fun aRunThreeLong_thatALaterSessionAnswered_isGone() {
         // B303: the walk used to keep the longest run it had seen, so three misses followed by a session that
         // met the plan still asked for a deload -- for as long as the run stayed in the read's window.
@@ -341,10 +363,12 @@ class PlanStallTest {
         planned: List<ProgressionPlanSet>,
         sessions: List<List<ProgressionPerformance>>,
         mode: ProgressionMode? = null,
+        plannedBySession: List<List<ProgressionPlanSet>?> = emptyList(),
     ) = PrescriptionHistory(
         exerciseName = "Back Squat",
         planned = planned,
         performedBySession = sessions,
+        plannedBySession = plannedBySession,
         progressionMode = mode,
         templateId = "t1",
         templateExerciseId = "te1",

@@ -199,6 +199,43 @@ class PlanVolumeFinderTest {
     }
 
     @Test
+    fun theFinishReadsEachSessionsOwnPlan_whenTodaysPlanHasMoved() = runTest {
+        // B471: the previous sessions earned their steps under plans asking 6 and 7; today's plan asks
+        // 8 because progression moved it. Built from today's plan, their prompts would all be short and
+        // the comfortable card would never appear for exactly the program the feature is for.
+        val currentPlan = rangeExercise(current = 8)
+        val templates = FakeTemplateRepository().apply {
+            exercises.value = mapOf("t1" to listOf(currentPlan))
+        }
+        val history = listOf(4 to 5, 6 to 6, 7 to 7)
+        val sessions = history.mapIndexed { index, (reps, _) ->
+            TemplateSession(
+                sessionId = "s$index",
+                startedAt = Instant.ofEpochMilli((index + 1).toLong()),
+                performed = listOf(
+                    PerformedExercise(
+                        exerciseId = "squat",
+                        sessionExerciseId = "se-$index",
+                        sets = listOf(performed(reps = reps)),
+                    ),
+                ),
+            )
+        }
+        val trends = FakeTrendsRepository().apply {
+            templateSessions = DataResult.Success(sessions)
+            prescriptions = history.mapIndexed { index, (_, current) ->
+                "se-$index" to rangeExercise(current).progressionSets()
+            }.toMap()
+        }
+        val finder = PlanVolumeFinder(FakeProgramRepository(), templates, trends)
+        val current = progressionPromptFor(currentPlan.progressionSets(), listOf(performed(reps = 8)))
+
+        val suggestion = finder.doneSuggestion("t1", "te1", current, listOf(performed(reps = 8))).getOrNull()
+
+        assertThat(suggestion?.reason).isEqualTo(VolumeReason.COMFORTABLE)
+    }
+
+    @Test
     fun theCard_readsTheRowsOwnPerformedEntry_ofADuplicateMovement() = runTest {
         // B446: the card read still matched by exerciseId alone, so a plan naming the same movement twice
         // read the first row's sets for both. Only the row that logged four sets earned the extra one.
@@ -299,6 +336,15 @@ class PlanVolumeFinderTest {
         val finder = PlanVolumeFinder(FakeProgramRepository(), templates, trends)
 
         assertThat(finder.suggestionsForTemplate("t1")).isInstanceOf(DataResult.Failure::class.java)
+    }
+
+    /** One exercise with a 5–8 range at 100 kg and the current rep the test wants. */
+    private fun rangeExercise(current: Int) = exercise(sets = 1).let { plan ->
+        plan.copy(
+            sets = plan.sets.map { set ->
+                set.copy(targetRepsMin = 5, targetRepsMax = 8, targetRepsCurrent = current)
+            },
+        )
     }
 
     private fun exercise(sets: Int = 3) = TemplateExercise(

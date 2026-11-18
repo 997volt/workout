@@ -3,6 +3,7 @@ package com.example.androidapp.domain
 import com.example.androidapp.domain.model.PlanStall
 import com.example.androidapp.domain.model.PrescriptionHistory
 import com.example.androidapp.domain.model.STALL_SESSIONS
+import com.example.androidapp.domain.model.TemplateSession
 import com.example.androidapp.domain.model.progressionSets
 import com.example.androidapp.domain.model.performedOccurrence
 import com.example.androidapp.domain.model.stall
@@ -73,6 +74,7 @@ class PlanStallFinder @Inject constructor(
         }
         // Three sessions is the rule's own threshold (N237), and a plan with fewer cannot have one yet.
         if (planned.isEmpty() || sessions.size < STALL_SESSIONS) return@dataResultOf emptyList()
+        val prescriptions = prescriptionsFor(sessions)
         // Each plan row reads its own occurrence of the movement (B446): a plan may name it twice (N54), and
         // the second row's history is not the first row's.
         val occurrences = mutableMapOf<String, Int>()
@@ -81,12 +83,16 @@ class PlanStallFinder @Inject constructor(
             occurrences[exercise.exerciseId] = occurrence + 1
             // One entry per session that **trained** the movement: absence is not a failure.
             val performed = sessions.mapNotNull { session ->
-                session.performedOccurrence(exercise.exerciseId, occurrence)?.sets
+                session.performedOccurrence(exercise.exerciseId, occurrence)
             }
             PrescriptionHistory(
                 exerciseName = exercise.exerciseName,
                 planned = exercise.progressionSets(),
-                performedBySession = performed,
+                performedBySession = performed.map { it.sets },
+                // The plan each session was trained under, not the one that has moved since (B471).
+                plannedBySession = performed.map { row ->
+                    row.sessionExerciseId?.let { prescriptions[it] }
+                },
                 // The movement's own answer (N235): Off is never counted (N304).
                 progressionMode = exercise.progressionMode,
                 templateId = exercise.templateId,
@@ -94,5 +100,17 @@ class PlanStallFinder @Inject constructor(
                 exerciseId = exercise.exerciseId,
             ).stall()
         }
+    }
+
+    /** The prescriptions this plan's sessions started under, keyed by session exercise (B471). */
+    private suspend fun prescriptionsFor(
+        sessions: List<TemplateSession>,
+    ) = when (
+        val read = trends.prescriptions(
+            sessions.flatMap { session -> session.performed.mapNotNull { it.sessionExerciseId } },
+        )
+    ) {
+        is DataResult.Failure -> throw read.error.asThrowable()
+        is DataResult.Success -> read.data
     }
 }

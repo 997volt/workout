@@ -26,39 +26,12 @@ prescription and should land before 2.32 cuts, the rest are independent. Nothing
 read, because B471 is a design decision rather than a patch, and the last two reviews kept the read and
 the write apart for the same reason.
 
-### Before 2.32
-
-- **B471 — Auto progression makes a progressing lift look stalled, and withholds its volume card.** The
-  N304 stall rule compares every recent session to the plan **as it stands now**:
-  [PlanStallFinder.kt](app/src/main/java/com/example/androidapp/domain/PlanStallFinder.kt) reads the live
-  template and hands `exercise.progressionSets()` to `PrescriptionHistory.planned`, and
-  `PrescriptionHistory.stall` measures each past session against it. With auto on, *Done* writes the next
-  step **before** the finish reads the card, so every session that earned a step is now one step behind
-  the plan: a rep step moves `targetRepsCurrent` past the reps just performed, a load step moves the weight
-  past the load just lifted, and a hold step moves the seconds past the hold just taken. Three successful
-  weeks therefore build a three-session run of "misses", and the finish says a lift that has moved every
-  week has stalled; the program editor and the weekly review
-  ([PlanStallFinder.stallsForProgram](app/src/main/java/com/example/androidapp/domain/PlanStallFinder.kt))
-  carry the same run, which keeps growing while the plan keeps moving. The same living plan is judged by
-  N311: [PlanVolumeFinder.kt](app/src/main/java/com/example/androidapp/domain/PlanVolumeFinder.kt)
-  rebuilds previous prompts with `promptFor(..., exercise.progressionSets())`, so auto-progressed sessions
-  never satisfy "every working set earned a step", and the false stall closes the `isOpen` gate that
-  would still allow the extra-set card. A manually accepted step and a hand-edited target move the plan
-  the same way, so this was latent before N299 — auto makes it certain. Fixed means the stall and volume
-  rules read the prescription each session was trained under (N20's second rule: store the planned sets
-  with the session), not today's plan; a stored verdict was rejected because history is editable (N306)
-  and a corrected set must be judged against the plan it actually answered. N305 rejected that schema
-  for a read-back number, but here the number decides a deload and a set-back, so the reason for
-  rejecting it no longer holds. A write-log-only fix was rejected too: it would know the auto steps and
-  not the manual ones, which is two rules for one fact.
-
 ### Coverage
 
 - **N325 — The auto progression seams that let these through are uncovered.** No test asserts the
   banner's plural message for a batch of two steps (the per-step writes and batch undo now have tests).
   The enablement text and the baseline line have screen tests only for their presence. Fixed means
-  those cases are asserted, and B471's historical plan is pinned at whichever level the decision puts
-  it.
+  those cases are asserted.
 
 ## Parked — deliberately not planned
 

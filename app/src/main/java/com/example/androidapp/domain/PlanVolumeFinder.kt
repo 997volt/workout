@@ -1,5 +1,6 @@
 package com.example.androidapp.domain
 
+import com.example.androidapp.domain.model.PerformedExercise
 import com.example.androidapp.domain.model.PlanStall
 import com.example.androidapp.domain.model.PrescriptionHistory
 import com.example.androidapp.domain.model.ProgressionPerformance
@@ -68,12 +69,13 @@ class PlanVolumeFinder @Inject constructor(
                 is DataResult.Failure -> throw read.error.asThrowable()
                 is DataResult.Success -> read.data
             }
+            val prescriptions = prescriptionsFor(sessions)
             // Each plan row reads its own occurrence of the movement (B446): a plan may name it twice.
             val occurrences = mutableMapOf<String, Int>()
             plan.mapNotNull { exercise ->
                 val occurrence = occurrences.getOrDefault(exercise.exerciseId, 0)
                 occurrences[exercise.exerciseId] = occurrence + 1
-                planSuggestion(exercise, occurrence, sessions)
+                planSuggestion(exercise, occurrence, sessions, prescriptions)
             }
         }
 
@@ -103,16 +105,25 @@ class PlanVolumeFinder @Inject constructor(
         // history rather than the first row's.
         val occurrence = plan.takeWhile { it.id != exercise.id }
             .count { it.exerciseId == exercise.exerciseId }
+        val prescriptions = prescriptionsFor(sessions)
         // The previous history is the sessions that trained the movement (B429): a vacation or a
         // substitution is absence, not a session that failed to earn the pattern.
         val trained = sessions.mapNotNull { session ->
-            session.performedOccurrence(exercise.exerciseId, occurrence)?.let { session to it.sets }
+            session.performedOccurrence(exercise.exerciseId, occurrence)?.let { performed ->
+                session to performed
+            }
         }
         doneSuggestion(
             exercise = exercise,
             current = current,
-            previous = trained.map { (session, _) -> promptFor(exercise, occurrence, session) },
-            performedBySession = trained.map { it.second } + listOf(currentPerformed),
+            // Each previous session's prompt is built from the plan it started under, not today's (B471).
+            previous = trained.map { (_, performed) ->
+                progressionPromptFor(planFor(exercise, performed, prescriptions), performed.sets)
+            },
+            performedBySession = trained.map { it.second.sets } + listOf(currentPerformed),
+            plannedBySession = trained.map { (_, performed) ->
+                planFor(exercise, performed, prescriptions)
+            } + listOf(null),
         )
     }
 
@@ -135,6 +146,11 @@ class PlanVolumeFinder @Inject constructor(
          * order, not the planned pairs, or an extra in the middle reads as a different set.
          */
         performedBySession: List<List<ProgressionPerformance>>? = null,
+        /**
+         * The prescription each session was trained under, aligned with [performedBySession] (B471);
+         * null entries fall back to the current plan for sessions from before the snapshot.
+         */
+        plannedBySession: List<List<ProgressionPlanSet>?> = emptyList(),
     ): VolumeSuggestion? {
         val planned = exercise.progressionSets()
         val work = planned.workSets()
@@ -145,7 +161,7 @@ class PlanVolumeFinder @Inject constructor(
             ?: (previous + current).map { prompt ->
                 prompt.sets.filter { it.planned != null }.mapNotNull { it.performed }
             }
-        if (!isOpen(work, exercise, history)) return null
+        if (!isOpen(work, exercise, history, plannedBySession)) return null
 
         // The current makes the pair/trio; the session behind it must not have held, or the threshold
         // was reached on an earlier Done and the card carries it instead.
@@ -170,17 +186,23 @@ class PlanVolumeFinder @Inject constructor(
         exercise: TemplateExercise,
         occurrence: Int,
         sessions: List<TemplateSession>,
+        prescriptions: Map<String, List<ProgressionPlanSet>>,
     ): VolumeSuggestion? {
         val planned = exercise.progressionSets()
         val work = planned.workSets()
         // Only sessions that trained the movement take part (B429): absence is neither evidence nor a break.
         // The row's own occurrence is the one read (B446).
         val trained = sessions.mapNotNull { session ->
-            session.performedOccurrence(exercise.exerciseId, occurrence)?.let { session to it.sets }
+            session.performedOccurrence(exercise.exerciseId, occurrence)?.let { performed ->
+                session to performed
+            }
         }
-        if (!isOpen(work, exercise, trained.map { it.second })) return null
+        val sessionPlans = trained.map { (_, performed) -> planFor(exercise, performed, prescriptions) }
+        if (!isOpen(work, exercise, trained.map { it.second.sets }, sessionPlans)) return null
 
-        val prompts = trained.map { (session, _) -> promptFor(exercise, occurrence, session, planned) }
+        val prompts = trained.mapIndexed { index, (_, performed) ->
+            progressionPromptFor(sessionPlans[index], performed.sets)
+        }
         if (prompts.takeLast(EXTRA_SESSIONS).size == EXTRA_SESSIONS &&
             prompts.takeLast(EXTRA_SESSIONS).all { it.extraCount() == 1 }
         ) {
@@ -210,14 +232,16 @@ class PlanVolumeFinder @Inject constructor(
         work: List<ProgressionPlanSet>,
         exercise: TemplateExercise,
         performedBySession: List<List<ProgressionPerformance>>,
+        plannedBySession: List<List<ProgressionPlanSet>?> = emptyList(),
     ): Boolean {
         if (work.isEmpty() || work.size >= MAX_WORK_SETS) return false
-        return stall(exercise, performedBySession) == null
+        return stall(exercise, performedBySession, plannedBySession) == null
     }
 
     private fun stall(
         exercise: TemplateExercise,
         performedBySession: List<List<ProgressionPerformance>>,
+        plannedBySession: List<List<ProgressionPlanSet>?>,
     ): PlanStall? {
         // The raw performed sets, in the session's own order (B429): the stall rule pairs them with the
         // plan by class, and the prompt's planned pairs would drop an extra or compact a skipped set,
@@ -228,6 +252,7 @@ class PlanVolumeFinder @Inject constructor(
             exerciseName = exercise.exerciseName,
             planned = planned,
             performedBySession = performedBySession,
+            plannedBySession = plannedBySession,
             progressionMode = exercise.progressionMode,
             templateId = exercise.templateId,
             templateExerciseId = exercise.id,
@@ -235,16 +260,24 @@ class PlanVolumeFinder @Inject constructor(
         ).stall()
     }
 
-    private fun promptFor(
+    /** The prescription a session exercise started under, or today's plan for a pre-snapshot session. */
+    private fun planFor(
         exercise: TemplateExercise,
-        occurrence: Int,
-        session: TemplateSession,
-        planned: List<ProgressionPlanSet> = exercise.progressionSets(),
-    ): ProgressionPrompt =
-        progressionPromptFor(
-            planned,
-            session.performedOccurrence(exercise.exerciseId, occurrence)?.sets.orEmpty(),
-        )
+        performed: PerformedExercise,
+        prescriptions: Map<String, List<ProgressionPlanSet>>,
+    ): List<ProgressionPlanSet> =
+        performed.sessionExerciseId?.let { prescriptions[it] } ?: exercise.progressionSets()
+
+    /** The prescriptions this plan's sessions started under, keyed by session exercise (B471). */
+    private suspend fun prescriptionsFor(
+        sessions: List<TemplateSession>,
+    ): Map<String, List<ProgressionPlanSet>> {
+        val ids = sessions.flatMap { session -> session.performed.mapNotNull { it.sessionExerciseId } }
+        return when (val read = trends.prescriptions(ids)) {
+            is DataResult.Failure -> throw read.error.asThrowable()
+            is DataResult.Success -> read.data
+        }
+    }
 
     @Suppress("ReturnCount")
     private fun suggestion(
