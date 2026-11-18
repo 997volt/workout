@@ -520,63 +520,6 @@ internal fun SetSuggestion.initialDraft(unit: WeightUnit, timed: Boolean): SetEn
 )
 
 /**
- * Why the next set is shown these numbers (P3.17): what the lift did last time, and what the plan asks.
- *
- * A sentence, not a prescription: both halves are sources the prefill already read, and the line exists so
- * the lifter can tell a number remembered from a number planned. It is omitted when neither source speaks.
- */
-@Composable
-private fun SuggestionReasonLine(
-    reason: SuggestionReason,
-    unit: WeightUnit,
-    modifier: Modifier = Modifier,
-) {
-    val unitLabel = stringResource(
-        if (unit == WeightUnit.KILOGRAMS) R.string.suggestion_unit_kg else R.string.suggestion_unit_lb,
-    )
-    val parts = mutableListOf<String>()
-    if (reason.lastReps != null) {
-        var last = stringResource(
-            R.string.suggestion_set_shape,
-            reason.lastReps,
-            weightWithUnit(reason.lastWeightGrams, unit, unitLabel),
-        )
-        reason.lastRpeHalves?.let { last += stringResource(R.string.suggestion_rpe, Rpe.format(it)) }
-        parts += stringResource(R.string.suggestion_last_time, last)
-    }
-    if (reason.planReps != null || reason.planWeightGrams != null) {
-        val weight = weightWithUnit(reason.planWeightGrams, unit, unitLabel)
-        var plan = when {
-            reason.planReps != null && reason.planWeightGrams != null -> pluralStringResource(
-                R.plurals.suggestion_reps_at,
-                reason.planReps,
-                reason.planReps,
-                weight,
-            )
-
-            reason.planReps != null -> pluralStringResource(
-                R.plurals.suggestion_reps,
-                reason.planReps,
-                reason.planReps,
-            )
-            else -> weight
-        }
-        reason.planRpeHalves?.let { plan += stringResource(R.string.suggestion_rpe, Rpe.format(it)) }
-        parts += stringResource(R.string.suggestion_plan, plan)
-    }
-    Text(
-        text = parts.joinToString(stringResource(R.string.suggestion_separator)),
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = modifier.padding(top = 4.dp),
-    )
-}
-
-/** A weight and its unit, or an empty string when the source named none. */
-private fun weightWithUnit(grams: Long?, unit: WeightUnit, label: String): String =
-    grams?.let { Weight.format(it, unit) + " " + label }.orEmpty()
-
-/**
  * The next set, stated on the screen and committed by the *Log set* beside it (ROADMAP N59).
  *
  * This replaces N51's shape — *Log set* opened the editor, and logging *was* the dialog — with the
