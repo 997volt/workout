@@ -56,6 +56,12 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   26), and the rules read that, falling back to today's plan only for sessions from before the snapshot.
   The backup carries the rows and validates them; the migration starts every existing install empty.
 
+### Changed
+
+- **The auto progression banner and consent copy are pinned** (N325). The banner's plural branch, the
+  switch's hint, the enable dialog's promise and the baseline date had no assertions, so a wording or
+  layout change could have shipped unseen. They are now read back exactly as the screen states them.
+
 ## [2.31] — 2026-11-17 (versionCode 52)
 
 ### Fixed

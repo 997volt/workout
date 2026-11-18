@@ -3,6 +3,7 @@ package com.example.androidapp.ui.workout
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.WeightUnit
@@ -52,9 +53,43 @@ class AutoProgressionBannerTest {
         }
 
         composeTestRule.onNodeWithTag(TestTags.AUTO_PROGRESSION).assertIsDisplayed()
+        composeTestRule.onNodeWithText("Bench Press · next time 102.5").assertExists()
         composeTestRule.onNodeWithTag(TestTags.AUTO_PROGRESSION_UNDO).performClick()
 
         assertThat(undone).isTrue()
+    }
+
+    @Test
+    fun aBatchOfTwoSteps_saysHowManyTargetsMoved() {
+        // N325: the plural branch had no test, so a batch of two could have read like one.
+        composeTestRule.setContent {
+            AndroidAppTheme {
+                AutoProgressionBanner(
+                    moment = AutoProgressionMoment(
+                        exerciseName = "Bench Press",
+                        unit = WeightUnit.KILOGRAMS,
+                        steps = listOf(
+                            AutoProgressionStep(
+                                writeId = "w1",
+                                direction = ProgressionDirection.REPS,
+                                before = ProgressionTargets(weightGrams = 100_000L, repsCurrent = 5),
+                                after = ProgressionTargets(weightGrams = 100_000L, repsCurrent = 6),
+                            ),
+                            AutoProgressionStep(
+                                writeId = "w2",
+                                direction = ProgressionDirection.REPS,
+                                before = ProgressionTargets(weightGrams = 100_000L, repsCurrent = 6),
+                                after = ProgressionTargets(weightGrams = 100_000L, repsCurrent = 7),
+                            ),
+                        ),
+                    ),
+                    onUndo = {},
+                    onDismiss = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Bench Press · 2 targets adjusted").assertExists()
     }
 
     @Test

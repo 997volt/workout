@@ -15,24 +15,6 @@ work was planned, so they do not always run in order — and an id this file doe
 shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 [CHANGELOG-1.x.md](CHANGELOG-1.x.md) for the 1.x releases.
 
-## Next — the auto progression review
-
-The auto progression feature (N299) was read against the decisions it claims to follow — N299 itself,
-N303, N304, N305 and N311, with N74, N235, B400, B402 and B409 — with the switch on for a weekly
-program that repeats: how a *Done* finds its program, what one press writes, what the banner can take
-back, what the baseline resets, and what the plan's own movement does to the rules that compare history
-to the plan. The rows are ordered by what they cost: the first needs a decision about storing the
-prescription and should land before 2.32 cuts, the rest are independent. Nothing was fixed during the
-read, because B471 is a design decision rather than a patch, and the last two reviews kept the read and
-the write apart for the same reason.
-
-### Coverage
-
-- **N325 — The auto progression seams that let these through are uncovered.** No test asserts the
-  banner's plural message for a batch of two steps (the per-step writes and batch undo now have tests).
-  The enablement text and the baseline line have screen tests only for their presence. Fixed means
-  those cases are asserted.
-
 ## Parked — deliberately not planned
 
 Each row is a product in its own right, contradicts "local-only", or both. Parking is a

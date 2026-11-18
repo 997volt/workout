@@ -11,6 +11,7 @@ import com.example.androidapp.domain.model.AutoProgressionCheck
 import com.example.androidapp.domain.model.ProgressionMode
 import com.example.androidapp.domain.model.ProgressionRule
 import com.example.androidapp.ui.components.TestTags
+import com.example.androidapp.ui.history.HistoryFormat
 import com.example.androidapp.ui.theme.AndroidAppTheme
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
@@ -18,6 +19,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import java.time.Instant
+import java.time.ZoneId
 
 /**
  * Auto progression's switch, preflight and reset (ROADMAP N299).
@@ -120,13 +122,45 @@ class ProgramProgressionScreenTest {
     }
 
     @Test
+    fun theSwitchCard_statesWhatTheSwitchDecides() {
+        // N325: the consent's own words, not just the control's presence.
+        setScreen(state = state())
+
+        composeTestRule.onNodeWithText("Adjust this program's targets").assertIsDisplayed()
+        composeTestRule
+            .onNodeWithText("A movement's own answer still decides for that movement.")
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun theEnableDialog_statesWhatTheAppWillWrite() {
+        setScreen(state = state(confirmEnable = true))
+
+        composeTestRule.onNodeWithText("Turn on auto progression?").assertIsDisplayed()
+        composeTestRule
+            .onNodeWithText(
+                "The app will write the next step into your plan after you complete the work. " +
+                    "Every write is recorded and can be undone. Nothing is written until you finish an exercise.",
+            )
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun theBaselineLine_namesWhenItStarted() {
+        val at = Instant.ofEpochMilli(1_700_000_000_000L)
+        setScreen(state = state(auto = true, baselineAt = at))
+
+        val date = HistoryFormat.date(at, ZoneId.systemDefault())
+        composeTestRule.onNodeWithText("Started from the targets on $date").assertIsDisplayed()
+    }
+
+    @Test
     fun resetIsOfferedOnlyWhileAutoIsOn_andAsksBeforeRestoring() {
         var reset = false
         setScreen(
             state = state(auto = true, baselineAt = Instant.ofEpochMilli(1_700_000_000_000L)),
             onReset = { reset = true },
         )
-
         composeTestRule.onNodeWithTag(TestTags.Programs.AUTO_RESET).performClick()
 
         assertThat(reset).isTrue()
