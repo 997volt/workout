@@ -31,15 +31,6 @@ they cost.
 
 ### Coverage
 
-- **N327 — The goal-history reader is weight-only under a generic name.**
-  [GoalOutcomes.kt](app/src/main/java/com/example/androidapp/ui/statistics/GoalOutcomes.kt)'s `goalOutcomes`
-  takes readings but always builds a weight `MetricSeries` and compares a target with the weight tolerance
-  (1,000 grams) and a rate with the weight band. Its only caller is the weight's
-  [MeasurementsViewModel.kt](app/src/main/java/com/example/androidapp/ui/measurements/MeasurementsViewModel.kt),
-  so nothing is wrong on screen today; the repository and the non-weight `GoalRow` already support periods,
-  and the first non-weight history would read a 1 m tolerance on a waist in millimetres. Fixed means the
-  reader takes the metric's key and tolerance, or is named and tested as weight-only; a test for the
-  non-weight case or an API that cannot be called with one.
 - **N328 — The history prints the next period's start as this period's end.** A period runs to the next
   boundary, exclusive; [GoalRow.kt](app/src/main/java/com/example/androidapp/ui/statistics/GoalRow.kt)'s
   history row prints the next start as the second date (`"%1$s – %2$s"`), and the editor's "Until %1$s"

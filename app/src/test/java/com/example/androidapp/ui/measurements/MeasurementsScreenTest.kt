@@ -41,7 +41,7 @@ import com.example.androidapp.domain.repository.GoalPeriod
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.statistics.EnergyAdjustment
 import com.example.androidapp.ui.statistics.MetricReading
-import com.example.androidapp.ui.statistics.goalOutcomes
+import com.example.androidapp.ui.statistics.weightGoalOutcomes
 import com.example.androidapp.ui.theme.AndroidAppTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -580,7 +580,7 @@ class MeasurementsScreenTest {
         isLoading = false,
         today = LocalDate.of(2026, 10, 2),
         weightGoal = goal,
-        goalHistory = goalOutcomes(
+        goalHistory = weightGoalOutcomes(
             periods,
             listOf(
                 MetricReading(Instant.parse("2026-09-01T08:00:00Z"), 83_000.0),

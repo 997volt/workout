@@ -96,6 +96,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Changed
 
+- **The goal-history reader is named for the weight it reads** (N327). It always built the weight series and
+  applied the weight tolerance and band, while its generic name invited a non-weight history to use a 1 kg
+  tolerance on a waist in millimetres. It is now `weightGoalOutcomes`, with the weight-only contract in its
+  KDoc; no screen changed, because the weight goal is its only caller.
 - **The auto progression banner and consent copy are pinned** (N325). The banner's plural branch, the
   switch's hint, the enable dialog's promise and the baseline date had no assertions, so a wording or
   layout change could have shipped unseen. They are now read back exactly as the screen states them.

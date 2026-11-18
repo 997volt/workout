@@ -22,7 +22,7 @@ import com.example.androidapp.ui.statistics.MetricKey
 import com.example.androidapp.ui.statistics.MetricReading
 import com.example.androidapp.ui.statistics.MetricSeries
 import com.example.androidapp.ui.statistics.WEIGHT_METRIC_ID
-import com.example.androidapp.ui.statistics.goalOutcomes
+import com.example.androidapp.ui.statistics.weightGoalOutcomes
 import com.example.androidapp.ui.statistics.weighInVerdict
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -129,7 +129,7 @@ class MeasurementsViewModel @Inject constructor(
             entries = entries,
             todayEntry = entries.firstOrNull { it.isDailyOn(screen.date, screen.zone) },
             weightGoal = current[WEIGHT_METRIC_ID]?.weightGoal,
-            goalHistory = goalOutcomes(periods, readings),
+            goalHistory = weightGoalOutcomes(periods, readings),
             today = screen.date,
         )
     }

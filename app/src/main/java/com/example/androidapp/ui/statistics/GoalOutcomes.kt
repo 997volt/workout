@@ -59,7 +59,7 @@ data class GoalPeriodOutcome(val period: GoalPeriod, val outcome: GoalOutcome)
  * A period whose row states neither kind nor value is [GoalOutcome.NoGoal]: it is not a goal that was missed, it
  * is a stretch of time the lifter was not asking for anything.
  */
-fun goalOutcomes(periods: List<GoalPeriod>, readings: List<MetricReading>): List<GoalPeriodOutcome> =
+fun weightGoalOutcomes(periods: List<GoalPeriod>, readings: List<MetricReading>): List<GoalPeriodOutcome> =
     periods.mapIndexed { index, period ->
         GoalPeriodOutcome(period, outcomeOf(period, readingsWithin(period, periods.getOrNull(index + 1), readings)))
     }

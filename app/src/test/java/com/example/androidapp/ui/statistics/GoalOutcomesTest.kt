@@ -35,7 +35,7 @@ class GoalOutcomesTest {
 
     @Test
     fun aTarget_isMet_whenAReadingReachedIt_withinTolerance() {
-        val outcomes = goalOutcomes(
+        val outcomes = weightGoalOutcomes(
             listOf(period(null, "TARGET", 80_000.0)),
             readings(0L to 82_000.0, 7L to 81_500.0, 14L to 80_400.0),
         )
@@ -45,7 +45,7 @@ class GoalOutcomesTest {
 
     @Test
     fun aTarget_thatWasNeverReached_isMissed() {
-        val outcomes = goalOutcomes(
+        val outcomes = weightGoalOutcomes(
             listOf(period(null, "TARGET", 75_000.0)),
             readings(0L to 82_000.0, 7L to 81_500.0),
         )
@@ -56,7 +56,7 @@ class GoalOutcomesTest {
     @Test
     fun aLoseGoal_isMet_whenTheTrendSatInItsBand() {
         // 82 kg falling 533 g a week is the loss band's centre (0.65% of the body), so the rate is met.
-        val outcomes = goalOutcomes(listOf(period(null, "LOSE", null)), weekly(perWeek = -533.0))
+        val outcomes = weightGoalOutcomes(listOf(period(null, "LOSE", null)), weekly(perWeek = -533.0))
 
         assertThat(outcomes.single().outcome).isEqualTo(GoalOutcome.Met)
     }
@@ -64,7 +64,7 @@ class GoalOutcomesTest {
     @Test
     fun aGainGoal_isMet_whenTheTrendSatInItsOwnBand() {
         // 82 kg rising 287 g a week is the gain target (0.35% of the body), inside 0.25–0.5%.
-        val outcomes = goalOutcomes(listOf(period(null, "GAIN", null)), weekly(perWeek = +287.0))
+        val outcomes = weightGoalOutcomes(listOf(period(null, "GAIN", null)), weekly(perWeek = +287.0))
 
         assertThat(outcomes.single().outcome).isEqualTo(GoalOutcome.Met)
     }
@@ -73,14 +73,14 @@ class GoalOutcomesTest {
     fun aLoseGoal_isMissed_whenTheTrendWentTheOtherWay() {
         // Inside the loss band as a magnitude and the opposite of what was asked — the half a magnitude-only
         // check would call met.
-        val outcomes = goalOutcomes(listOf(period(null, "LOSE", null)), weekly(perWeek = +533.0))
+        val outcomes = weightGoalOutcomes(listOf(period(null, "LOSE", null)), weekly(perWeek = +533.0))
 
         assertThat(outcomes.single().outcome).isEqualTo(GoalOutcome.Missed)
     }
 
     @Test
     fun aGainGoal_isMissed_whenTheTrendWentTheOtherWay() {
-        val outcomes = goalOutcomes(listOf(period(null, "GAIN", null)), weekly(perWeek = -287.0))
+        val outcomes = weightGoalOutcomes(listOf(period(null, "GAIN", null)), weekly(perWeek = -287.0))
 
         assertThat(outcomes.single().outcome).isEqualTo(GoalOutcome.Missed)
     }
@@ -88,7 +88,7 @@ class GoalOutcomesTest {
     @Test
     fun aLoseGoal_isMissed_whenTheRateWasTooFast() {
         // Above the loss band's top: 0.8% of 82 kg is 656 g a week.
-        val outcomes = goalOutcomes(listOf(period(null, "LOSE", null)), weekly(perWeek = -900.0))
+        val outcomes = weightGoalOutcomes(listOf(period(null, "LOSE", null)), weekly(perWeek = -900.0))
 
         assertThat(outcomes.single().outcome).isEqualTo(GoalOutcome.Missed)
     }
@@ -96,7 +96,7 @@ class GoalOutcomesTest {
     @Test
     fun aGainGoal_isMissed_whenTheRateWasTooFast() {
         // Above the gain band's top: 0.5% of 82 kg is 410 g a week.
-        val outcomes = goalOutcomes(listOf(period(null, "GAIN", null)), weekly(perWeek = +500.0))
+        val outcomes = weightGoalOutcomes(listOf(period(null, "GAIN", null)), weekly(perWeek = +500.0))
 
         assertThat(outcomes.single().outcome).isEqualTo(GoalOutcome.Missed)
     }
@@ -105,7 +105,7 @@ class GoalOutcomesTest {
     fun aRateGoal_withTooFewWeighIns_isUnjudged_ratherThanMissed() {
         // N98's floor, kept: three readings are a number and not a trend, and a verdict about the past must not
         // be noise either.
-        val outcomes = goalOutcomes(
+        val outcomes = weightGoalOutcomes(
             listOf(period(null, "LOSE", null)),
             readings(0L to 82_000.0, 7L to 81_500.0, 14L to 81_000.0),
         )
@@ -115,7 +115,7 @@ class GoalOutcomesTest {
 
     @Test
     fun maintenance_isMet_whenTheWeightStayedInItsCorridor() {
-        val outcomes = goalOutcomes(
+        val outcomes = weightGoalOutcomes(
             listOf(period(null, "MAINTAIN", 80_000.0)),
             readings(0L to 80_400.0, 7L to 80_600.0, 14L to 80_500.0),
         )
@@ -125,7 +125,7 @@ class GoalOutcomesTest {
 
     @Test
     fun maintenance_isMissed_whenTheWeightLeftIt() {
-        val outcomes = goalOutcomes(
+        val outcomes = weightGoalOutcomes(
             listOf(period(null, "MAINTAIN", 80_000.0)),
             readings(0L to 80_400.0, 7L to 82_500.0, 14L to 83_000.0),
         )
@@ -136,7 +136,7 @@ class GoalOutcomesTest {
     @Test
     fun maintenance_fromOneWeighIn_isUnjudged_ratherThanAVerdictOnWater() {
         // B480: "stayed" needs a line; one reading has none, so the corridor has not been shown to hold.
-        val outcomes = goalOutcomes(
+        val outcomes = weightGoalOutcomes(
             listOf(period(null, "MAINTAIN", 80_000.0)),
             readings(0L to 80_400.0),
         )
@@ -146,7 +146,7 @@ class GoalOutcomesTest {
 
     @Test
     fun maintenance_fromTwoWeighIns_isJudgedOnTheirLine() {
-        val outcomes = goalOutcomes(
+        val outcomes = weightGoalOutcomes(
             listOf(period(null, "MAINTAIN", 80_000.0)),
             readings(0L to 80_400.0, 7L to 80_600.0),
         )
@@ -157,14 +157,14 @@ class GoalOutcomesTest {
     @Test
     fun aPeriodOfNoGoal_isNotAMiss() {
         // The row a *Clear* writes: a stretch of time the lifter was not asking for anything.
-        val outcomes = goalOutcomes(listOf(period(null, null, null)), weekly(perWeek = 0.0))
+        val outcomes = weightGoalOutcomes(listOf(period(null, null, null)), weekly(perWeek = 0.0))
 
         assertThat(outcomes.single().outcome).isEqualTo(GoalOutcome.NoGoal)
     }
 
     @Test
     fun aPeriodNobodyWeighedIn_isUnjudged() {
-        val outcomes = goalOutcomes(
+        val outcomes = weightGoalOutcomes(
             listOf(period(20L, "TARGET", 80_000.0)),
             readings(0L to 82_000.0, 7L to 81_000.0),
         )
@@ -176,7 +176,7 @@ class GoalOutcomesTest {
     fun eachPeriod_isJudgedOnItsOwnStretch_ratherThanTheWholeSeries() {
         // The point of periods: March's goal is judged on March, and a target reached in April does not answer
         // for it.
-        val outcomes = goalOutcomes(
+        val outcomes = weightGoalOutcomes(
             listOf(
                 period(null, "TARGET", 75_000.0),
                 period(28L, "TARGET", 80_000.0),
