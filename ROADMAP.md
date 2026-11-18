@@ -29,18 +29,6 @@ they cost.
 
 ### Before 2.32
 
-- **B481 — A weight goal of zero is accepted, and the calorie statement inherits it.** `MetricUnit.parse`
-  accepts zero ("finite and not negative"), `weightGoalFor` in
-  [GoalRow.kt](app/src/main/java/com/example/androidapp/ui/statistics/GoalRow.kt) asks only for a parse, and
-  [RoomGoalRepository.kt](app/src/main/java/com/example/androidapp/data/RoomGoalRepository.kt) and
-  [BackupValidator.kt](app/src/main/java/com/example/androidapp/data/transfer/BackupValidator.kt) accept any
-  non-negative value. A target of 0 kg is an 80 kg lifter's goal 80 kg away with a multi-year date; a
-  maintenance goal of 0 kg makes the corridor's point gap about 79 kg, and
-  [EnergyAdjustment.kt](app/src/main/java/com/example/androidapp/ui/statistics/EnergyAdjustment.kt)'s corridor
-  arithmetic quotes about 87,000 kcal a day. The body field on the same screen already treats zero as "not a
-  body" (B336); the goal field does not. The tests cover the kind round trip and a missing value, never zero.
-  Fixed means a weight goal must be positive at the editor, the repository and the backup, with tests; a
-  typed 0 is refused and a file carrying one is refused rather than restored.
 - **B482 — A large maintenance gap is quoted as one week's calorie change.**
   `energyAdjustmentToCorridor` multiplies the whole gap by the same 1.1 kcal a day per gram a week (B335).
   1.2 kg outside the corridor is 1,320 kcal — the test currently asserts that — and 10 kg is 11,000, in a

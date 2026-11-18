@@ -17,6 +17,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A weight goal must be a weight** (B481). Zero was a valid parse in the goal editor and a valid
+  non-negative value in the store and the backup; a 0 kg target is a goal years away, and a 0 kg
+  maintenance corridor made the kcal sentence quote tens of thousands of calories. The editor, the
+  repository and the backup now refuse a weight goal of zero, the same rule the body field already
+  applies.
 - **Maintenance keeps N98's floor, in the sentence and in the history** (B480). The statistics section's
   corridor branch skipped the eight-reading/21-day floor that the rate branch and the weigh-in prompt apply,
   so one or two weigh-ins produced a kcal figure; the history also called a one-weigh-in corridor Met or

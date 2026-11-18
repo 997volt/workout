@@ -97,6 +97,16 @@ class GoalPeriodsTest {
     }
 
     @Test
+    fun aZeroWeightGoal_isRefused_ratherThanStored() = runTest {
+        // B481: the store is a second boundary behind the editor; a caller that builds Target(0) or
+        // Maintain(0) directly must not get a row either.
+        assertTrue(save(start = today, goal = WeightGoal.Target(0L)) is DataResult.Failure)
+        assertTrue(save(start = today, goal = WeightGoal.Maintain(0L)) is DataResult.Failure)
+
+        assertTrue("nothing was written", periods().isEmpty())
+    }
+
+    @Test
     fun theSameDayTwice_isOnePeriod() = runTest {
         save(start = today, goal = WeightGoal.Target(75_000L))
 

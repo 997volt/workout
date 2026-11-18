@@ -332,11 +332,36 @@ internal object BackupValidator {
                     out += BackupProblem(where, "A goal must be a finite, non-negative number.")
                 }
             }
+            validateWeightGoalValue(row.metricId, row.kind, row.value, where, out)
+        }
+        file.goals.forEach { (metric, value) ->
+            validateWeightGoalValue(metric, file.goalKinds[metric], value, "Goal for $metric", out)
         }
         file.goalKinds.forEach { (metric, kind) ->
             if (WeightGoalKind.entries.none { it.name == kind }) {
                 out += BackupProblem("Goal for $metric", "The goal kind is not one this app knows.")
             }
+        }
+    }
+
+    /**
+     * A weight is a body, not a number: a target or corridor of zero is not a goal (B481).
+     *
+     * The older `goals` half has no kind on a file written before kinds existed, so the metric id is the
+     * only thing that can say whether its zero is a weight. A non-weight level target of zero is left
+     * alone; only the weight kind and the weight metric are refused.
+     */
+    private fun validateWeightGoalValue(
+        metricId: String,
+        kind: String?,
+        value: Double?,
+        where: String,
+        out: MutableList<BackupProblem>,
+    ) {
+        val valueKind = kind == WeightGoalKind.TARGET.name || kind == WeightGoalKind.MAINTAIN.name ||
+            (kind == null && metricId == WEIGHT_METRIC)
+        if (valueKind && value == 0.0) {
+            out += BackupProblem(where, "A weight goal must be heavier than zero.")
         }
     }
 
@@ -545,3 +570,7 @@ internal object BackupValidator {
         }
     }
 }
+
+
+/** The weight metric's backup id; the UI's own constant is internal to its module. */
+private const val WEIGHT_METRIC = "BODY:WEIGHT"

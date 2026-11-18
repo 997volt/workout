@@ -76,6 +76,7 @@ class RoomGoalRepository @Inject constructor(
     ): DataResult<Unit> = dataResultOf {
         val zone = ZoneId.systemDefault()
         val today = timeSource.now().atZone(zone).toLocalDate()
+        validateGoal(goal)
         validatePeriod(start, end, today)
         val startMillis = start?.let { GoalTimeline.startOfDay(it, zone) }
         val endMillis = end?.let { GoalTimeline.startOfDay(it, zone) }
@@ -104,6 +105,16 @@ class RoomGoalRepository @Inject constructor(
                 else -> editPeriod(existing, periods, write)
             }
         }
+    }
+
+    /** A weight is a body, not a number: a goal of zero is not a goal (B481). */
+    private fun validateGoal(goal: WeightGoal?) {
+        val grams = when (goal) {
+            is WeightGoal.Target -> goal.weightGrams
+            is WeightGoal.Maintain -> goal.weightGrams
+            else -> null
+        }
+        if (grams != null && grams <= 0L) throw InvalidInputException(GOAL_MUST_BE_POSITIVE)
     }
 
     /** The day itself is not a record, and an end that is not after its start would write an empty stretch. */
@@ -381,6 +392,8 @@ private fun MetricGoalEntity.toPeriod(): GoalPeriod = GoalPeriod(
     kind = kind,
     value = value,
 )
+
+private const val GOAL_MUST_BE_POSITIVE = "A weight goal must be heavier than zero."
 
 private const val START_AFTER_TODAY = "A goal cannot start after today."
 

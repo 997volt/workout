@@ -18,6 +18,15 @@ class BackupValidatorTest {
     }
 
     @Test
+    fun aWeightGoal_mustBeHeavierThanZero() {
+        // B481: zero is not a body; the goal field and the store refuse it, and a file must not smuggle it in.
+        val zero = valid().copy(goalPeriods = valid().goalPeriods.map { it.copy(value = 0.0) })
+
+        assertThat(BackupValidator.problems(zero).messages())
+            .contains("A weight goal must be heavier than zero.")
+    }
+
+    @Test
     fun aCountedSet_needsPositiveReps_andAHoldStatesSecondsInstead() {
         val zeroReps = valid().copy(sets = listOf(set.copy(reps = 0)))
         assertThat(BackupValidator.problems(zeroReps).messages())
@@ -258,6 +267,17 @@ class BackupValidatorTest {
             ),
         ),
         templateSets = listOf(templateSet),
+        goalPeriods = listOf(
+            GoalPeriodDto(
+                id = "goal-1",
+                metricId = "BODY:WEIGHT",
+                kind = "TARGET",
+                value = 80_000.0,
+                startedAt = 0L,
+                createdAt = 0L,
+                updatedAt = 0L,
+            ),
+        ),
     )
 
     private companion object {

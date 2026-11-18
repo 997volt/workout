@@ -505,6 +505,24 @@ class MeasurementsScreenTest {
     }
 
     @Test
+    fun aZeroWeightGoal_isNotSaveable() {
+        // B481: the body field refuses zero, so the goal field must too; otherwise the corridor arithmetic
+        // reads a 0 kg goal as tens of kilograms of missing weight.
+        var saved: WeightGoal? = null
+        setScreen(
+            state = stateWithGoal(WeightGoal.Target(80_000L)),
+            onSaveGoalPeriod = { _, _, _, value -> saved = value },
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_SET).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_FIELD).performTextClearance()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_FIELD).performTextInput("0")
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_CONFIRM).assertIsNotEnabled()
+        assertNull("a zero weight goal writes nothing", saved)
+    }
+
+    @Test
     fun aDirectionGoal_offersNoWeight_andInventsNone() {
         // N135's rule, moved here with the row: the band decides the rate, and the app never manufactures an end
         // weight the lifter did not state — so the field is not offered at all, and a stale one cannot become a

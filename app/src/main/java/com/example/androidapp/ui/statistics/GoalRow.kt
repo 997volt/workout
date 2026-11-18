@@ -671,8 +671,11 @@ private fun weightGoalFor(kind: WeightGoalKind?, typed: String, metric: MetricEn
     null -> null
     WeightGoalKind.LOSE -> WeightGoal.Direction(gain = false)
     WeightGoalKind.GAIN -> WeightGoal.Direction(gain = true)
-    WeightGoalKind.TARGET -> metric.unit.parse(typed)?.let { WeightGoal.Target(it.toLong()) }
-    WeightGoalKind.MAINTAIN -> metric.unit.parse(typed)?.let { WeightGoal.Maintain(it.toLong()) }
+    // A bodyweight to reach or hold is a body, and zero is not one (B481); the measurement field on the
+    // same screen already refuses it for the same reason (B336).
+    WeightGoalKind.TARGET -> metric.unit.parse(typed)?.takeIf { it > 0.0 }?.let { WeightGoal.Target(it.toLong()) }
+    WeightGoalKind.MAINTAIN ->
+        metric.unit.parse(typed)?.takeIf { it > 0.0 }?.let { WeightGoal.Maintain(it.toLong()) }
 }
 
 /**
