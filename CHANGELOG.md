@@ -17,6 +17,12 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A backup's goal kind and value must describe one goal** (B484). The validator checked the kind name and
+  the value's sign separately: a target or maintenance kind without a value restored as "no goal", a
+  direction with a value lost it on read, and the older `goals`/`goalKinds` halves were never compared with
+  the periods that win the import. The validator now requires a value for a value kind, refuses one on a
+  direction, and checks the halves against the open period; a target with no kind is still the old file's
+  target.
 - **A goal still in force says "so far", not "Missed"** (B483). The history gave the newest, open period the
   same final Met/Missed as a closed one, so a target set two days ago read "Missed" beside a range that
   started with "From". The open period's verdict is now "Met so far" / "Missed so far"; closed periods keep

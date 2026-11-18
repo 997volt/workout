@@ -27,6 +27,37 @@ class BackupValidatorTest {
     }
 
     @Test
+    fun aGoalKindAndValue_areOneStatement() {
+        // B484: a target without a weight reads as no goal, and a direction with a weight silently loses it.
+        val noValue = valid().copy(goalPeriods = valid().goalPeriods.map { it.copy(value = null) })
+        assertThat(BackupValidator.problems(noValue).messages())
+            .contains("A target or maintenance goal needs a weight.")
+
+        val directionWithValue = valid().copy(goalKinds = mapOf("BODY:WEIGHT" to "LOSE"))
+        assertThat(BackupValidator.problems(directionWithValue).messages())
+            .contains("A direction goal cannot state a weight.")
+
+        val halfWithoutValue = valid().copy(goals = emptyMap())
+        assertThat(BackupValidator.problems(halfWithoutValue).messages())
+            .contains("A target or maintenance goal needs a weight.")
+    }
+
+    @Test
+    fun aGoalHalf_mustAgreeWithTheOpenPeriod() {
+        // B484: both halves are in the file, so they must describe the same open period.
+        val wrongValue = valid().copy(goals = mapOf("BODY:WEIGHT" to 81_000.0))
+        assertThat(BackupValidator.problems(wrongValue).messages())
+            .contains("The goal value disagrees with its open period.")
+
+        val wrongKind = valid().copy(goalKinds = mapOf("BODY:WEIGHT" to "MAINTAIN"))
+        assertThat(BackupValidator.problems(wrongKind).messages())
+            .contains("The goal kind disagrees with its open period.")
+
+        // A target with no kind is still a target under the old build's rule, so the half is compatible.
+        assertThat(BackupValidator.problems(valid().copy(goalKinds = emptyMap()))).isEmpty()
+    }
+
+    @Test
     fun aCountedSet_needsPositiveReps_andAHoldStatesSecondsInstead() {
         val zeroReps = valid().copy(sets = listOf(set.copy(reps = 0)))
         assertThat(BackupValidator.problems(zeroReps).messages())
@@ -278,6 +309,8 @@ class BackupValidatorTest {
                 updatedAt = 0L,
             ),
         ),
+        goals = mapOf("BODY:WEIGHT" to 80_000.0),
+        goalKinds = mapOf("BODY:WEIGHT" to "TARGET"),
     )
 
     private companion object {

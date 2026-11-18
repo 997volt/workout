@@ -29,15 +29,6 @@ they cost.
 
 ### Before 2.32
 
-- **B484 — The backup checks a goal's kind and value separately, not against each other.**
-  `validateGoals` in [BackupValidator.kt](app/src/main/java/com/example/androidapp/data/transfer/BackupValidator.kt)
-  accepts any known kind and any finite non-negative value. A TARGET or MAINTAIN with no value is restored as
-  a row that reads as no goal; a LOSE or GAIN with a value keeps the value in the row but drops it on read.
-  When a file carries both `goalPeriods` and the older `goals`/`goalKinds` halves, the periods win and the
-  halves are not checked against them. The app's own writes cannot produce those shapes, so this is a
-  hand-edited file or a future build's row — exactly what a validator is for. Fixed means a value kind
-  requires a positive value (B481), a direction kind requires none, and the two halves agree when both are
-  present; tests for each refusal.
 - **B485 — A restore can create a goal boundary the write path forbids.** `restoreGoalPeriods` in
   [RoomBackupRepository.kt](app/src/main/java/com/example/androidapp/data/RoomBackupRepository.kt) inserts
   every `goalPeriods` row with IGNORE-by-id. It does not refuse a start in the future, a second undated row

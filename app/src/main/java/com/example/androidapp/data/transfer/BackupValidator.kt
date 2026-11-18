@@ -10,7 +10,6 @@ import com.example.androidapp.domain.model.MAX_REPS
 import com.example.androidapp.domain.model.MAX_TAPE_MILLIMETRES
 import com.example.androidapp.domain.model.Rpe
 import com.example.androidapp.domain.model.TenPointScale
-import com.example.androidapp.domain.model.WeightGoalKind
 import com.example.androidapp.domain.model.storedZoneOrNull
 import com.example.androidapp.domain.repository.BackupProblem
 import java.time.LocalDate
@@ -42,7 +41,7 @@ internal object BackupValidator {
         validateSessionPlanSets(file, this, strict)
         validateRatings(file, this)
         validateMeasurements(file, this, strict)
-        validateGoals(file, this)
+        GoalBackupValidator.validate(file, this)
         validateTemplates(file, this)
         validateTemplateExercises(file.templateExercises, this, strict)
         validateTemplateSets(file.templateSets, this, strict)
@@ -317,54 +316,6 @@ internal object BackupValidator {
         }
     }
 
-    private fun validateGoals(file: BackupFile, out: MutableList<BackupProblem>) {
-        file.goalPeriods.forEachIndexed { index, row ->
-            val where = "Goal ${index + 1}"
-            row.id.required(out, where)
-            row.metricId.required(out, where)
-            row.kind?.let {
-                if (WeightGoalKind.entries.none { kind -> kind.name == it }) {
-                    out += BackupProblem(where, "The goal kind is not one this app knows.")
-                }
-            }
-            row.value?.let {
-                if (!it.isFinite() || it < 0.0) {
-                    out += BackupProblem(where, "A goal must be a finite, non-negative number.")
-                }
-            }
-            validateWeightGoalValue(row.metricId, row.kind, row.value, where, out)
-        }
-        file.goals.forEach { (metric, value) ->
-            validateWeightGoalValue(metric, file.goalKinds[metric], value, "Goal for $metric", out)
-        }
-        file.goalKinds.forEach { (metric, kind) ->
-            if (WeightGoalKind.entries.none { it.name == kind }) {
-                out += BackupProblem("Goal for $metric", "The goal kind is not one this app knows.")
-            }
-        }
-    }
-
-    /**
-     * A weight is a body, not a number: a target or corridor of zero is not a goal (B481).
-     *
-     * The older `goals` half has no kind on a file written before kinds existed, so the metric id is the
-     * only thing that can say whether its zero is a weight. A non-weight level target of zero is left
-     * alone; only the weight kind and the weight metric are refused.
-     */
-    private fun validateWeightGoalValue(
-        metricId: String,
-        kind: String?,
-        value: Double?,
-        where: String,
-        out: MutableList<BackupProblem>,
-    ) {
-        val valueKind = kind == WeightGoalKind.TARGET.name || kind == WeightGoalKind.MAINTAIN.name ||
-            (kind == null && metricId == WEIGHT_METRIC)
-        if (valueKind && value == 0.0) {
-            out += BackupProblem(where, "A weight goal must be heavier than zero.")
-        }
-    }
-
     private fun validateTemplates(file: BackupFile, out: MutableList<BackupProblem>) {
         file.templates.forEachIndexed { index, row ->
             val where = "Workout template ${index + 1}"
@@ -570,6 +521,3 @@ internal object BackupValidator {
         }
     }
 }
-
-/** The weight metric's backup id; the UI's own constant is internal to its module. */
-private const val WEIGHT_METRIC = "BODY:WEIGHT"
