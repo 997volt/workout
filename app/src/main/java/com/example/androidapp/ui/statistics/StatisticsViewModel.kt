@@ -518,6 +518,9 @@ class StatisticsViewModel @Inject constructor(
                 // one: the rate is a share of the body now, and a range that excluded the latest weigh-in
                 // could not state it (N135).
                 val currentWeightGrams = allReadings.mapNotNull { it.value }.lastOrNull()?.toLong()
+                // A reached target has no rate to display (B479): the rate answers "how fast to it", and
+                // there is nothing left to reach. The row says reached and the energy section stays quiet.
+                val targetReached = weightGoal?.isTargetReached(currentWeightGrams ?: 0L) == true
                 StatisticsUiState(
                     isLoading = false,
                     range = sources.range,
@@ -541,10 +544,12 @@ class StatisticsViewModel @Inject constructor(
                     // readings **in that period**, not against what the range chips happen to show (B141).
                     goalReadings = allReadings,
                     planTargets = plans,
-                    rateTarget = weightGoal?.ratePerWeekGrams(currentWeightGrams ?: 0L),
-                    rateBand = weightGoal?.rateBandPerWeekGrams(currentWeightGrams ?: 0L),
+                    rateTarget = weightGoal?.takeIf { !targetReached }
+                        ?.ratePerWeekGrams(currentWeightGrams ?: 0L),
+                    rateBand = weightGoal?.takeIf { !targetReached }
+                        ?.rateBandPerWeekGrams(currentWeightGrams ?: 0L),
                     targetDate = weightGoal?.targetDateEstimate(currentWeightGrams ?: 0L, today()),
-                    targetReached = weightGoal?.isTargetReached(currentWeightGrams ?: 0L) == true,
+                    targetReached = targetReached,
                     acceptsHead = sources.acceptsHead,
                     records = recordFacts.second,
                 )

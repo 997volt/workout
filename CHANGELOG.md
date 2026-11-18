@@ -17,6 +17,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A reached weight target stops asking for a rate** (B479). The history's own 1 kg tolerance said a target
+  was met, while the rate derivation still took its direction from the exact weight: an 80.5 kg target at
+  80.0 kg read "Target reached", then showed a gain band and an "eat more" sentence, and the weigh-in prompt
+  said the same. A target inside the tolerance now has no rate, band or calorie sentence, and a weigh-in at
+  it says nothing.
 - **The plan's rep range is still visible after a load step restarts it** (B478). A set answered at the
   ceiling of its 5–10 range progressed by one load step, which put the current rep back on 5, and the
   next session's plan line said only "Plan 5 reps @ 102.5 kg" — the 10 the lifter could still climb to

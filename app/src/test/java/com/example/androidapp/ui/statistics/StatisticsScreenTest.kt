@@ -1194,12 +1194,17 @@ class StatisticsScreenTest {
         setScreen(
             state = stateWithGoal(WeightGoal.Target(80_500L)).copy(
                 targetReached = true,
+                // The production state used to carry these beside "reached"; the section must not draw them.
+                rateTarget = -520.0,
+                rateBand = (-640.0)..(-400.0),
             ),
         )
 
         composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_TARGET)
             .assertTextEquals("Target reached")
         composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_TARGET_DATE).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_BAND).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_STATEMENT).assertDoesNotExist()
     }
 
     @Test

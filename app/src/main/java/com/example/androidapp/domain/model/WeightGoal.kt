@@ -113,6 +113,7 @@ fun weightRateBandPerWeekGrams(weightGrams: Long, gain: Boolean): ClosedRange<Do
 private fun WeightGoal.directionFrom(currentWeightGrams: Long): Boolean? = when (this) {
     is WeightGoal.Direction -> gain
     is WeightGoal.Target -> when {
+        isTargetReached(currentWeightGrams) -> null
         weightGrams > currentWeightGrams -> true
         weightGrams < currentWeightGrams -> false
         else -> null
@@ -153,6 +154,8 @@ fun WeightGoal.ratePerWeekGrams(currentWeightGrams: Long): Double? {
     if (currentWeightGrams <= 0L) return null
     return when (this) {
         is WeightGoal.Target -> when {
+            // A target inside the goal's own reached tolerance is met; it has no direction left to ask for.
+            isTargetReached(currentWeightGrams) -> 0.0
             weightGrams > currentWeightGrams -> rateOn(currentWeightGrams, gain = true)
             weightGrams < currentWeightGrams -> rateOn(currentWeightGrams, gain = false)
             else -> 0.0

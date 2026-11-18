@@ -6,6 +6,7 @@ import kotlin.math.ceil
 import kotlin.math.floor
 import com.example.androidapp.domain.model.MAINTENANCE_CORRIDOR_GRAMS
 import com.example.androidapp.domain.model.WeightGoal
+import com.example.androidapp.domain.model.isTargetReached
 import com.example.androidapp.domain.model.ratePerWeekGrams
 import kotlin.math.roundToInt
 
@@ -107,7 +108,9 @@ internal fun MetricSeries.hasEnoughToSpeak(): Boolean {
  * A **maintenance** goal is judged against its corridor, exactly as the chart's section judges it (N135).
  */
 fun MetricSeries.weighInVerdict(goal: WeightGoal?, currentWeightGrams: Long?): EnergyAdjustment? {
-    if (goal == null || !hasEnoughToSpeak()) return null
+    // A target already inside its reached tolerance has no rate to answer for (B479), so an unsolicited
+    // prompt after a weigh-in would be advice toward a goal that is already met.
+    if (goal == null || !hasEnoughToSpeak() || goal.isTargetReached(currentWeightGrams ?: 0L)) return null
     return if (goal is WeightGoal.Maintain) {
         energyAdjustmentToCorridor(goal.weightGrams.toDouble())
     } else {

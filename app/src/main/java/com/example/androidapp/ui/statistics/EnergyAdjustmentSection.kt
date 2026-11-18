@@ -86,27 +86,31 @@ fun EnergyAdjustmentSection(
         // A target's date is what its rate implies, never the input (N151). A reached target says so.
         TargetDateLine(targetDate = targetDate)
 
-        // The target is the number; this is the range that says whether the trend is on it (N149).
-        rateBand?.let { band ->
-            Text(
-                text = stringResource(
-                    R.string.statistics_rate_band,
-                    slopeText(band.start) { metric.unit.formatRate(it) },
-                    slopeText(band.endInclusive) { metric.unit.formatRate(it) },
-                    stringResource(metric.unit.labelRes),
-                ),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.testTag(TestTags.Statistics.ENERGY_BAND),
-            )
-        }
+        // A reached target has no rate to chase and no band to be on (B479): the row has said it is met,
+        // and a calorie sentence here would be advice about a goal that is already answered.
+        if (!targetReached) {
+            // The target is the number; this is the range that says whether the trend is on it (N149).
+            rateBand?.let { band ->
+                Text(
+                    text = stringResource(
+                        R.string.statistics_rate_band,
+                        slopeText(band.start) { metric.unit.formatRate(it) },
+                        slopeText(band.endInclusive) { metric.unit.formatRate(it) },
+                        stringResource(metric.unit.labelRes),
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.testTag(TestTags.Statistics.ENERGY_BAND),
+                )
+            }
 
-        energyStatement(series = series, weightGoal = weightGoal, rateTarget = rateTarget)?.let { text ->
-            Text(
-                text = text,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.testTag(TestTags.Statistics.ENERGY_STATEMENT),
-            )
+            energyStatement(series = series, weightGoal = weightGoal, rateTarget = rateTarget)?.let { text ->
+                Text(
+                    text = text,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.testTag(TestTags.Statistics.ENERGY_STATEMENT),
+                )
+            }
         }
 
         Text(

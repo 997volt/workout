@@ -103,6 +103,16 @@ class WeightGoalTest {
     }
 
     @Test
+    fun aTargetInsideTheReachedTolerance_hasNoMovementAndNoBand() {
+        // B479: the goal history calls 0.5 kg away reached; the rate must agree rather than asking for the
+        // 0.5 kg the row above already says is met.
+        val target = WeightGoal.Target(80_500L)
+
+        assertThat(target.ratePerWeekGrams(80_000L)).isEqualTo(0.0)
+        assertThat(target.rateBandPerWeekGrams(80_000L)).isNull()
+    }
+
+    @Test
     fun maintenance_asksForNoRate_atAll() {
         // N135: a corridor is what a maintenance goal is; a literal 0.0 kg a week is broken by the first
         // glass of water, so it is not a rate the app will state.

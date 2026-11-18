@@ -29,21 +29,6 @@ they cost.
 
 ### Before 2.32
 
-- **B479 — A reached target still reads as a rate to chase.** `isTargetReached` gives a target the goal
-  history's 1 kg tolerance, but [WeightGoal.kt](app/src/main/java/com/example/androidapp/domain/model/WeightGoal.kt)'s
-  `directionFrom` calls it met only when the two weights are equal. A target of 80.5 kg against 80.0 kg is
-  therefore *reached* and *a gain goal* at once: `ratePerWeekGrams` returns 280 g a week,
-  [StatisticsViewModel.kt](app/src/main/java/com/example/androidapp/ui/statistics/StatisticsViewModel.kt)
-  passes the rate and band beside `targetReached = true`, and
-  [EnergyAdjustmentSection.kt](app/src/main/java/com/example/androidapp/ui/statistics/EnergyAdjustmentSection.kt)
-  prints "Target reached" over "On target between +0.2 and +0.4 kg per week" and an "eat more" sentence. The
-  same rate reaches [MeasurementsViewModel.kt](app/src/main/java/com/example/androidapp/ui/measurements/MeasurementsViewModel.kt)'s
-  weigh-in path, so the unsolicited prompt after a weigh-in at the target tells the lifter to eat more. The
-  tests stop short of the contradiction: the domain case only checks the date, and
-  [StatisticsScreenTest.kt](app/src/test/java/com/example/androidapp/ui/statistics/StatisticsScreenTest.kt)
-  sets `targetReached` without the rate the view model really passes. Fixed means a reached target has no
-  rate band and no calorie sentence or weigh-in prompt — the row says reached and stops — with tests for a
-  target inside the tolerance, one exactly on it, the screen with its production state, and the weigh-in.
 - **B480 — Maintenance quotes a calorie change below the floor, and judges a corridor from one weigh-in.**
   [EnergyAdjustmentSection.kt](app/src/main/java/com/example/androidapp/ui/statistics/EnergyAdjustmentSection.kt)'s
   maintenance branch calls `energyAdjustmentToCorridor` directly; that function never checks

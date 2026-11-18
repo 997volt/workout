@@ -199,6 +199,14 @@ class EnergyAdjustmentTest {
     }
 
     @Test
+    fun aWeighInAtAReachedTarget_saysNothing() {
+        // B479: the prompt is unsolicited, and a target inside its reached tolerance has no rate to answer.
+        val long = weekly(perWeek = 0.0)
+
+        assertThat(long.weighInVerdict(WeightGoal.Target(82_500L), currentWeightGrams = 82_000L)).isNull()
+    }
+
+    @Test
     fun aMaintenanceGoal_insideItsCorridor_isOnTarget() {
         // The corridor is the goal, so a flat 80 kg series is the answer rather than a rate of zero.
         val flat = series(*(0L..7L).map { week -> (week * 7) to 80_000.0 }.toTypedArray())

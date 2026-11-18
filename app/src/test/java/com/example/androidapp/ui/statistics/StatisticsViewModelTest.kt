@@ -578,6 +578,8 @@ class StatisticsViewModelTest {
         advanceUntilIdle()
         assertThat(reached.uiState.value.targetDate).isNull()
         assertThat(reached.uiState.value.targetReached).isTrue()
+        assertThat(reached.uiState.value.rateTarget).isNull()
+        assertThat(reached.uiState.value.rateBand).isNull()
     }
 
     @Test
