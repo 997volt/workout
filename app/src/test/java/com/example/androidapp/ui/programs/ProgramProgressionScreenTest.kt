@@ -133,6 +133,15 @@ class ProgramProgressionScreenTest {
     }
 
     @Test
+    fun resetIsNotDrawn_whileAutoIsOff() {
+        // B477: the retained snapshot had no reader because the screen draws Reset only while the
+        // switch is on; the state now drops it, but the control's absence is the screen's own rule.
+        setScreen(state = state(auto = false, baselineAt = Instant.ofEpochMilli(1_700_000_000_000L)))
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.AUTO_RESET).assertDoesNotExist()
+    }
+
+    @Test
     fun resetIsDisabled_whileAResetWrites() {
         // B414: the button used to stay live, so a second confirm started a second reset.
         setScreen(

@@ -15,9 +15,9 @@ interface ProgressionRepository {
     /**
      * Switches the program's own progression on or off (ROADMAP N299).
      *
-     * Enabling snapshots every scheduled set's current target as the baseline in the same
-     * transaction as the flag; disabling leaves that snapshot, so a later reset still has the point
-     * the first switch was made from.
+     * Enabling snapshots every scheduled set's current target as the baseline in the same transaction
+     * as the flag. Disabling drops that snapshot (B477): Reset is offered only while the switch is on,
+     * so the rows would have no reader, and a later enabling captures the targets the lifter has then.
      */
     suspend fun setAutoProgression(programId: String, enabled: Boolean): DataResult<Unit>
 

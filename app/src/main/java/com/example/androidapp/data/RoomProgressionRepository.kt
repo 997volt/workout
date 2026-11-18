@@ -38,11 +38,10 @@ class RoomProgressionRepository @Inject constructor(
     /**
      * The switch and its baseline are one act (ROADMAP N299).
      *
-     * Enabling without a snapshot would be a program that says auto is on with nothing to reset to;
-     * disabling leaves the snapshot alone, because the point the first switch was made from is still
-     * the honest answer to "where did this start". Re-enabling captures the current targets again —
-     * the lifter may have edited the plan while auto was off, and the later baseline is the one they
-     * meant.
+     * Enabling without a snapshot would be a program that says auto is on with nothing to reset to.
+     * Disabling drops the snapshot (B477): Reset is offered only while the switch is on, so a target
+     * kept for a reset nobody can take is stale state; turning it back on captures where the lifter
+     * is then, which is also the point they may have edited the plan while auto was off.
      */
     override suspend fun setAutoProgression(programId: String, enabled: Boolean): DataResult<Unit> =
         dataResultOf {
@@ -50,8 +49,9 @@ class RoomProgressionRepository @Inject constructor(
             database.withTransaction {
                 val updated = programs.setAutoProgression(programId, enabled, now)
                 if (updated == 0) throw NotFoundException("program $programId")
+                // Both directions start from an empty snapshot; only enabling fills it.
+                writes.clearBaselines(programId)
                 if (enabled) {
-                    writes.clearBaselines(programId)
                     writes.insertBaselines(
                         programs.findProgramSets(programId).map { it.toBaseline(programId, now) },
                     )

@@ -46,6 +46,9 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   dialog said "this program". The reset now skips sets the program no longer schedules, and the
   confirmation names the other program when the plan is shared (or says the read failed rather than
   pretending there is none).
+- **The auto progression baseline has one story** (B477). Disabling kept a snapshot that no screen could
+  read — Reset is drawn only while the switch is on — and re-enabling recaptured it anyway. Disabling now
+  drops the rows, a later enabling captures the targets the lifter has then, and both KDocs say so.
 
 ## [2.31] — 2026-11-17 (versionCode 52)
 

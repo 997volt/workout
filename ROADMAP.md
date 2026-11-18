@@ -52,20 +52,6 @@ the write apart for the same reason.
   rejecting it no longer holds. A write-log-only fix was rejected too: it would know the auto steps and
   not the manual ones, which is two rules for one fact.
 
-### The rest of the review
-
-- **B477 — The retained baseline for a disabled switch is unreachable, and the docs say it is not.**
-  [ProgressionRepository.kt](app/src/main/java/com/example/androidapp/domain/repository/ProgressionRepository.kt)
-  says disabling "leaves that snapshot, so a later reset still has the point the first switch was made
-  from", and [RoomProgressionRepository.kt](app/src/main/java/com/example/androidapp/data/RoomProgressionRepository.kt)
-  keeps it for that answer — but the screen offers Reset only while auto is on
-  ([ProgramProgressionScreen.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramProgressionScreen.kt)),
-  while re-enabling clears and recaptures the baseline. The kept rows therefore have no reader: the
-  "Started from" line is hidden while off, and turning it on overwrites the date. The screen test's name
-  says "only while auto is on" but it only asserts the on state, so the off state is unpinned as well.
-  Fixed means one of the two stories: retain the first baseline across a re-enable (and say so), or
-  drop the stale rows and correct both KDocs.
-
 ### Coverage and one scope question
 
 - **N325 — The auto progression seams that let these through are uncovered.** No test asserts the

@@ -81,6 +81,26 @@ class ProgressionRepositoryTest {
     }
 
     @Test
+    fun disabling_dropsTheBaseline_andReEnablingCapturesTheNewOne() = runTest {
+        // B477: disabling used to keep rows no screen could read — Reset is drawn only while the
+        // switch is on — and re-enabling recaptured anyway. One story now: off drops it, on captures.
+        assertTrue(progression.setAutoProgression("p1", true) is DataResult.Success)
+        setTarget(weightGrams = 110_000L, repsCurrent = 6)
+
+        assertTrue(progression.setAutoProgression("p1", false) is DataResult.Success)
+
+        assertNull("no reset can be offered while off", progression.baselineCapturedAt("p1").getOrNull())
+        assertTrue("and nothing is left to read", database.progressionDao().findBaselines("p1").isEmpty())
+
+        assertTrue(progression.setAutoProgression("p1", true) is DataResult.Success)
+        assertEquals(
+            "the later switch starts from where the plan is",
+            110_000L,
+            database.progressionDao().findBaselines("p1").single().weightGrams,
+        )
+    }
+
+    @Test
     fun reset_skipsASetTheProgramNoLongerSchedules() = runTest {
         // B476: the baseline names a set by id, and a removed day leaves its plan in the library. A
         // reset that rewound it would touch a workout the program no longer prescribes.
