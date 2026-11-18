@@ -344,6 +344,9 @@ class ActiveWorkoutViewModel @Inject constructor(
     /** True while the banner's undo is running, so a second tap cannot run the batch twice (B473). */
     private var autoUndoInFlight = false
 
+    /** Exercises whose auto finish is still writing; a second *Done* waits for it (B474). */
+    private val autoFinishing = mutableSetOf<String>()
+
     /** Emits true once a finish or discard succeeds, so the screen can leave. */
     private val _closed = MutableStateFlow(false)
     val closed: StateFlow<Boolean> = _closed
@@ -616,13 +619,25 @@ class ActiveWorkoutViewModel @Inject constructor(
                 }
             }
 
-            isDeload -> viewModelScope.launch { finishExercise(sessionExerciseId, row?.progression) }
+            isDeload -> viewModelScope.launch { finishExercise(sessionExerciseId, row.progression) }
 
             movementMode != null -> finishWithMode(sessionExerciseId, row, movementMode)
             row?.progression?.hasPlan != true ->
                 viewModelScope.launch { finishExercise(sessionExerciseId, row?.progression) }
 
-            else -> viewModelScope.launch { resolveAutoAndFinish(sessionExerciseId, row) }
+            else -> {
+                // One finish per exercise (B474): a second tap before the first write lands would
+                // build the same prompt from the same pre-write plan, and the loser of the race is
+                // refused by `requireBeforeMatches` with a caller-level sentence.
+                if (!autoFinishing.add(sessionExerciseId)) return
+                viewModelScope.launch {
+                    try {
+                        resolveAutoAndFinish(sessionExerciseId, row)
+                    } finally {
+                        autoFinishing.remove(sessionExerciseId)
+                    }
+                }
+            }
         }
     }
 

@@ -52,15 +52,7 @@ the write apart for the same reason.
   rejecting it no longer holds. A write-log-only fix was rejected too: it would know the auto steps and
   not the manual ones, which is two rules for one fact.
 
-- **B474 — A double *Done* launches two auto writes.** `onFinishExercise` hands the auto path to
-  `viewModelScope.launch` with no in-flight guard
-  ([ActiveWorkoutViewModel.kt](app/src/main/java/com/example/androidapp/ui/workout/ActiveWorkoutViewModel.kt)),
-  and *Done* has no busy state either ([WorkoutExerciseSection.kt](app/src/main/java/com/example/androidapp/ui/workout/WorkoutExerciseSection.kt)).
-  Two taps before the first write lands build the same prompt from the same pre-write plan; the second
-  write is refused by `requireBeforeMatches` ("the recorded step does not start from the plan"), which is
-  a caller refusal rather than a user error, and the race decides whether the finish's success clears it
-  before the screen draws it. Fixed means a per-exercise finish in flight (or a single-flight write)
-  ignores the second tap, with a test that presses *Done* twice without settling.
+### The rest of the review
 
 - **B475 — A program's auto switch can survive in a shape the editor cannot show.** A weekly program
   converted to a block keeps `autoProgression = 1` in its row —
@@ -105,11 +97,11 @@ the write apart for the same reason.
 
 - **N325 — The auto progression seams that let these through are uncovered.** No test asserts the
   banner's plural message for a batch of two steps (the per-step writes and batch undo now have tests),
-  a double *Done* (B474), a reset after a schedule change or over a shared plan (B476), the switch across
-  a kind change or a delete/restore (B475), or a weekly program with the switch on next to a block that
-  names the same template. The enablement text and the baseline line have screen tests only for their
-  presence. Fixed means those cases are asserted, and B471's historical plan is pinned at whichever level
-  the decision puts it.
+  a reset after a schedule change or over a shared plan (B476), the switch across a kind change or a
+  delete/restore (B475), or a weekly program with the switch on next to a block that names the same
+  template. The enablement text and the baseline line have screen tests only for their presence. Fixed
+  means those cases are asserted, and B471's historical plan is pinned at whichever level the decision
+  puts it.
 
 - **N326 — Which sessions count as the program's?** N299 resolves a session to a program through its
   **template**, so the switch applies to (a) a weekly program's workout started from the library when

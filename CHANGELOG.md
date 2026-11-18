@@ -31,6 +31,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   plans still matched; two taps over a slow undo ran the batch twice and could skip the next batch's
   banner. Every step is attempted, the first failure is said, the undo is single-flight, and the banner
   only advances for the moment it was shown for.
+- **A double *Done* takes one auto batch** (B474). Both taps built the same prompt from the same
+  pre-write plan and both launched the write, so the loser of the race was refused by the repository
+  with a caller-level sentence — or the finish's success cleared it before it was drawn. The finish is
+  now in flight per exercise, and a second tap waits for the first.
 
 ## [2.31] — 2026-11-17 (versionCode 52)
 

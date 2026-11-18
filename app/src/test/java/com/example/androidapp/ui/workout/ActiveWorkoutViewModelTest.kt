@@ -1063,6 +1063,39 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
+    fun aSecondDoneTap_doesNotStartASecondAutoBatch() = runTest(dispatcher) {
+        // B474: both taps built the prompt from the same pre-write plan and both launched the write;
+        // the loser of the race was refused by requireBeforeMatches with a caller-level sentence. The
+        // second tap now waits for the first finish, which owns the exercise.
+        val repository = FakeWorkoutRepository()
+        val templates = answeredPlan()
+        val progression = FakeProgressionRepository().apply { autoPrograms["t1"] = "p1" }
+        templates.progressionGate = CompletableDeferred()
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = templates,
+            progression = progression,
+        )
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        val id = viewModel.uiState.value.exercises.single().id
+        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
+
+        viewModel.onFinishExercise(id)
+        viewModel.onFinishExercise(id)
+        templates.progressionGate?.complete(Unit)
+        settle()
+
+        assertEquals("one batch for one exercise", 1, templates.progressionWrites.size)
+        assertEquals("one step to read back", 1, viewModel.autoStep.value?.steps?.size)
+        assertTrue("the first tap finished the exercise", viewModel.uiState.value.exercises.single().isFinished)
+        assertNull("the second tap wrote nothing to refuse", viewModel.uiState.value.error)
+    }
+
+    @Test
     fun aMovementThatSaysOff_isNotAdjustedByTheProgramsAutoProgression() = runTest(dispatcher) {
         // N235 still wins: the program's switch is below the movement's own answer, so a movement set
         // to Off is finished without a write and without a question.
@@ -3804,6 +3837,9 @@ class ActiveWorkoutViewModelTest {
          * failure left behind rather than retrying the write over an unchanged plan.
          */
         var failProgressionAfter: Int? = null
+
+        /** Held to overlap two *Done* presses (B474); null completes immediately. */
+        var progressionGate: CompletableDeferred<Unit>? = null
         override suspend fun setSupersetGroup(
             templateExerciseIds: List<String>,
             group: Int?,
@@ -3921,6 +3957,7 @@ class ActiveWorkoutViewModelTest {
             edit: TemplateSetEdit,
             write: ProgressionSetWrite,
         ): DataResult<String> {
+            progressionGate?.await()
             val refused = failUpdates || failProgressionAfter?.let { progressionWrites.size >= it } == true
             return if (refused) {
                 DataResult.Failure(DataError.Storage(IOException("disk full")))
