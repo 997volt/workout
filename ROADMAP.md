@@ -25,14 +25,6 @@ hold. The findings are the edges the fixes left: a block that can still be switc
 that can take away the off control, a double *Done* after *Not now*, a legacy boundary whose range lies, and
 three backup/snapshot edges. Nothing was fixed during the read; the rows are ordered by what they cost.
 
-- **B492 — A legacy clock-time boundary makes the history's range lie.** N328 subtracts a day from the next
-  start's date, but `GoalOutcomes.readingsWithin`
-  ([GoalOutcomes.kt](app/src/main/java/com/example/androidapp/ui/statistics/GoalOutcomes.kt)) clips by the
-  *instant*: a period whose next boundary is 08:00 owns that morning's weigh-in, while the range in
-  [GoalRow.kt](app/src/main/java/com/example/androidapp/ui/statistics/GoalRow.kt) says it ended the day
-  before. The N328 test's own periods are 08:00, so it pins the shape without a boundary-morning reading.
-  Fixed means the last day is derived from the instant (subtract only for a local-midnight boundary, or show
-  the time), with a test whose reading sits on the boundary morning.
 - **B489 — The backup preview does not count the plan snapshots.** The import writes `sessionPlanSets` and
   counts them in its summary (B471), but
   [BackupRepository.kt](app/src/main/java/com/example/androidapp/domain/repository/BackupRepository.kt)'s

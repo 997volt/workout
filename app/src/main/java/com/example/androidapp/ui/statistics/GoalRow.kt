@@ -401,17 +401,16 @@ private fun GoalHistoryRow(
     onClick: () -> Unit,
 ) {
     val zone = ZoneId.systemDefault()
-    val startDay = outcome.period.startedAt?.atZone(zone)?.toLocalDate()
-    val nextDay = nextStart?.atZone(zone)?.toLocalDate()
+    val start = outcome.period.startedAt
+    val startText = start?.let { goalMomentText(it, zone) }
     val range = when {
-        startDay == null -> stringResource(R.string.statistics_goal_from_unknown)
-        nextDay == null -> stringResource(R.string.statistics_goal_from, goalDayText(startDay))
-        else -> {
-            // The next boundary belongs to the next period (N215); the last day this one owns is the day
-            // before it, so the range does not appear to include a weigh-in it does not judge (N328).
-            val end = if (nextDay > startDay) nextDay.minusDays(1) else startDay
-            stringResource(R.string.statistics_goal_range, goalDayText(startDay), goalDayText(end))
-        }
+        start == null -> stringResource(R.string.statistics_goal_from_unknown)
+        nextStart == null -> stringResource(R.string.statistics_goal_from, startText.orEmpty())
+        else -> stringResource(
+            R.string.statistics_goal_range,
+            startText.orEmpty(),
+            goalPeriodEndText(start, nextStart, zone),
+        )
     }
     Column(
         modifier = Modifier

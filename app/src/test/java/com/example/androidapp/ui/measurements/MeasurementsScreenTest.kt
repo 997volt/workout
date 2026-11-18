@@ -41,6 +41,7 @@ import com.example.androidapp.domain.repository.GoalPeriod
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.statistics.EnergyAdjustment
 import com.example.androidapp.ui.statistics.MetricReading
+import com.example.androidapp.ui.history.HistoryFormat
 import com.example.androidapp.ui.statistics.goalDayText
 import com.example.androidapp.ui.statistics.weightGoalOutcomes
 import com.example.androidapp.ui.theme.AndroidAppTheme
@@ -326,8 +327,8 @@ class MeasurementsScreenTest {
     fun theGoalHistory_endsAPeriodTheDayBeforeTheNextStarts() {
         // N328: the next boundary starts the next goal; printing that day as the closed period's end made a
         // weigh-in on it look judged by the wrong goal. The editor names the same day as the next start.
-        val start = Instant.parse("2026-01-01T08:00:00Z")
-        val next = Instant.parse("2026-09-10T08:00:00Z")
+        val start = Instant.parse("2026-01-01T00:00:00Z")
+        val next = Instant.parse("2026-09-10T00:00:00Z")
         val zone = ZoneId.systemDefault()
         val startDay = start.atZone(zone).toLocalDate()
         val nextDay = next.atZone(zone).toLocalDate()
@@ -347,6 +348,33 @@ class MeasurementsScreenTest {
         composeTestRule.onNodeWithText("${goalDayText(startDay)} – ${goalDayText(lastDay)}").assertExists()
         composeTestRule.onNodeWithTag(TestTags.Statistics.goalOutcome(1)).performClick()
         composeTestRule.onNodeWithText("Next starts ${goalDayText(nextDay)}").assertExists()
+    }
+
+    @Test
+    fun theGoalHistory_showsALegacyClockTimeBoundary() {
+        // B492: the reader clips by the instant, so a period whose next boundary is 08:00 owns that
+        // morning's weigh-in. The range must name the boundary time, not the day before it.
+        val start = Instant.parse("2026-01-01T08:00:00Z")
+        val next = Instant.parse("2026-09-10T08:00:00Z")
+        val zone = ZoneId.systemDefault()
+        val startText = "${goalDayText(start.atZone(zone).toLocalDate())} at ${HistoryFormat.time(start, zone)}"
+        val nextText = "${goalDayText(next.atZone(zone).toLocalDate())} at ${HistoryFormat.time(next, zone)}"
+        setScreen(
+            state = stateWithGoal(
+                goal = WeightGoal.Target(75_000L),
+                periods = listOf(
+                    GoalPeriod(id = "p0", startedAt = start, kind = "TARGET", value = 75_000.0),
+                    GoalPeriod(id = "p1", startedAt = next, kind = "TARGET", value = 75_000.0),
+                ),
+                readings = listOf(
+                    MetricReading(Instant.parse("2026-09-10T06:00:00Z"), 83_000.0),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_HISTORY).performClick()
+
+        composeTestRule.onNodeWithText("$startText – $nextText").assertExists()
     }
 
     @Test
@@ -604,17 +632,15 @@ class MeasurementsScreenTest {
     private fun stateWithGoal(
         goal: WeightGoal?,
         periods: List<GoalPeriod> = emptyList(),
+        readings: List<MetricReading> = listOf(
+            MetricReading(Instant.parse("2026-09-01T08:00:00Z"), 83_000.0),
+            MetricReading(Instant.parse("2026-09-15T08:00:00Z"), 82_000.0),
+        ),
     ) = MeasurementsUiState(
         isLoading = false,
         today = LocalDate.of(2026, 10, 2),
         weightGoal = goal,
-        goalHistory = weightGoalOutcomes(
-            periods,
-            listOf(
-                MetricReading(Instant.parse("2026-09-01T08:00:00Z"), 83_000.0),
-                MetricReading(Instant.parse("2026-09-15T08:00:00Z"), 82_000.0),
-            ),
-        ),
+        goalHistory = weightGoalOutcomes(periods, readings),
     )
 
     @Test

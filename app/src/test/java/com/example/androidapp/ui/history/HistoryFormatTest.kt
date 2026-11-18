@@ -29,6 +29,16 @@ class HistoryFormatTest {
     }
 
     @Test
+    fun aClockTime_readsInTheZoneItIsGiven() {
+        // B492: a legacy goal boundary carried a clock time, and a day-only label hid the readings it
+        // still judges. The formatter is the date's companion for those instants.
+        val instant = Instant.parse("2026-09-10T20:00:00Z")
+
+        assertEquals("20:00", HistoryFormat.time(instant, ZoneOffset.UTC, Locale.UK))
+        assertEquals("05:00", HistoryFormat.time(instant, ZoneOffset.ofHours(9), Locale.UK))
+    }
+
+    @Test
     fun theHeadline_leadsWithTheLocalesOwnShortWeekday() {
         // ROADMAP N57: the weekday is the part a lifter navigates by, and it is the locale's name
         // rather than a hard-coded English pattern — so the assertion names the locale it expects.

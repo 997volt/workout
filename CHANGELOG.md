@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A legacy clock-time goal boundary keeps its time in the history** (B492). N328's range ends the day
+  before the next start, which is right for the midnight boundaries the editor writes; a goal row from the
+  old path at 08:00 owns that morning's weigh-in, so the range ended a day early. A non-midnight boundary now
+  shows the date and time it began, and the start of a legacy period does too.
 - **A second Done after *Not now* cannot write an auto step** (B491). The finish-in-flight guard lived only
   on the auto branch; the question-open branch started its decline and finish without it, so a second tap in
   the same frame saw no question and took the auto branch. Every branch that starts a finish now shares one

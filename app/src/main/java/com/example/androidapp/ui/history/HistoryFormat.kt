@@ -38,6 +38,22 @@ object HistoryFormat {
         .format(instant)
 
     /**
+     * The clock time an instant reads as, in [zone] and the locale's short pattern (B492).
+     *
+     * The companion of [date] for the places that must name an instant rather than a day: a goal
+     * boundary written by the old path carries a clock time, and a day-only label would hide it.
+     */
+    fun time(
+        instant: Instant,
+        zone: ZoneId,
+        locale: Locale = Locale.getDefault(),
+    ): String = DateTimeFormatter
+        .ofLocalizedTime(FormatStyle.SHORT)
+        .withLocale(locale)
+        .withZone(zone)
+        .format(instant)
+
+    /**
      * The headline a history row carries: the short weekday, then the date (ROADMAP N57).
      *
      * e.g. `Sun, Oct 4, 2026`. The weekday is the part a lifter navigates by — which day of the week
