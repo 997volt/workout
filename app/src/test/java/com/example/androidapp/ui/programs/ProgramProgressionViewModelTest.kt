@@ -2,6 +2,7 @@ package com.example.androidapp.ui.programs
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.ui.testing.FakeProgramRepository
 import com.example.androidapp.ui.testing.FakeProgressionRepository
@@ -119,6 +120,28 @@ class ProgramProgressionViewModelTest {
         advanceUntilIdle()
 
         assertThat(viewModel.uiState.value.notFound).isTrue()
+    }
+
+    @Test
+    fun theResetSnapshot_namesAnotherProgramSharingAPlan() = runTest(dispatcher) {
+        // B476: the plan is one plan, so the reset confirmation must not say "this program" while a
+        // second program's targets are rewound by the same write.
+        programs.slots.value = listOf(
+            ProgramSlot(
+                id = "s1",
+                programId = PROGRAM_ID,
+                templateId = "t1",
+                position = 0,
+                templateName = "Day A",
+            ),
+        )
+        programs.otherProgramNames = listOf("PPL")
+
+        val viewModel = viewModel()
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.sharedProgramNames).containsExactly("PPL")
+        assertThat(programs.otherProgramNameReads).containsExactly(listOf("t1") to PROGRAM_ID)
     }
 
     private companion object {

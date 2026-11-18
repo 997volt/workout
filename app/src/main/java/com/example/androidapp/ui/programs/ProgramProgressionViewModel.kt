@@ -7,6 +7,7 @@ import androidx.navigation.toRoute
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.NotFoundException
+import com.example.androidapp.domain.asThrowable
 import com.example.androidapp.domain.dataResultOf
 import com.example.androidapp.domain.getOrNull
 import com.example.androidapp.domain.model.AutoProgressionCheck
@@ -40,6 +41,8 @@ data class ProgramProgressionUiState(
     /** The confirmation the screen is showing, if any. */
     val confirmEnable: Boolean = false,
     val confirmReset: Boolean = false,
+    /** Other programs that schedule a template this program shares, so Reset changes them too (B476). */
+    val sharedProgramNames: List<String> = emptyList(),
     /** Sets the last reset restored, for the one message it is worth saying. */
     val restored: Int? = null,
 ) {
@@ -87,6 +90,7 @@ class ProgramProgressionViewModel @Inject constructor(
                         autoProgression = snapshot.autoProgression,
                         checks = snapshot.checks,
                         baselineAt = snapshot.baselineAt,
+                        sharedProgramNames = snapshot.sharedProgramNames,
                         error = null,
                     )
                 }
@@ -107,11 +111,23 @@ class ProgramProgressionViewModel @Inject constructor(
         val byTemplate = slots.distinctBy { it.templateId }.associate { slot ->
             slot.templateId to templates.observeExercises(slot.templateId).first()
         }
+        val templateIds = slots.map { it.templateId }.distinct()
+        // A failed sharing read is the screen's failure, not "nobody else uses this plan": the reset
+        // confirmation would otherwise promise a program-only rewrite it cannot prove (B476).
+        val shared = if (templateIds.isEmpty()) {
+            emptyList()
+        } else {
+            when (val names = programs.otherProgramNamesUsingTemplates(templateIds, programId)) {
+                is DataResult.Success -> names.data
+                is DataResult.Failure -> throw names.error.asThrowable()
+            }
+        }
         return Snapshot(
             name = program.name,
             autoProgression = program.autoProgression,
             checks = autoProgressionPreflight(slots, byTemplate).checks,
             baselineAt = progression.baselineCapturedAt(programId).getOrNull()?.let(Instant::ofEpochMilli),
+            sharedProgramNames = shared,
         )
     }
 
@@ -183,11 +199,12 @@ class ProgramProgressionViewModel @Inject constructor(
         }
     }
 
-    /** The three facts the screen reads, once. */
+    /** The facts the screen reads, once. */
     private data class Snapshot(
         val name: String,
         val autoProgression: Boolean,
         val checks: List<AutoProgressionCheck>,
         val baselineAt: Instant?,
+        val sharedProgramNames: List<String>,
     )
 }

@@ -159,6 +159,21 @@ class ProgramProgressionScreenTest {
         assertThat(confirmed).isTrue()
     }
 
+    @Test
+    fun theResetConfirmation_namesAnotherProgramSharingThePlan() {
+        // B476: the plan is shared, so the dialog names the program the same write rewinds.
+        setScreen(
+            state = state(
+                auto = true,
+                baselineAt = Instant.ofEpochMilli(1_700_000_000_000L),
+                confirmReset = true,
+                sharedProgramNames = listOf("PPL"),
+            ),
+        )
+
+        composeTestRule.onNodeWithText("Also rewinds the plan used by PPL.").assertExists()
+    }
+
     private fun setScreen(
         state: ProgramProgressionUiState = state(),
         onSetAuto: (Boolean) -> Unit = {},
@@ -193,6 +208,7 @@ class ProgramProgressionScreenTest {
         confirmEnable: Boolean = false,
         confirmReset: Boolean = false,
         writing: Boolean = false,
+        sharedProgramNames: List<String> = emptyList(),
     ) = ProgramProgressionUiState(
         isLoading = false,
         programName = "Upper/Lower",
@@ -202,5 +218,6 @@ class ProgramProgressionScreenTest {
         confirmEnable = confirmEnable,
         confirmReset = confirmReset,
         writing = writing,
+        sharedProgramNames = sharedProgramNames,
     )
 }

@@ -40,6 +40,12 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   weekly program silently resumed writes; deleting a program also kept the flag, which a document
   restore could bring back. The switch is cleared on the conversion, the delete and the document
   restore, and a backup importing a block drops a flag the resolver ignores.
+- **Reset touches only the program's current plans, and names a shared one** (B476). A baseline kept a
+  workout the program no longer scheduled, so a reset after removing or repointing a day rewound a plan
+  the program had stopped prescribing; another program sharing a template was rewound too, while the
+  dialog said "this program". The reset now skips sets the program no longer schedules, and the
+  confirmation names the other program when the plan is shared (or says the read failed rather than
+  pretending there is none).
 
 ## [2.31] — 2026-11-17 (versionCode 52)
 

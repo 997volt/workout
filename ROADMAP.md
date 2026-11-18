@@ -54,18 +54,6 @@ the write apart for the same reason.
 
 ### The rest of the review
 
-- **B476 — Reset writes more than "every planned set in this program".** `resetToBaseline` reads the
-  program's baseline rows and rewrites every live set they name
-  ([RoomProgressionRepository.kt](app/src/main/java/com/example/androidapp/data/RoomProgressionRepository.kt)),
-  whether or not the program still schedules that set. Removing a day or repointing a slot leaves the old
-  template's sets in the baseline, so a reset after a schedule edit rewinds a workout that is no longer
-  part of the program — while the confirmation still says "Every planned set in this program"
-  ([strings.xml](app/src/main/res/values/strings.xml)). The plan is also one plan: another program that
-  schedules a shared template has its targets rewound by this program's baseline, and the dialog names
-  neither the shared plan nor that program, although N307's deload confirm and N308's replace sheet
-  already name another program when the plan is shared. Fixed means reset only touches sets the program
-  currently schedules, and the confirmation names the sharing (or the other programs) when there is any.
-
 - **B477 — The retained baseline for a disabled switch is unreachable, and the docs say it is not.**
   [ProgressionRepository.kt](app/src/main/java/com/example/androidapp/domain/repository/ProgressionRepository.kt)
   says disabling "leaves that snapshot, so a later reset still has the point the first switch was made
@@ -82,10 +70,9 @@ the write apart for the same reason.
 
 - **N325 — The auto progression seams that let these through are uncovered.** No test asserts the
   banner's plural message for a batch of two steps (the per-step writes and batch undo now have tests),
-  a reset after a schedule change or over a shared plan (B476), or a weekly program with the switch on
-  next to a block that names the same template. The enablement text and the baseline line have screen
-  tests only for their presence. Fixed means those cases are asserted, and B471's historical plan is
-  pinned at whichever level the decision puts it.
+  or a weekly program with the switch on next to a block that names the same template. The enablement
+  text and the baseline line have screen tests only for their presence. Fixed means those cases are
+  asserted, and B471's historical plan is pinned at whichever level the decision puts it.
 
 - **N326 — Which sessions count as the program's?** N299 resolves a session to a program through its
   **template**, so the switch applies to (a) a weekly program's workout started from the library when

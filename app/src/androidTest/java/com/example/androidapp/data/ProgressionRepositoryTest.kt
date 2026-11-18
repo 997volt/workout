@@ -81,6 +81,24 @@ class ProgressionRepositoryTest {
     }
 
     @Test
+    fun reset_skipsASetTheProgramNoLongerSchedules() = runTest {
+        // B476: the baseline names a set by id, and a removed day leaves its plan in the library. A
+        // reset that rewound it would touch a workout the program no longer prescribes.
+        assertTrue(progression.setAutoProgression("p1", true) is DataResult.Success)
+        database.programDao().softDeleteSlot("slot1", NOW)
+        setTarget(weightGrams = 110_000L, repsCurrent = 5)
+
+        val restored = (progression.resetToBaseline("p1") as DataResult.Success).data
+
+        assertEquals("nothing in the program is left to restore", 0, restored)
+        assertEquals(
+            "the removed day's plan is left alone",
+            110_000L,
+            database.templateSetDao().findTemplateSet(SET_ID)!!.targetWeightGrams,
+        )
+    }
+
+    @Test
     fun aBlock_neverResolvesToAuto_whateverItsFlagSays() = runTest {
         // N303: a block's weeks are the creator's own, so the resolver ignores it even when a restored
         // or hand-edited file says the switch is on. Only a weekly program answers.

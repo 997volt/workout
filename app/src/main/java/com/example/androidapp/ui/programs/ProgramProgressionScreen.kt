@@ -145,23 +145,10 @@ fun ProgramProgressionScreen(
         )
     }
     if (state.confirmReset) {
-        AlertDialog(
-            onDismissRequest = onDismissReset,
-            title = { Text(stringResource(R.string.program_progression_reset_title)) },
-            text = { Text(stringResource(R.string.program_progression_reset_text)) },
-            confirmButton = {
-                Button(
-                    onClick = onConfirmReset,
-                    modifier = Modifier.testTag(TestTags.Programs.AUTO_RESET_CONFIRM),
-                ) {
-                    Text(stringResource(R.string.program_progression_reset_confirm))
-                }
-            },
-            dismissButton = {
-                AppTextButton(onClick = onDismissReset) {
-                    Text(stringResource(R.string.action_cancel))
-                }
-            },
+        ResetConfirmDialog(
+            sharedProgramNames = state.sharedProgramNames,
+            onConfirm = onConfirmReset,
+            onDismiss = onDismissReset,
         )
     }
 
@@ -410,5 +397,49 @@ private fun blockedHint(rule: ProgressionRule): Int? = when (rule) {
     ProgressionRule.NO_REPS -> R.string.program_progression_blocked_no_reps
     ProgressionRule.NOTHING_TO_MOVE -> R.string.program_progression_blocked_nothing
     else -> null
+}
+
+/**
+ * The reset's one confirmation, split out so the screen stays under its complexity ceiling.
+ *
+ * [sharedProgramNames] is empty for a plan only this program uses; otherwise the same write rewinds
+ * another program's targets too, and the dialog says so (B476).
+ */
+@Composable
+private fun ResetConfirmDialog(
+    sharedProgramNames: List<String>,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.program_progression_reset_title)) },
+        text = {
+            Column {
+                Text(stringResource(R.string.program_progression_reset_text))
+                if (sharedProgramNames.isNotEmpty()) {
+                    Text(
+                        stringResource(
+                            R.string.program_progression_reset_shared,
+                            sharedProgramNames.joinToString(", "),
+                        ),
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                modifier = Modifier.testTag(TestTags.Programs.AUTO_RESET_CONFIRM),
+            ) {
+                Text(stringResource(R.string.program_progression_reset_confirm))
+            }
+        },
+        dismissButton = {
+            AppTextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.action_cancel))
+            }
+        },
+    )
 }
 

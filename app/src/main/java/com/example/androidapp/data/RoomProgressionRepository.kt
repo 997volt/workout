@@ -66,17 +66,21 @@ class RoomProgressionRepository @Inject constructor(
         dataResultOf { writes.baselineCapturedAt(programId) }
 
     /**
-     * Restores every planned set the baseline names, skipping one that no longer exists.
+     * Restores the baseline of every planned set the program **currently schedules**, skipping the rest.
      *
      * A baseline is a memory of the switch being turned on, not a second plan: a set the lifter has
-     * since deleted is left deleted rather than resurrected by a reset.
+     * since deleted is left deleted rather than resurrected by a reset. A set whose day the program no
+     * longer schedules is no longer "in this program" either (B476) — the lifter may have moved it to
+     * another program, and a reset that rewound it would make the confirmation's promise false.
      */
     override suspend fun resetToBaseline(programId: String): DataResult<Int> = dataResultOf {
         val baselines = writes.findBaselines(programId)
         val now = timeSource.nowEpochMillis()
         database.withTransaction {
+            val scheduled = programs.findProgramSets(programId).mapTo(mutableSetOf()) { it.id }
             var restored = 0
             baselines.forEach { baseline ->
+                if (baseline.templateSetId !in scheduled) return@forEach
                 val set = sets.findTemplateSet(baseline.templateSetId) ?: return@forEach
                 val updated = set.copy(
                     targetWeightGrams = baseline.weightGrams,
