@@ -571,6 +571,5 @@ internal object BackupValidator {
     }
 }
 
-
 /** The weight metric's backup id; the UI's own constant is internal to its module. */
 private const val WEIGHT_METRIC = "BODY:WEIGHT"
