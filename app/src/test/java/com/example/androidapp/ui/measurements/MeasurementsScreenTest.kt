@@ -39,9 +39,9 @@ import com.example.androidapp.domain.model.WeightGoal
 import com.example.androidapp.domain.model.WeightGoalKind
 import com.example.androidapp.domain.repository.GoalPeriod
 import com.example.androidapp.ui.components.TestTags
+import com.example.androidapp.ui.history.HistoryFormat
 import com.example.androidapp.ui.statistics.EnergyAdjustment
 import com.example.androidapp.ui.statistics.MetricReading
-import com.example.androidapp.ui.history.HistoryFormat
 import com.example.androidapp.ui.statistics.goalDayText
 import com.example.androidapp.ui.statistics.weightGoalOutcomes
 import com.example.androidapp.ui.theme.AndroidAppTheme
