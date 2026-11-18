@@ -120,6 +120,34 @@ class ProgressionRepositoryTest {
     }
 
     @Test
+    fun aBlock_cannotSwitchAutoOn() = runTest {
+        // B487: the resolver already refuses a block (N303); the write boundary must too, so a stale
+        // route cannot set a flag no screen will show.
+        database.programDao().insertProgram(
+            ProgramEntity(
+                id = "block",
+                name = "Base block",
+                kind = ProgramKind.SEQUENCE,
+                autoProgression = false,
+                createdAt = NOW,
+                updatedAt = NOW,
+                deletedAt = null,
+            ),
+        )
+
+        assertTrue(progression.setAutoProgression("block", true) is DataResult.Failure)
+        assertFalse(database.programDao().findProgram("block")!!.autoProgression)
+        assertNull(
+            "an enabling that never happened captures no baseline",
+            progression.baselineCapturedAt("block").getOrNull(),
+        )
+        assertTrue(
+            "turning a stale flag off is still allowed",
+            progression.setAutoProgression("block", false) is DataResult.Success,
+        )
+    }
+
+    @Test
     fun aBlock_neverResolvesToAuto_whateverItsFlagSays() = runTest {
         // N303: a block's weeks are the creator's own, so the resolver ignores it even when a restored
         // or hand-edited file says the switch is on. Only a weekly program answers.

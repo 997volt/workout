@@ -169,32 +169,56 @@ fun ProgramProgressionScreen(
             )
         },
     ) { innerPadding ->
-        when {
-            state.isLoading -> CenteredMessage(
-                text = stringResource(R.string.active_workout_loading),
-                showSpinner = true,
-                modifier = Modifier.padding(innerPadding),
-            )
+        ProgramProgressionFrame(
+            state = state,
+            readFailed = readFailed,
+            onSetAuto = onSetAuto,
+            onReset = onReset,
+            modifier = Modifier.padding(innerPadding),
+        )
+    }
+}
 
-            state.notFound -> CenteredMessage(
-                text = stringResource(R.string.program_progression_missing),
-                showSpinner = false,
-                modifier = Modifier.padding(innerPadding),
-            )
+/** The screen's frames as one place: loading, missing, a failed read, a block, or the content. */
+@Composable
+private fun ProgramProgressionFrame(
+    state: ProgramProgressionUiState,
+    readFailed: Boolean,
+    onSetAuto: (Boolean) -> Unit,
+    onReset: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    when {
+        state.isLoading -> CenteredMessage(
+            text = stringResource(R.string.active_workout_loading),
+            showSpinner = true,
+            modifier = modifier,
+        )
 
-            readFailed -> CenteredMessage(
-                text = dataErrorMessage(state.error),
-                showSpinner = false,
-                modifier = Modifier.padding(innerPadding),
-            )
+        state.notFound -> CenteredMessage(
+            text = stringResource(R.string.program_progression_missing),
+            showSpinner = false,
+            modifier = modifier,
+        )
 
-            else -> ProgramProgressionContent(
-                state = state,
-                onSetAuto = onSetAuto,
-                onReset = onReset,
-                modifier = Modifier.padding(innerPadding),
-            )
-        }
+        readFailed -> CenteredMessage(
+            text = state.error?.let { dataErrorMessage(it) }.orEmpty(),
+            showSpinner = false,
+            modifier = modifier,
+        )
+
+        state.isSequence -> CenteredMessage(
+            text = stringResource(R.string.program_progression_block),
+            showSpinner = false,
+            modifier = modifier,
+        )
+
+        else -> ProgramProgressionContent(
+            state = state,
+            onSetAuto = onSetAuto,
+            onReset = onReset,
+            modifier = modifier,
+        )
     }
 }
 

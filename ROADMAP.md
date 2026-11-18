@@ -25,17 +25,6 @@ hold. The findings are the edges the fixes left: a block that can still be switc
 that can take away the off control, a double *Done* after *Not now*, a legacy boundary whose range lies, and
 three backup/snapshot edges. Nothing was fixed during the read; the rows are ordered by what they cost.
 
-- **B487 — A block can still be switched on through the progression screen.** The editor menu hides *Auto
-  progression* for a block (N303), but
-  [ProgramProgressionScreen.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramProgressionScreen.kt)
-  does not know the program's kind, and
-  [RoomProgressionRepository.kt](app/src/main/java/com/example/androidapp/data/RoomProgressionRepository.kt)'s
-  `setAutoProgression` checks only that the row is live. A progression route left on the back stack, or one
-  open while a document or backup restore turns the program into a block, can still set the flag. The
-  resolver ignores it (`kind = 'WEEKLY'`), so it does nothing and the editor hides it — until a later
-  conversion back to weekly resumes the writes, which is B475 one path over. Fixed means the repository
-  refuses enabling for a non-weekly program and the screen does not draw the switch for one; tests for the
-  block state and the write.
 - **B488 — A failed shared-plan read takes away the way to turn auto off.**
   [ProgramProgressionViewModel.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramProgressionViewModel.kt)'s
   `snapshot()` reads `otherProgramNamesUsingTemplates` unconditionally and throws its failure, so the screen's

@@ -155,6 +155,18 @@ class ProgramProgressionScreenTest {
     }
 
     @Test
+    fun aBlock_saysTheSwitchIsNotOffered() {
+        // B487: the route is not normally reachable for a block, but a stale one must not draw a switch
+        // the repository now refuses.
+        setScreen(state = state(isSequence = true))
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.AUTO_SWITCH).assertDoesNotExist()
+        composeTestRule
+            .onNodeWithText("This program is a block. Its weeks are its own, so auto progression is not offered.")
+            .assertIsDisplayed()
+    }
+
+    @Test
     fun resetIsOfferedOnlyWhileAutoIsOn_andAsksBeforeRestoring() {
         var reset = false
         setScreen(
@@ -252,10 +264,12 @@ class ProgramProgressionScreenTest {
         confirmReset: Boolean = false,
         writing: Boolean = false,
         sharedProgramNames: List<String> = emptyList(),
+        isSequence: Boolean = false,
     ) = ProgramProgressionUiState(
         isLoading = false,
         programName = "Upper/Lower",
         autoProgression = auto,
+        isSequence = isSequence,
         checks = checks,
         baselineAt = baselineAt,
         confirmEnable = confirmEnable,

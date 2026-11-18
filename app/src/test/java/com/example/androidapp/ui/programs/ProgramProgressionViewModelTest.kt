@@ -2,6 +2,7 @@ package com.example.androidapp.ui.programs
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.ui.testing.FakeProgramRepository
@@ -120,6 +121,22 @@ class ProgramProgressionViewModelTest {
         advanceUntilIdle()
 
         assertThat(viewModel.uiState.value.notFound).isTrue()
+    }
+
+    @Test
+    fun aBlock_isNotOfferedTheSwitch() = runTest(dispatcher) {
+        // B487: a block's weeks are its own (N303); the screen says so rather than offering a control
+        // the resolver ignores.
+        programs.program.value = WorkoutProgram(
+            id = PROGRAM_ID,
+            name = "Base block",
+            kind = ProgramKind.SEQUENCE,
+        )
+        val viewModel = viewModel()
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.isSequence).isTrue()
+        assertThat(viewModel.uiState.value.notFound).isFalse()
     }
 
     @Test

@@ -12,6 +12,7 @@ import com.example.androidapp.domain.dataResultOf
 import com.example.androidapp.domain.getOrNull
 import com.example.androidapp.domain.model.AutoProgressionCheck
 import com.example.androidapp.domain.model.AutoProgressionPreflight
+import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.model.autoProgressionPreflight
 import com.example.androidapp.domain.repository.ProgramRepository
 import com.example.androidapp.domain.repository.ProgressionRepository
@@ -32,6 +33,8 @@ data class ProgramProgressionUiState(
     val isLoading: Boolean = true,
     val programName: String = "",
     val autoProgression: Boolean = false,
+    /** True for a block, which is never offered the switch (N303, B487). */
+    val isSequence: Boolean = false,
     val checks: List<AutoProgressionCheck> = emptyList(),
     /** When the current baseline was captured, or null when the switch has never been on. */
     val baselineAt: Instant? = null,
@@ -88,6 +91,7 @@ class ProgramProgressionViewModel @Inject constructor(
                         isLoading = false,
                         programName = snapshot.name,
                         autoProgression = snapshot.autoProgression,
+                        isSequence = snapshot.isSequence,
                         checks = snapshot.checks,
                         baselineAt = snapshot.baselineAt,
                         sharedProgramNames = snapshot.sharedProgramNames,
@@ -125,6 +129,7 @@ class ProgramProgressionViewModel @Inject constructor(
         return Snapshot(
             name = program.name,
             autoProgression = program.autoProgression,
+            isSequence = program.kind == ProgramKind.SEQUENCE,
             checks = autoProgressionPreflight(slots, byTemplate).checks,
             baselineAt = progression.baselineCapturedAt(programId).getOrNull()?.let(Instant::ofEpochMilli),
             sharedProgramNames = shared,
@@ -203,6 +208,7 @@ class ProgramProgressionViewModel @Inject constructor(
     private data class Snapshot(
         val name: String,
         val autoProgression: Boolean,
+        val isSequence: Boolean,
         val checks: List<AutoProgressionCheck>,
         val baselineAt: Instant?,
         val sharedProgramNames: List<String>,

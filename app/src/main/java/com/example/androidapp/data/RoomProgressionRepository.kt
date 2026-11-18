@@ -12,6 +12,7 @@ import com.example.androidapp.domain.InvalidInputException
 import com.example.androidapp.domain.NotFoundException
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.dataResultOf
+import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.nowEpochMillis
 import com.example.androidapp.domain.repository.ProgressionRepository
 import javax.inject.Inject
@@ -47,6 +48,10 @@ class RoomProgressionRepository @Inject constructor(
         dataResultOf {
             val now = timeSource.nowEpochMillis()
             database.withTransaction {
+                val program = programs.findProgram(programId) ?: throw NotFoundException("program $programId")
+                // A block's weeks are the creator's own (N303), so the write boundary refuses the switch
+                // even when a stale route reaches it (B487).
+                if (enabled && program.kind != ProgramKind.WEEKLY) throw InvalidInputException(BLOCK_AUTO)
                 val updated = programs.setAutoProgression(programId, enabled, now)
                 if (updated == 0) throw NotFoundException("program $programId")
                 // Both directions start from an empty snapshot; only enabling fills it.
@@ -143,3 +148,6 @@ private fun TemplateSetEntity.toBaseline(programId: String, now: Long) = Progres
     durationSeconds = targetDurationSeconds,
     capturedAt = now,
 )
+
+/** A block never has its own targets adjusted (N303, B487). */
+private const val BLOCK_AUTO = "A block does not adjust its own targets."

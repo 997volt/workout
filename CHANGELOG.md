@@ -17,6 +17,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A block cannot have auto progression switched on** (B487). The editor hid the switch, but the progression
+  screen and the repository did not check the program's kind; a stale route, or a restore that made the
+  program a block, could still set the flag the resolver ignores until a later conversion back to weekly
+  resumed the writes. The repository now refuses enabling for a non-weekly program, and the screen says the
+  switch is not offered instead of drawing it.
 - **A goal period's range ends the day before the next starts** (N328). The history printed the next period's
   start as this period's end, so a weigh-in on that day looked judged by the wrong goal. The range now names
   the last day the period owns — the next start's day minus one — and the editor's "Until" says "Next starts"
