@@ -17,6 +17,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A restore does not lay a second goal boundary on a day** (B485). The goal-period import merged by id only,
+  so a file row for a day the device already had under another id created two boundaries the editor's day
+  rules could not address; a future start or a second undated row could arrive the same way. The validator
+  now refuses a start after the backup and more than one undated period per metric, and the import skips a
+  row whose day — or undated slot — the device already owns, the way an id already present wins.
 - **A backup's goal kind and value must describe one goal** (B484). The validator checked the kind name and
   the value's sign separately: a target or maintenance kind without a value restored as "no goal", a
   direction with a value lost it on read, and the older `goals`/`goalKinds` halves were never compared with

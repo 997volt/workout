@@ -2,6 +2,7 @@ package com.example.androidapp.data
 
 import android.content.Context
 import androidx.room.withTransaction
+import com.example.androidapp.data.local.GoalTimeline
 import com.example.androidapp.data.local.MeasurementSoreMuscleEntity
 import com.example.androidapp.data.local.MetricGoalEntity
 import com.example.androidapp.data.local.SessionExerciseJointEntity
@@ -780,24 +781,42 @@ class RoomBackupRepository @Inject constructor(
      * whose only new content was a goal used to report that everything had already been here.
      */
     private suspend fun restoreGoalPeriods(file: BackupFile): Int {
-        if (file.goalPeriods.isNotEmpty()) {
-            return metricGoals.insert(file.goalPeriods.map { it.toEntity() }).count { it != SKIPPED }
+        val zone = ZoneId.systemDefault()
+        // The device's own row for a day is the newer statement, exactly as an id already present wins over
+        // the file's copy (B485). Only the device's rows are skipped against; the file's own legacy same-day
+        // rows still travel together, because the old clock-time path could write them and the editor can
+        // address each by id.
+        val taken = metricGoals.allForBackup().mapTo(mutableSetOf()) {
+            it.metricId to it.startedAt?.let { at -> GoalTimeline.dayOf(at, zone) }
         }
         val now = timeSource.nowEpochMillis()
-        val metrics = file.goals.keys + file.goalKinds.keys
-        return metricGoals.insert(
-            metrics.map { metricId ->
-                MetricGoalEntity(
-                    id = "legacy:$metricId",
-                    metricId = metricId,
-                    kind = file.goalKinds[metricId],
-                    value = file.goals[metricId],
-                    startedAt = null,
-                    createdAt = now,
-                    updatedAt = now,
-                )
-            },
-        ).count { it != SKIPPED }
+        return if (file.goalPeriods.isNotEmpty()) {
+            val rows = file.goalPeriods.filter {
+                (it.metricId to it.startedAt?.let { at -> GoalTimeline.dayOf(at, zone) }) !in taken
+            }
+            if (rows.isEmpty()) 0 else metricGoals.insert(rows.map { it.toEntity() }).count { it != SKIPPED }
+        } else {
+            // The compatibility fallback writes one undated row per metric; a device that already holds one
+            // keeps it, for the same day rule.
+            val metrics = (file.goals.keys + file.goalKinds.keys).filter { (it to null) !in taken }
+            if (metrics.isEmpty()) {
+                0
+            } else {
+                metricGoals.insert(
+                    metrics.map { metricId ->
+                        MetricGoalEntity(
+                            id = "legacy:$metricId",
+                            metricId = metricId,
+                            kind = file.goalKinds[metricId],
+                            value = file.goals[metricId],
+                            startedAt = null,
+                            createdAt = now,
+                            updatedAt = now,
+                        )
+                    },
+                ).count { it != SKIPPED }
+            }
+        }
     }
 
     /**

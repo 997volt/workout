@@ -467,6 +467,23 @@ class BackupRoundTripTest {
     }
 
     @Test
+    fun aRestoreDoesNotLayASecondGoalBoundaryOnADeviceDay() = runTest {
+        // B485: the device's row for a day is the newer statement; a file row with another id on that day
+        // must not create a second boundary the editor's day rules cannot address.
+        val goals = RoomGoalRepository(database, clock)
+        goals.savePeriod("BODY:WEIGHT", null, LocalDate.of(2026, 9, 1), null, WeightGoal.Target(80_000L))
+        val exported = BackupCodec.decode(exportedJson())
+        val text = BackupCodec.encode(
+            exported.copy(goalPeriods = exported.goalPeriods.map { it.copy(id = "file-${it.id}") }),
+        )
+
+        val summary = (repository.import(text) as DataResult.Success).data
+
+        assertEquals(1, database.metricGoalDao().allForBackup().size)
+        assertEquals(0, summary.added)
+    }
+
+    @Test
     fun aRestoreWhoseOnlyNewContentIsAGoal_countsIt() = runTest {
         // B144: the periods were written after the import's transaction and never counted, so a restore whose
         // only new content was a goal reported "everything in that file was already here" while it restored it.

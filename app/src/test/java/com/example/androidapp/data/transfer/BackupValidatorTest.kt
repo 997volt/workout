@@ -58,6 +58,27 @@ class BackupValidatorTest {
     }
 
     @Test
+    fun aGoalBoundary_mustBeInThePast_andOnlyOneUndatedPeriodIsAllowed() {
+        // B485: a future boundary would become the current goal before its time, and two undated rows give
+        // one metric two "before we knew when this started" periods.
+        val future = valid().copy(
+            goalPeriods = valid().goalPeriods.map { it.copy(startedAt = valid().exportedAt + 1) },
+        )
+        assertThat(BackupValidator.problems(future).messages())
+            .contains("A goal cannot start after the backup was taken.")
+
+        val row = valid().goalPeriods.single()
+        val twoUndated = valid().copy(
+            goalPeriods = listOf(
+                row.copy(id = "goal-1", startedAt = null),
+                row.copy(id = "goal-2", startedAt = null),
+            ),
+        )
+        assertThat(BackupValidator.problems(twoUndated).messages())
+            .contains("A goal can have only one undated period.")
+    }
+
+    @Test
     fun aCountedSet_needsPositiveReps_andAHoldStatesSecondsInstead() {
         val zeroReps = valid().copy(sets = listOf(set.copy(reps = 0)))
         assertThat(BackupValidator.problems(zeroReps).messages())

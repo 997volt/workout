@@ -29,17 +29,6 @@ they cost.
 
 ### Before 2.32
 
-- **B485 — A restore can create a goal boundary the write path forbids.** `restoreGoalPeriods` in
-  [RoomBackupRepository.kt](app/src/main/java/com/example/androidapp/data/RoomBackupRepository.kt) inserts
-  every `goalPeriods` row with IGNORE-by-id. It does not refuse a start in the future, a second undated row
-  for one metric, or a second row on a day the device already has under another id.
-  [RoomGoalRepository.kt](app/src/main/java/com/example/androidapp/data/RoomGoalRepository.kt) and
-  [GoalTimeline.kt](app/src/main/java/com/example/androidapp/data/local/GoalTimeline.kt) assume at most one
-  boundary per day: two rows on one day make `observeCurrent` choose by `createdAt`, leave a row the day
-  rules cannot move, and show two overlapping stretches in the history; a future start becomes the current
-  goal before its time. The round-trip test restores into a cleared database, so it never meets the existing
-  day. Fixed means the validator refuses a future or duplicate start, the import merges a same-day row
-  instead of laying a second, and tests cover a restore onto a device that already has that day.
 - **B486 — The calorie section says "Set a goal" without a way to set one.** The weight goal is edited on
   Measurements; [StatisticsScreen.kt](app/src/main/java/com/example/androidapp/ui/statistics/StatisticsScreen.kt)
   hides `GoalRow` for the weight metric, and

@@ -13,18 +13,21 @@ import com.example.androidapp.domain.repository.BackupProblem
 internal object GoalBackupValidator {
 
     fun validate(file: BackupFile, out: MutableList<BackupProblem>) {
-        validatePeriods(file.goalPeriods, out)
+        validatePeriods(file.goalPeriods, file.exportedAt, out)
         validateHalves(file, out)
         // The older halves are compatibility, not a second store: when both are present the later half must
         // describe the period that is open, because the import takes the periods (B484).
         if (file.goalPeriods.isNotEmpty()) validateHalvesAgreeWithPeriods(file, out)
     }
 
-    private fun validatePeriods(rows: List<GoalPeriodDto>, out: MutableList<BackupProblem>) {
+    private fun validatePeriods(rows: List<GoalPeriodDto>, exportedAt: Long, out: MutableList<BackupProblem>) {
         rows.forEachIndexed { index, row ->
             val where = "Goal ${index + 1}"
             row.id.required(out, where)
             row.metricId.required(out, where)
+            if (row.startedAt != null && row.startedAt > exportedAt) {
+                out += BackupProblem(where, "A goal cannot start after the backup was taken.")
+            }
             val known = row.kind == null || WeightGoalKind.entries.any { it.name == row.kind }
             if (!known) {
                 out += BackupProblem(where, "The goal kind is not one this app knows.")
@@ -36,6 +39,11 @@ internal object GoalBackupValidator {
             }
             validateWeightGoalValue(row.metricId, row.kind, row.value, where, out)
             if (known) validateTerms(row.kind, row.value, where, out)
+        }
+        rows.groupBy { it.metricId }.forEach { (metric, metricRows) ->
+            if (metricRows.count { it.startedAt == null } > 1) {
+                out += BackupProblem("Goal for $metric", "A goal can have only one undated period.")
+            }
         }
     }
 
