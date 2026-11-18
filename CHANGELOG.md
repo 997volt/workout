@@ -17,6 +17,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **Maintenance keeps N98's floor, in the sentence and in the history** (B480). The statistics section's
+  corridor branch skipped the eight-reading/21-day floor that the rate branch and the weigh-in prompt apply,
+  so one or two weigh-ins produced a kcal figure; the history also called a one-weigh-in corridor Met or
+  Missed. Both now wait: fewer than eight readings over 21 days says "Not enough weigh-ins yet", and a
+  corridor period with no fitted line is Unjudged.
 - **A reached weight target stops asking for a rate** (B479). The history's own 1 kg tolerance said a target
   was met, while the rate derivation still took its direction from the exact weight: an 80.5 kg target at
   80.0 kg read "Target reached", then showed a gain band and an "eat more" sentence, and the weigh-in prompt

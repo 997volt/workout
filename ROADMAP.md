@@ -29,18 +29,6 @@ they cost.
 
 ### Before 2.32
 
-- **B480 — Maintenance quotes a calorie change below the floor, and judges a corridor from one weigh-in.**
-  [EnergyAdjustmentSection.kt](app/src/main/java/com/example/androidapp/ui/statistics/EnergyAdjustmentSection.kt)'s
-  maintenance branch calls `energyAdjustmentToCorridor` directly; that function never checks
-  `hasEnoughToSpeak`, so one reading produces a kcal sentence. The weigh-in path in
-  [EnergyAdjustment.kt](app/src/main/java/com/example/androidapp/ui/statistics/EnergyAdjustment.kt) checks the
-  floor first and says nothing, so the two surfaces answer the same question differently.
-  [GoalOutcomes.kt](app/src/main/java/com/example/androidapp/ui/statistics/GoalOutcomes.kt)'s
-  `stayedInCorridor` likewise falls back to a one-reading check, so a maintenance period with one weigh-in is
-  Met or Missed while `GoalOutcome.Unjudged` promises that too little recorded is not a verdict. The tests
-  only cover three-reading corridors and the rate branch's floor. Fixed means the section applies N98's
-  8-readings-over-21-days floor to maintenance, a corridor period with no fitted line is Unjudged, and tests
-  cover one and two readings on both surfaces.
 - **B481 — A weight goal of zero is accepted, and the calorie statement inherits it.** `MetricUnit.parse`
   accepts zero ("finite and not negative"), `weightGoalFor` in
   [GoalRow.kt](app/src/main/java/com/example/androidapp/ui/statistics/GoalRow.kt) asks only for a parse, and

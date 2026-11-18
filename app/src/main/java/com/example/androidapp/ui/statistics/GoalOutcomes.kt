@@ -83,8 +83,7 @@ private fun outcomeOf(period: GoalPeriod, readings: List<MetricReading>): GoalOu
         goal is WeightGoal.Target ->
             if (readings.any { reached(it, goal.weightGrams) }) GoalOutcome.Met else GoalOutcome.Missed
 
-        goal is WeightGoal.Maintain ->
-            if (stayedInCorridor(goal.weightGrams, readings)) GoalOutcome.Met else GoalOutcome.Missed
+        goal is WeightGoal.Maintain -> maintenanceOutcome(goal.weightGrams, readings)
 
         else -> rateOutcome(goal as WeightGoal.Direction, readings)
     }
@@ -92,6 +91,21 @@ private fun outcomeOf(period: GoalPeriod, readings: List<MetricReading>): GoalOu
 
 private fun reached(reading: MetricReading, targetGrams: Long): Boolean =
     reading.value?.let { abs(it - targetGrams) <= TARGET_REACHED_TOLERANCE_GRAMS } ?: false
+
+/**
+ * A corridor is "stayed", so one morning's water is not a period (N137, B480).
+ *
+ * A line needs two readings; with one there is no line to absorb the day's water, which is what the corridor
+ * exists to do, so the period is [GoalOutcome.Unjudged] rather than Met or Missed.
+ */
+private fun maintenanceOutcome(targetGrams: Long, readings: List<MetricReading>): GoalOutcome =
+    if (readings.count { it.value != null } < 2) {
+        GoalOutcome.Unjudged
+    } else if (stayedInCorridor(targetGrams, readings)) {
+        GoalOutcome.Met
+    } else {
+        GoalOutcome.Missed
+    }
 
 private fun stayedInCorridor(targetGrams: Long, readings: List<MetricReading>): Boolean {
     val inside = { value: Double -> abs(value - targetGrams) <= MAINTENANCE_CORRIDOR_GRAMS }

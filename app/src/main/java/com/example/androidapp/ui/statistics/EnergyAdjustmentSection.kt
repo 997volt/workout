@@ -174,13 +174,16 @@ private fun targetText(
  * Every branch is an answer rather than a gap: a goal that was never set, and a series too short to fit, both
  * have something to *say* — and the second says it rather than drawing a number, which is the floor N98 sets.
  * A maintenance goal is judged **against its corridor** rather than against a rate of zero, which is what
- * makes it a goal at all (N135).
+ * makes it a goal at all (N135); N98's floor applies to that branch too (B480), because a corridor read from
+ * one weigh-in is not a trend.
  */
 @Composable
 private fun energyStatement(series: MetricSeries?, weightGoal: WeightGoal?, rateTarget: Double?): String? {
     if (series == null || weightGoal == null) return null
     val adjustment = if (weightGoal is WeightGoal.Maintain) {
-        series.energyAdjustmentToCorridor(weightGoal.weightGrams.toDouble())
+        // The floor is the sentence's, not the rate branch's alone (B480): a corridor read from one weigh-in
+        // is a day of water, and the weigh-in prompt already refuses it for the same reason.
+        if (!series.hasEnoughToSpeak()) null else series.energyAdjustmentToCorridor(weightGoal.weightGrams.toDouble())
     } else {
         rateTarget?.let { series.energyAdjustment(it) }
     }

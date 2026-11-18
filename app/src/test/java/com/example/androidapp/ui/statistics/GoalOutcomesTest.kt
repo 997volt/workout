@@ -134,6 +134,27 @@ class GoalOutcomesTest {
     }
 
     @Test
+    fun maintenance_fromOneWeighIn_isUnjudged_ratherThanAVerdictOnWater() {
+        // B480: "stayed" needs a line; one reading has none, so the corridor has not been shown to hold.
+        val outcomes = goalOutcomes(
+            listOf(period(null, "MAINTAIN", 80_000.0)),
+            readings(0L to 80_400.0),
+        )
+
+        assertThat(outcomes.single().outcome).isEqualTo(GoalOutcome.Unjudged)
+    }
+
+    @Test
+    fun maintenance_fromTwoWeighIns_isJudgedOnTheirLine() {
+        val outcomes = goalOutcomes(
+            listOf(period(null, "MAINTAIN", 80_000.0)),
+            readings(0L to 80_400.0, 7L to 80_600.0),
+        )
+
+        assertThat(outcomes.single().outcome).isEqualTo(GoalOutcome.Met)
+    }
+
+    @Test
     fun aPeriodOfNoGoal_isNotAMiss() {
         // The row a *Clear* writes: a stretch of time the lifter was not asking for anything.
         val outcomes = goalOutcomes(listOf(period(null, null, null)), weekly(perWeek = 0.0))

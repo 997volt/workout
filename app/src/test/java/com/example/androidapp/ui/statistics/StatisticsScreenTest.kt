@@ -1325,6 +1325,16 @@ class StatisticsScreenTest {
         composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_TARGET).assertTextEquals("80 ±1")
     }
 
+    @Test
+    fun aMaintenanceGoal_belowTheFloor_saysWaiting_ratherThanQuotingANumber() {
+        // B480: the default two weigh-ins are below N98's floor; the corridor branch used to quote a figure
+        // from them while the rate branch and the weigh-in prompt both refused.
+        setScreen(state = stateWithGoal(WeightGoal.Maintain(80_000L)))
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_STATEMENT)
+            .assertTextEquals("Not enough weigh-ins yet")
+    }
+
     private fun stateWithGoal(
         goal: WeightGoal?,
         periods: List<GoalPeriod> = emptyList(),
