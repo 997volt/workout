@@ -22,6 +22,7 @@ import com.example.androidapp.domain.repository.TemplateSetEdit
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -155,6 +156,17 @@ class ProgressionRepositoryTest {
             "p1",
             (progression.autoProgramForTemplate("t1") as DataResult.Success).data,
         )
+    }
+
+    @Test
+    fun anInactiveWeeklyProgram_stillResolvesItsTemplates() = runTest {
+        // N326: the switch is the lifter's, not the follow state. A start from the library is one of
+        // the starts the template resolution exists to cover, so an inactive weekly program still
+        // answers for its plans; the fixture's p1 is not active.
+        assertFalse(database.programDao().findProgram("p1")!!.isActive)
+        assertTrue(progression.setAutoProgression("p1", true) is DataResult.Success)
+
+        assertEquals("p1", progression.autoProgramForTemplate("t1").getOrNull())
     }
 
     @Test

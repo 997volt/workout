@@ -52,22 +52,13 @@ the write apart for the same reason.
   rejecting it no longer holds. A write-log-only fix was rejected too: it would know the auto steps and
   not the manual ones, which is two rules for one fact.
 
-### Coverage and one scope question
+### Coverage
 
 - **N325 — The auto progression seams that let these through are uncovered.** No test asserts the
-  banner's plural message for a batch of two steps (the per-step writes and batch undo now have tests),
-  or a weekly program with the switch on next to a block that names the same template. The enablement
-  text and the baseline line have screen tests only for their presence. Fixed means those cases are
-  asserted, and B471's historical plan is pinned at whichever level the decision puts it.
-
-- **N326 — Which sessions count as the program's?** N299 resolves a session to a program through its
-  **template**, so the switch applies to (a) a weekly program's workout started from the library when
-  that program is not active, and (b) a block's session whose template is also named by an auto weekly
-  program — which the 2.29 entry's "its template never resolves to auto" says cannot happen, but the
-  resolver filters the auto **program's** kind, not the session's origin. The app records only the
-  template on a session, so neither boundary is visible at *Done*. Fixed means a decision: accept both
-  (one plan, and the switch is the lifter's) and say so in N299 and N303, or persist the program/slot with
-  the session so a block session can be excluded.
+  banner's plural message for a batch of two steps (the per-step writes and batch undo now have tests).
+  The enablement text and the baseline line have screen tests only for their presence. Fixed means
+  those cases are asserted, and B471's historical plan is pinned at whichever level the decision puts
+  it.
 
 ## Parked — deliberately not planned
 

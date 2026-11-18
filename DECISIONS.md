@@ -530,7 +530,12 @@ the rule; that one argues it.
   a shared workout is one plan, so the step moves for every program that names it. **A block is never
   offered the switch** (N303): its weeks are the creator's own order (N174), so the app would be adjusting
   a prescription mid-block, and the same reason that keeps a block out of N300's calendar exemption (B398)
-  applies here. The resolver enforces it too, so a restored file cannot switch a block on. **No down-adjustment is
+  applies here. The resolver enforces it too, so a restored file cannot switch a block on. **N326 settles what
+  that leaves**: the resolver filters the auto *program's* kind, not where the session was started, so a
+  block workout whose template a weekly program also schedules is adjusted through that weekly switch — one
+  plan, and the switch the lifter turned on is the consent — and a weekly program that is no longer active
+  still resolves its templates, because a start from the library is one of the starts template resolution
+  exists to cover. The follow state is home's; the switch is the lifter's. **No down-adjustment is
   deliberate**: a miss holds, and a stall is still N237's card to answer; a back-off would be a separate
   rule. **The switch, the log and the baseline are device state in the backup, not the program document**, because
   importing a program must not start writing on the recipient's device. Enabling captures every scheduled
