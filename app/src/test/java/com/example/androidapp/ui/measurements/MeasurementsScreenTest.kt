@@ -292,6 +292,36 @@ class MeasurementsScreenTest {
     }
 
     @Test
+    fun theGoalStillInForce_saysSoFar_ratherThanAFinalMissed() {
+        // B483: the newest period has no next boundary, so its verdict is a status. A target set today must
+        // not read "Missed" beside a range that starts with "From".
+        setScreen(
+            state = stateWithGoal(
+                goal = WeightGoal.Target(75_000L),
+                periods = listOf(
+                    GoalPeriod(
+                        id = "p0",
+                        startedAt = Instant.parse("2026-01-01T08:00:00Z"),
+                        kind = "TARGET",
+                        value = 75_000.0,
+                    ),
+                    GoalPeriod(
+                        id = "p1",
+                        startedAt = Instant.parse("2026-09-10T08:00:00Z"),
+                        kind = "TARGET",
+                        value = 75_000.0,
+                    ),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_HISTORY).performClick()
+
+        composeTestRule.onNodeWithText("Missed so far").assertExists()
+        composeTestRule.onNodeWithText("Missed").assertExists()
+    }
+
+    @Test
     fun theGoalCard_waitsForTheFirstEmission() {
         // B225: the default state's `today` is LocalDate.MIN, and formatting it throws. The card is not
         // reachable until the real day is known.

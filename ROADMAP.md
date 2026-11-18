@@ -29,14 +29,6 @@ they cost.
 
 ### Before 2.32
 
-- **B483 — The goal still in force is reported as "Missed".** `goalOutcomes` runs the last period to the end
-  of the series and gives it the same Met/Missed verdict as a closed one;
-  [GoalRow.kt](app/src/main/java/com/example/androidapp/ui/statistics/GoalRow.kt)'s history lists that open
-  period, whose range says "From …". A target set two days ago and not yet reached reads "Missed", and a
-  direction goal with enough history and one week off its band reads "Missed" while the lifter is still in
-  it. `GoalOutcome` has no in-progress state, and the tests only judge a current period that is Met. Fixed
-  means the open period has its own status ("so far" / "in progress") or is not given a final verdict; tests
-  for a current target, direction and maintenance.
 - **B484 — The backup checks a goal's kind and value separately, not against each other.**
   `validateGoals` in [BackupValidator.kt](app/src/main/java/com/example/androidapp/data/transfer/BackupValidator.kt)
   accepts any known kind and any finite non-negative value. A TARGET or MAINTAIN with no value is restored as

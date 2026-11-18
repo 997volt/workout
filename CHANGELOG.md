@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A goal still in force says "so far", not "Missed"** (B483). The history gave the newest, open period the
+  same final Met/Missed as a closed one, so a target set two days ago read "Missed" beside a range that
+  started with "From". The open period's verdict is now "Met so far" / "Missed so far"; closed periods keep
+  the final words, and no-goal or too-little-data periods are unchanged.
 - **A large maintenance gap is a lower bound, not a daily number** (B482). The corridor arithmetic quoted a
   multi-kilogram gap at a week's pace, so 10 kg outside the corridor read as 11,000 kcal a day. Figures
   beyond 1,500 kcal a day are now capped and the sentence says "More than", on both the statistics section

@@ -428,7 +428,7 @@ private fun GoalHistoryRow(
                 style = MaterialTheme.typography.bodyMedium,
             )
             Text(
-                text = stringResource(goalOutcomeLabel(outcome.outcome)),
+                text = stringResource(goalOutcomeLabel(outcome.outcome, open = nextStart == null)),
                 style = MaterialTheme.typography.bodyMedium,
             )
         }
@@ -440,10 +440,15 @@ private fun GoalHistoryRow(
     }
 }
 
-/** The verdict in words: met, missed, a period of no goal, or one too thin to judge (N137). */
-private fun goalOutcomeLabel(outcome: GoalOutcome): Int = when (outcome) {
-    GoalOutcome.Met -> R.string.statistics_goal_met
-    GoalOutcome.Missed -> R.string.statistics_goal_missed
+/**
+ * The verdict in words: met, missed, a period of no goal, or one too thin to judge (N137).
+ *
+ * The period with no next boundary is the one still in force, so its met/missed is a status rather than a
+ * result — "Met so far" (B483). No goal and too little data are already honest about themselves.
+ */
+private fun goalOutcomeLabel(outcome: GoalOutcome, open: Boolean): Int = when (outcome) {
+    GoalOutcome.Met -> if (open) R.string.statistics_goal_met_so_far else R.string.statistics_goal_met
+    GoalOutcome.Missed -> if (open) R.string.statistics_goal_missed_so_far else R.string.statistics_goal_missed
     GoalOutcome.NoGoal -> R.string.statistics_goal_no_goal
     GoalOutcome.Unjudged -> R.string.statistics_goal_unjudged
 }

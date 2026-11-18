@@ -598,6 +598,9 @@
     <string name="statistics_goal_range">%1$s – %2$s</string>
     <string name="statistics_goal_met">Met</string>
     <string name="statistics_goal_missed">Missed</string>
+    <!-- A period with no next boundary is still running (B483): its verdict is a status, not a result. -->
+    <string name="statistics_goal_met_so_far">Met so far</string>
+    <string name="statistics_goal_missed_so_far">Missed so far</string>
     <string name="statistics_goal_no_goal">No goal</string>
     <string name="statistics_goal_unjudged">Not enough weigh-ins</string>
     <!-- The energy adjustment a weight trend implies (ROADMAP N98). It is deliberately a *relative*
