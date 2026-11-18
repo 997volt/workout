@@ -592,6 +592,33 @@ class ActiveWorkoutScreenTest {
     }
 
     @Test
+    fun aPlanThatEarnedALoadStep_statesTheRepRangeAtTheNewLoad() {
+        // B478: a 5–10 plan at 100 kg, answered at 10, progresses to 102.5 kg and restarts the range at
+        // 5. The line said only "Plan 5 reps @ 102.5 kg", so the session looked like a fixed target and
+        // the lifter could not see the ceiling the step had just reset to. The field still opens on 5;
+        // the plan line names the range.
+        setScreen(
+            state = state(
+                isFinished = false,
+                suggestion = SetSuggestion(
+                    reps = 5,
+                    weightGrams = 102_500L,
+                    reason = SuggestionReason(
+                        planReps = 5,
+                        planRepsMin = 5,
+                        planRepsMax = 10,
+                        planWeightGrams = 102_500L,
+                    ),
+                ),
+            ),
+        )
+
+        composeTestRule
+            .onNodeWithText("Plan 5–10 reps @ 102.5 kg")
+            .assertExists()
+    }
+
+    @Test
     fun tappingReopen_reportsThatExercise() {
         var reopened: String? = null
         setScreen(state(isFinished = true), actions = Actions(onReopenExercise = { reopened = it }))

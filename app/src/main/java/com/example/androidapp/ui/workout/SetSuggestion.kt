@@ -71,6 +71,16 @@ data class SuggestionReason(
     val planReps: Int? = null,
     val planWeightGrams: Long? = null,
     val planRpeHalves: Int? = null,
+    /**
+     * The plan's authored rep range, from its "Reps from"/"Reps to" ends, or null (N74).
+     *
+     * Carried beside [planReps] because they answer different questions. [planReps] is where the climb
+     * stands — 5 after a load step resets a 5–10 range to its floor — while the range is what the
+     * lifter may still add reps within at the new load. Before this the line read "Plan 5 reps @ 102.5
+     * kg", which hid the ceiling the lifter had just reached.
+     */
+    val planRepsMin: Int? = null,
+    val planRepsMax: Int? = null,
 )
 
 /**
@@ -93,7 +103,10 @@ fun suggestionReason(
         previous?.sets?.lastOrNull()
     }
     val planSaysSomething = planned != null &&
-        (planned.reps != null || planned.weightGrams != null || planned.rpeHalves != null)
+        (
+            planned.reps != null || planned.weightGrams != null || planned.rpeHalves != null ||
+                planned.repsMin != null || planned.repsMax != null
+            )
     if (last == null && !planSaysSomething) return null
     return SuggestionReason(
         lastReps = last?.reps,
@@ -102,6 +115,8 @@ fun suggestionReason(
         planReps = planned?.reps,
         planWeightGrams = planned?.weightGrams,
         planRpeHalves = planned?.rpeHalves,
+        planRepsMin = planned?.repsMin,
+        planRepsMax = planned?.repsMax,
     )
 }
 
@@ -123,6 +138,15 @@ data class PlannedTarget(
     val rpeHalves: Int? = null,
     /** The hold the plan prescribes, in seconds, or null (ROADMAP N242). */
     val durationSeconds: Int? = null,
+    /**
+     * The plan's authored rep range, from its "Reps from" and "Reps to" ends (N74).
+     *
+     * Null for a rung, which carries no targets of its own, and for a plan that named neither end.
+     * [reps] stays where the climb stands; these are what the step at the ceiling restarts from, so a
+     * load step that resets a 5–10 set to 5 still names 5–10.
+     */
+    val repsMin: Int? = null,
+    val repsMax: Int? = null,
 )
 
 /**
@@ -381,6 +405,10 @@ fun plannedTargetFor(
             // A planned hold opens the session on its seconds, which is the whole point of prescribing
             // one (ROADMAP N242).
             durationSeconds = set.targetDurationSeconds,
+            // The authored ends travel beside the current place, so a load step that restarts the range
+            // still tells the lifter what the range is (N74, B478).
+            repsMin = set.targetRepsMin,
+            repsMax = set.targetRepsMax,
         )
     }
 }

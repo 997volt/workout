@@ -43,23 +43,7 @@ internal fun SuggestionReasonLine(
     }
     if (reason.planReps != null || reason.planWeightGrams != null) {
         val weight = weightWithUnit(reason.planWeightGrams, unit, unitLabel)
-        var plan = when {
-            reason.planReps != null && reason.planWeightGrams != null -> pluralStringResource(
-                R.plurals.suggestion_reps_at,
-                reason.planReps,
-                reason.planReps,
-                weight,
-            )
-
-            reason.planReps != null -> pluralStringResource(
-                R.plurals.suggestion_reps,
-                reason.planReps,
-                reason.planReps,
-            )
-            else -> weight
-        }
-        reason.planRpeHalves?.let { plan += stringResource(R.string.suggestion_rpe, Rpe.format(it)) }
-        parts += stringResource(R.string.suggestion_plan, plan)
+        parts += stringResource(R.string.suggestion_plan, planReasonPart(reason, weight))
     }
     Text(
         text = parts.joinToString(stringResource(R.string.suggestion_separator)),
@@ -67,6 +51,52 @@ internal fun SuggestionReasonLine(
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = modifier.padding(top = 4.dp),
     )
+}
+
+/**
+ * The plan's half of the reason line: its authored range where it wrote one, its current place otherwise.
+ *
+ * Split out so the line stays under the complexity ceiling. The range wins over the current place because
+ * the field above already states the latter: a 5–10 set that a load step restarted at 5 used to read
+ * "Plan 5 reps @ 102.5 kg", hiding the ceiling the lifter had just reached (B478).
+ */
+@Composable
+private fun planReasonPart(reason: SuggestionReason, weight: String): String {
+    val range = reason.planRepsMin?.let { min ->
+        reason.planRepsMax?.takeIf { max -> min < max }?.let { max -> min to max }
+    }
+    var plan = when {
+        range != null && reason.planWeightGrams != null -> pluralStringResource(
+            R.plurals.suggestion_rep_range_at,
+            range.second,
+            range.first,
+            range.second,
+            weight,
+        )
+
+        range != null -> pluralStringResource(
+            R.plurals.suggestion_rep_range,
+            range.second,
+            range.first,
+            range.second,
+        )
+
+        reason.planReps != null && reason.planWeightGrams != null -> pluralStringResource(
+            R.plurals.suggestion_reps_at,
+            reason.planReps,
+            reason.planReps,
+            weight,
+        )
+
+        reason.planReps != null -> pluralStringResource(
+            R.plurals.suggestion_reps,
+            reason.planReps,
+            reason.planReps,
+        )
+        else -> weight
+    }
+    reason.planRpeHalves?.let { plan += stringResource(R.string.suggestion_rpe, Rpe.format(it)) }
+    return plan
 }
 
 /** A weight and its unit, or an empty string when the source named none. */

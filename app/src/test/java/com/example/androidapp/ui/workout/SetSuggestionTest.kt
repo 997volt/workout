@@ -325,6 +325,55 @@ class SetSuggestionTest {
         assertEquals(18, target?.rpeHalves)
     }
 
+    @Test
+    fun aLoadStepThatRestartsTheRange_keepsTheAuthoredEndsBesideTheCurrentPlace() {
+        // B478: a 5–10 set whose load step reset targetRepsCurrent to its floor said only "Plan 5 reps
+        // @ 102.5 kg", so the ceiling the lifter had just reached disappeared from the next session.
+        // The current place and the two authored ends travel separately; the screen states the range.
+        val planned = TemplateExercise(
+            id = "te1",
+            templateId = "t1",
+            exerciseId = "back-squat",
+            position = 0,
+            exerciseName = "Back Squat",
+            primaryMuscle = MuscleGroup.QUADS,
+            equipment = Equipment.BARBELL,
+            targetRpeHalves = 16,
+            sets = listOf(
+                TemplateSet(
+                    id = "ts1",
+                    templateExerciseId = "te1",
+                    setIndex = 0,
+                    targetWeightGrams = 102_500L,
+                    targetRepsMin = 5,
+                    targetRepsMax = 10,
+                    targetRepsCurrent = 5,
+                ),
+            ),
+        )
+
+        val target = plannedTargetFor(planned, nextIndex = 0)
+        assertEquals(5, target?.reps)
+        assertEquals(5, target?.repsMin)
+        assertEquals(10, target?.repsMax)
+
+        val reason = suggestionReason(previous = null, planned = target)
+        assertEquals(5, reason?.planReps)
+        assertEquals(5, reason?.planRepsMin)
+        assertEquals(10, reason?.planRepsMax)
+    }
+
+    @Test
+    fun aPlanThatNamesOnlyTheCeiling_carriesNoRangeStart() {
+        // One end is not a range: the screen only prints 5–10 when both ends are there and differ, so
+        // a plan that wrote "Reps to 5" keeps the old "Plan 5 reps" line.
+        val target = plannedTargetFor(planned = plannedExercise(exerciseRpe = 16), nextIndex = 0)
+
+        assertEquals(5, target?.reps)
+        assertNull(target?.repsMin)
+        assertEquals(5, target?.repsMax)
+    }
+
     /** One planned exercise with one planned set, for the plan's target RPE (N59). */
     private fun plannedExercise(exerciseRpe: Int?) = TemplateExercise(
         id = "te1",

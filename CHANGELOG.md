@@ -13,6 +13,16 @@ repeated here.
 **1.0–1.18 live in [CHANGELOG-1.x.md](CHANGELOG-1.x.md)**, kept whole rather than deleted because the
 id a 1.x commit names is still looked up by it. This file carries the current release.
 
+## [Unreleased]
+
+### Fixed
+
+- **The plan's rep range is still visible after a load step restarts it** (B478). A set answered at the
+  ceiling of its 5–10 range progressed by one load step, which put the current rep back on 5, and the
+  next session's plan line said only "Plan 5 reps @ 102.5 kg" — the 10 the lifter could still climb to
+  was gone from the screen. The line now states the authored range ("Plan 5–10 reps @ 102.5 kg") while
+  the fields keep the current place.
+
 ## [2.31] — 2026-11-17 (versionCode 52)
 
 ### Fixed

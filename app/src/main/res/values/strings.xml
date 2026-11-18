@@ -375,6 +375,18 @@
     <string name="suggestion_last_time">Last time %1$s</string>
     <string name="suggestion_plan">Plan %1$s</string>
     <string name="suggestion_set_shape">%1$d × %2$s</string>
+    <!-- The plan's authored range, shown beside the next set's weight when a load step has restarted
+         the range at its floor (B478). The field above already states the current place; this is what
+         the lifter can still climb. The quantity is the range's upper end, which is what a plural reads
+         for a range; a real range always ends above one. -->
+    <plurals name="suggestion_rep_range">
+        <item quantity="one">%1$d–%2$d rep</item>
+        <item quantity="other">%1$d–%2$d reps</item>
+    </plurals>
+    <plurals name="suggestion_rep_range_at">
+        <item quantity="one">%1$d–%2$d rep @ %3$s</item>
+        <item quantity="other">%1$d–%2$d reps @ %3$s</item>
+    </plurals>
     <plurals name="suggestion_reps_at">
         <item quantity="one">%1$d rep @ %2$s</item>
         <item quantity="other">%1$d reps @ %2$s</item>
