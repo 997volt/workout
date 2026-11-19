@@ -743,10 +743,16 @@ class RoomBackupRepository @Inject constructor(
         val substitutionsToRestore = file.programSubstitutions.filter { it.id in hiddenSubstitutions }
 
         // A block's weeks are its own (N303): a file cannot arm a baseline the switch no longer offers (B490).
+        // Only a local block, or a hidden row the file is about to restore as one, loses its rows; a live
+        // weekly program with this id is left alone by the insert, so it must keep its baseline too (B494).
         val blockProgramIds = file.programs
             .filter { it.kind != ProgramKind.WEEKLY }
             .mapTo(mutableSetOf()) { it.id }
-        blockProgramIds.forEach { database.progressionDao().clearBaselines(it) }
+        val localPrograms = programBackup.allPrograms().associateBy { it.id }
+        blockProgramIds.filter { id ->
+            val local = localPrograms[id]
+            local == null || local.deletedAt != null || local.kind == ProgramKind.SEQUENCE
+        }.forEach { database.progressionDao().clearBaselines(it) }
         programBackup.restorePrograms(programsToRestore.map { it.toEntity() })
         programBackup.restoreProgramSlots(slotsToRestore.map { it.toEntity() })
         programBackup.restoreProgramSkips(skipsToRestore.map { it.toEntity() })

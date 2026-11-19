@@ -9,6 +9,7 @@ import com.example.androidapp.data.local.ProgramDeloadDayEntity
 import com.example.androidapp.data.local.ProgramDeloadEntity
 import com.example.androidapp.data.local.ProgramEntity
 import com.example.androidapp.data.local.ProgramSlotEntity
+import com.example.androidapp.data.local.ProgressionBaselineEntity
 import com.example.androidapp.data.local.RetiredMovementEntity
 import com.example.androidapp.data.local.SessionExerciseJointEntity
 import com.example.androidapp.data.local.SessionPlanSetEntity
@@ -467,6 +468,64 @@ class BackupRoundTripTest {
             "MAINTAIN",
             rows.single { it.value == 79_000.0 }.kind,
         )
+    }
+
+    @Test
+    fun aBlockFile_doesNotClearALiveWeeklyProgramsBaseline() = runTest {
+        // B494: the program row is inserted with IGNORE, so a file block whose id is a live weekly program
+        // here must not clear that program's baseline — the merge changed neither its row nor its switch.
+        seedAWorkout()
+        database.programDao().insertProgram(
+            ProgramEntity(
+                id = "shared",
+                name = "Weekly",
+                kind = ProgramKind.WEEKLY,
+                autoProgression = true,
+                createdAt = 1L,
+                updatedAt = 1L,
+                deletedAt = null,
+            ),
+        )
+        database.progressionDao().insertBaselines(
+            listOf(
+                ProgressionBaselineEntity(
+                    programId = "shared",
+                    templateSetId = "template-set-1",
+                    weightGrams = 100_000L,
+                    repsCurrent = 5,
+                    durationSeconds = null,
+                    capturedAt = 1L,
+                ),
+            ),
+        )
+        val file = BackupCodec.decode(exportedJson()).copy(
+            programs = listOf(
+                ProgramDto(
+                    id = "shared",
+                    name = "Block now",
+                    kind = ProgramKind.SEQUENCE,
+                    autoProgression = true,
+                    createdAt = 1L,
+                    updatedAt = 1L,
+                ),
+            ),
+            progressionBaselines = listOf(
+                ProgressionBaselineDto(
+                    programId = "shared",
+                    templateSetId = "template-set-1",
+                    weightGrams = 100_000L,
+                    repsCurrent = 5,
+                    capturedAt = 1L,
+                ),
+            ),
+        )
+
+        assertTrue(repository.import(BackupCodec.encode(file)) is DataResult.Success)
+
+        val program = database.programDao().findProgram("shared")!!
+        assertEquals(ProgramKind.WEEKLY, program.kind)
+        assertTrue(program.autoProgression)
+        assertEquals(1, database.progressionDao().findBaselines("shared").size)
     }
 
     @Test

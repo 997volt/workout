@@ -24,15 +24,6 @@ live weekly program with the same id, an old file's weekly baseline still import
 block's legacy flag has no way to be turned off from the screen, and the preview counts snapshots the rest of
 the preview hides. Nothing was fixed during the read.
 
-- **B494 — A block file can clear a live weekly program's baseline.** The B490 import collects every block id
-  in [BackupFile](app/src/main/java/com/example/androidapp/data/transfer/BackupFile.kt) and calls
-  `clearBaselines` for each before the programs are inserted
-  ([RoomBackupRepository.kt](app/src/main/java/com/example/androidapp/data/RoomBackupRepository.kt)). The program
-  insert is IGNORE by id, so a file block whose id is a **live weekly** program here leaves that program's row
-  and switch alone but deletes its baseline: a backup taken before B490 restores a reset point away from a
-  program it did not change. The clear is only right when the local row is a block, or is hidden and will be
-  restored as the file's block. Fixed means the import checks the local row before clearing, with a test where
-  the file's block id is a live weekly program with the switch on.
 - **B495 — An old file's weekly baseline imports while its switch is off.** The B490 filter drops a block's file
   baselines, but a pre-B477 file can carry a baseline for a **weekly** program whose `autoProgression` is false;
   [RoomBackupRepository.kt](app/src/main/java/com/example/androidapp/data/RoomBackupRepository.kt) inserts it,

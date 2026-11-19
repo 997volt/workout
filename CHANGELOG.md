@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A block file no longer clears a live weekly program's baseline** (B494). The B490 import cleared baselines
+  for every block id in the file before inserting the programs; the insert is IGNORE, so a file block whose id
+  was a live weekly program here left that program alone but deleted its baseline. Only a local block, or a
+  hidden row about to be restored as one, loses its rows now.
 - **A backup refuses duplicate plan snapshot rows** (B493). The session-plan table is keyed by exercise and
   set index and the import inserts with IGNORE, so a file carrying the same pair twice dropped one row in
   silence. The validator now refuses the duplicate pair.

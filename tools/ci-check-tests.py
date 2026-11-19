@@ -50,7 +50,7 @@ class Suite:
 # and report OK; these numbers are the fixed side of that comparison. Bump one in the commit that
 # changes the suite, and the checker prints the difference when it was forgotten.
 EXPECTED_UNIT_TESTS = 2372
-EXPECTED_INSTRUMENTED_TESTS = 535
+EXPECTED_INSTRUMENTED_TESTS = 536
 EXPECTED_SHARED_TESTS = 29
 
 SUITES = {
