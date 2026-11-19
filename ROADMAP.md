@@ -24,12 +24,6 @@ live weekly program with the same id, an old file's weekly baseline still import
 block's legacy flag has no way to be turned off from the screen, and the preview counts snapshots the rest of
 the preview hides. Nothing was fixed during the read.
 
-- **B495 — An old file's weekly baseline imports while its switch is off.** The B490 filter drops a block's file
-  baselines, but a pre-B477 file can carry a baseline for a **weekly** program whose `autoProgression` is false;
-  [RoomBackupRepository.kt](app/src/main/java/com/example/androidapp/data/RoomBackupRepository.kt) inserts it,
-  recreating the hidden rows B477 says disabling drops. The switch and its baseline are one story only for the
-  paths that write; the import still has two. Fixed means a baseline is imported only for a weekly program whose
-  file switch is on, with a test for the old weekly auto-off row.
 - **B496 — A block's legacy switch has no way to be turned off.** B487 hides the switch for a block and refuses
   enabling in [RoomProgressionRepository.kt](app/src/main/java/com/example/androidapp/data/RoomProgressionRepository.kt),
   but the repository still allows turning it **off** and

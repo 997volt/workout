@@ -471,6 +471,39 @@ class BackupRoundTripTest {
     }
 
     @Test
+    fun anOldWeeklyProgramWithoutTheSwitch_importsWithoutItsBaseline() = runTest {
+        // B495: a pre-B477 file can carry a weekly program with autoProgression false and a baseline for it.
+        // The baseline belongs to a switch that is off, so the import must not resurrect the hidden rows.
+        seedAWorkout()
+        val file = BackupCodec.decode(exportedJson()).copy(
+            programs = listOf(
+                ProgramDto(
+                    id = "old-weekly",
+                    name = "Old weekly",
+                    kind = ProgramKind.WEEKLY,
+                    autoProgression = false,
+                    createdAt = 1L,
+                    updatedAt = 1L,
+                ),
+            ),
+            progressionBaselines = listOf(
+                ProgressionBaselineDto(
+                    programId = "old-weekly",
+                    templateSetId = "template-set-1",
+                    weightGrams = 100_000L,
+                    repsCurrent = 5,
+                    capturedAt = 1L,
+                ),
+            ),
+        )
+
+        assertTrue(repository.import(BackupCodec.encode(file)) is DataResult.Success)
+
+        assertFalse(database.programDao().findProgram("old-weekly")!!.autoProgression)
+        assertTrue(database.progressionDao().findBaselines("old-weekly").isEmpty())
+    }
+
+    @Test
     fun aBlockFile_doesNotClearALiveWeeklyProgramsBaseline() = runTest {
         // B494: the program row is inserted with IGNORE, so a file block whose id is a live weekly program
         // here must not clear that program's baseline — the merge changed neither its row nor its switch.

@@ -753,6 +753,11 @@ class RoomBackupRepository @Inject constructor(
             val local = localPrograms[id]
             local == null || local.deletedAt != null || local.kind == ProgramKind.SEQUENCE
         }.forEach { database.progressionDao().clearBaselines(it) }
+        // A baseline belongs to a switch that is on (B477); an old file can carry a weekly program with the
+        // flag off and a baseline, and importing the rows would resurrect the state disabling drops (B495).
+        val baselinePrograms = file.programs
+            .filter { it.kind == ProgramKind.WEEKLY && it.autoProgression }
+            .mapTo(mutableSetOf()) { it.id }
         programBackup.restorePrograms(programsToRestore.map { it.toEntity() })
         programBackup.restoreProgramSlots(slotsToRestore.map { it.toEntity() })
         programBackup.restoreProgramSkips(skipsToRestore.map { it.toEntity() })
@@ -785,7 +790,7 @@ class RoomBackupRepository @Inject constructor(
                 .count { it != SKIPPED } +
             programBackup.insertProgressionBaselines(
                 file.progressionBaselines
-                    .filter { it.programId !in blockProgramIds }
+                    .filter { it.programId in baselinePrograms }
                     .map { it.toEntity() },
             ).count { it != SKIPPED }
 
