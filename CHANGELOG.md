@@ -17,6 +17,9 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A backup refuses duplicate plan snapshot rows** (B493). The session-plan table is keyed by exercise and
+  set index and the import inserts with IGNORE, so a file carrying the same pair twice dropped one row in
+  silence. The validator now refuses the duplicate pair.
 - **Every path that turns auto progression off drops the baseline** (B490). B477 made the repository's
   disable clear the rows, but converting to a block, deleting, restoring a document and importing a block
   cleared only the flag, and a document edit that made a block did not clear either. Those paths now clear

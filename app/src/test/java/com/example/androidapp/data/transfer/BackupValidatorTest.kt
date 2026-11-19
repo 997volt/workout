@@ -79,6 +79,27 @@ class BackupValidatorTest {
     }
 
     @Test
+    fun aPlanSnapshot_pair_isUnique() {
+        // B493: the table is keyed by (sessionExerciseId,setIndex) and the import inserts with IGNORE, so a
+        // duplicate used to drop one row in silence; the validator must refuse the pair instead.
+        val row = SessionPlanSetDto(
+            sessionExerciseId = "se-1",
+            setIndex = 0,
+            role = com.example.androidapp.domain.model.SetType.NORMAL,
+            targetWeightGrams = 100_000L,
+            targetRepsMin = 5,
+            targetRepsMax = 8,
+            targetRepsCurrent = 5,
+            targetRpeHalves = 16,
+        )
+
+        assertThat(BackupValidator.problems(valid().copy(sessionPlanSets = listOf(row)))).isEmpty()
+        assertThat(
+            BackupValidator.problems(valid().copy(sessionPlanSets = listOf(row, row))).messages(),
+        ).contains("A plan snapshot repeats a set.")
+    }
+
+    @Test
     fun aCountedSet_needsPositiveReps_andAHoldStatesSecondsInstead() {
         val zeroReps = valid().copy(sets = listOf(set.copy(reps = 0)))
         assertThat(BackupValidator.problems(zeroReps).messages())

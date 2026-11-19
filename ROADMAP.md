@@ -15,23 +15,6 @@ work was planned, so they do not always run in order — and an id this file doe
 shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 [CHANGELOG-1.x.md](CHANGELOG-1.x.md) for the 1.x releases.
 
-## Next — the unreleased-changes review
-
-Everything since 2.31 was read as one batch — the auto-progression fixes (B472–B477), the rep-range line
-(B478), the session-plan snapshot (B471), N325, and the weight-goal/calorie batch (B479–B486, N327, N328) —
-rather than as the separate reviews that produced them. The earlier rows were read in isolation; this read is
-the seams between them. The auto-progression writes, the snapshot schema and the goal/calorie arithmetic
-hold. The findings are the edges the fixes left: a block that can still be switched on, a secondary read
-that can take away the off control, a double *Done* after *Not now*, a legacy boundary whose range lies, and
-three backup/snapshot edges. Nothing was fixed during the read; the rows are ordered by what they cost.
-
-- **B493 — Duplicate plan snapshot rows are dropped in silence.** `session_plan_sets` is keyed by
-  `(sessionExerciseId,setIndex)` and the backup import inserts with IGNORE, but
-  [BackupValidator.kt](app/src/main/java/com/example/androidapp/data/transfer/BackupValidator.kt)'s
-  `validateSessionPlanSets` never checks the pair for a duplicate. A hand-edited or corrupt file loses one
-  row without a problem, and the one kept may be the wrong plan. The other tables' ids have the same class of
-  check. Fixed means the validator refuses a duplicate pair, with the import tested.
-
 ## Parked — deliberately not planned
 
 Each row is a product in its own right, contradicts "local-only", or both. Parking is a

@@ -184,9 +184,13 @@ internal object BackupValidator {
         strict: Boolean,
     ) {
         val sessionExerciseIds = file.sessionExercises.mapTo(mutableSetOf()) { it.id }
+        val seen = mutableSetOf<Pair<String, Int>>()
         file.sessionPlanSets.forEachIndexed { index, row ->
             val where = "Session plan set ${index + 1}"
             row.sessionExerciseId.required(out, where)
+            if (!seen.add(row.sessionExerciseId to row.setIndex)) {
+                out += BackupProblem(where, "A plan snapshot repeats a set.")
+            }
             if (row.sessionExerciseId !in sessionExerciseIds) {
                 out += BackupProblem(where, "The session exercise is not in this file.")
             }
