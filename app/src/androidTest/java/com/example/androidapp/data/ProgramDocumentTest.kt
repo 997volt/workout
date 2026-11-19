@@ -714,6 +714,43 @@ class ProgramDocumentTest {
     }
 
     @Test
+    fun restoringADocument_clearsTheBaselineToo() = runTest {
+        // B490: the restore only un-hides the row and clears the switch; the baseline would otherwise
+        // outlive the switch it belonged to.
+        val programId = seedProgram()
+        val progression = RoomProgressionRepository(database, clock)
+        assertTrue(progression.setAutoProgression(programId, true) is DataResult.Success)
+        val document = exportOf(programId)
+        database.programDao().softDeleteProgram(programId, now.toEpochMilli())
+        assertTrue("the setup kept the baseline", database.progressionDao().findBaselines(programId).isNotEmpty())
+
+        importOf(document)
+
+        assertTrue("the restored program has no baseline", database.progressionDao().findBaselines(programId).isEmpty())
+    }
+
+    @Test
+    fun anEditThatMakesAProgramABlock_clearsItsBaseline() = runTest {
+        // B490: the document edit's kind write is the same conversion as the editor toggle; it must not
+        // leave the switch or baseline a block never offers.
+        val programId = seedProgram()
+        val progression = RoomProgressionRepository(database, clock)
+        assertTrue(progression.setAutoProgression(programId, true) is DataResult.Success)
+        val original = ProgramDocumentCodec.decode(exportOf(programId))
+        val edit = original.copy(
+            program = original.program.copy(kind = ProgramKind.SEQUENCE),
+            edit = EditMarker(baseExportedAt = original.exportedAt),
+        )
+
+        importOf(ProgramDocumentCodec.encode(edit))
+
+        val program = database.programDao().findProgram(programId)!!
+        assertEquals(ProgramKind.SEQUENCE, program.kind)
+        assertFalse("an edited block keeps no switch", program.autoProgression)
+        assertTrue("nor its baseline", database.progressionDao().findBaselines(programId).isEmpty())
+    }
+
+    @Test
     fun aBlockIsNotAskedAboutAsAMissedWeek() = runTest {
         // B195: the clock is Wednesday and the seeded slot is Monday, so the weekly program has a
         // miss to ask about. A block's weekday places one session, so it has no weekly occurrence.

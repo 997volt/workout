@@ -23,6 +23,7 @@ import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.InvalidInputException
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.dataResultOf
+import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.model.localDayBounds
 import com.example.androidapp.domain.nowEpochMillis
 import com.example.androidapp.domain.repository.BackupPreview
@@ -741,6 +742,11 @@ class RoomBackupRepository @Inject constructor(
         val deloadDaysToRestore = file.programDeloadDays.filter { it.id in hiddenDeloadDays }
         val substitutionsToRestore = file.programSubstitutions.filter { it.id in hiddenSubstitutions }
 
+        // A block's weeks are its own (N303): a file cannot arm a baseline the switch no longer offers (B490).
+        val blockProgramIds = file.programs
+            .filter { it.kind != ProgramKind.WEEKLY }
+            .mapTo(mutableSetOf()) { it.id }
+        blockProgramIds.forEach { database.progressionDao().clearBaselines(it) }
         programBackup.restorePrograms(programsToRestore.map { it.toEntity() })
         programBackup.restoreProgramSlots(slotsToRestore.map { it.toEntity() })
         programBackup.restoreProgramSkips(skipsToRestore.map { it.toEntity() })
@@ -771,8 +777,11 @@ class RoomBackupRepository @Inject constructor(
             // returns -1 is a row this device already held and the file's copy does not replace it.
             programBackup.insertProgressionWrites(file.progressionWrites.map { it.toEntity() })
                 .count { it != SKIPPED } +
-            programBackup.insertProgressionBaselines(file.progressionBaselines.map { it.toEntity() })
-                .count { it != SKIPPED }
+            programBackup.insertProgressionBaselines(
+                file.progressionBaselines
+                    .filter { it.programId !in blockProgramIds }
+                    .map { it.toEntity() },
+            ).count { it != SKIPPED }
 
         return Imported(added = added, restored = restored)
     }

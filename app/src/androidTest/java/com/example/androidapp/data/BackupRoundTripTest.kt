@@ -18,6 +18,8 @@ import com.example.androidapp.data.local.TemplateExerciseEntity
 import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.data.transfer.BackupCodec
 import com.example.androidapp.data.transfer.GoalPeriodDto
+import com.example.androidapp.data.transfer.ProgramDto
+import com.example.androidapp.data.transfer.ProgressionBaselineDto
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
@@ -465,6 +467,40 @@ class BackupRoundTripTest {
             "MAINTAIN",
             rows.single { it.value == 79_000.0 }.kind,
         )
+    }
+
+    @Test
+    fun importingABlock_dropsTheBaselineTheFileCarries() = runTest {
+        // B490: a block's switch is never offered, so a file that names one must not leave a baseline
+        // no reset can reach.
+        seedAWorkout()
+        val file = BackupCodec.decode(exportedJson()).copy(
+            programs = listOf(
+                ProgramDto(
+                    id = "block",
+                    name = "Base block",
+                    kind = ProgramKind.SEQUENCE,
+                    autoProgression = true,
+                    createdAt = 1L,
+                    updatedAt = 1L,
+                ),
+            ),
+            progressionBaselines = listOf(
+                ProgressionBaselineDto(
+                    programId = "block",
+                    templateSetId = "template-set-1",
+                    weightGrams = 100_000L,
+                    repsCurrent = 5,
+                    capturedAt = 1L,
+                ),
+            ),
+        )
+
+        val result = repository.import(BackupCodec.encode(file))
+
+        assertTrue(result is DataResult.Success)
+        assertFalse(database.programDao().findProgram("block")!!.autoProgression)
+        assertTrue(database.progressionDao().findBaselines("block").isEmpty())
     }
 
     @Test

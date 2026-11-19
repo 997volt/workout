@@ -17,6 +17,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **Every path that turns auto progression off drops the baseline** (B490). B477 made the repository's
+  disable clear the rows, but converting to a block, deleting, restoring a document and importing a block
+  cleared only the flag, and a document edit that made a block did not clear either. Those paths now clear
+  the baseline as well, and a block's file does not import one, so the switch and its snapshot are one story
+  everywhere.
 - **The backup preview counts the plan snapshots** (B489). The import restored and counted the session-plan
   snapshots, but the preview had no line for them, so a file whose only new rows were snapshots previewed as
   no change while the restore reported one added. The preview now has a "Plan snapshots" row, shown when the

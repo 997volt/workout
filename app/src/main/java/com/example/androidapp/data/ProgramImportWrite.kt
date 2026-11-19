@@ -16,6 +16,7 @@ import com.example.androidapp.data.transfer.withResolvedExercises
 import com.example.androidapp.data.transfer.withValidLibraryShape
 import com.example.androidapp.domain.InvalidInputException
 import com.example.androidapp.domain.TimeSource
+import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.repository.ProgramImportSummary
 import com.example.androidapp.shared.Change
 import com.example.androidapp.shared.ChangeKind
@@ -95,6 +96,8 @@ internal suspend fun mergeProgramDocument(
     // One statement, before the inserts: a hidden program comes back, a live or absent one is
     // untouched (only rows with `deletedAt` set are updated), and the count says which happened.
     val programsRestored = programBackup.restoreProgramVisibility(resolved.program.id, now)
+    // The restore clears the switch (B475); its baseline is the other half of the same statement (B490).
+    if (programsRestored > 0) database.progressionDao().clearBaselines(resolved.program.id)
 
     // The library's shape is enforced on the way in (B92): a document can carry a parent link the app would
     // never write, and a movement filed under a head the document does not carry keeps the link (the head may
@@ -200,6 +203,14 @@ internal suspend fun applyProgramEdit(
     )
     if (writer.renamed) writer.rename()
     writer.applySchedule()
+    // An edit that makes the program a block is the same conversion as the editor's toggle; it must
+    // not keep a switch or baseline the block never offers (B475, B490).
+    if (ready.changes.any { it.kind == ChangeKind.PROGRAM_KIND } &&
+        document.program.kind == ProgramKind.SEQUENCE
+    ) {
+        database.programDao().setAutoProgression(document.program.id, enabled = false, at = now)
+        database.progressionDao().clearBaselines(document.program.id)
+    }
     val exercises = writer.writeExercises()
     val templates = writer.writeTemplates()
     writer.writeTemplateExercises()

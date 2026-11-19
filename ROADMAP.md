@@ -25,16 +25,6 @@ hold. The findings are the edges the fixes left: a block that can still be switc
 that can take away the off control, a double *Done* after *Not now*, a legacy boundary whose range lies, and
 three backup/snapshot edges. Nothing was fixed during the read; the rows are ordered by what they cost.
 
-- **B490 — The switch is cleared without its baseline on the B475 paths.** B477 made disabling drop the
-  baseline in `RoomProgressionRepository.setAutoProgression`, but converting to a block
-  ([RoomProgramRepository.kt](app/src/main/java/com/example/androidapp/data/RoomProgramRepository.kt)),
-  deleting ([ProgramDao.kt](app/src/main/java/com/example/androidapp/data/local/ProgramDao.kt)), restoring a
-  document ([ProgramBackupDao.kt](app/src/main/java/com/example/androidapp/data/local/ProgramBackupDao.kt))
-  and importing a block
-  ([ProgramBackupMappers.kt](app/src/main/java/com/example/androidapp/data/transfer/ProgramBackupMappers.kt))
-  clear only the flag. The rows stay hidden and exported, and "off drops it" is true on one of the four off
-  paths. Fixed means those paths clear the baseline too (or go through the one repository method), with tests
-  for each.
 - **B493 — Duplicate plan snapshot rows are dropped in silence.** `session_plan_sets` is keyed by
   `(sessionExerciseId,setIndex)` and the backup import inserts with IGNORE, but
   [BackupValidator.kt](app/src/main/java/com/example/androidapp/data/transfer/BackupValidator.kt)'s

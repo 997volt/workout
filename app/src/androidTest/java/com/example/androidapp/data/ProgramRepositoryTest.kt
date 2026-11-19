@@ -4,6 +4,7 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.data.local.ExerciseEntity
+import com.example.androidapp.data.local.ProgressionBaselineEntity
 import com.example.androidapp.data.local.SessionExerciseEntity
 import com.example.androidapp.data.local.SetEntryEntity
 import com.example.androidapp.data.local.WorkoutDatabase
@@ -256,6 +257,7 @@ class ProgramRepositoryTest {
         // B475: a sequence is never offered the switch, and the resolver ignores it. Leaving the flag
         // on hid the control that would turn it off and silently re-armed writes if it became weekly.
         val program = create("Upper/Lower")
+        givenABaseline(program)
         database.programDao().setAutoProgression(program, true, now.toEpochMilli())
 
         repository.setProgramKind(program, ProgramKind.SEQUENCE)
@@ -264,6 +266,10 @@ class ProgramRepositoryTest {
             "a block never carries the switch",
             database.programDao().findProgram(program)!!.autoProgression,
         )
+        assertTrue(
+            "and the baseline goes with it (B490)",
+            database.progressionDao().findBaselines(program).isEmpty(),
+        )
     }
 
     @Test
@@ -271,6 +277,7 @@ class ProgramRepositoryTest {
         // B475: deleting is not a consent to keep adjusting, and a document that un-hides the row
         // must not bring the write authorization back.
         val program = create("Upper/Lower")
+        givenABaseline(program)
         database.programDao().setAutoProgression(program, true, now.toEpochMilli())
 
         repository.deleteProgram(program)
@@ -278,6 +285,10 @@ class ProgramRepositoryTest {
         assertFalse(
             "the hidden row keeps no switch",
             database.programBackupDao().allPrograms().single { it.id == program }.autoProgression,
+        )
+        assertTrue(
+            "and no baseline outlives it (B490)",
+            database.progressionDao().findBaselines(program).isEmpty(),
         )
     }
 
@@ -1017,6 +1028,22 @@ class ProgramRepositoryTest {
 
     private suspend fun create(name: String): String =
         (repository.createProgram(name) as DataResult.Success).data
+
+    /** A baseline row for an off-the-write-boundary test; clearBaselines does not care where it came from. */
+    private suspend fun givenABaseline(programId: String) {
+        database.progressionDao().insertBaselines(
+            listOf(
+                ProgressionBaselineEntity(
+                    programId = programId,
+                    templateSetId = "set-$programId",
+                    weightGrams = 100_000L,
+                    repsCurrent = 5,
+                    durationSeconds = null,
+                    capturedAt = now.toEpochMilli(),
+                ),
+            ),
+        )
+    }
 
     /** The single slot of a program the test has already filled, in its order (P3.3). */
     private suspend fun slot(programId: String): ProgramSlot =

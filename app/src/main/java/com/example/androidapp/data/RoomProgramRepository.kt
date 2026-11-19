@@ -10,6 +10,7 @@ import com.example.androidapp.data.local.ProgramSkipEntity
 import com.example.androidapp.data.local.ProgramSlotEntity
 import com.example.androidapp.data.local.ProgramSubstitutionDao
 import com.example.androidapp.data.local.ProgramSubstitutionEntity
+import com.example.androidapp.data.local.ProgressionDao
 import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.data.local.toDomain
 import com.example.androidapp.data.local.toProgramSession
@@ -75,6 +76,8 @@ class RoomProgramRepository @Inject constructor(
 
     private val dao: ProgramDao = database.programDao()
 
+    private val progression: ProgressionDao = database.progressionDao()
+
     private val runDao: ProgramRunDao = database.programRunDao()
 
     private val skipDao: ProgramSkipDao = database.programSkipDao()
@@ -135,7 +138,11 @@ class RoomProgramRepository @Inject constructor(
                 if (updated == 0) throw NotFoundException("program $programId")
                 // A block is never offered the switch (N303), so a weekly program that becomes one
                 // cannot keep a flag the editor can no longer show and the resolver ignores (B475).
-                if (kind == ProgramKind.SEQUENCE) dao.setAutoProgression(programId, enabled = false, at = now)
+                if (kind == ProgramKind.SEQUENCE) {
+                    dao.setAutoProgression(programId, enabled = false, at = now)
+                    // The switch and its baseline are one story (B477); converting is another off path (B490).
+                    progression.clearBaselines(programId)
+                }
                 // A block needs a beginning, and the toggle is where one is chosen (B196): without a
                 // date the start falls back to the program's creation, which for a program that has
                 // been trained for months would make the block arrive already under way.
@@ -166,8 +173,12 @@ class RoomProgramRepository @Inject constructor(
         }
 
     override suspend fun deleteProgram(programId: String): DataResult<Unit> = dataResultOf {
-        if (dao.softDeleteProgram(id = programId, at = timeSource.nowEpochMillis()) == 0) {
-            throw NotFoundException("program $programId")
+        database.withTransaction {
+            if (dao.softDeleteProgram(id = programId, at = timeSource.nowEpochMillis()) == 0) {
+                throw NotFoundException("program $programId")
+            }
+            // Deleting is an off path too; the rows would otherwise outlive the switch they belonged to (B490).
+            progression.clearBaselines(programId)
         }
     }
 
