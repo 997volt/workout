@@ -233,6 +233,14 @@ class RoomBackupRepository @Inject constructor(
                     file.exercises.map { FileRow(it.id, it.deletedAt) },
                     dao.allExercises().associate { it.id to it.deletedAt },
                 ),
+                planSnapshots = previewCounts(
+                    file.sessionPlanSets.map {
+                        FileRow(snapshotPreviewKey(it.sessionExerciseId, it.setIndex), deletedAt = null)
+                    },
+                    dao.allSessionPlanSets().associate {
+                        snapshotPreviewKey(it.sessionExerciseId, it.setIndex) to null
+                    },
+                ),
                 problems = problems,
             )
         }
@@ -243,6 +251,10 @@ class RoomBackupRepository @Inject constructor(
      * (B330).
      */
     private data class FileRow(val id: String, val deletedAt: Long?)
+
+    /** The snapshot's composite key as one preview id (B489). */
+    private fun snapshotPreviewKey(sessionExerciseId: String, setIndex: Int): String =
+        "$sessionExerciseId#$setIndex"
 
     /**
      * Splits the file's live rows into the merge's three cases against the local rows (N248, B330).

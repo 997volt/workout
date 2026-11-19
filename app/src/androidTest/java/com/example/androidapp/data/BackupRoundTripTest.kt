@@ -11,6 +11,7 @@ import com.example.androidapp.data.local.ProgramEntity
 import com.example.androidapp.data.local.ProgramSlotEntity
 import com.example.androidapp.data.local.RetiredMovementEntity
 import com.example.androidapp.data.local.SessionExerciseJointEntity
+import com.example.androidapp.data.local.SessionPlanSetEntity
 import com.example.androidapp.data.local.SessionSoreMuscleEntity
 import com.example.androidapp.data.local.TemplateEntity
 import com.example.androidapp.data.local.TemplateExerciseEntity
@@ -464,6 +465,38 @@ class BackupRoundTripTest {
             "MAINTAIN",
             rows.single { it.value == 79_000.0 }.kind,
         )
+    }
+
+    @Test
+    fun thePreview_countsASessionPlanSnapshot_thatWouldBeAdded() = runTest {
+        // B489: a file whose sessions and sets are already here but whose snapshot is not used to preview
+        // as no change, while the import counted the snapshot as added.
+        seedAWorkout()
+        database.sessionPlanSetDao().insertAll(
+            listOf(
+                SessionPlanSetEntity(
+                    sessionExerciseId = "se-1",
+                    setIndex = 0,
+                    role = SetType.NORMAL,
+                    targetWeightGrams = 100_000L,
+                    targetAssistanceGrams = null,
+                    targetRepsMin = 5,
+                    targetRepsMax = 8,
+                    targetRepsCurrent = 5,
+                    targetDurationSeconds = null,
+                    targetRpeHalves = 16,
+                ),
+            ),
+        )
+        val json = exportedJson()
+        database.openHelper.writableDatabase.execSQL("DELETE FROM session_plan_sets")
+
+        val preview = (repository.preview(json) as DataResult.Success).data
+
+        assertEquals(1, preview.planSnapshots.inFile)
+        assertEquals(0, preview.planSnapshots.alreadyHere)
+        assertEquals(1, preview.planSnapshots.added)
+        assertEquals(0, preview.sessions.added)
     }
 
     @Test

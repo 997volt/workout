@@ -127,13 +127,20 @@ data class BackupProblem(val where: String, val message: String)
  *
  * Read-only: the counts come from decoding the file and listing what is here, never from a dry-run write. The
  * four kinds are the ones the question names; plans and programs ride along in the merge but are not part of
- * the question.
+ * the question except the plan snapshot's own line (B489).
  */
 data class BackupPreview(
     val sessions: PreviewCounts,
     val sets: PreviewCounts,
     val measurements: PreviewCounts,
     val exercises: PreviewCounts,
+    /**
+     * The plan snapshot rows (B471, B489).
+     *
+     * Their own line rather than part of [sets]: they are a prescription, not logged work, and a restore
+     * whose only new rows are these used to preview as no change while the import reported one added.
+     */
+    val planSnapshots: PreviewCounts = PreviewCounts(0, 0, 0, 0),
     /** Values the app cannot store; non-empty means the file cannot be merged (B342). */
     val problems: List<BackupProblem> = emptyList(),
     /**

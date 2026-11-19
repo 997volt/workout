@@ -114,7 +114,7 @@ private fun PreviewProblems(problems: List<BackupProblem>) {
     }
 }
 
-/** Four kinds against four numbers: the file's row, and the merge's three outcomes (N248). */
+/** The preview's kinds against four numbers: the file's row, and the merge's three outcomes (N248). */
 @Composable
 private fun PreviewTable(preview: BackupPreview) {
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -135,6 +135,13 @@ private fun PreviewTable(preview: BackupPreview) {
             label = stringResource(R.string.import_preview_movements_label),
             counts = preview.exercises,
         )
+        // A file from before B471 has none; a zero row would be noise rather than an answer.
+        if (preview.planSnapshots.inFile > 0) {
+            PreviewLine(
+                label = stringResource(R.string.import_preview_plan_snapshots_label),
+                counts = preview.planSnapshots,
+            )
+        }
     }
 }
 

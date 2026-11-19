@@ -107,6 +107,25 @@ class ImportPreviewDialogTest {
     }
 
     @Test
+    fun thePlanSnapshots_haveTheirOwnRow() {
+        // B489: the import counts the session-plan snapshots, but the preview had no line for them, so a
+        // file whose only new rows were snapshots previewed as no change.
+        show(
+            BackupPreview(
+                sessions = PreviewCounts(0, 0, 0, 0),
+                sets = PreviewCounts(0, 0, 0, 0),
+                measurements = PreviewCounts(0, 0, 0, 0),
+                exercises = PreviewCounts(0, 0, 0, 0),
+                planSnapshots = PreviewCounts(inFile = 1, alreadyHere = 0, restored = 0, added = 1),
+            ),
+        )
+
+        composeTestRule.onNodeWithContentDescription(
+            "Plan snapshots — in the file: 1, already here: 0, would come back: 0, new: 1",
+        ).assertExists()
+    }
+
+    @Test
     fun theFile_andWhatTheMergeWouldDo_areShown_andEitherAnswerIsReported() {
         show(
             BackupPreview(

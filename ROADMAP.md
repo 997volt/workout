@@ -25,15 +25,6 @@ hold. The findings are the edges the fixes left: a block that can still be switc
 that can take away the off control, a double *Done* after *Not now*, a legacy boundary whose range lies, and
 three backup/snapshot edges. Nothing was fixed during the read; the rows are ordered by what they cost.
 
-- **B489 — The backup preview does not count the plan snapshots.** The import writes `sessionPlanSets` and
-  counts them in its summary (B471), but
-  [BackupRepository.kt](app/src/main/java/com/example/androidapp/domain/repository/BackupRepository.kt)'s
-  `BackupPreview` has no field for them and
-  [RoomBackupRepository.kt](app/src/main/java/com/example/androidapp/data/RoomBackupRepository.kt)'s
-  `preview()` never reads them. A file whose only new rows are snapshots previews as no change, then the
-  restore reports one added. The preview's four kinds are the question it answers, but a collection the merge
-  now writes belongs in it. Fixed means a snapshot count (or the session count that contains them) and a
-  snapshot-only test.
 - **B490 — The switch is cleared without its baseline on the B475 paths.** B477 made disabling drop the
   baseline in `RoomProgressionRepository.setAutoProgression`, but converting to a block
   ([RoomProgramRepository.kt](app/src/main/java/com/example/androidapp/data/RoomProgramRepository.kt)),
