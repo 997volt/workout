@@ -24,14 +24,6 @@ live weekly program with the same id, an old file's weekly baseline still import
 block's legacy flag has no way to be turned off from the screen, and the preview counts snapshots the rest of
 the preview hides. Nothing was fixed during the read.
 
-- **B496 — A block's legacy switch has no way to be turned off.** B487 hides the switch for a block and refuses
-  enabling in [RoomProgressionRepository.kt](app/src/main/java/com/example/androidapp/data/RoomProgressionRepository.kt),
-  but the repository still allows turning it **off** and
-  [ProgramProgressionScreen.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramProgressionScreen.kt)
-  now shows a message with no control at all. A block row from before B475 (or a hand-edited database) with the
-  flag on therefore keeps it for ever, ignored by the resolver; the B475/B490 paths cannot reach a row that is
-  already live. Fixed means the block state offers a turn-off action when the flag is on, or a one-time cleanup,
-  with a test.
 - **B497 — The preview counts snapshots the rest of it hides.** The B489 `planSnapshots` count includes every
   file snapshot, while the sessions/sets counts in the same preview filter rows whose session exercise or
   exercise is hidden (`visibleSetIds`). A file can preview a "Plan snapshots" row for a session the rest of the

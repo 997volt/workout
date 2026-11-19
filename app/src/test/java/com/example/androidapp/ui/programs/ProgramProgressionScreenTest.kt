@@ -161,9 +161,22 @@ class ProgramProgressionScreenTest {
         setScreen(state = state(isSequence = true))
 
         composeTestRule.onNodeWithTag(TestTags.Programs.AUTO_SWITCH).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.Programs.AUTO_BLOCK_TURN_OFF).assertDoesNotExist()
         composeTestRule
             .onNodeWithText("This program is a block. Its weeks are its own, so auto progression is not offered.")
             .assertIsDisplayed()
+    }
+
+    @Test
+    fun aBlockWithALegacySwitch_offersToTurnItOff() {
+        // B496: B487 hides the switch for a block, but a row from before B475 can still carry it and the
+        // repository allows turning it off; without a control the state could never be cleared.
+        var value: Boolean? = null
+        setScreen(state = state(auto = true, isSequence = true), onSetAuto = { value = it })
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.AUTO_BLOCK_TURN_OFF).performClick()
+
+        assertThat(value).isFalse()
     }
 
     @Test

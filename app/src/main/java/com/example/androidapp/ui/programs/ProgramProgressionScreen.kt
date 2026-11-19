@@ -4,7 +4,9 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -208,9 +210,9 @@ private fun ProgramProgressionFrame(
             modifier = modifier,
         )
 
-        state.isSequence -> CenteredMessage(
-            text = stringResource(R.string.program_progression_block),
-            showSpinner = false,
+        state.isSequence -> BlockAutoMessage(
+            auto = state.autoProgression,
+            onSetAuto = onSetAuto,
             modifier = modifier,
         )
 
@@ -220,6 +222,41 @@ private fun ProgramProgressionFrame(
             onReset = onReset,
             modifier = modifier,
         )
+    }
+}
+
+/**
+ * A block's screen: the switch is not offered (B487), but a row from before B475 may still carry it, and
+ * hiding every control would leave no way to turn it off (B496). The action writes the ordinary off path,
+ * which clears the baseline too.
+ */
+@Composable
+private fun BlockAutoMessage(
+    auto: Boolean,
+    onSetAuto: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = stringResource(R.string.program_progression_block),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (auto) {
+            Spacer(Modifier.height(12.dp))
+            AppTextButton(
+                onClick = { onSetAuto(false) },
+                modifier = Modifier.testTag(TestTags.Programs.AUTO_BLOCK_TURN_OFF),
+            ) {
+                Text(stringResource(R.string.program_progression_block_turn_off))
+            }
+        }
     }
 }
 

@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A block's legacy auto switch can be turned off** (B496). B487 hides the switch for a block, but a row from
+  before B475 can still carry it and the repository allows off; with no control the hidden flag could never be
+  cleared. The block screen now offers "Turn off auto progression" when the flag is on, and the ordinary off
+  path clears the baseline with it.
 - **An old file's weekly baseline no longer imports with the switch off** (B495). The B490 filter dropped only
   block baselines; a pre-B477 file can carry a weekly program with the flag false and a baseline for it, and the
   import inserted it, recreating the state disabling drops. A baseline now imports only for a weekly program

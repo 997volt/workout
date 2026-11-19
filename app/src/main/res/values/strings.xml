@@ -1295,6 +1295,7 @@
     <string name="program_weeks_not_found">This program no longer exists.</string>
     <string name="program_progression">Auto progression</string>
     <string name="program_progression_block">This program is a block. Its weeks are its own, so auto progression is not offered.</string>
+    <string name="program_progression_block_turn_off">Turn off auto progression</string>
     <string name="program_progression_title">Auto progression</string>
     <string name="program_progression_intro">When this is on, the app raises this program\'s planned targets from what you log. It never lowers them, and every change is recorded.</string>
     <string name="program_progression_toggle">Adjust this program\'s targets</string>

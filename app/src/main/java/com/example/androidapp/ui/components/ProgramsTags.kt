@@ -129,6 +129,9 @@ internal object ProgramsTags {
     const val AUTO_SWITCH = "program_auto_switch"
     const val AUTO_ENABLE = "program_auto_enable"
     const val AUTO_RESET = "program_auto_reset"
+
+    /** The turn-off recovery for a block whose old row still carries the switch (B496). */
+    const val AUTO_BLOCK_TURN_OFF = "program_auto_block_turn_off"
     const val AUTO_RESET_CONFIRM = "program_auto_reset_confirm"
 
     /** The read-only view of what a slot's template prescribes (ROADMAP N72). */
