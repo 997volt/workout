@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The preview does not count plan snapshots under a hidden exercise** (B497). The B489 row counted every file
+  snapshot, while the rest of the preview filters rows whose session exercise is hidden. The snapshot count now
+  uses the same visibility rule, and the import summary counts only the visible ones; the row is still carried
+  for a later restore.
 - **A block's legacy auto switch can be turned off** (B496). B487 hides the switch for a block, but a row from
   before B475 can still carry it and the repository allows off; with no control the hidden flag could never be
   cleared. The block screen now offers "Turn off auto progression" when the flag is on, and the ordinary off

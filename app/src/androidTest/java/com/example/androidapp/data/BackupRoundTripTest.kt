@@ -471,6 +471,35 @@ class BackupRoundTripTest {
     }
 
     @Test
+    fun thePreview_doesNotCountASnapshotUnderAHiddenExercise() = runTest {
+        // B497: the rest of the preview drops the children of a hidden session exercise, and the B489
+        // snapshot row must agree — the import still carries the row for a later restore, but it is not
+        // one of the visible rows the question counts.
+        seedAWorkout()
+        database.sessionPlanSetDao().insertAll(
+            listOf(
+                SessionPlanSetEntity(
+                    sessionExerciseId = "se-1",
+                    setIndex = 0,
+                    role = SetType.NORMAL,
+                    targetWeightGrams = 100_000L,
+                    targetAssistanceGrams = null,
+                    targetRepsMin = 5,
+                    targetRepsMax = 8,
+                    targetRepsCurrent = 5,
+                    targetDurationSeconds = null,
+                    targetRpeHalves = 16,
+                ),
+            ),
+        )
+        database.workoutDao().softDeleteSessionExercise("se-1", 1_000L)
+
+        val preview = (repository.preview(exportedJson()) as DataResult.Success).data
+
+        assertEquals(0, preview.planSnapshots.inFile)
+    }
+
+    @Test
     fun anOldWeeklyProgramWithoutTheSwitch_importsWithoutItsBaseline() = runTest {
         // B495: a pre-B477 file can carry a weekly program with autoProgression false and a baseline for it.
         // The baseline belongs to a switch that is off, so the import must not resurrect the hidden rows.

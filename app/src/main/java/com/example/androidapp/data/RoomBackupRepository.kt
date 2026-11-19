@@ -218,6 +218,7 @@ class RoomBackupRepository @Inject constructor(
             // A set is drawn only inside its exercise inside its session (N261): one whose parents stay hidden
             // is a live row the merge writes and the history shows nowhere, so it is not one of the counts.
             val drawnSets = visibleSetIds(file)
+            val visibleSessionExercises = visibleSessionExerciseIds(file)
             val problems = BackupValidator.problems(file)
             BackupPreview(
                 legacyLimits = file.limitsVersion < BackupCodec.CURRENT_LIMITS_VERSION,
@@ -235,9 +236,11 @@ class RoomBackupRepository @Inject constructor(
                     dao.allExercises().associate { it.id to it.deletedAt },
                 ),
                 planSnapshots = previewCounts(
-                    file.sessionPlanSets.map {
-                        FileRow(snapshotPreviewKey(it.sessionExerciseId, it.setIndex), deletedAt = null)
-                    },
+                    file.sessionPlanSets
+                        .filter { it.sessionExerciseId in visibleSessionExercises }
+                        .map {
+                            FileRow(snapshotPreviewKey(it.sessionExerciseId, it.setIndex), deletedAt = null)
+                        },
                     dao.allSessionPlanSets().associate {
                         snapshotPreviewKey(it.sessionExerciseId, it.setIndex) to null
                     },
@@ -424,7 +427,7 @@ class RoomBackupRepository @Inject constructor(
      * parent is live afterwards when it is live in the file — inserted, or restored — or already live here,
      * which the merge leaves alone.
      */
-    private suspend fun visibleSetIds(file: BackupFile): Set<String> {
+    private suspend fun visibleSessionExerciseIds(file: BackupFile): Set<String> {
         val localExercises = dao.allSessionExercises()
         val sessions = LiveAfterMerge(
             file = file.sessions.associate { it.id to it.deletedAt },
@@ -438,14 +441,15 @@ class RoomBackupRepository @Inject constructor(
             file.sessionExercises.forEach { put(it.id, it.sessionId) }
             localExercises.forEach { if (it.id !in this) put(it.id, it.sessionId) }
         }
+        return (file.sessionExercises.map { it.id } + localExercises.map { it.id })
+            .filter { id -> id in exercises && sessionOf[id]?.let { it in sessions } == true }
+            .toSet()
+    }
+
+    private suspend fun visibleSetIds(file: BackupFile): Set<String> {
+        val visible = visibleSessionExerciseIds(file)
         return file.sets
-            .filter { set ->
-                val sessionId = sessionOf[set.sessionExerciseId]
-                set.deletedAt == null &&
-                    set.sessionExerciseId in exercises &&
-                    sessionId != null &&
-                    sessionId in sessions
-            }
+            .filter { it.deletedAt == null && it.sessionExerciseId in visible }
             .mapTo(mutableSetOf()) { it.id }
     }
 
@@ -681,6 +685,8 @@ class RoomBackupRepository @Inject constructor(
         // parent it does not carry is refused by the validator, and this filter keeps the insert's
         // foreign key honest if it ever is not (B471).
         val fileSessionExerciseIds = file.sessionExercises.mapTo(mutableSetOf()) { it.id }
+        val filePlanSets = file.sessionPlanSets.filter { it.sessionExerciseId in fileSessionExerciseIds }
+        val planRows = dao.insertSessionPlanSets(filePlanSets.map { it.toEntity() })
         return dao.insertExercises(file.exercises.map { it.toEntity() })
             .countLive(file.exercises) { it.deletedAt == null } +
             dao.insertSessions(file.sessions.map { it.toEntity() })
@@ -695,11 +701,9 @@ class RoomBackupRepository @Inject constructor(
                 .countLive(file.sessionSoreMuscles) { it.deletedAt == null && it.id in visible.soreMuscles } +
             dao.insertSets(file.sets.map { it.toEntity() })
                 .countLive(file.sets) { it.deletedAt == null && it.id in visible.sets } +
-            dao.insertSessionPlanSets(
-                file.sessionPlanSets
-                    .filter { it.sessionExerciseId in fileSessionExerciseIds }
-                    .map { it.toEntity() },
-            ).count { it != SKIPPED } +
+            planRows.indices.count {
+                planRows[it] != SKIPPED && filePlanSets[it].sessionExerciseId in visible.sessionExercises
+            } +
             dao.insertTemplates(file.templates.map { it.toEntity() })
                 .countLive(file.templates) { it.deletedAt == null } +
             dao.insertTemplateExercises(file.templateExercises.map { it.toEntity() })
