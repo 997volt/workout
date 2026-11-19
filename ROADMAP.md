@@ -15,6 +15,44 @@ work was planned, so they do not always run in order — and an id this file doe
 shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 [CHANGELOG-1.x.md](CHANGELOG-1.x.md) for the 1.x releases.
 
+## Next — the second unreleased-changes review
+
+The unreleased batch was read again after the first review's fixes (B487–B493) landed. The earlier rows are
+shipped and the batch now includes them; this read is the whole set with their seams in view. The fixes hold
+on their own paths, but four edges remain where they meet older data: a block file can clear the baseline of a
+live weekly program with the same id, an old file's weekly baseline still imports while its switch is off, a
+block's legacy flag has no way to be turned off from the screen, and the preview counts snapshots the rest of
+the preview hides. Nothing was fixed during the read.
+
+- **B494 — A block file can clear a live weekly program's baseline.** The B490 import collects every block id
+  in [BackupFile](app/src/main/java/com/example/androidapp/data/transfer/BackupFile.kt) and calls
+  `clearBaselines` for each before the programs are inserted
+  ([RoomBackupRepository.kt](app/src/main/java/com/example/androidapp/data/RoomBackupRepository.kt)). The program
+  insert is IGNORE by id, so a file block whose id is a **live weekly** program here leaves that program's row
+  and switch alone but deletes its baseline: a backup taken before B490 restores a reset point away from a
+  program it did not change. The clear is only right when the local row is a block, or is hidden and will be
+  restored as the file's block. Fixed means the import checks the local row before clearing, with a test where
+  the file's block id is a live weekly program with the switch on.
+- **B495 — An old file's weekly baseline imports while its switch is off.** The B490 filter drops a block's file
+  baselines, but a pre-B477 file can carry a baseline for a **weekly** program whose `autoProgression` is false;
+  [RoomBackupRepository.kt](app/src/main/java/com/example/androidapp/data/RoomBackupRepository.kt) inserts it,
+  recreating the hidden rows B477 says disabling drops. The switch and its baseline are one story only for the
+  paths that write; the import still has two. Fixed means a baseline is imported only for a weekly program whose
+  file switch is on, with a test for the old weekly auto-off row.
+- **B496 — A block's legacy switch has no way to be turned off.** B487 hides the switch for a block and refuses
+  enabling in [RoomProgressionRepository.kt](app/src/main/java/com/example/androidapp/data/RoomProgressionRepository.kt),
+  but the repository still allows turning it **off** and
+  [ProgramProgressionScreen.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramProgressionScreen.kt)
+  now shows a message with no control at all. A block row from before B475 (or a hand-edited database) with the
+  flag on therefore keeps it for ever, ignored by the resolver; the B475/B490 paths cannot reach a row that is
+  already live. Fixed means the block state offers a turn-off action when the flag is on, or a one-time cleanup,
+  with a test.
+- **B497 — The preview counts snapshots the rest of it hides.** The B489 `planSnapshots` count includes every
+  file snapshot, while the sessions/sets counts in the same preview filter rows whose session exercise or
+  exercise is hidden (`visibleSetIds`). A file can preview a "Plan snapshots" row for a session the rest of the
+  preview excludes; the import restores the snapshot under a hidden parent. Fixed means the snapshot count uses
+  the same visibility rule as the sets, with a hidden-parent test.
+
 ## Parked — deliberately not planned
 
 Each row is a product in its own right, contradicts "local-only", or both. Parking is a
