@@ -723,6 +723,21 @@ class ProgressionOfferTest {
     )
 
     @Test
+    fun aFailedAttempt_doesNotTakeAPlanPlaceInThePairing() {
+        // N329/N336: the attempt is a row in the session but not a performance of a prescribed set.
+        // Filtering only warm-ups made it pair with plan set 2 and pushed the third made set into
+        // "not in plan" — a Done sheet that judged the wrong work.
+        val planned = listOf(planSet(id = "p0", index = 0), planSet(id = "p1", index = 1))
+        val attempted = done(reps = 0, role = SetType.FAILED_ATTEMPT, weight = 140_000L)
+
+        val prompt = progressionPromptFor(planned, listOf(done(reps = 5), attempted, done(reps = 5)))
+
+        assertThat(prompt.sets.map { it.planned?.setId }).containsExactly("p0", "p1").inOrder()
+        assertThat(prompt.sets[1].performed?.role).isEqualTo(SetType.NORMAL)
+        assertThat(prompt.sets.none { it.miss == ProgressionMiss.NOT_IN_PLAN }).isTrue()
+    }
+
+    @Test
     fun aPlanThatPrescribesAHold_earnsSeconds_andNothingElse() {
         // ROADMAP N242: a timed set used to earn nothing at all — its plan's rep target did not apply and
         // the offer said "a hold is not measured in reps". A plan that prescribes seconds is answered in

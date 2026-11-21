@@ -22,10 +22,6 @@ these; they are ordered by severity, and each entry leaves this list in the comm
 an entry still here is an open one. A fix that changes an unreleased feature's behaviour folds into
 that feature's CHANGELOG entry rather than becoming a second release note.
 
-- **N336 — A failed attempt is not a performed plan set.** `ProgressionOffer.performedWork()` filters
-  only warm-ups, so the attempt takes a plan place, shifts the **Done** prompt's pairing and can appear
-  as extra work. Filter the performed side by `isWork` and test the pairing.
-
 - **N337 — The CSV carries the plan's whole prescription.** Planned RPE is populated in the report and
   then never written, and planned assistance and hold are not in the model at all. Add the columns and
   assert them, including a plan that prescribes only assistance or a hold.

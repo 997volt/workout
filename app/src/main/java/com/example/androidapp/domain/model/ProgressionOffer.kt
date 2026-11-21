@@ -579,7 +579,10 @@ private fun List<ProgressionPlanSet>.plannedWork(): List<ProgressionPlanSet> =
 
 /** The same exclusion on the session's side, in the order the sets were logged (N50). */
 private fun List<ProgressionPerformance>.performedWork(): List<ProgressionPerformance> =
-    filterNot { it.role == SetType.WARMUP }
+    // `isWork` is the one rule (N329, N336), not a second list of roles: a warm-up is preparation and
+    // a failed attempt is a row that did not perform the plan, so neither takes a place in the pairing
+    // — and a rung still does, because its group's step is judged off its anchor.
+    filter { it.role.isWork }
 
 /** One rep is the step a rep direction raises by: the smallest unit a plan counts in. */
 private const val REPS_PER_STEP = 1
