@@ -607,7 +607,7 @@ class RoomWorkoutRepository @Inject constructor(
         }
         val now = timeSource.nowEpochMillis()
         // Resolved once: the shape refuses a contradictory row, and asking twice would decide it twice.
-        val shape = heldShape(reps, durationSeconds)
+        val shape = heldShape(reps, durationSeconds, setType)
         dao.insertSet(
             SetEntryEntity(
                 id = UUID.randomUUID().toString(),
@@ -684,7 +684,7 @@ class RoomWorkoutRepository @Inject constructor(
             if (newlyBroken) {
                 throw InvalidInputException("That change would leave a later rung without an anchor.")
             }
-            val shape = heldShape(reps, durationSeconds)
+            val shape = heldShape(reps, durationSeconds, setType)
             val updated = stored.copy(
                 reps = shape.first,
                 durationSeconds = shape.second,
@@ -729,7 +729,11 @@ class RoomWorkoutRepository @Inject constructor(
             ?: return@dataResultOf PreviousPerformance(emptyList())
 
         PreviousPerformance(
-            sets = dao.findSetsFor(previousSessionId, exerciseId).map { it.toDomain() },
+            // A failed attempt is not "what you did last time" (N329): it must not prefill the next set's
+            // weight or stand in for a plan place.
+            sets = dao.findSetsFor(previousSessionId, exerciseId)
+                .map { it.toDomain() }
+                .filter { it.setType != SetType.FAILED_ATTEMPT },
             // The date the same read is asked for elsewhere (ROADMAP N233): one answer to "when was the
             // last time", so the prefill and the exercise's own screen cannot disagree about which.
             sessionStartedAt = dao.findSession(previousSessionId)
@@ -917,7 +921,18 @@ internal const val MAX_SET_SECONDS = 86_400
  * File-level and internal so the rule can be tested without a database (B256): it is one decision, and the
  * cases that matter are the three refusals and the clamp that keeps a zero-rep set out of history.
  */
-internal fun heldShape(reps: Int, durationSeconds: Int?): Pair<Int, Int?> = when {
+internal fun heldShape(
+    reps: Int,
+    durationSeconds: Int?,
+    setType: SetType = SetType.NORMAL,
+): Pair<Int, Int?> = when {
+    // A failed attempt is the one row that records no completed rep (N329). It is a counted attempt,
+    // not a hold, and its zero is a fact rather than a mistyped field the clamp below rescues.
+    setType == SetType.FAILED_ATTEMPT && durationSeconds != null ->
+        throw InvalidInputException("A failed attempt records a load, not a hold.")
+    setType == SetType.FAILED_ATTEMPT && reps != 0 ->
+        throw InvalidInputException("A failed attempt records no completed reps.")
+    setType == SetType.FAILED_ATTEMPT -> 0 to null
     durationSeconds == null -> reps.coerceAtLeast(1).also {
         if (it > MAX_REPS) throw InvalidInputException("A set cannot have more than $MAX_REPS reps.")
     } to null

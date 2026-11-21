@@ -9,6 +9,7 @@ import com.example.androidapp.domain.model.MAX_BODY_PERCENT_TENTHS
 import com.example.androidapp.domain.model.MAX_REPS
 import com.example.androidapp.domain.model.MAX_TAPE_MILLIMETRES
 import com.example.androidapp.domain.model.Rpe
+import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.TenPointScale
 import com.example.androidapp.domain.model.storedZoneOrNull
 import com.example.androidapp.domain.repository.BackupProblem
@@ -157,6 +158,15 @@ internal object BackupValidator {
         row.rpeHalves?.let {
             if (!Rpe.isValid(it)) out += BackupProblem(where, "RPE must be between 1 and 10 in half steps.")
         }
+        if (row.setType == SetType.FAILED_ATTEMPT) {
+            // N329: a failed attempt is the one counted row with no completed rep.
+            if (row.durationSeconds != null) {
+                out += BackupProblem(where, "A failed attempt records a load, not a hold.")
+            } else if (row.reps != 0) {
+                out += BackupProblem(where, "A failed attempt records no completed reps.")
+            }
+            return
+        }
         if (row.durationSeconds == null) {
             if (row.reps < 1 || (strict && row.reps > MAX_REPS)) {
                 out += BackupProblem(where, "A counted set needs between 1 and $MAX_REPS reps.")
@@ -188,6 +198,9 @@ internal object BackupValidator {
         file.sessionPlanSets.forEachIndexed { index, row ->
             val where = "Session plan set ${index + 1}"
             row.sessionExerciseId.required(out, where)
+            if (row.role == SetType.FAILED_ATTEMPT) {
+                out += BackupProblem(where, "A failed attempt is not a planned set.")
+            }
             if (!seen.add(row.sessionExerciseId to row.setIndex)) {
                 out += BackupProblem(where, "A plan snapshot repeats a set.")
             }
@@ -362,6 +375,9 @@ internal object BackupValidator {
             val where = "Planned set ${index + 1}"
             row.id.required(out, where)
             row.templateExerciseId.required(out, where)
+            if (row.role == SetType.FAILED_ATTEMPT) {
+                out += BackupProblem(where, "A failed attempt is not a planned set.")
+            }
             if (row.setIndex < 0) out += BackupProblem(where, "A set index cannot be negative.")
             row.targetWeightGrams?.load(out, where, strict)
             row.targetAssistanceGrams?.load(out, where, strict)

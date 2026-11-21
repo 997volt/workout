@@ -465,6 +465,19 @@ class TemplateRepositoryTest {
     }
 
     @Test
+    fun aFailedAttempt_isNotAPlannedSet() = runTest {
+        // N329: a plan prescribes work; a failed attempt is something that happened, so the plan boundary
+        // refuses it even though the logged-set boundary accepts it.
+        val template = create("Legs")
+        val exercise = plannedExercise(template)
+
+        val result = repository.addSet(exercise, TemplateSetEdit(role = SetType.FAILED_ATTEMPT))
+
+        assertTrue(result is DataResult.Failure)
+        assertTrue(repository.observeExercises(template).first().single().sets.isEmpty())
+    }
+
+    @Test
     fun updatingAPlannedSet_keepsItsPlace_andCanClearATarget() = runTest {
         val template = create("Legs")
         val exercise = plannedExercise(template)

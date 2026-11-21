@@ -965,6 +965,8 @@
     <!-- A bodyweight set reads at its load, with the marker saying the lifter's own weight is in it
          (B245). The weight field is the *added* part, and the two must not be confused. -->
     <string name="set_summary_bodyweight">%1$s %2$s × %3$d · BW</string>
+    <string name="set_summary_failed_attempt">Attempted %1$s %2$s</string>
+    <string name="history_one_rep_max_test">Best single %1$s %2$s — failed %3$s %4$s</string>
     <string name="set_summary_timed_bodyweight">%1$s %2$s · %3$s · BW</string>
     <!-- A prescribed hold, as one part of a set's line: "1:30 hold" (ROADMAP N242). -->
     <string name="set_hold_value">%1$s hold</string>
@@ -976,6 +978,7 @@
     <!-- On a bodyweight movement the field holds what was added to the lifter's own weight (B245). -->
     <string name="set_weight_added_label">Added weight (%1$s)</string>
     <string name="set_reps_label">Reps</string>
+    <string name="set_failed_attempt_reps">0 — no rep completed</string>
     <string name="set_save">Save</string>
     <string name="set_cancel">Cancel</string>
     <!-- RPE and comment per set (ROADMAP N6). The comment may be empty; a set logged from the

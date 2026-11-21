@@ -204,7 +204,7 @@ private fun List<ExerciseTrendRow>.toPoint(
     jointPainBySite: Map<String, Map<String, Double>>,
 ): ExerciseTrendPoint {
     // A warm-up is not a working set: it must not become the heaviest set on the chart.
-    val working = filter { it.weightGrams != null && it.setType != SetType.WARMUP }
+    val working = filter { it.weightGrams != null && it.setType?.isWork == true }
     // A bodyweight set carries the lifter as its load and is the heaviest set of the day if it is; an
     // assisted set carries what is left after the machine — `loadGrams` decides, once, for all three figures
     // below (ROADMAP N219).

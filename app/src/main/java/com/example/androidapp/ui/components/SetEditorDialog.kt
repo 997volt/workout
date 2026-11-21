@@ -1,6 +1,5 @@
 package com.example.androidapp.ui.components
 
-import com.example.androidapp.domain.DurationFormat
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,6 +16,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
+import com.example.androidapp.domain.DurationFormat
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.Rpe
@@ -155,8 +155,16 @@ private fun SetEditingFields(
         // (`SetRoleSelector` guarantees that), so a set that already is a rung still reads as one.
         SetRoleSelector(
             role = draft.setType,
-            onSelect = { onDraftChange(draft.copy(setType = it)) },
-            offers = offers,
+            onSelect = { role ->
+                onDraftChange(
+                    draft.copy(
+                        setType = role,
+                        // A failed attempt carries no rep over from the set that was being corrected (N329).
+                        repsText = if (role == SetType.FAILED_ATTEMPT) "0" else draft.repsText,
+                    ),
+                )
+            },
+            offers = { role -> offers(role) && (role != SetType.FAILED_ATTEMPT || !timed) },
         )
         SetEntryNumbers(
             timed = timed,

@@ -45,6 +45,20 @@ class ExerciseTrendPointTest {
     }
 
     @Test
+    fun aFailedAttempt_isNotWork_andDoesNotBecomeTheHeaviestSet() {
+        // N329: a 140 kg attempt with no rep is a fact in the history, not the day's top set or its 1RM.
+        val points = rows(
+            row(weight = 137_500L, reps = 1),
+            row(weight = 140_000L, reps = 0, type = SetType.FAILED_ATTEMPT),
+        ).toExerciseTrendPoints()
+
+        assertEquals(137_500L, points.single().heaviestSetGrams)
+        assertEquals(137_500L, points.single().estimatedOneRepMaxGrams)
+        assertEquals(137_500L, points.single().volumeGrams)
+        assertEquals(1, points.single().totalReps)
+    }
+
+    @Test
     fun aClusterSet_countsAsAWorkingSetToo() {
         // B69: N79 added the second rung role and the exclusion is `!= WARMUP`, so a cluster counts —
         // but only the drop was asserted, which would leave a change to role-by-role filtering green.

@@ -282,7 +282,7 @@ class ExercisePickerViewModel @Inject constructor(
     /** Writes one target per working set, reporting the first failure rather than the last (N168). */
     private suspend fun writeTargets(plannedId: String, sets: List<SetEntry>): AddOutcome {
         val failures = sets
-            .filter { it.setType != SetType.WARMUP }
+            .filter { it.setType.isWork }
             .map { set ->
                 templateRepository.addSet(
                     plannedId,

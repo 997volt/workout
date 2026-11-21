@@ -129,6 +129,8 @@ internal data class SetEntryValues(
     val load: Load?,
     val rpeHalves: Int?,
     val rpeValid: Boolean,
+    /** The role the draft states, which decides whether no reps is a value (N329). */
+    val setType: SetType = SetType.NORMAL,
 ) {
     /**
      * A set needs reps and a load; the comment and a not-recorded RPE stay optional (N6, N59).
@@ -137,14 +139,24 @@ internal data class SetEntryValues(
      * loaded lift — which is the one place the two shapes differ.
      */
     val isComplete: Boolean
-        get() = rpeValid && load != null && if (timed) durationSeconds != null else reps != null
+        get() = rpeValid && load != null && when {
+            // A failed attempt is the one counted row with no completed rep (N329).
+            setType == SetType.FAILED_ATTEMPT -> !timed && reps == 0
+            timed -> durationSeconds != null
+            else -> reps != null
+        }
 }
 
 internal fun SetEntryDraft.values(unit: WeightUnit): SetEntryValues {
     // A hold of zero seconds is not a set, for the reason a set of zero reps is not one.
     val duration = if (timed) DurationFormat.parseSeconds(durationText)?.takeIf { it > 0 } else null
-    // A set of zero reps is not a set, which is why this floor is 1 — and a timed set states none at all.
-    val reps = if (timed) 0 else repsText.toIntOrNull()?.takeIf { it > 0 }
+    // A set of zero reps is not a set, which is why this floor is 1 — except for a failed attempt, where
+    // the zero is the whole fact (N329); a timed set states none at all.
+    val reps = if (timed) {
+        0
+    } else {
+        repsText.toIntOrNull()?.takeIf { it > 0 || (setType == SetType.FAILED_ATTEMPT && it == 0) }
+    }
     // One field, two columns: a leading minus is assistance (ROADMAP N15). A timed set may state no load:
     // a plank is bodyweight and nothing else, which is 0 rather than a question left unanswered.
     val load = Weight.parseLoad(weightText, unit)
@@ -163,6 +175,7 @@ internal fun SetEntryDraft.values(unit: WeightUnit): SetEntryValues {
         rpeHalves = rpeHalves,
         // Blank is valid; anything typed has to parse *and* sit on the scale.
         rpeValid = rpeText.isBlank() || rpeHalves != null,
+        setType = setType,
     )
 }
 
@@ -295,44 +308,64 @@ internal fun SetEntryNumbers(
                 )
             },
         )
-        if (timed) {
-            // The hold, not a rep count (ROADMAP N220). Typed as `1:30` or `45`; steered by ±15 s so a
-            // plank adjusted mid-hold needs no keyboard, and floored at one second because a zero-second
-            // hold is not a set.
-            NumberStepper(
-                label = stringResource(R.string.set_duration_label),
-                testTag = tags.duration,
-                increaseTag = tags.increaseDuration,
-                decreaseTag = tags.decreaseDuration,
-                value = draft.durationText,
-                onValueChange = { onDraftChange(draft.copy(durationText = it)) },
-                // Ascii rather than Number so the colon the label promises can be typed (B252); the ± steps
-                // remain the common way in, and a bare `90` is still read as seconds.
-                keyboardType = KeyboardType.Ascii,
-                onStep = { delta ->
-                    val stepped = ((values.durationSeconds ?: DEFAULT_HOLD_SECONDS) + delta * HOLD_STEP_SECONDS)
-                        .coerceAtLeast(1)
-                    onDraftChange(draft.copy(durationText = DurationFormat.ofSeconds(stepped.toLong())))
-                },
-            )
-        } else {
-            NumberStepper(
-                label = stringResource(R.string.set_reps_label),
-                testTag = tags.reps,
-                increaseTag = tags.increaseReps,
-                decreaseTag = tags.decreaseReps,
-                value = draft.repsText,
-                onValueChange = { onDraftChange(draft.copy(repsText = it)) },
-                keyboardType = KeyboardType.Number,
-                // A set of zero reps is not a set, so this floor is 1 rather than 0 —
-                // unlike weight, where 0 is meaningful (bodyweight).
-                onStep = { delta ->
-                    onDraftChange(
-                        draft.copy(repsText = ((values.reps ?: 1) + delta).coerceAtLeast(1).toString()),
-                    )
-                },
-            )
-        }
+        SetRepsField(draft = draft, values = values, onDraftChange = onDraftChange, tags = tags, timed = timed)
+    }
+}
+
+/** The reps field: a hold's seconds, a failed attempt's fixed zero, or a counted set's stepper (N220, N329). */
+@Composable
+private fun SetRepsField(
+    draft: SetEntryDraft,
+    values: SetEntryValues,
+    onDraftChange: (SetEntryDraft) -> Unit,
+    tags: SetFieldTags,
+    timed: Boolean,
+) {
+    if (timed) {
+        // The hold, not a rep count (ROADMAP N220). Typed as `1:30` or `45`; steered by ±15 s so a
+        // plank adjusted mid-hold needs no keyboard, and floored at one second because a zero-second
+        // hold is not a set.
+        NumberStepper(
+            label = stringResource(R.string.set_duration_label),
+            testTag = tags.duration,
+            increaseTag = tags.increaseDuration,
+            decreaseTag = tags.decreaseDuration,
+            value = draft.durationText,
+            onValueChange = { onDraftChange(draft.copy(durationText = it)) },
+            // Ascii rather than Number so the colon the label promises can be typed (B252); the ± steps
+            // remain the common way in, and a bare `90` is still read as seconds.
+            keyboardType = KeyboardType.Ascii,
+            onStep = { delta ->
+                val stepped = ((values.durationSeconds ?: DEFAULT_HOLD_SECONDS) + delta * HOLD_STEP_SECONDS)
+                    .coerceAtLeast(1)
+                onDraftChange(draft.copy(durationText = DurationFormat.ofSeconds(stepped.toLong())))
+            },
+        )
+    } else if (draft.setType == SetType.FAILED_ATTEMPT) {
+        // Fixed at zero: the attempt produced no rep, and there is nothing to step (N329).
+        Text(
+            text = stringResource(R.string.set_failed_attempt_reps),
+            modifier = Modifier.testTag(tags.reps),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    } else {
+        NumberStepper(
+            label = stringResource(R.string.set_reps_label),
+            testTag = tags.reps,
+            increaseTag = tags.increaseReps,
+            decreaseTag = tags.decreaseReps,
+            value = draft.repsText,
+            onValueChange = { onDraftChange(draft.copy(repsText = it)) },
+            keyboardType = KeyboardType.Number,
+            // A set of zero reps is not a set, so this floor is 1 rather than 0 —
+            // unlike weight, where 0 is meaningful (bodyweight).
+            onStep = { delta ->
+                onDraftChange(
+                    draft.copy(repsText = ((values.reps ?: 1) + delta).coerceAtLeast(1).toString()),
+                )
+            },
+        )
     }
 }
 

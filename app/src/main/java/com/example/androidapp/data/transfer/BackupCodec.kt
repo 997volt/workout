@@ -72,7 +72,7 @@ object BackupCodec {
      * move: a v8 file has no phase weeks, so this build reads every older backup and every helper-written
      * file exactly as before.
      */
-    const val CURRENT_SCHEMA_VERSION = 9
+    const val CURRENT_SCHEMA_VERSION = 10
 
     /** The oldest file this build reads: a shape whose meaning is still this one (ROADMAP N104, N185). */
     const val MINIMUM_SCHEMA_VERSION = 5

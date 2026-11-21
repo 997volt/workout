@@ -1,6 +1,5 @@
 package com.example.androidapp.ui.components
 
-import com.example.androidapp.domain.model.SetType
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -13,6 +12,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.androidapp.domain.model.SetType
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -52,6 +52,22 @@ class SetEditorDialogTest {
                 onSave = { saved = it },
             )
         }
+    }
+
+    @Test
+    fun choosingAFailedAttempt_zerosTheReps_andSavesTheZero() {
+        // N329: the correction path is the other way into the role, and it must state the same zero — a
+        // save disabled by a rep the role does not mean would be a dead end.
+        show(reps = 5, weightGrams = 140_000L)
+        composeTestRule.onNodeWithTag(TestTags.SET_ROLE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.setRole(SetType.FAILED_ATTEMPT.name)).performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.SET_EDIT_REPS_FIELD)
+            .assertTextContains("0 — no rep completed")
+        composeTestRule.onNodeWithTag(TestTags.SET_SAVE).performClick()
+
+        assertEquals(0, saved?.reps)
+        assertEquals(SetType.FAILED_ATTEMPT, saved?.setType)
     }
 
     @Test

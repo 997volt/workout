@@ -112,7 +112,18 @@ enum class SetType(val label: String) {
      * touched no row already on disk.
      */
     CLUSTER("Cluster"),
-    FAILURE("Failure"),
+    FAILURE("To failure"),
+
+    /**
+     * A load that was tried and not completed (ROADMAP N329).
+     *
+     * A 1RM test can end in a failed attempt, and that attempt is a fact the history should keep: the
+     * load tried, no completed rep, and the comment the lifter wrote. It is **not work** and **not rated** —
+     * it did not complete a plan set and must not become a record, a volume figure or a 1RM estimate — but
+     * it is a row the exercise's history shows. Its reps are fixed at zero; a produced rep belongs to the
+     * set that produced it.
+     */
+    FAILED_ATTEMPT("Failed attempt"),
     ;
 
     /**
@@ -132,7 +143,7 @@ enum class SetType(val label: String) {
      * what the app reads. The rule lives on the role so the write boundary, the editors, the rows and
      * the record scan all read the same one, rather than each deciding for itself.
      */
-    val recordsEffort: Boolean get() = !isRung && this != WARMUP
+    val recordsEffort: Boolean get() = !isRung && this != WARMUP && this != FAILED_ATTEMPT
 
     /**
      * Whether this role is the plan's work rather than its preparation (ROADMAP N112).
@@ -143,7 +154,7 @@ enum class SetType(val label: String) {
      * not rated on its own. That is what separates this from [recordsEffort]: that one asks what may be
      * recorded, this one asks what the plan asked for.
      */
-    val isWork: Boolean get() = this != WARMUP
+    val isWork: Boolean get() = this != WARMUP && this != FAILED_ATTEMPT
 }
 
 /**

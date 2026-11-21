@@ -176,6 +176,46 @@ class WorkoutEditingTest {
     }
 
     @Test
+    fun aFailedAttempt_isARealRowWithNoCompletedRep() = runTest {
+        // N329: the write boundary accepts the zero only for the role, and the row keeps the attempted load
+        // and the comment that explains it.
+        seedOpenWorkoutWithASet()
+
+        val result = repository.logSet(
+            "se1",
+            reps = 0,
+            weightGrams = 140_000L,
+            rpeHalves = null,
+            note = "Failed attempt at 140",
+            setType = SetType.FAILED_ATTEMPT,
+        )
+
+        assertTrue(result is DataResult.Success)
+        val failed = database.backupDao().allSets().single { it.setType == SetType.FAILED_ATTEMPT }
+        assertEquals(0, failed.reps)
+        assertEquals(140_000L, failed.weightGrams)
+        assertEquals("Failed attempt at 140", failed.note)
+        assertNull("the role records no effort", failed.rpeHalves)
+    }
+
+    @Test
+    fun aFailedAttemptWithARep_isRefused() = runTest {
+        seedOpenWorkoutWithASet()
+
+        val result = repository.logSet(
+            "se1",
+            reps = 1,
+            weightGrams = 140_000L,
+            rpeHalves = null,
+            note = null,
+            setType = SetType.FAILED_ATTEMPT,
+        )
+
+        assertTrue((result as DataResult.Failure).error is DataError.Invalid)
+        assertTrue(database.backupDao().allSets().none { it.setType == SetType.FAILED_ATTEMPT })
+    }
+
+    @Test
     fun aDoneExercise_cannotTakeAnotherSet() = runTest {
         seedOpenWorkoutWithASet()
         repository.finishExercise("se1")

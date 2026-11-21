@@ -55,6 +55,9 @@ internal interface HistoryTags {
     /** The previous training the detail compares each set with (ROADMAP N306). */
     val HISTORY_VS_LAST_TIME: String get() = "history_vs_last_time"
 
+    /** The best-single and failed-attempt line a 1RM test leaves (N329). */
+    val HISTORY_ONE_REP_MAX_TEST: String get() = "history_one_rep_max_test"
+
     /** One set's change from the same place in it (N306). */
     val HISTORY_SET_DELTA: String get() = "history_set_delta"
 

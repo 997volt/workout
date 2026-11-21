@@ -46,6 +46,18 @@ class SetNumberTest {
     }
 
     @Test
+    fun aFailedAttempt_takesNoNumber() {
+        // N329: the attempt is visible in the session but is not one of the working sets the plan counts.
+        val numbers = listOf(
+            SetType.NORMAL,
+            SetType.FAILED_ATTEMPT,
+            SetType.NORMAL,
+        ).setNumbers { it }
+
+        assertThat(numbers).containsExactly(1, null, 2).inOrder()
+    }
+
+    @Test
     fun aPlanOfNothingButWarmUps_numbersNothing() {
         val numbers = listOf(SetType.WARMUP, SetType.WARMUP).setNumbers { it }
 

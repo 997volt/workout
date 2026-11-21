@@ -2,6 +2,7 @@ package com.example.androidapp.ui.workout
 
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.ui.components.SetEntryDraft
+import com.example.androidapp.ui.components.toEdit
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
@@ -21,6 +22,17 @@ class NextSetDraftRoleTest {
         rpeText = rpeText,
         setType = setType,
     )
+
+    @Test
+    fun choosingFailedAttempt_zerosTheReps_andLeavesTheEffortBehind() {
+        // N329: the role is the whole fact, so a rep typed for the set it used to be does not travel.
+        val attempted = draft(setType = SetType.NORMAL, rpeText = "9")
+            .withRole(SetType.FAILED_ATTEMPT, planRpeHalves = 16)
+
+        assertThat(attempted.setType).isEqualTo(SetType.FAILED_ATTEMPT)
+        assertThat(attempted.repsText).isEqualTo("0")
+        assertThat(attempted.toEdit(com.example.androidapp.domain.WeightUnit.KILOGRAMS).rpeHalves).isNull()
+    }
 
     @Test
     fun aPlannedWarmUp_broughtBackToWork_statesThePlansEffort() {

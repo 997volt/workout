@@ -6,6 +6,7 @@ import com.example.androidapp.R
 import com.example.androidapp.domain.DurationFormat
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.WeightUnit
+import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.loadGrams
 
 /**
@@ -30,6 +31,8 @@ internal fun setSummaryText(
     unit: WeightUnit,
     /** True to state the hold in words, for a screen reader (B252): "1 minute 30 seconds". */
     spokenDuration: Boolean = false,
+    /** The role, so a failed attempt is not read as a working set of zero reps (N329). */
+    setType: SetType = SetType.NORMAL,
 ): String {
     val bodyweight = bodyweightGrams != null
     // The same rule the totals use (N219): a bodyweight set's load is the lifter plus what was added,
@@ -46,6 +49,8 @@ internal fun setSummaryText(
         if (spokenDuration) DurationFormat.spokenSeconds(it.toLong()) else DurationFormat.ofSeconds(it.toLong())
     }
     return when {
+        setType == SetType.FAILED_ATTEMPT -> stringResource(R.string.set_summary_failed_attempt, weight, label)
+
         durationSeconds != null && bodyweight -> stringResource(
             R.string.set_summary_timed_bodyweight,
             weight,

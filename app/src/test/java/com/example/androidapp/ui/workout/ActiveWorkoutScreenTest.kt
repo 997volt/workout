@@ -939,6 +939,30 @@ class ActiveWorkoutScreenTest {
     }
 
     @Test
+    fun aFailedAttempt_logsZeroReps_andNotAWorkingSet() {
+        // N329: the log path can state the attempt with its load and no rep; the role, not a clamped 1,
+        // is what reaches the write.
+        val logged = mutableListOf<Pair<String, SetEdit>>()
+        setScreen(
+            state = state(isFinished = false),
+            actions = Actions(onLogSet = { id, edit -> logged += id to edit }),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.exercisePendingRole("se1")).performClick()
+        composeTestRule.onNodeWithTag(
+            TestTags.exercisePendingRole("se1", SetType.FAILED_ATTEMPT.name),
+        ).performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.SET_REPS_FIELD)
+            .assertTextContains("0 — no rep completed")
+        composeTestRule.onNodeWithTag(TestTags.SET_LOG)
+            .performSemanticsAction(SemanticsActions.OnClick)
+
+        assertEquals(0, logged.single().second.reps)
+        assertEquals(SetType.FAILED_ATTEMPT, logged.single().second.setType)
+    }
+
+    @Test
     fun aPlannedWarmUp_promotedToAWorkingSet_statesThePlansEffortAgain() {
         // ROADMAP N67 with N59: the effort field is withheld for a warm-up, so returning the role to
         // one that records an effort has to state the plan's number again rather than leave *Not

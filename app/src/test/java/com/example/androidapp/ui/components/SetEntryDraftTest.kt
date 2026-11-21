@@ -41,6 +41,22 @@ class SetEntryDraftTest {
     }
 
     @Test
+    fun aFailedAttempt_isCompleteAtZeroReps_andNowhereElse() {
+        // N329: the attempt records the load and no completed rep; a normal counted set still needs one.
+        val failed = SetEntryDraft(
+            repsText = "0",
+            weightText = "140",
+            rpeText = "",
+            setType = SetType.FAILED_ATTEMPT,
+        )
+
+        assertThat(failed.values(WeightUnit.KILOGRAMS).isComplete).isTrue()
+        assertThat(failed.toEdit(WeightUnit.KILOGRAMS).reps).isEqualTo(0)
+        assertThat(failed.copy(repsText = "1").values(WeightUnit.KILOGRAMS).isComplete).isFalse()
+        assertThat(failed.copy(setType = SetType.NORMAL).values(WeightUnit.KILOGRAMS).isComplete).isFalse()
+    }
+
+    @Test
     fun aTimedDraft_statesADurationInsteadOfReps() {
         // ROADMAP N220: one payload, and the hold is what a timed set records. Reps go to zero rather than
         // being left at whatever the field held before the movement was marked timed.

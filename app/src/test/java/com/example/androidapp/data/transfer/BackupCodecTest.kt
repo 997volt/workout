@@ -268,7 +268,7 @@ class BackupCodecTest {
         // B326 moved the ceiling to 8 for a plan's hold; N292 moves it to 9 because a program's day can
         // name a phase week, which a v8 build would read as one repeating week. The fixed value makes the
         // next move deliberate; a v8 file has no phase weeks and reads exactly as it did.
-        assertEquals(9, BackupCodec.CURRENT_SCHEMA_VERSION)
+        assertEquals(10, BackupCodec.CURRENT_SCHEMA_VERSION)
 
         val fromBeforeThePhaseWeek = sample.copy(schemaVersion = 8)
 

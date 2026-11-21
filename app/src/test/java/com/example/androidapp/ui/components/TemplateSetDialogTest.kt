@@ -53,6 +53,15 @@ class TemplateSetDialogTest {
     }
 
     @Test
+    fun thePlanRolePicker_doesNotOfferAFailedAttempt() {
+        // N329: a plan prescribes work; a failed attempt is performed, never planned.
+        show()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_ROLE).performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.setRole(SetType.FAILED_ATTEMPT.name)).assertDoesNotExist()
+    }
+
+    @Test
     fun aRotation_keepsThePlannedDraft() {
         // B376: the host's open id is saveable, so the dialog is still on screen after a configuration
         // change; its draft has to be there with it.

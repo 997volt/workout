@@ -13,6 +13,21 @@ repeated here.
 **1.0–1.18 live in [CHANGELOG-1.x.md](CHANGELOG-1.x.md)**, kept whole rather than deleted because the
 id a 1.x commit names is still looked up by it. This file carries the current release.
 
+## [Unreleased]
+
+### Added
+
+- **A failed attempt is a first-class set** (N329). A 1RM attempt that produced no rep could not be logged:
+  the set needed at least one rep, and the existing **Failure** role means *taken to failure*, which still
+  counts as a working set. The new **Failed attempt** role records the attempted load, zero reps and an
+  optional comment. It is not work and not rated, so it stays out of volume, records, estimated 1RM, earned
+  sets, the "last time" prefill, find-the-weight calibration, plan completion and set numbering, while
+  staying visible in history as "Attempted 140 kg" and in the session's "Best single 137.5 kg — failed
+  140 kg". The existing Failure label is now **To failure**; its enum name is unchanged. A plan, template,
+  program document or backup planned set cannot name the role, and the backup schema moves to 10 so an older
+  build refuses the file rather than half-reading it. The role is offered only for a counted set; a hold is
+  not a 1RM attempt.
+
 ## [2.32] — 2026-11-19 (versionCode 53)
 
 ### Fixed

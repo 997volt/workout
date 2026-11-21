@@ -9,6 +9,7 @@ import com.example.androidapp.domain.model.ProgressionPerformance
 import com.example.androidapp.domain.model.ProgressionPlanSet
 import com.example.androidapp.domain.model.ProgressionTargets
 import com.example.androidapp.domain.model.SessionExercise
+import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.progressionSets
 import com.example.androidapp.domain.repository.ProgressionSetWrite
 import com.example.androidapp.domain.repository.TemplateRepository
@@ -139,15 +140,17 @@ internal fun SessionExercise.suggestionFor(
     previous: PreviousPerformance?,
     plan: PlanContext,
 ): SetSuggestion {
+    // A failed attempt is a row in the session but not a place in the plan (N329).
+    val planIndex = loggedSets.count { it.setType != SetType.FAILED_ATTEMPT }
     val planned = plannedTargetFor(
         planned = plan.plannedEntry,
-        nextIndex = loggedSets.size,
+        nextIndex = planIndex,
         anchorLoad = loggedSets.anchorLoadForTheNextRung(),
     )
     // A rung's reps come from what this same set did last time, matched by **place** rather than by the
     // stored index (B157): a soft delete leaves a hole in the indices, while the list's own order is the
     // position the plan counts.
-    val sameSetLastTime = previous?.sets?.getOrNull(loggedSets.size)
+    val sameSetLastTime = previous?.sets?.getOrNull(planIndex)
     val calibration = plan.plannedEntry?.calibrationPending == true
     val suggestion = suggestionForNextSet(
         loggedSets = loggedSets,

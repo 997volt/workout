@@ -174,6 +174,30 @@ class BackupCodecRoundTripTest {
     }
 
     @Test
+    fun aFailedAttempt_survivesTheCodec() {
+        // N329: the role and its zero reps travel; the applied load and the comment are what make the
+        // attempt useful after a restore.
+        val entity = SetEntryEntity(
+            id = "set-failed",
+            sessionExerciseId = "se1",
+            setIndex = 3,
+            reps = 0,
+            weightGrams = 140_000L,
+            rpeHalves = null,
+            note = "Failed attempt at 140",
+            setType = SetType.FAILED_ATTEMPT,
+            assistanceGrams = 0L,
+            bodyweightGrams = null,
+            durationSeconds = null,
+            createdAt = 1_600_000_000_000L,
+            updatedAt = 1_600_000_000_001L,
+            deletedAt = null,
+        )
+
+        assertThat(entity.toDto().toEntity()).isEqualTo(entity)
+    }
+
+    @Test
     fun aSessionPlanSet_survivesTheCodec() {
         // B471: the prescription travels with the session. A dropped field here would make a
         // restored session be judged against a different plan than the one it was trained under.

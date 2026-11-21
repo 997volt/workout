@@ -3,6 +3,7 @@ package com.example.androidapp.data
 import com.example.androidapp.domain.InvalidInputException
 import com.example.androidapp.domain.model.MAX_REPS
 import com.example.androidapp.domain.model.SetEntry
+import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.loadGrams
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
@@ -56,6 +57,27 @@ class SetShapeTest {
         // The one shape the write boundary exists for: two answers to "how many".
         val refused = runCatching { heldShape(reps = 5, durationSeconds = 45) }
         assertThat(refused.exceptionOrNull()).isInstanceOf(InvalidInputException::class.java)
+    }
+
+    @Test
+    fun aFailedAttempt_isTheOneCountedRowWithZeroReps() {
+        // N329: the zero is a fact, not a mistyped field to clamp.
+        val shape = heldShape(reps = 0, durationSeconds = null, setType = SetType.FAILED_ATTEMPT)
+
+        assertThat(shape).isEqualTo(0 to null)
+    }
+
+    @Test
+    fun aFailedAttemptWithARep_orAHold_isRefused() {
+        val withRep = runCatching {
+            heldShape(reps = 1, durationSeconds = null, setType = SetType.FAILED_ATTEMPT)
+        }
+        val withHold = runCatching {
+            heldShape(reps = 0, durationSeconds = 30, setType = SetType.FAILED_ATTEMPT)
+        }
+
+        assertThat(withRep.exceptionOrNull()).isInstanceOf(InvalidInputException::class.java)
+        assertThat(withHold.exceptionOrNull()).isInstanceOf(InvalidInputException::class.java)
     }
 
     @Test

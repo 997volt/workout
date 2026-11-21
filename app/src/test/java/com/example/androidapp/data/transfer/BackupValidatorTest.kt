@@ -100,6 +100,46 @@ class BackupValidatorTest {
     }
 
     @Test
+    fun aFailedAttempt_isTheZeroRepSet_andOnlyTheZeroRepSet() {
+        // N329: the one counted row that records no completed rep is the role's, not a mistyped normal set.
+        val failed = set.copy(reps = 0, setType = com.example.androidapp.domain.model.SetType.FAILED_ATTEMPT)
+        assertThat(BackupValidator.problems(valid().copy(sets = listOf(failed)))).isEmpty()
+
+        assertThat(
+            BackupValidator.problems(valid().copy(sets = listOf(failed.copy(reps = 1)))).messages(),
+        ).contains("A failed attempt records no completed reps.")
+        assertThat(
+            BackupValidator.problems(valid().copy(sets = listOf(failed.copy(durationSeconds = 30)))).messages(),
+        ).contains("A failed attempt records a load, not a hold.")
+    }
+
+    @Test
+    fun aFailedAttempt_isNotAPlannedSet() {
+        // N329: a plan prescribes work; a failed attempt is something that happened. The validator refuses it
+        // in both the plan's own rows and the session's snapshot of them.
+        val planned = valid().templateSets.single().copy(
+            role = com.example.androidapp.domain.model.SetType.FAILED_ATTEMPT,
+        )
+        assertThat(
+            BackupValidator.problems(valid().copy(templateSets = listOf(planned))).messages(),
+        ).contains("A failed attempt is not a planned set.")
+
+        val snapshot = SessionPlanSetDto(
+            sessionExerciseId = "se-1",
+            setIndex = 0,
+            role = com.example.androidapp.domain.model.SetType.FAILED_ATTEMPT,
+            targetWeightGrams = 100_000L,
+            targetRepsMin = 5,
+            targetRepsMax = 8,
+            targetRepsCurrent = 5,
+            targetRpeHalves = 16,
+        )
+        assertThat(
+            BackupValidator.problems(valid().copy(sessionPlanSets = listOf(snapshot))).messages(),
+        ).contains("A failed attempt is not a planned set.")
+    }
+
+    @Test
     fun aCountedSet_needsPositiveReps_andAHoldStatesSecondsInstead() {
         val zeroReps = valid().copy(sets = listOf(set.copy(reps = 0)))
         assertThat(BackupValidator.problems(zeroReps).messages())

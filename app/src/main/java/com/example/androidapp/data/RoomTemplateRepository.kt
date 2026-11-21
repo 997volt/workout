@@ -935,6 +935,7 @@ class RoomTemplateRepository @Inject constructor(
         val valueProblem = dropValueProblem(set)
         val run = if (set.role.isRung) sets.runAt(index) else null
         return when {
+            set.role == SetType.FAILED_ATTEMPT -> "A failed attempt is not a planned set."
             valueProblem != null -> valueProblem
             !set.role.isRung -> null
 

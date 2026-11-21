@@ -51,11 +51,13 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
 import com.example.androidapp.domain.Weight
+import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.SoreMuscle
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.WorkoutSession
+import com.example.androidapp.domain.model.loadGrams
 import com.example.androidapp.domain.model.zoneIdOrNull
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.CenteredMessage
@@ -718,6 +720,7 @@ private fun ExerciseBlock(
                 onDeleteSet = onDeleteSet,
             )
         }
+        OneRepMaxTestLine(exercise.sets, exerciseWeightUnit(exercise.sets.firstOrNull()?.weightUnit))
 
         // A step was there and the lifter passed (ROADMAP N236), in the same sentence the review uses.
         declinedStepText(exercise.declinedDirections)?.let { declined ->
@@ -823,6 +826,7 @@ private fun HistorySetNumbers(
                     reps = set.reps,
                     unit = exerciseWeightUnit(set.weightUnit),
                     spokenDuration = true,
+                    setType = set.setType,
                 )
             } else {
                 null
@@ -837,6 +841,7 @@ private fun HistorySetNumbers(
                     durationSeconds = set.durationSeconds,
                     reps = set.reps,
                     unit = exerciseWeightUnit(set.weightUnit),
+                    setType = set.setType,
                 ),
                 modifier = spoken?.let { description ->
                     Modifier.semantics { contentDescription = description }
@@ -871,6 +876,39 @@ private fun HistorySetNumbers(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+    }
+}
+
+/**
+ * The test a set of failed attempts describes (N329): the best single that was made, and the heavier
+ * load that was not. Only drawn when a failed attempt is above the best single, so an ordinary failed
+ * set below a working single is not dressed as a 1RM test.
+ */
+@Composable
+private fun OneRepMaxTestLine(sets: List<HistorySet>, unit: WeightUnit) {
+    val failed = sets
+        .filter { it.setType == SetType.FAILED_ATTEMPT }
+        .maxByOrNull { loadGrams(it.weightGrams, it.bodyweightGrams, it.assistanceGrams) }
+    val best = sets
+        .filter { it.setType.isWork && !it.setType.isRung && it.reps == 1 }
+        .maxByOrNull { loadGrams(it.weightGrams, it.bodyweightGrams, it.assistanceGrams) }
+    if (failed == null || best == null) return
+    val bestLoad = loadGrams(best.weightGrams, best.bodyweightGrams, best.assistanceGrams)
+    val failedLoad = loadGrams(failed.weightGrams, failed.bodyweightGrams, failed.assistanceGrams)
+    if (failedLoad > bestLoad) {
+        val label = unit.label()
+        Text(
+            text = stringResource(
+                R.string.history_one_rep_max_test,
+                Weight.display(bestLoad, 0L, unit),
+                label,
+                Weight.display(failedLoad, 0L, unit),
+                label,
+            ),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.testTag(TestTags.HISTORY_ONE_REP_MAX_TEST),
+        )
     }
 }
 

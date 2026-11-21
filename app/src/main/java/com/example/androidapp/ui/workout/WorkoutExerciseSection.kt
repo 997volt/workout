@@ -493,7 +493,12 @@ internal fun SetEntryDraft.withRole(role: SetType, planRpeHalves: Int?): SetEntr
     } else {
         rpeText
     }
-    return copy(setType = role, rpeText = effort)
+    return copy(
+        setType = role,
+        rpeText = effort,
+        // A failed attempt has no rep to carry over from the set that was being typed (N329).
+        repsText = if (role == SetType.FAILED_ATTEMPT) "0" else repsText,
+    )
 }
 
 /**
@@ -581,7 +586,9 @@ private fun NextSetEditor(
                 // A rung hangs off the set above it and the pending set is appended, so the picker
                 // offers one only where the boundary would accept it: a first set, or one after a
                 // ramp, cannot be armed with a role that is going to be refused (ROADMAP N79, B63, B64).
-                offers = { role -> row.sets.canLogAs(role) },
+                offers = { role ->
+                    row.sets.canLogAs(role) && (role != SetType.FAILED_ATTEMPT || !row.isTimed)
+                },
             )
             SetEntryNumbers(
                 draft = draft,
@@ -772,6 +779,7 @@ private fun SetLine(
                     durationSeconds = set.durationSeconds,
                     reps = set.reps,
                     unit = set.weightUnit,
+                    setType = set.setType,
                 ),
                 modifier = set.spokenSummary()?.let { description ->
                     Modifier.semantics { contentDescription = description }
@@ -819,6 +827,7 @@ private fun SetRow.spokenSummary(): String? {
         reps = reps,
         unit = weightUnit,
         spokenDuration = true,
+        setType = setType,
     )
 }
 

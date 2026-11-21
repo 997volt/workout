@@ -98,6 +98,32 @@ class WorkoutDetailScreenTest {
     }
 
     @Test
+    fun aFailedAttemptAboveABestSingle_readsAsAOneRepMaxTest() {
+        // N329: the history keeps the failed attempt and states the test it describes without letting the
+        // attempt become the session's heaviest set or 1RM.
+        setScreen(
+            state.copy(
+                exercises = listOf(
+                    state.exercises.single().copy(
+                        sets = listOf(
+                            HistorySet(id = "set1", reps = 1, weightGrams = 137_500L),
+                            HistorySet(
+                                id = "set2",
+                                reps = 0,
+                                weightGrams = 140_000L,
+                                setType = SetType.FAILED_ATTEMPT,
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.HISTORY_ONE_REP_MAX_TEST).assertExists()
+        composeTestRule.onNodeWithText("Best single 137.5 kg — failed 140 kg").assertExists()
+    }
+
+    @Test
     fun aHold_readsAsItsDuration_andIsSpokenInWords() {
         // B256: the row is the one place a lifter reads a set back, and nothing tested that a hold renders
         // as "0:45" rather than "0 reps" — nor that a screen reader gets words instead of digits.
