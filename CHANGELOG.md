@@ -17,6 +17,18 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Added
 
+- **The last training block is one CSV for a coach** (N331). History can share the most recent sequence
+  block — or the last eight weeks when there is no block — as a single CSV with a `record_type` column:
+  block, day, session, set, activity, measurement, sore-muscle and joint-pain rows. The plan sits beside what
+  was performed, a planned set that was not done is `performed=false`, and a failed attempt is a performed
+  row with no rep. Everything is included by default — readiness, soreness, joint pain and body measurements
+  too — with a health-data warning and no toggles. Download uses the Storage Access Framework; Share stages
+  the file through a release `FileProvider` and the system chooser. The file leaves only through the user's
+  action. The custom date range is the one Change option the sheet does not surface yet; the repository's
+  range read is in place for it.
+
+### Added
+
 - **A failed attempt is a first-class set** (N329). A 1RM attempt that produced no rep could not be logged:
   the set needed at least one rep, and the existing **Failure** role means *taken to failure*, which still
   counts as a working set. The new **Failed attempt** role records the attempted load, zero reps and an
