@@ -22,9 +22,6 @@ these; they are ordered by severity, and each entry leaves this list in the comm
 an entry still here is an open one. A fix that changes an unreleased feature's behaviour folds into
 that feature's CHANGELOG entry rather than becoming a second release note.
 
-- **N345 — Neutralize spreadsheet formulas in the CSV.** Fields starting with `=`, `+`, `-` or `@` are
-  evaluated by a coach's spreadsheet. Prefix them, and test a comment that starts with `=`.
-
 - **N346 — A failed attempt is not a warm-up in a rung refusal.** It falls through to `OnlyAWarmUp`,
   whose sentence names a warm-up. Add the cause, or reword it to "not a working set", and test it.
 

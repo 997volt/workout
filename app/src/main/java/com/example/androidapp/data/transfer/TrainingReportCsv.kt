@@ -315,13 +315,33 @@ object TrainingReportCsv {
         WeightUnit.POUNDS -> "lb"
     }
 
-    /** RFC 4180: quote a value that carries a comma, a quote or a newline; double its quotes. */
+    /**
+     * RFC 4180 quoting, plus spreadsheet formula neutralization (N345).
+     *
+     * A comment, block or workout name is lifter-written, and a cell starting with `=`, `+`, `@` or a
+     * leading tab/carriage return is evaluated by a spreadsheet — health data does not belong in a
+     * coach's formula bar, and a shared sheet can aggregate several athletes. A leading `'` keeps the
+     * text visible and inert; Excel hides the marker, other readers show it as part of the value.
+     *
+     * A leading `-` is prefixed only when what follows is not a number, so a negative value the format
+     * may grow later still reads as a value rather than as text.
+     */
     private fun escape(value: String?): String {
-        val text = value.orEmpty()
+        val raw = value.orEmpty()
+        val text = if (needsFormulaPrefix(raw)) "'$raw" else raw
         return if (text.any { it in QUOTED_CHARS }) {
             '"' + text.replace("\"", "\"\"") + '"'
         } else {
             text
+        }
+    }
+
+    private fun needsFormulaPrefix(text: String): Boolean {
+        val first = text.firstOrNull() ?: return false
+        return when (first) {
+            '=', '+', '@', '\t', '\r' -> true
+            '-' -> text.drop(1).toDoubleOrNull() == null
+            else -> false
         }
     }
 }

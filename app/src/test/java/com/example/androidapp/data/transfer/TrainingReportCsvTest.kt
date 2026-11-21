@@ -277,6 +277,21 @@ class TrainingReportCsvTest {
     }
 
     @Test
+    fun aCellThatLooksLikeAFormula_isNeutralized_butANegativeNumberIsNot() {
+        // N345: a lifter's comment is data, not a formula in the coach's spreadsheet. A negative value
+        // the format may grow later still has to survive as a number.
+        val dangerous = report.copy(
+            blockName = "-20",
+            sessions = listOf(report.sessions.single().copy(comment = "=HYPERLINK(\"http://x\")")),
+        )
+        val records = parse(TrainingReportCsv.write(dangerous))
+
+        assertThat(records.single { it["record_type"] == "session" }["session_comment"])
+            .isEqualTo("'=HYPERLINK(\"http://x\")")
+        assertThat(records.single { it["record_type"] == "block" }["block"]).isEqualTo("-20")
+    }
+
+    @Test
     fun anEmptyReport_isAHeaderAndABlockRow() {
         val csv = TrainingReportCsv.write(
             report.copy(days = emptyList(), sessions = emptyList(), measurements = emptyList()),
