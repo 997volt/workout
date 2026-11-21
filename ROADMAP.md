@@ -15,6 +15,96 @@ work was planned, so they do not always run in order — and an id this file doe
 shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 [CHANGELOG-1.x.md](CHANGELOG-1.x.md) for the 1.x releases.
 
+## Next — the 2.33 review fixes
+
+The 2.33 line is N329 and N331, neither released. A review of the ten commits since v2.32 found
+these; they are ordered by severity, and each entry leaves this list in the commit that fixes it, so
+an entry still here is an open one. A fix that changes an unreleased feature's behaviour folds into
+that feature's CHANGELOG entry rather than becoming a second release note.
+
+- **N333 — A completed block's report stops at the block.** The report ends a complete run at the latest
+  finished session in *all* history, so an old block chosen from **Change** carries every session and
+  measurement trained since — and `block_complete=true` beside a later `block_end`. End it at the
+  sequence schedule's last settled day, and test a session trained after completion.
+
+- **N334 — A plan cannot offer a failed attempt.** The plan dialog passes `offers` through and
+  `isAnchoredAt` accepts every non-rung, so **Failed attempt** is selectable and only the write boundary
+  refuses the save. Filter it in the dialog; the guard test asserts `TestTags.setRole` while the dialog
+  renders `templateSetRole`, so it passes without testing anything.
+
+- **N335 — A failed attempt does not shift the history comparison.** `previousPerformance` drops failed
+  attempts while the detail indexes the current rows by position, so a later set loses or misreads "vs
+  last time". Align both sides by work place and show no delta on the attempt itself.
+
+- **N336 — A failed attempt is not a performed plan set.** `ProgressionOffer.performedWork()` filters
+  only warm-ups, so the attempt takes a plan place, shifts the **Done** prompt's pairing and can appear
+  as extra work. Filter the performed side by `isWork` and test the pairing.
+
+- **N337 — The CSV carries the plan's whole prescription.** Planned RPE is populated in the report and
+  then never written, and planned assistance and hold are not in the model at all. Add the columns and
+  assert them, including a plan that prescribes only assistance or a hold.
+
+- **N338 — A failed block read cannot leave the old file writable.** `canWrite` ignores `error`, so a
+  failed **Change** keeps **Download**/**Share** enabled on the previous report. Require no error and
+  clear or guard the stale report.
+
+- **N339 — A failed attempt does not prefill zero reps.** The next set reads the last logged row, so a
+  free session opens at the attempted load with zero reps and cannot be logged. Skip the attempt for
+  the prefill.
+
+- **N340 — Repeated block days keep their own session.** Day attribution takes the first session naming
+  the template, so an A/B/A block maps every A day to the first A session and its key. Resolve the days
+  in order, the way the sequence schedule walks them, and test the repeat.
+
+- **N341 — The backup format documents version 10.** The KDoc explains 5 through 9 and stops at the
+  constant's new value; add N329's reason and correct the stale comment in the codec test.
+
+- **N342 — Remove the report's dead API.** `dismissOutcome` has no caller and `TrainingMeasurement.kind`
+  is populated but never exported; delete what nothing reads.
+
+- **N343 — Name the fallback by what it is.** `range()` names a report after its dates, so **Change** →
+  **Last 8 weeks** shows the ISO range beside the localized window and doubles it in the file name. Let
+  the caller name the report, with a localized fallback for both the fallback and the range.
+
+- **N344 — Do not keep every staged block CSV.** The share folder is never cleared. Remove the previous
+  staged file before staging the next one and say that in the doc, rather than claiming the system will
+  do it.
+
+- **N345 — Neutralize spreadsheet formulas in the CSV.** Fields starting with `=`, `+`, `-` or `@` are
+  evaluated by a coach's spreadsheet. Prefix them, and test a comment that starts with `=`.
+
+- **N346 — A failed attempt is not a warm-up in a rung refusal.** It falls through to `OnlyAWarmUp`,
+  whose sentence names a warm-up. Add the cause, or reword it to "not a working set", and test it.
+
+- **N347 — One home for "a failed attempt occupies no plan place".** The rule is a raw
+  `!= FAILED_ATTEMPT` in two places. Name it on `SetType` (warm-ups still take their plan place) and
+  read it there.
+
+- **N348 — Fix the formatting artifacts.** Two `### Added` headings under `[Unreleased]`, a
+  whitespace-only line and an outdented string in `strings.xml`, and the CSV doc's `S1`/`S2` keys that
+  are actually `session-1`.
+
+- **N349 — One calendar for the block report.** Sessions filter by their stored offset while
+  measurements and today use the system zone, so a near-midnight measurement can fall outside the
+  block and the instrumented test can fail in UTC+13/14. Use one zone and derive the test's date.
+
+- **N350 — A block with no start date still has a start.** `startDate ?: today` makes a legacy block
+  empty; use the creation date the model documents, as the sequence schedule already does.
+
+- **N351 — Cover the report's branches.** The repository needs active, no-block and old-block-with-later
+  training; the sheet needs loading/error and a failed download; the CSV needs pounds, bodyweight and a
+  hold. The plan asked for these and only one repository case exists.
+
+- **N352 — Finish the conventions pass.** Tag the sheet's **Change** control instead of addressing it by
+  the English `"Change"` in tests, and align `docs/app.js`'s stale `Failure` label with **To failure**.
+
+- **N353 — Number the CSV's sets the way the app does.** `setIndex + 1` numbers warm-ups and failed
+  attempts that the app leaves unnumbered. Number work rows only and test it.
+
+- **N354 — Say what the report actually reads.** The class doc claims a block is "a handful of
+  sessions, not a scan of all history" while it calls `observeHistory()` and `observeAll()`. Bound the
+  read or correct the comment and record the trade-off.
+
 ## Later
 
 - **N330 — A 1RM test has its own view.** Once N329 exists, a test's attempts can read as one story:
