@@ -15,6 +15,27 @@ work was planned, so they do not always run in order — and an id this file doe
 shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 [CHANGELOG-1.x.md](CHANGELOG-1.x.md) for the 1.x releases.
 
+## Next
+
+- **N329 — A failed attempt is a set of its own.** A 1RM attempt that produced no rep cannot be logged: the
+  set needs at least one rep, and the existing **Failure** role means *taken to failure*, which still counts
+  as a working set. Add a **Failed attempt** role with reps fixed at **0**, the attempted load, and an
+  optional comment. It is not work (`isWork = false`) and not rated (`recordsEffort = false`): excluded from
+  volume, records, estimated 1RM, earned sets, the "last time" prefill, find-the-weight calibration, plan
+  completion and set numbering, while remaining visible in the exercise's history as "Failed attempt — 140
+  kg". The existing Failure label becomes **To failure**; its enum name stays, so there is no data migration.
+  The role is offered only for a logged set — a template, program document or backup **planned** set that
+  names it is refused — and the planned set it answers stays unlogged. The backup version bumps because an
+  older build cannot parse the role. The successful single remains the tested 1RM, and the session can say
+  "Best single 137.5 kg — failed 140 kg".
+
+## Later
+
+- **N330 — A 1RM test has its own view.** Once N329 exists, a test's attempts can read as one story:
+  warm-ups, the made single, the failed attempts above it, and the tested result. A guided flow — rest
+  between attempts, an attempt ladder, the result written once — can follow later. It is not a second data
+  model: a 1RM test is an ordinary session whose sets carry N329's roles.
+
 ## Parked — deliberately not planned
 
 Each row is a product in its own right, contradicts "local-only", or both. Parking is a
