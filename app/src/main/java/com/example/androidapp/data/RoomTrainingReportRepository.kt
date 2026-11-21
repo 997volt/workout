@@ -94,7 +94,7 @@ class RoomTrainingReportRepository @Inject constructor(
 
     private suspend fun blockReport(program: WorkoutProgram): TrainingReport {
         val today = today()
-        val start = program.startDate ?: today
+        val start = blockStart(program, today, ZoneId.systemDefault())
         // A complete block ends when it last moved, not when the device last trained (N333): the
         // schedule is the thing that knows which sessions settled this block, and its last settled
         // day is where the block stopped. Reading history here would carry every later workout.
@@ -269,4 +269,20 @@ internal fun sessionsByDay(
             put(slot.position, session.id)
         }
     }
+}
+
+/**
+ * The day a block begins: its authored start, else the day it was created, else today (N350).
+ *
+ * A sequence program can have no start date — the model documents null as "the day it was created" —
+ * and reading that as today made a legacy block's window empty: start and end on the same day, no
+ * sessions, no measurements. The sequence schedule already falls back to the creation date, so the
+ * report uses the same rule rather than inventing a second one.
+ */
+internal fun blockStart(program: WorkoutProgram, today: LocalDate, zone: ZoneId): LocalDate {
+    program.startDate?.let { return it }
+    if (program.createdAtMillis > 0L) {
+        return Instant.ofEpochMilli(program.createdAtMillis).atZone(zone).toLocalDate()
+    }
+    return today
 }

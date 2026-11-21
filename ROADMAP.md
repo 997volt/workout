@@ -22,9 +22,6 @@ these; they are ordered by severity, and each entry leaves this list in the comm
 an entry still here is an open one. A fix that changes an unreleased feature's behaviour folds into
 that feature's CHANGELOG entry rather than becoming a second release note.
 
-- **N350 — A block with no start date still has a start.** `startDate ?: today` makes a legacy block
-  empty; use the creation date the model documents, as the sequence schedule already does.
-
 - **N351 — Cover the report's branches.** The repository needs active, no-block and old-block-with-later
   training; the sheet needs loading/error and a failed download; the CSV needs pounds, bodyweight and a
   hold. The plan asked for these and only one repository case exists.
