@@ -38,8 +38,15 @@ import javax.inject.Inject
  * Assembles the last training block for the CSV export (ROADMAP N331).
  *
  * Read-only, and composed from the repositories the screens already use rather than a second query
- * layer: a block is a handful of sessions, not a scan of all history, so the clarity of one assembly
- * path beats duplicating the workout, plan and measurement reads in SQL.
+ * layer: one assembly path is easier to keep correct than four SQL reads that must agree about plans,
+ * exercises and units.
+ *
+ * **It does read the whole history and every measurement before filtering** (N354): the window is
+ * applied in Kotlin, which is fine for a user-initiated one-off export of a block and is not what the
+ * first version of this comment claimed. A bounded read — a `startedAt` range on the history row and
+ * a `measuredAt` range on the measurements — is the next step if the export ever has to run over a
+ * large library; it was not taken here because it means a second history projection beside the
+ * existing one.
  */
 class RoomTrainingReportRepository @Inject constructor(
     database: WorkoutDatabase,

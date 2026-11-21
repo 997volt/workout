@@ -15,17 +15,6 @@ work was planned, so they do not always run in order — and an id this file doe
 shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 [CHANGELOG-1.x.md](CHANGELOG-1.x.md) for the 1.x releases.
 
-## Next — the 2.33 review fixes
-
-The 2.33 line is N329 and N331, neither released. A review of the ten commits since v2.32 found
-these; they are ordered by severity, and each entry leaves this list in the commit that fixes it, so
-an entry still here is an open one. A fix that changes an unreleased feature's behaviour folds into
-that feature's CHANGELOG entry rather than becoming a second release note.
-
-- **N354 — Say what the report actually reads.** The class doc claims a block is "a handful of
-  sessions, not a scan of all history" while it calls `observeHistory()` and `observeAll()`. Bound the
-  read or correct the comment and record the trade-off.
-
 ## Later
 
 - **N330 — A 1RM test has its own view.** Once N329 exists, a test's attempts can read as one story:
