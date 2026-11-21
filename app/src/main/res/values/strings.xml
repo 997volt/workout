@@ -787,7 +787,18 @@
     <string name="history_share_block">Share training block</string>
     <string name="history_block_title">Share training block</string>
     <string name="history_block_window">%1$s · %2$s → %3$s</string>
-    <string name="history_block_counts">%1$d sessions · %2$d sets · %3$d planned sets not done</string>
+    <plurals name="history_block_sessions">
+        <item quantity="one">%1$d session</item>
+        <item quantity="other">%1$d sessions</item>
+    </plurals>
+    <plurals name="history_block_sets">
+        <item quantity="one">%1$d set</item>
+        <item quantity="other">%1$d sets</item>
+    </plurals>
+    <plurals name="history_block_planned_not_done">
+        <item quantity="one">%1$d planned set not done</item>
+        <item quantity="other">%1$d planned sets not done</item>
+    </plurals>
     <string name="history_block_includes_title">Everything in the block</string>
     <string name="history_block_includes">Sessions and activities, every set and its role, the plan and what was done, comments, RPE, assistance, bodyweight, readiness, sore muscles, joint pain, body measurements and the block’s missed days.</string>
     <string name="history_block_warning">This CSV includes readiness, soreness, joint pain and body measurements. Share it only with someone who should have that data.</string>

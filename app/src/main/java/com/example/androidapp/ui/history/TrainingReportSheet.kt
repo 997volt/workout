@@ -17,6 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
@@ -115,17 +116,19 @@ private fun ReportContent(
     val end = text(report.blockEnd)
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(stringResource(R.string.history_block_window, report.blockName, start, end))
+        val sessionCount = report.sessions.size
+        val setCount = report.sessions.sumOf { session ->
+            session.exercises.sumOf { exercise -> exercise.sets.count { set -> set.performed } }
+        }
+        val notDone = report.sessions.sumOf { session ->
+            session.exercises.sumOf { exercise -> exercise.sets.count { set -> !set.performed } }
+        }
         Text(
-            stringResource(
-                R.string.history_block_counts,
-                report.sessions.size,
-                report.sessions.sumOf { session ->
-                    session.exercises.sumOf { exercise -> exercise.sets.count { set -> set.performed } }
-                },
-                report.sessions.sumOf { session ->
-                    session.exercises.sumOf { exercise -> exercise.sets.count { set -> !set.performed } }
-                },
-            ),
+            text = listOf(
+                pluralStringResource(R.plurals.history_block_sessions, sessionCount, sessionCount),
+                pluralStringResource(R.plurals.history_block_sets, setCount, setCount),
+                pluralStringResource(R.plurals.history_block_planned_not_done, notDone, notDone),
+            ).joinToString(" · "),
         )
         Text(stringResource(R.string.history_block_includes_title))
         Text(stringResource(R.string.history_block_includes))
