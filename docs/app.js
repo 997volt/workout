@@ -93,7 +93,7 @@
     NORMAL: 'Working',
     WARMUP: 'Warm-up',
     TOP_SET: 'Top set',
-    FAILURE: 'Failure',
+    FAILURE: 'To failure',
     DROP: 'Drop (cannot import)',
     CLUSTER: 'Cluster (cannot import)'
   };

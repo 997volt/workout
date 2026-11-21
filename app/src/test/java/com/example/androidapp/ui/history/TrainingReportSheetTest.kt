@@ -145,7 +145,7 @@ class TrainingReportSheetTest {
             ),
         )
 
-        composeTestRule.onNodeWithText("Change").performClick()
+        composeTestRule.onNodeWithTag(TestTags.HISTORY_BLOCK_CHANGE).performClick()
         composeTestRule.onNodeWithText("Last 8 weeks").performClick()
 
         assertEquals(1, weeks)

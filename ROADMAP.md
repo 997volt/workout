@@ -22,9 +22,6 @@ these; they are ordered by severity, and each entry leaves this list in the comm
 an entry still here is an open one. A fix that changes an unreleased feature's behaviour folds into
 that feature's CHANGELOG entry rather than becoming a second release note.
 
-- **N352 — Finish the conventions pass.** Tag the sheet's **Change** control instead of addressing it by
-  the English `"Change"` in tests, and align `docs/app.js`'s stale `Failure` label with **To failure**.
-
 - **N353 — Number the CSV's sets the way the app does.** `setIndex + 1` numbers warm-ups and failed
   attempts that the app leaves unnumbered. Number work rows only and test it.
 

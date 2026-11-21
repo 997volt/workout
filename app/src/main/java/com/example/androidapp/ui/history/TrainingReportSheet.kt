@@ -145,7 +145,10 @@ private fun ChangeMenu(
 ) {
     var open by remember { mutableStateOf(false) }
     Box {
-        AppTextButton(onClick = { open = true }) {
+        AppTextButton(
+            onClick = { open = true },
+            modifier = Modifier.testTag(TestTags.HISTORY_BLOCK_CHANGE),
+        ) {
             Text(stringResource(R.string.history_block_change))
         }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {

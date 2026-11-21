@@ -61,6 +61,7 @@ internal interface HistoryTags {
     /** The History action that opens the one-file block export (N331). */
     val HISTORY_SHARE_BLOCK: String get() = "history_share_block"
     val HISTORY_BLOCK_SHEET: String get() = "history_block_sheet"
+    val HISTORY_BLOCK_CHANGE: String get() = "history_block_change"
     val HISTORY_BLOCK_DOWNLOAD: String get() = "history_block_download"
     val HISTORY_BLOCK_SHARE: String get() = "history_block_share"
     val HISTORY_BLOCK_OUTCOME: String get() = "history_block_outcome"
