@@ -26,6 +26,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 
 /**
  * The last training block, end to end through the schema (ROADMAP N331).
@@ -128,7 +129,9 @@ class TrainingReportRepositoryTest {
 
         assertEquals("Block", report.blockName)
         assertEquals(LocalDate.of(2026, 10, 5), report.blockStart)
-        assertEquals(LocalDate.of(2026, 10, 7), report.blockEnd)
+        // N349: the block's window uses the device's current calendar, as the schedule that produced
+        // lastSettled does. Derive the expected day rather than assuming the test device is on UTC.
+        assertEquals(now.atZone(ZoneId.systemDefault()).toLocalDate(), report.blockEnd)
         assertTrue(report.blockComplete)
 
         val session = report.sessions.single()
@@ -188,6 +191,7 @@ class TrainingReportRepositoryTest {
             ),
         )
 
+        val completedOn = now.atZone(ZoneId.systemDefault()).toLocalDate()
         now = Instant.parse("2026-10-20T12:00:00Z")
         val later = (workouts.startOrResumeSession(template) as DataResult.Success).data
         val laterExercise = workouts.observeSessionExercises(later.id).first().single()
@@ -207,7 +211,7 @@ class TrainingReportRepositoryTest {
         val report = (repository.lastBlock("Last 8 weeks") as DataResult.Success).data
 
         assertTrue(report.blockComplete)
-        assertEquals(LocalDate.of(2026, 10, 7), report.blockEnd)
+        assertEquals(completedOn, report.blockEnd)
         assertEquals(first.id, report.sessions.single().id)
         assertEquals(80_000L, report.measurements.single().weightGrams)
     }

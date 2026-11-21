@@ -32,7 +32,6 @@ import kotlinx.coroutines.flow.first
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.ZoneOffset
 import javax.inject.Inject
 
 /**
@@ -120,8 +119,12 @@ class RoomTrainingReportRepository @Inject constructor(
     ): TrainingReport {
         val unit = settings.observeWeightUnit().first()
         val slots = program?.let { programs.observeSlots(it.id).first() }.orEmpty()
+        // One calendar for the window (N349): the schedule that produced the block's dates, the
+        // measurements below and "today" all bucket by the device's current zone. The session's own
+        // offset still labels its CSV row; it does not decide whether the session is in the block.
+        val zone = ZoneId.systemDefault()
         val history = workouts.observeHistory().first()
-            .filter { it.finishedAt != null && localDate(it.startedAt, it.zoneOffsetMinutes) in start..end }
+            .filter { it.finishedAt != null && it.startedAt.atZone(zone).toLocalDate() in start..end }
             .sortedBy { it.startedAt }
         val rawSessions = history.mapNotNull { summary -> buildSession(summary, unit) }
         // Resolve the days before naming them (N340): a plan may name one template on more than one
@@ -237,15 +240,9 @@ class RoomTrainingReportRepository @Inject constructor(
     private fun today(): LocalDate =
         Instant.ofEpochMilli(timeSource.nowEpochMillis()).atZone(ZoneId.systemDefault()).toLocalDate()
 
-    private fun localDate(instant: Instant, offsetMinutes: Int?): LocalDate {
-        val offset = offsetMinutes?.let { ZoneOffset.ofTotalSeconds(it * SECONDS_PER_MINUTE) } ?: ZoneOffset.UTC
-        return instant.atOffset(offset).toLocalDate()
-    }
-
     private companion object {
         const val FALLBACK_WEEKS = 8L
         const val RECENT_BLOCK_COUNT = 5
-        const val SECONDS_PER_MINUTE = 60
     }
 }
 

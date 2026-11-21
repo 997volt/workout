@@ -22,10 +22,6 @@ these; they are ordered by severity, and each entry leaves this list in the comm
 an entry still here is an open one. A fix that changes an unreleased feature's behaviour folds into
 that feature's CHANGELOG entry rather than becoming a second release note.
 
-- **N349 — One calendar for the block report.** Sessions filter by their stored offset while
-  measurements and today use the system zone, so a near-midnight measurement can fall outside the
-  block and the instrumented test can fail in UTC+13/14. Use one zone and derive the test's date.
-
 - **N350 — A block with no start date still has a start.** `startDate ?: today` makes a legacy block
   empty; use the creation date the model documents, as the sequence schedule already does.
 
