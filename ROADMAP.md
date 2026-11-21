@@ -22,9 +22,6 @@ these; they are ordered by severity, and each entry leaves this list in the comm
 an entry still here is an open one. A fix that changes an unreleased feature's behaviour folds into
 that feature's CHANGELOG entry rather than becoming a second release note.
 
-- **N353 — Number the CSV's sets the way the app does.** `setIndex + 1` numbers warm-ups and failed
-  attempts that the app leaves unnumbered. Number work rows only and test it.
-
 - **N354 — Say what the report actually reads.** The class doc claims a block is "a handful of
   sessions, not a scan of all history" while it calls `observeHistory()` and `observeAll()`. Bound the
   read or correct the comment and record the trade-off.

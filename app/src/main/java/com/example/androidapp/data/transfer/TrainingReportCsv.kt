@@ -32,9 +32,6 @@ import java.util.Locale
  */
 object TrainingReportCsv {
 
-    /** A set's display number is the plan's zero-based index plus one. */
-    private const val SET_NUMBER_OFFSET = 1
-
     private const val SECONDS_PER_MINUTE = 60
 
     private const val TENTHS_PER_WHOLE = 10.0
@@ -109,7 +106,13 @@ object TrainingReportCsv {
                 val key = sessionKeys.getValue(session.id)
                 add(sessionRow(session, key))
                 session.exercises.forEach { exercise ->
-                    exercise.sets.forEach { set -> add(setRow(session, key, exercise.name, set)) }
+                    // The plan's own numbering (N112, N353): a warm-up and a failed attempt take no
+                    // number, and the work rows count from one in the order the day ran them.
+                    var number = 0
+                    exercise.sets.forEach { set ->
+                        val counted = if (set.performed) set.role else set.plannedRole ?: set.role
+                        add(setRow(session, key, exercise.name, set, if (counted.isWork) ++number else null))
+                    }
                     exercise.joints.forEach { joint -> add(jointRow(session, key, exercise.name, joint)) }
                 }
                 session.soreMuscles.forEach { sore -> add(soreRow(session, key, sore)) }
@@ -180,6 +183,7 @@ object TrainingReportCsv {
         key: String,
         exercise: String,
         set: TrainingSet,
+        number: Int?,
     ): Map<String, String?> {
         val role = if (set.performed) set.role else (set.plannedRole ?: set.role)
         return mapOf(
@@ -189,7 +193,7 @@ object TrainingReportCsv {
             "workout" to session.workout,
             "block_day" to session.dayName,
             "exercise" to exercise,
-            "set_number" to (set.setIndex + SET_NUMBER_OFFSET).toString(),
+            "set_number" to number?.toString(),
             "role" to role.label,
             "performed" to set.performed.toString(),
         ) + plannedFields(set) + actualFields(set)

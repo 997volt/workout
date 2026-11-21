@@ -153,7 +153,7 @@ class TrainingReportCsvTest {
         val failed = records.single { it["record_type"] == "set" && it["role"] == "Failed attempt" }
         assertThat(failed["session_key"]).isEqualTo("session-1")
         assertThat(failed["exercise"]).isEqualTo("Bench Press")
-        assertThat(failed["set_number"]).isEqualTo("2")
+        assertThat(failed["set_number"]).isEmpty()
         assertThat(failed["reps"]).isEqualTo("0")
         assertThat(failed["weight"]).isEqualTo("110")
         assertThat(failed["unit"]).isEqualTo("kg")
@@ -167,6 +167,7 @@ class TrainingReportCsvTest {
         assertThat(plannedOnly["planned_weight"]).isEqualTo("90")
         assertThat(plannedOnly["planned_unit"]).isEqualTo("kg")
         assertThat(plannedOnly["planned_rpe"]).isEqualTo("8.5")
+        assertThat(plannedOnly["set_number"]).isEqualTo("2")
         assertThat(plannedOnly["weight"]).isEmpty()
 
         val measurements = records.filter { it["record_type"] == "measurement" }
@@ -274,6 +275,53 @@ class TrainingReportCsvTest {
         return records.drop(1)
             .filter { row -> row.any { it.isNotEmpty() } }
             .map { row -> header.indices.associate { header[it] to (row.getOrNull(it) ?: "") } }
+    }
+
+    @Test
+    fun theSetNumber_countsWorkOnly_likeTheApp() {
+        // N353: set numbers are the app's (N112), not the row's index. A warm-up and a failed attempt
+        // take none, and the working set that follows is set 1.
+        val sets = listOf(
+            TrainingSet(
+                setIndex = 0,
+                performed = true,
+                role = SetType.WARMUP,
+                unit = WeightUnit.KILOGRAMS,
+                reps = 8,
+                weightGrams = 50_000L,
+            ),
+            TrainingSet(
+                setIndex = 1,
+                performed = true,
+                role = SetType.FAILED_ATTEMPT,
+                unit = WeightUnit.KILOGRAMS,
+                reps = 0,
+                weightGrams = 140_000L,
+            ),
+            TrainingSet(
+                setIndex = 2,
+                performed = true,
+                role = SetType.NORMAL,
+                unit = WeightUnit.KILOGRAMS,
+                reps = 5,
+                weightGrams = 100_000L,
+            ),
+        )
+        val csv = report.copy(
+            days = emptyList(),
+            sessions = listOf(
+                report.sessions.single().copy(
+                    exercises = listOf(TrainingExercise(name = "Squat", sets = sets)),
+                ),
+            ),
+            measurements = emptyList(),
+        )
+
+        val numbers = parse(TrainingReportCsv.write(csv))
+            .filter { it["record_type"] == "set" }
+            .map { it["set_number"] }
+
+        assertThat(numbers).containsExactly("", "", "1").inOrder()
     }
 
     @Test
