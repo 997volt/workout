@@ -286,9 +286,10 @@ internal fun List<SetRow>.canLogAs(role: SetType): Boolean = refusalForLoggingAs
  * Why this role cannot be logged here, or null when it can (N145).
  *
  * The rule is one sentence, but it is not one *fault*: the set above may be missing entirely, may be a warm-up,
- * or may already be a rung of the other kind — and the boundary used to answer all three with "A drop set
- * follows the set above it", which tells the lifter what a drop set is rather than what is wrong with the place
- * they tapped. The three are told apart here so the boundary can say which one it is.
+ * may be a failed attempt (N329/N346), or may already be a rung of the other kind — and the boundary used to
+ * answer the first cases with "A drop set follows the set above it", which tells the lifter what a drop set is
+ * rather than what is wrong with the place they tapped. They are told apart here so the boundary can say which
+ * one it is.
  *
  * File-level and pure, like [canLogAs], because it is a question about rows: the session's list answers it, and
  * `RoomWorkoutRepository` asks the same one of the same rows.
@@ -302,6 +303,7 @@ internal fun List<SetRow>.refusalForLoggingAs(role: SetType): RungRefusal? {
         above == null -> RungRefusal.NothingAbove
         above.setType.recordsEffort -> null
         above.setType.isRung -> RungRefusal.ARungAbove
+        above.setType == SetType.FAILED_ATTEMPT -> RungRefusal.FailedAttemptAbove
         else -> RungRefusal.OnlyAWarmUp
     }
 }
@@ -309,8 +311,9 @@ internal fun List<SetRow>.refusalForLoggingAs(role: SetType): RungRefusal? {
 /**
  * Why a rung cannot go where it was asked for (N145).
  *
- * Three causes, three sentences: a lifter who is told *which* one it is can act on it — move the set, change the
- * role above, or log the working set first — where being told the rule again leaves them to work it out.
+ * Four causes, four sentences: a lifter who is told *which* one it is can act on it — move the set, change the
+ * role above, or log the working set first — where being told the rule again leaves them to work it out. A
+ * failed attempt is not a warm-up, so it gets its own sentence rather than borrowing that one (N346).
  */
 internal enum class RungRefusal {
     /** The set is the exercise's first, so there is nothing to hang a run off. */
@@ -318,6 +321,9 @@ internal enum class RungRefusal {
 
     /** The set above is a warm-up, which no run reads an anchor from (B63). */
     OnlyAWarmUp,
+
+    /** The set above is a failed attempt: it is not work, so it cannot anchor a run (N329, N346). */
+    FailedAttemptAbove,
 
     /** The set above is a rung of the other kind, and a run's anchor has to stand on its own. */
     ARungAbove,
@@ -338,6 +344,9 @@ internal fun RungRefusal.sentence(role: SetType): String {
 
         RungRefusal.OnlyAWarmUp ->
             "A $name set needs a working set above it, and the set above this one is a warm-up."
+
+        RungRefusal.FailedAttemptAbove ->
+            "A $name set needs a working set above it, and the set above this one is a failed attempt."
 
         RungRefusal.ARungAbove ->
             "A $name set needs a working set above it, and the set above this one is another kind of rung."

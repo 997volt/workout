@@ -641,4 +641,25 @@ class SetSuggestionTest {
         assertEquals(140_000L, suggestion.weightGrams)
         assertEquals(5, suggestion.reps)
     }
+
+    @Test
+    fun aRungAboveAFailedAttempt_namesTheAttempt_notAWarmUp() {
+        // N346: the attempt is not work, so it cannot anchor a rung — but it is also not a warm-up, and
+        // the refusal used to tell the lifter it was.
+        val failed = SetRow(
+            id = "a",
+            number = null,
+            reps = 0,
+            weightGrams = 140_000L,
+            setType = SetType.FAILED_ATTEMPT,
+        )
+
+        val refusal = listOf(failed).refusalForLoggingAs(SetType.DROP)
+
+        assertEquals(RungRefusal.FailedAttemptAbove, refusal)
+        assertEquals(
+            "A drop set needs a working set above it, and the set above this one is a failed attempt.",
+            refusal!!.sentence(SetType.DROP),
+        )
+    }
 }

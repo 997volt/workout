@@ -22,9 +22,6 @@ these; they are ordered by severity, and each entry leaves this list in the comm
 an entry still here is an open one. A fix that changes an unreleased feature's behaviour folds into
 that feature's CHANGELOG entry rather than becoming a second release note.
 
-- **N346 — A failed attempt is not a warm-up in a rung refusal.** It falls through to `OnlyAWarmUp`,
-  whose sentence names a warm-up. Add the cause, or reword it to "not a working set", and test it.
-
 - **N347 — One home for "a failed attempt occupies no plan place".** The rule is a raw
   `!= FAILED_ATTEMPT` in two places. Name it on `SetType` (warm-ups still take their plan place) and
   read it there.
