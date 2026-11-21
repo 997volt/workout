@@ -27,8 +27,6 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   action. The custom date range is the one Change option the sheet does not surface yet; the repository's
   range read is in place for it.
 
-### Added
-
 - **A failed attempt is a first-class set** (N329). A 1RM attempt that produced no rep could not be logged:
   the set needed at least one rep, and the existing **Failure** role means *taken to failure*, which still
   counts as a working set. The new **Failed attempt** role records the attempted load, zero reps and an

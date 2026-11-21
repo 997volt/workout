@@ -781,9 +781,6 @@
     <string name="workout_note_title">How did it go?</string>
     <string name="workout_note_body">Optional — why it went well or badly. You can add it later from the workout.</string>
     <string name="workout_note_label">Comment</string>
-    <!-- The detail's comparison with the previous training (ROADMAP N306). The date is the previous
-         session's own, and each set states what moved: a load in its unit, reps, or a hold in seconds. -->
-    
     <string name="history_share_block">Share training block</string>
     <string name="history_block_title">Share training block</string>
     <string name="history_block_window">%1$s · %2$s → %3$s</string>
@@ -810,7 +807,9 @@
     <string name="history_block_write_failed">Couldn’t write the CSV.</string>
     <string name="history_block_written">CSV written.</string>
     <string name="history_block_close">Close</string>
-<string name="history_vs_last_time">vs last time · %1$s</string>
+    <!-- The detail's comparison with the previous training (ROADMAP N306). The date is the previous
+         session's own, and each set states what moved: a load in its unit, reps, or a hold in seconds. -->
+    <string name="history_vs_last_time">vs last time · %1$s</string>
     <string name="history_vs_last_time_unknown">vs last time</string>
     <string name="history_same_as_last_time">same as last time</string>
     <plurals name="history_delta_reps">

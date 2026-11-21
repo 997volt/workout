@@ -22,10 +22,6 @@ these; they are ordered by severity, and each entry leaves this list in the comm
 an entry still here is an open one. A fix that changes an unreleased feature's behaviour folds into
 that feature's CHANGELOG entry rather than becoming a second release note.
 
-- **N348 — Fix the formatting artifacts.** Two `### Added` headings under `[Unreleased]`, a
-  whitespace-only line and an outdented string in `strings.xml`, and the CSV doc's `S1`/`S2` keys that
-  are actually `session-1`.
-
 - **N349 — One calendar for the block report.** Sessions filter by their stored offset while
   measurements and today use the system zone, so a near-midnight measurement can fall outside the
   block and the instrumented test can fail in UTC+13/14. Use one zone and derive the test's date.

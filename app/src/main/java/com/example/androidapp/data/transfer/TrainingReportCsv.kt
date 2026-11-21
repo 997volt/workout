@@ -23,7 +23,7 @@ import java.util.Locale
  *
  * One file, with a `record_type` column: a strict one-row-per-set table cannot also carry the block's
  * schedule, an activity, a body measurement or a recovery rating. The coach filters `record_type = set`
- * for the training table and joins the rest by `S1`, `S2`… — stable keys the writer mints, never the
+ * for the training table and joins the rest by `session-1`, `session-2`… — stable keys the writer mints, never the
  * app's internal UUIDs.
  *
  * The format is deliberately spreadsheet-shaped: UTF-8, RFC 4180 quoting, ISO dates and dot decimals,
