@@ -223,7 +223,6 @@ class RoomTrainingReportRepository @Inject constructor(
 
     private fun BodyMeasurement.toTrainingMeasurement(): TrainingMeasurement = TrainingMeasurement(
         measuredAt = measuredAt,
-        kind = kind,
         weightGrams = weightGrams,
         bodyFatTenths = bodyFatTenths,
         muscleTenths = muscleTenths,

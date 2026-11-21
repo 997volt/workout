@@ -4,7 +4,6 @@ import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.Activity
 import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.JointPain
-import com.example.androidapp.domain.model.MeasurementKind
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.Side
@@ -110,7 +109,6 @@ class TrainingReportCsvTest {
             TrainingMeasurement(
                 measuredAt = systemDate.let { LocalDate.parse(it) }
                     .atStartOfDay(ZoneId.systemDefault()).toInstant(),
-                kind = MeasurementKind.DAILY,
                 weightGrams = 80_000L,
                 bodyFatTenths = 155,
                 muscleTenths = 450,

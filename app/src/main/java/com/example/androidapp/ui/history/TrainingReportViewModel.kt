@@ -88,10 +88,6 @@ class TrainingReportViewModel @Inject constructor(
         load { repository.range(today.minusWeeks(FALLBACK_WEEKS), today) }
     }
 
-    fun dismissOutcome() {
-        _state.update { it.copy(outcome = null) }
-    }
-
     fun onShareFinished(shared: Boolean) {
         _state.update {
             it.copy(

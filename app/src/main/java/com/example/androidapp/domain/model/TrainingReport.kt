@@ -103,7 +103,6 @@ data class TrainingSet(
 /** One body measurement in the block: a daily entry, or one tape day. */
 data class TrainingMeasurement(
     val measuredAt: Instant,
-    val kind: MeasurementKind,
     val weightGrams: Long? = null,
     val bodyFatTenths: Int? = null,
     val muscleTenths: Int? = null,
