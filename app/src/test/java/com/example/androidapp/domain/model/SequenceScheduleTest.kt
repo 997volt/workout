@@ -167,6 +167,9 @@ class SequenceScheduleTest {
         assertThat(schedule.due).isNull()
         assertThat(schedule.settled).isEqualTo(3)
         assertThat(schedule.position).isEqualTo(3)
+        // N333: the block's last settled day is what the export ends on — the skip here, because a
+        // skipped session still moved the block.
+        assertThat(schedule.lastSettled).isEqualTo(start.plusDays(7))
     }
 
     @Test

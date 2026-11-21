@@ -92,16 +92,12 @@ class RoomTrainingReportRepository @Inject constructor(
     private suspend fun blockReport(program: WorkoutProgram): TrainingReport {
         val today = today()
         val start = program.startDate ?: today
-        val complete = programs.observeProgramRun(program.id).first()?.isComplete == true
-        val end = if (complete) {
-            workouts.observeHistory().first()
-                .filter { it.finishedAt != null }
-                .map { localDate(it.startedAt, it.zoneOffsetMinutes) }
-                .filter { it >= start }
-                .maxOrNull() ?: start
-        } else {
-            today
-        }
+        // A complete block ends when it last moved, not when the device last trained (N333): the
+        // schedule is the thing that knows which sessions settled this block, and its last settled
+        // day is where the block stopped. Reading history here would carry every later workout.
+        val schedule = programs.observeSequenceSchedule(program.id).first()
+        val complete = schedule?.isComplete == true
+        val end = if (complete) schedule?.lastSettled ?: start else today
         return report(
             name = program.name,
             start = start,

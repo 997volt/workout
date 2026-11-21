@@ -22,11 +22,6 @@ these; they are ordered by severity, and each entry leaves this list in the comm
 an entry still here is an open one. A fix that changes an unreleased feature's behaviour folds into
 that feature's CHANGELOG entry rather than becoming a second release note.
 
-- **N333 — A completed block's report stops at the block.** The report ends a complete run at the latest
-  finished session in *all* history, so an old block chosen from **Change** carries every session and
-  measurement trained since — and `block_complete=true` beside a later `block_end`. End it at the
-  sequence schedule's last settled day, and test a session trained after completion.
-
 - **N334 — A plan cannot offer a failed attempt.** The plan dialog passes `offers` through and
   `isAnchoredAt` accepts every non-rung, so **Failed attempt** is selectable and only the write boundary
   refuses the save. Filter it in the dialog; the guard test asserts `TestTags.setRole` while the dialog

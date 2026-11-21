@@ -155,4 +155,60 @@ class TrainingReportRepositoryTest {
         assertEquals(80_000L, measurement.weightGrams)
         assertEquals(155, measurement.bodyFatTenths)
     }
+
+    @Test
+    fun aCompletedBlock_stopsAtItsLastSettledSession() = runTest {
+        // N333: a block is a window, not "everything since the block started". A session trained after
+        // the last slot settled does not belong to the block, so it must not stretch the end or add a
+        // session — and a measurement after it must not ride along with the block's body data.
+        val template = (templates.createTemplate("Push") as DataResult.Success).data
+        templates.addExercise(template, "back-squat")
+        val planned = templates.observeExercises(template).first().single().id
+        templates.addSet(
+            planned,
+            TemplateSetEdit(role = SetType.NORMAL, targetWeightGrams = 100_000L, targetRepsMax = 5),
+        )
+        val program = (programs.createProgram("Block") as DataResult.Success).data
+        programs.setProgramKind(program, ProgramKind.SEQUENCE)
+        programs.setProgramStartDate(program, LocalDate.of(2026, 10, 5))
+        programs.addSlot(program, template)
+
+        val first = (workouts.startOrResumeSession(template) as DataResult.Success).data
+        val firstExercise = workouts.observeSessionExercises(first.id).first().single()
+        workouts.logSet(firstExercise.id, reps = 5, weightGrams = 100_000L, rpeHalves = null, note = null)
+        workouts.finishExercise(firstExercise.id)
+        workouts.finishSession(first.id)
+        measurements.save(
+            BodyMeasurement(
+                id = "m1",
+                measuredAt = now,
+                kind = MeasurementKind.DAILY,
+                weightGrams = 80_000L,
+                bodyFatTenths = 155,
+            ),
+        )
+
+        now = Instant.parse("2026-10-20T12:00:00Z")
+        val later = (workouts.startOrResumeSession(template) as DataResult.Success).data
+        val laterExercise = workouts.observeSessionExercises(later.id).first().single()
+        workouts.logSet(laterExercise.id, reps = 5, weightGrams = 110_000L, rpeHalves = null, note = null)
+        workouts.finishExercise(laterExercise.id)
+        workouts.finishSession(later.id)
+        measurements.save(
+            BodyMeasurement(
+                id = "m2",
+                measuredAt = now,
+                kind = MeasurementKind.DAILY,
+                weightGrams = 81_000L,
+                bodyFatTenths = 156,
+            ),
+        )
+
+        val report = (repository.lastBlock() as DataResult.Success).data
+
+        assertTrue(report.blockComplete)
+        assertEquals(LocalDate.of(2026, 10, 7), report.blockEnd)
+        assertEquals(first.id, report.sessions.single().id)
+        assertEquals(80_000L, report.measurements.single().weightGrams)
+    }
 }

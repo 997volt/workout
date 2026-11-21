@@ -24,6 +24,14 @@ data class SequenceSchedule(
     val settled: Int,
     /** True when every session is done or skipped. */
     val isComplete: Boolean,
+    /**
+     * The day the block last moved — the last session or skip it settled — or null before anything has.
+     *
+     * Exposed for the block export (N333): a complete block ends here, not at the latest session the
+     * device happens to hold. The run's own [ProgramRun] is the place; this is the date the place was
+     * reached, which no screen was reading.
+     */
+    val lastSettled: LocalDate? = null,
 ) {
     /** The one-based place the block is at, for "Day 4 of 9" — the next session's own number. */
     val position: Int get() = (settled + 1).coerceAtMost(length)
@@ -71,6 +79,7 @@ fun sequenceSchedule(
         length = ordered.size,
         settled = walk.settled,
         isComplete = next == null,
+        lastSettled = walk.last,
     )
 }
 
