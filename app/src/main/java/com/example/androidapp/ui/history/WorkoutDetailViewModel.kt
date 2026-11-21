@@ -152,6 +152,26 @@ fun setDelta(set: HistorySet, previous: PastSet?): SetDelta? {
     )
 }
 
+/**
+ * The previous session's set each current row describes, by **work place** (N306, N335).
+ *
+ * [previous] has no failed attempts in it — `previousPerformance` removes them (N329) — while the
+ * current session still shows them, so indexing both lists by the same position would shift every
+ * row after an attempt and compare it with the wrong set. A failed attempt has no counterpart at
+ * all: it is not work, so it draws no delta and consumes no place. Warm-ups still consume theirs,
+ * because the previous read keeps them and the two lists agree there.
+ */
+internal fun previousByPlace(sets: List<HistorySet>, previous: List<PastSet>): List<PastSet?> {
+    var place = 0
+    return sets.map { set ->
+        if (set.setType == SetType.FAILED_ATTEMPT) {
+            null
+        } else {
+            previous.getOrNull(place++)
+        }
+    }
+}
+
 /** What the previous session looked like, reduced to the place a delta needs (N306). */
 private fun PreviousPerformance.toHistoryPrevious(): HistoryPrevious = HistoryPrevious(
     sets = sets.sortedBy { it.setIndex }.map {

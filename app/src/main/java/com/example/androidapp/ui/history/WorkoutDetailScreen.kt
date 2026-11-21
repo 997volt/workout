@@ -708,12 +708,15 @@ private fun ExerciseBlock(
         // Numbered by the same rule the workout screen numbers by, so one session does not read two
         // ways: a warm-up takes no number (N112).
         val numbers = exercise.sets.setNumbers { it.setType }
+        // The counterpart is matched by work place, not by raw list position: the previous read has no
+        // failed attempts in it, while this session still shows them (N329, N335).
+        val previousSets = previousByPlace(exercise.sets, exercise.previous?.sets.orEmpty())
         exercise.sets.forEachIndexed { index, set ->
             HistorySetRow(
                 set = set,
                 number = numbers[index],
                 // The by-place counterpart in the previous session, if its order reached this far (N306).
-                previous = exercise.previous?.sets?.getOrNull(index),
+                previous = previousSets[index],
                 editLabel = editLabel,
                 editable = editing,
                 onEditSet = onEditSet,

@@ -22,10 +22,6 @@ these; they are ordered by severity, and each entry leaves this list in the comm
 an entry still here is an open one. A fix that changes an unreleased feature's behaviour folds into
 that feature's CHANGELOG entry rather than becoming a second release note.
 
-- **N335 — A failed attempt does not shift the history comparison.** `previousPerformance` drops failed
-  attempts while the detail indexes the current rows by position, so a later set loses or misreads "vs
-  last time". Align both sides by work place and show no delta on the attempt itself.
-
 - **N336 — A failed attempt is not a performed plan set.** `ProgressionOffer.performedWork()` filters
   only warm-ups, so the attempt takes a plan place, shifts the **Done** prompt's pairing and can appear
   as extra work. Filter the performed side by `isWork` and test the pairing.
