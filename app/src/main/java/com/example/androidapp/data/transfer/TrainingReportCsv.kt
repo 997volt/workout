@@ -97,7 +97,7 @@ object TrainingReportCsv {
     /** The file's text, ready to write as UTF-8. */
     fun write(report: TrainingReport): String {
         val sessionKeys = report.sessions.mapIndexed { index, session ->
-            session.id to "S${index + 1}"
+            session.id to "session-${index + 1}"
         }.toMap()
         val rows = buildList {
             add(blockRow(report))

@@ -1,5 +1,7 @@
 package com.example.androidapp.ui.history
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -16,6 +18,7 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -27,6 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,6 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -46,6 +51,7 @@ import com.example.androidapp.domain.DurationFormat
 import com.example.androidapp.domain.model.HistoryMatch
 import com.example.androidapp.domain.model.WorkoutSummary
 import com.example.androidapp.domain.model.zoneIdOrNull
+import com.example.androidapp.platform.shareTrainingReport
 import com.example.androidapp.ui.components.AppFilterChip
 import com.example.androidapp.ui.components.AppRow
 import com.example.androidapp.ui.components.AppTextButton
@@ -72,6 +78,7 @@ fun WorkoutHistoryRoute(
     onStartTemplate: (templateId: String, slotId: String?) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: WorkoutHistoryViewModel = hiltViewModel(),
+    reportViewModel: TrainingReportViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -102,8 +109,40 @@ fun WorkoutHistoryRoute(
         message = message,
         onDismissMessage = { message = null },
         modifier = modifier,
+        onShareBlock = reportViewModel::open,
     )
+
+    val reportState by reportViewModel.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val createDocument = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument(CSV_MIME_TYPE),
+    ) { uri ->
+        if (uri != null) reportViewModel.download(context, uri)
+    }
+    val shareFile = reportState.shareFile
+    LaunchedEffect(shareFile) {
+        if (shareFile != null) {
+            val shared = shareTrainingReport(context, shareFile)
+            reportViewModel.onShareFinished(shared)
+        }
+    }
+    if (reportState.isOpen) {
+        TrainingReportSheet(
+            state = reportState,
+            onDownload = {
+                createDocument.launch(
+                    reportState.report?.let(::trainingReportFileName) ?: "workout-block.csv",
+                )
+            },
+            onShare = reportViewModel::share,
+            onChoose = reportViewModel::choose,
+            onLastWeeks = reportViewModel::lastWeeks,
+            onClose = reportViewModel::close,
+        )
+    }
 }
+
+private const val CSV_MIME_TYPE = "text/csv"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -117,6 +156,8 @@ fun WorkoutHistoryScreen(
     onDismissMessage: () -> Unit,
     modifier: Modifier = Modifier,
     message: String? = null,
+    /** Opens the one-file block export (N331). */
+    onShareBlock: () -> Unit = {},
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     MessageSnackbar(message, snackbarHostState, onDismissMessage)
@@ -125,7 +166,20 @@ fun WorkoutHistoryScreen(
         modifier = modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TabRootTopBar(title = stringResource(R.string.history_title))
+            TabRootTopBar(
+                title = stringResource(R.string.history_title),
+                actions = {
+                    IconButton(
+                        onClick = onShareBlock,
+                        modifier = Modifier.testTag(TestTags.HISTORY_SHARE_BLOCK),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Share,
+                            contentDescription = stringResource(R.string.history_share_block),
+                        )
+                    }
+                },
+            )
         },
     ) { innerPadding ->
         when {

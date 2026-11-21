@@ -39,6 +39,7 @@ class WorkoutHistoryScreenTest {
 
     private var typed: String? = null
     private var picked: HistoryFilter? = null
+    private var shared = false
 
     private fun show(state: WorkoutHistoryUiState) {
         composeTestRule.setContent {
@@ -50,9 +51,20 @@ class WorkoutHistoryScreenTest {
                     onQueryChange = { typed = it },
                     onFilterChange = { picked = it },
                     onDismissMessage = {},
+                    onShareBlock = { shared = true },
                 )
             }
         }
+    }
+
+    @Test
+    fun theShareAction_reportsItsTap() {
+        // N331: the block export starts from History's own bar, not from a hidden menu.
+        show(WorkoutHistoryUiState(isLoading = false))
+
+        composeTestRule.onNodeWithTag(TestTags.HISTORY_SHARE_BLOCK).performClick()
+
+        assertEquals(true, shared)
     }
 
     @Test

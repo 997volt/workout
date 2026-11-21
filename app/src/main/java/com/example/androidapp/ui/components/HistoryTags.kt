@@ -58,6 +58,13 @@ internal interface HistoryTags {
     /** The best-single and failed-attempt line a 1RM test leaves (N329). */
     val HISTORY_ONE_REP_MAX_TEST: String get() = "history_one_rep_max_test"
 
+    /** The History action that opens the one-file block export (N331). */
+    val HISTORY_SHARE_BLOCK: String get() = "history_share_block"
+    val HISTORY_BLOCK_SHEET: String get() = "history_block_sheet"
+    val HISTORY_BLOCK_DOWNLOAD: String get() = "history_block_download"
+    val HISTORY_BLOCK_SHARE: String get() = "history_block_share"
+    val HISTORY_BLOCK_OUTCOME: String get() = "history_block_outcome"
+
     /** One set's change from the same place in it (N306). */
     val HISTORY_SET_DELTA: String get() = "history_set_delta"
 

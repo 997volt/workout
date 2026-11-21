@@ -30,6 +30,15 @@
         android:theme="@style/Theme.AndroidApp"
         tools:targetApi="31">
 
+        <provider
+            android:name=".platform.ReportFileProvider"
+            android:authorities="${applicationId}.reportfiles"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/report_paths" />
+        </provider>
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -237,7 +237,7 @@ class RoomTrainingReportRepository @Inject constructor(
     }
 
     private companion object {
-        const val FALLBACK_WEEKS = 8
+        const val FALLBACK_WEEKS = 8L
         const val RECENT_BLOCK_COUNT = 5
         const val SECONDS_PER_MINUTE = 60
     }

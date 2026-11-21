@@ -26,7 +26,7 @@ import java.time.ZoneId
  * The one-file block export (ROADMAP N331).
  *
  * One CSV with record types, not a presentation report: the trainer filters `record_type = set` for the
- * training table and joins the plan, the schedule, the body and recovery rows by the `S1` keys. These
+ * training table and joins the plan, the schedule, the body and recovery rows by the `session-1` keys. These
  * assertions are the contract a coach's spreadsheet depends on.
  */
 class TrainingReportCsvTest {
@@ -137,12 +137,12 @@ class TrainingReportCsvTest {
         val days = records.filter { it["record_type"] == "day" }
         assertThat(days.map { it["day"] }).containsExactly("Day 1 — Push", "Day 2 — Pull").inOrder()
         assertThat(days[0]["day_status"]).isEqualTo("done")
-        assertThat(days[0]["session_key"]).isEqualTo("S1")
+        assertThat(days[0]["session_key"]).isEqualTo("session-1")
         assertThat(days[1]["day_status"]).isEqualTo("not_done")
         assertThat(days[1]["session_key"]).isEmpty()
 
         val session = records.single { it["record_type"] == "session" }
-        assertThat(session["session_key"]).isEqualTo("S1")
+        assertThat(session["session_key"]).isEqualTo("session-1")
         assertThat(session["session_date"]).isEqualTo("2026-10-01")
         assertThat(session["session_started"]).isEqualTo("2026-10-01T10:00:00+02:00")
         assertThat(session["session_finished"]).isEqualTo("2026-10-01T11:00:00+02:00")
@@ -153,7 +153,7 @@ class TrainingReportCsvTest {
         assertThat(session["readiness_note"]).isEqualTo("slept 6h")
 
         val failed = records.single { it["record_type"] == "set" && it["role"] == "Failed attempt" }
-        assertThat(failed["session_key"]).isEqualTo("S1")
+        assertThat(failed["session_key"]).isEqualTo("session-1")
         assertThat(failed["exercise"]).isEqualTo("Bench Press")
         assertThat(failed["set_number"]).isEqualTo("2")
         assertThat(failed["reps"]).isEqualTo("0")
