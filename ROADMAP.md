@@ -22,10 +22,6 @@ these; they are ordered by severity, and each entry leaves this list in the comm
 an entry still here is an open one. A fix that changes an unreleased feature's behaviour folds into
 that feature's CHANGELOG entry rather than becoming a second release note.
 
-- **N338 — A failed block read cannot leave the old file writable.** `canWrite` ignores `error`, so a
-  failed **Change** keeps **Download**/**Share** enabled on the previous report. Require no error and
-  clear or guard the stale report.
-
 - **N339 — A failed attempt does not prefill zero reps.** The next set reads the last logged row, so a
   free session opens at the attempted load with zero reps and cannot be logged. Skip the attempt for
   the prefill.

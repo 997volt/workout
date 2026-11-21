@@ -80,7 +80,7 @@ class TrainingReportViewModelTest {
     )
 
     private class FakeRepository(
-        private val result: DataResult<TrainingReport>,
+        var result: DataResult<TrainingReport>,
         private val blocks: DataResult<List<TrainingBlockChoice>> = DataResult.Success(emptyList()),
     ) : TrainingReportRepository {
         override suspend fun lastBlock() = result
@@ -146,6 +146,36 @@ class TrainingReportViewModelTest {
 
         assertThat(io.written).startsWith("record_type,")
         assertThat(viewModel.state.value.outcome).isEqualTo(TrainingReportOutcome.WRITTEN)
+    }
+
+    @Test
+    fun aFailedChange_keepsTheOldReportOutOfReach() = runTest(dispatcher) {
+        // N338: a failed Change leaves the previous report in state so the sheet can retry, but the
+        // error line describes the block that was asked for — the old one must not be downloadable.
+        val repository = FakeRepository(DataResult.Success(report()))
+        val io = FakeDocumentIo()
+        val viewModel = TrainingReportViewModel(
+            repository = repository,
+            documentIo = io,
+            timeSource = TimeSource { Instant.parse("2026-10-17T10:00:00Z") },
+        )
+        viewModel.open()
+        advanceUntilIdle()
+        assertThat(viewModel.state.value.canWrite).isTrue()
+
+        repository.result = DataResult.Failure(DataError.Storage(IllegalStateException("boom")))
+        viewModel.choose("p-other")
+        advanceUntilIdle()
+
+        assertThat(viewModel.state.value.error).isNotNull()
+        assertThat(viewModel.state.value.report).isNotNull()
+        assertThat(viewModel.state.value.canWrite).isFalse()
+
+        viewModel.share()
+        assertThat(viewModel.state.value.shareFile).isNull()
+        viewModel.download(context, Uri.parse("content://test/block.csv"))
+        advanceUntilIdle()
+        assertThat(io.written).isNull()
     }
 
     @Test

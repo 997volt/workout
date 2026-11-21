@@ -41,7 +41,14 @@ data class TrainingReportUiState(
     /** A staged file the screen should hand to the share sheet, then clear. */
     val shareFile: TrainingReportFile? = null,
 ) {
-    val canWrite: Boolean get() = report != null && !isLoading && !writing
+    /**
+     * Whether the sheet may hand its CSV out.
+     *
+     * **No error** (N338): a failed read keeps the previous report so the sheet can retry, but that
+     * report is not what the error line is describing. Writing it would export the block the lifter
+     * moved away from while the sheet says the chosen one could not be read.
+     */
+    val canWrite: Boolean get() = report != null && error == null && !isLoading && !writing
 }
 
 /**
@@ -95,6 +102,7 @@ class TrainingReportViewModel @Inject constructor(
     }
 
     fun download(context: Context, uri: Uri) {
+        if (!_state.value.canWrite) return
         val report = _state.value.report ?: return
         val file = reportFile(report)
         _state.update { it.copy(writing = true, outcome = null) }
@@ -110,6 +118,7 @@ class TrainingReportViewModel @Inject constructor(
     }
 
     fun share() {
+        if (!_state.value.canWrite) return
         val report = _state.value.report ?: return
         _state.update { it.copy(shareFile = reportFile(report)) }
     }
