@@ -107,7 +107,7 @@ class RoomTrainingReportRepository @Inject constructor(
         // day is where the block stopped. Reading history here would carry every later workout.
         val schedule = programs.observeSequenceSchedule(program.id).first()
         val complete = schedule?.isComplete == true
-        val end = if (complete) schedule?.lastSettled ?: start else today
+        val end = if (complete) schedule.lastSettled ?: start else today
         return report(
             name = program.name,
             start = start,
@@ -286,10 +286,9 @@ internal fun sessionsByDay(
  * sessions, no measurements. The sequence schedule already falls back to the creation date, so the
  * report uses the same rule rather than inventing a second one.
  */
-internal fun blockStart(program: WorkoutProgram, today: LocalDate, zone: ZoneId): LocalDate {
-    program.startDate?.let { return it }
-    if (program.createdAtMillis > 0L) {
-        return Instant.ofEpochMilli(program.createdAtMillis).atZone(zone).toLocalDate()
+internal fun blockStart(program: WorkoutProgram, today: LocalDate, zone: ZoneId): LocalDate =
+    program.startDate ?: if (program.createdAtMillis > 0L) {
+        Instant.ofEpochMilli(program.createdAtMillis).atZone(zone).toLocalDate()
+    } else {
+        today
     }
-    return today
-}
