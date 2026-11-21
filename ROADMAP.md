@@ -22,10 +22,6 @@ these; they are ordered by severity, and each entry leaves this list in the comm
 an entry still here is an open one. A fix that changes an unreleased feature's behaviour folds into
 that feature's CHANGELOG entry rather than becoming a second release note.
 
-- **N344 — Do not keep every staged block CSV.** The share folder is never cleared. Remove the previous
-  staged file before staging the next one and say that in the doc, rather than claiming the system will
-  do it.
-
 - **N345 — Neutralize spreadsheet formulas in the CSV.** Fields starting with `=`, `+`, `-` or `@` are
   evaluated by a coach's spreadsheet. Prefix them, and test a comment that starts with `=`.
 

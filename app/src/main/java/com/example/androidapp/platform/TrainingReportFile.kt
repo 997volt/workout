@@ -17,13 +17,20 @@ data class TrainingReportFile(val name: String, val csv: String)
  *
  * The file leaves only through the app the user picks. It is staged in the cache under the
  * provider declared for `reports/`, granted read-only for that one URI, and never uploaded by the
- * app; the provider is not exported and the cache is cleared by the system.
+ * app; the provider is not exported.
+ *
+ * **The previous staged report is removed before this one is written** (N344). The app cannot know
+ * when the receiving app has finished reading, so it does not delete the file it just shared, but
+ * health data should not accumulate in the cache for the life of the install.
  */
 suspend fun shareTrainingReport(context: Context, file: TrainingReportFile): Boolean {
     val folder = File(context.cacheDir, "reports").apply { mkdirs() }
     val target = File(folder, file.name)
     val written = withContext(Dispatchers.IO) {
-        runCatching { target.writeText(file.csv) }.isSuccess
+        runCatching {
+            clearStagedReports(folder)
+            target.writeText(file.csv)
+        }.isSuccess
     }
     if (!written) return false
 
