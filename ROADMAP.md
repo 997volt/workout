@@ -22,10 +22,6 @@ these; they are ordered by severity, and each entry leaves this list in the comm
 an entry still here is an open one. A fix that changes an unreleased feature's behaviour folds into
 that feature's CHANGELOG entry rather than becoming a second release note.
 
-- **N339 — A failed attempt does not prefill zero reps.** The next set reads the last logged row, so a
-  free session opens at the attempted load with zero reps and cannot be logged. Skip the attempt for
-  the prefill.
-
 - **N340 — Repeated block days keep their own session.** Day attribution takes the first session naming
   the template, so an A/B/A block maps every A day to the first A session and its key. Resolve the days
   in order, the way the sequence schedule walks them, and test the repeat.

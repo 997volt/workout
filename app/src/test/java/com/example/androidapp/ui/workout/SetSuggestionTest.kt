@@ -622,4 +622,23 @@ class SetSuggestionTest {
         assertTrue("what was just done is a real number", next.weightKnown)
         assertEquals(75_000L, next.weightGrams)
     }
+
+    @Test
+    fun aFailedAttempt_lendsItsLoadToTheNextSet_butNotItsZeroReps() {
+        // N329/N339: the attempt is the last row, so its bar is the best starting point — but a
+        // prefilled 0 made the next set incomplete until the lifter typed over it.
+        val work = SetRow(id = "w", number = 1, reps = 5, weightGrams = 130_000L)
+        val attempt = SetRow(
+            id = "a",
+            number = null,
+            reps = 0,
+            weightGrams = 140_000L,
+            setType = SetType.FAILED_ATTEMPT,
+        )
+
+        val suggestion = suggestionForNextSet(listOf(work, attempt), previous = null, planned = null)
+
+        assertEquals(140_000L, suggestion.weightGrams)
+        assertEquals(5, suggestion.reps)
+    }
 }

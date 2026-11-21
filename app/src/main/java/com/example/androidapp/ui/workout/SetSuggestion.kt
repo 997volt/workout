@@ -187,15 +187,18 @@ fun suggestionForNextSet(
     calibrationPending: Boolean = false,
 ): SetSuggestion {
     // "What you just did" beats "what you did last time": within a session the set before is the best
-    // evidence there is.
+    // evidence there is. A **failed attempt** counts only for its load (N329, N339): the bar it tried is
+    // a useful starting point, while its zero reps are not a rep count for the next set — prefilling
+    // them made the next set unloggable until the lifter typed over the zero.
     val logged = loggedSets.lastOrNull()
+    val lastWork = loggedSets.lastOrNull { it.setType != SetType.FAILED_ATTEMPT }
     val lastTime = previous?.sets?.lastOrNull()
     val prefill = when {
         logged != null -> SetSuggestion(
-            reps = logged.reps,
+            reps = lastWork?.reps ?: lastTime?.reps ?: DEFAULT_REPS,
             weightGrams = logged.weightGrams,
             assistanceGrams = logged.assistanceGrams,
-            durationSeconds = logged.durationSeconds,
+            durationSeconds = lastWork?.durationSeconds ?: logged.durationSeconds,
         )
 
         lastTime != null -> SetSuggestion(
