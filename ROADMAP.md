@@ -22,6 +22,11 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
   between attempts, an attempt ladder, the result written once — can follow later. It is not a second data
   model: a 1RM test is an ordinary session whose sets carry N329's roles.
 
+- **N332 — A custom range for the training block export.** N331's **Change** offers the recent sequence blocks
+  and **Last 8 weeks**; a custom start and end date is the one design option the sheet does not surface yet.
+  The repository's range read is already in place. Add the two date prompts to the sheet, keep the same
+  all-in-one CSV and warning, and test the chosen dates and an empty range.
+
 ## Parked — deliberately not planned
 
 Each row is a product in its own right, contradicts "local-only", or both. Parking is a
