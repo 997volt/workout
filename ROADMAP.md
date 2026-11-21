@@ -22,6 +22,61 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
   between attempts, an attempt ladder, the result written once — can follow later. It is not a second data
   model: a 1RM test is an ordinary session whose sets carry N329's roles.
 
+- **N331 — Share the last training block as one CSV.** History gains a **Share training block** action with
+  one sheet, not a report builder. It shows the block, its window, sessions, sets and missed planned sets,
+  offers **Change** (the last few blocks, last 8 weeks or a custom range), and a read-only **Includes** list;
+  there are no include toggles and no format picker, and **Download CSV** / **Share CSV** are the explicit
+  consent. Because everything is on by default the sheet also says, in one line, that the file includes
+  readiness, soreness, joint pain and body measurements, and to share it only with someone who should have
+  that data. The app stays local-only: the file leaves only through the user's Download or Share action, the
+  app never learns the recipient, and a shared temp file is deleted afterwards.
+
+  **The block.** The most recent **sequence program**, from its start date to its last session when the block
+  is complete, or to today while it is in progress; every finished session in that window is included,
+  including extra workouts, labelled **Unplanned**. Sessions are labelled by the block's days through the
+  existing slot assignment. With no sequence program the sheet does not invent a block: it offers **Last 8
+  weeks** or a custom range and says "No block found".
+
+  **Everything by default.** Every finished session and activity; every set including warm-ups, working,
+  top, drops, clusters, to-failure and failed attempts; loads, units, reps, holds, RPE, assistance and the
+  set's bodyweight; the plan's targets and whether each planned set was done; set and session comments; the
+  session's readiness note, sore muscles and joint pain; body measurements in the block; the block's
+  scheduled days with done / skipped / missed / upcoming. The report is scoped to the block's training and
+  body — not app settings, the library catalogue, deleted rows, workouts outside the block, or the full
+  backup.
+
+  **The file.** One CSV, UTF-8, RFC 4180 quoting, ISO dates and dot decimals, with a `record_type` column and
+  stable `D1` / `S1` keys instead of internal ids. One file is the point of "download the block"; the record
+  types let a coach filter in a spreadsheet:
+
+  - `block` — one row: name, start, end, status, exported-at and the block's totals.
+  - `day` — one scheduled block day: date, weekday, block day, done / skipped / missed / upcoming, session key.
+  - `session` — one finished workout or activity: start, finish, duration, workout, block day, comment,
+    readiness note.
+  - `set` — one planned or performed set: session/day, exercise, set number, role, planned reps/load/RPE,
+    actual reps or hold, load, unit, assistance, bodyweight, RPE, comment, `performed`. A planned set that was
+    not done is `performed=false`; a failed attempt is a performed row with `role=Failed attempt`, `reps=0`
+    and the attempted load, so a coach sees it without it entering volume.
+  - `activity` — session, activity, duration, distance, comment.
+  - `measurement` — date/time, metric, value and unit: scale weight, body fat, tape sites.
+  - `sore_muscle` — session, muscle, score.
+  - `joint_pain` — session, site, side, score.
+
+  The set's bodyweight snapshot and a `measurement` bodyweight row are deliberately both present: they are
+  different facts. The file name is `workout-<block>-<start>-to-<end>.csv`; **Download** uses the existing
+  SAF `CreateDocument("text/csv")` path, and **Share** uses `ACTION_SEND` with a `FileProvider` URI.
+
+  **The data path.** A repository selects the block, its planned and performed rows, measurements and
+  recovery rows; a pure report model and a single CSV writer turn them into the file; a ViewModel owns the
+  sheet, the preview and the write outcome; a `FileProvider` carries the share. Tests: block selection
+  (complete, active, no block, extra sessions), planned-but-not-done rows, failed attempts, measurements and
+  recovery, CSV escaping, ISO dates and units, the share intent and the sheet's warning and contents.
+
+  **Rejected.** HTML or PDF (CSV was chosen), reusing the backup JSON (machine-shaped, all health data, not the
+  block), include toggles (everything by default, with a read-only review), and a server or email integration
+  (local-only). A zip of separate CSVs is the one alternative kept if a coach specifically wants four clean
+  tables; the default is one attachment.
+
 ## Parked — deliberately not planned
 
 Each row is a product in its own right, contradicts "local-only", or both. Parking is a
