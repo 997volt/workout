@@ -22,10 +22,6 @@ these; they are ordered by severity, and each entry leaves this list in the comm
 an entry still here is an open one. A fix that changes an unreleased feature's behaviour folds into
 that feature's CHANGELOG entry rather than becoming a second release note.
 
-- **N351 — Cover the report's branches.** The repository needs active, no-block and old-block-with-later
-  training; the sheet needs loading/error and a failed download; the CSV needs pounds, bodyweight and a
-  hold. The plan asked for these and only one repository case exists.
-
 - **N352 — Finish the conventions pass.** Tag the sheet's **Change** control instead of addressing it by
   the English `"Change"` in tests, and align `docs/app.js`'s stale `Failure` label with **To failure**.
 

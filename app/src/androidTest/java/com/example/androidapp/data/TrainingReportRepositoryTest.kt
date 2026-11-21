@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -213,6 +214,69 @@ class TrainingReportRepositoryTest {
         assertTrue(report.blockComplete)
         assertEquals(completedOn, report.blockEnd)
         assertEquals(first.id, report.sessions.single().id)
+        assertEquals(80_000L, report.measurements.single().weightGrams)
+    }
+
+    @Test
+    fun anUnfinishedBlock_runsToToday_andCarriesWhatWasDoneSoFar() = runTest {
+        // N351: only the complete case was covered. An active block's end is today, and the one
+        // session trained so far is in the report with its plan snapshot.
+        val first = (templates.createTemplate("Push") as DataResult.Success).data
+        templates.addExercise(first, "back-squat")
+        val planned = templates.observeExercises(first).first().single().id
+        templates.addSet(
+            planned,
+            TemplateSetEdit(role = SetType.NORMAL, targetWeightGrams = 100_000L, targetRepsMax = 5),
+        )
+        val second = (templates.createTemplate("Pull") as DataResult.Success).data
+        val program = (programs.createProgram("Block") as DataResult.Success).data
+        programs.setProgramKind(program, ProgramKind.SEQUENCE)
+        programs.setProgramStartDate(program, LocalDate.of(2026, 10, 5))
+        programs.addSlot(program, first)
+        programs.addSlot(program, second)
+
+        val started = (workouts.startOrResumeSession(first) as DataResult.Success).data
+        val sessionExercise = workouts.observeSessionExercises(started.id).first().single()
+        workouts.logSet(sessionExercise.id, reps = 5, weightGrams = 100_000L, rpeHalves = null, note = null)
+        workouts.finishExercise(sessionExercise.id)
+        workouts.finishSession(started.id)
+
+        val report = (repository.lastBlock("Last 8 weeks") as DataResult.Success).data
+
+        assertFalse(report.blockComplete)
+        assertEquals(LocalDate.of(2026, 10, 5), report.blockStart)
+        assertEquals(now.atZone(ZoneId.systemDefault()).toLocalDate(), report.blockEnd)
+        assertEquals(started.id, report.sessions.single().id)
+        assertEquals("Push", report.sessions.single().dayName)
+    }
+
+    @Test
+    fun withNoSequenceProgram_lastBlockIsTheEightWeeksItWasNamed() = runTest {
+        // N351: with no block the sheet still exports, but under the caller's name and with the
+        // eight-week window — not an invented program.
+        val template = (templates.createTemplate("Push") as DataResult.Success).data
+        templates.addExercise(template, "back-squat")
+        val started = (workouts.startOrResumeSession(template) as DataResult.Success).data
+        val sessionExercise = workouts.observeSessionExercises(started.id).first().single()
+        workouts.logSet(sessionExercise.id, reps = 5, weightGrams = 100_000L, rpeHalves = null, note = null)
+        workouts.finishExercise(sessionExercise.id)
+        workouts.finishSession(started.id)
+        measurements.save(
+            BodyMeasurement(
+                id = "m1",
+                measuredAt = now,
+                kind = MeasurementKind.DAILY,
+                weightGrams = 80_000L,
+                bodyFatTenths = 155,
+            ),
+        )
+
+        val report = (repository.lastBlock("Last 8 weeks") as DataResult.Success).data
+
+        assertEquals("Last 8 weeks", report.blockName)
+        assertFalse(report.blockComplete)
+        assertEquals(report.blockEnd.minusWeeks(8), report.blockStart)
+        assertEquals(started.id, report.sessions.single().id)
         assertEquals(80_000L, report.measurements.single().weightGrams)
     }
 }

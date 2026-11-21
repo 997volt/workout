@@ -1,11 +1,13 @@
 package com.example.androidapp.ui.history
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.TrainingDay
@@ -107,6 +109,30 @@ class TrainingReportSheetTest {
 
         assertEquals(1, downloaded)
         assertEquals(1, shared)
+    }
+
+    @Test
+    fun loading_saysSo_andHoldsTheActions() {
+        // N351: the sheet's two non-report branches have no file to offer.
+        show(TrainingReportUiState(isOpen = true, isLoading = true))
+
+        composeTestRule.onNodeWithText("Reading the block…").assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.HISTORY_BLOCK_DOWNLOAD).assertIsNotEnabled()
+        composeTestRule.onNodeWithTag(TestTags.HISTORY_BLOCK_SHARE).assertIsNotEnabled()
+    }
+
+    @Test
+    fun anError_saysSo_andHoldsTheActions() {
+        show(
+            TrainingReportUiState(
+                isOpen = true,
+                error = DataError.Storage(IllegalStateException("boom")),
+                report = report(),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.HISTORY_BLOCK_DOWNLOAD).assertIsNotEnabled()
+        composeTestRule.onNodeWithTag(TestTags.HISTORY_BLOCK_SHARE).assertIsNotEnabled()
     }
 
     @Test

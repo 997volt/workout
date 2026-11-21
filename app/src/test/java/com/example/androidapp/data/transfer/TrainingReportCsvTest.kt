@@ -277,6 +277,39 @@ class TrainingReportCsvTest {
     }
 
     @Test
+    fun aPoundsBodyweightHold_carriesItsOwnUnitBodyweightAndSeconds() {
+        // N351: the set columns the format advertises — the exercise's unit, the composed load's
+        // bodyweight and a hold's seconds — in one row.
+        val hold = TrainingSet(
+            setIndex = 0,
+            performed = true,
+            role = SetType.NORMAL,
+            unit = WeightUnit.POUNDS,
+            reps = 0,
+            durationSeconds = 90,
+            weightGrams = 20_000L,
+            bodyweightGrams = 75_000L,
+        )
+        val csv = report.copy(
+            days = emptyList(),
+            sessions = listOf(
+                report.sessions.single().copy(
+                    exercises = listOf(TrainingExercise(name = "Weighted Hold", sets = listOf(hold))),
+                ),
+            ),
+            measurements = emptyList(),
+        )
+
+        val row = parse(TrainingReportCsv.write(csv)).single { it["record_type"] == "set" }
+
+        assertThat(row["unit"]).isEqualTo("lb")
+        assertThat(row["weight"]).isEqualTo("44.1")
+        assertThat(row["bodyweight"]).isEqualTo("165.3")
+        assertThat(row["hold_seconds"]).isEqualTo("90")
+        assertThat(row["reps"]).isEqualTo("0")
+    }
+
+    @Test
     fun aCellThatLooksLikeAFormula_isNeutralized_butANegativeNumberIsNot() {
         // N345: a lifter's comment is data, not a formula in the coach's spreadsheet. A negative value
         // the format may grow later still has to survive as a number.

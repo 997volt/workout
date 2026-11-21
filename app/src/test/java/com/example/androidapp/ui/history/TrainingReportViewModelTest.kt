@@ -167,6 +167,25 @@ class TrainingReportViewModelTest {
     }
 
     @Test
+    fun aFailedDownload_saysItFailed() = runTest(dispatcher) {
+        // N351: the write's false branch is a user-visible outcome, not just an internal boolean.
+        val io = FakeDocumentIo(writes = false)
+        val viewModel = TrainingReportViewModel(
+            repository = FakeRepository(DataResult.Success(report())),
+            documentIo = io,
+            timeSource = TimeSource { Instant.parse("2026-10-17T10:00:00Z") },
+        )
+        viewModel.open("Last 8 weeks")
+        advanceUntilIdle()
+
+        viewModel.download(context, Uri.parse("content://test/block.csv"))
+        advanceUntilIdle()
+
+        assertThat(viewModel.state.value.outcome).isEqualTo(TrainingReportOutcome.WRITE_FAILED)
+        assertThat(io.written).isNotNull()
+    }
+
+    @Test
     fun aFailedChange_keepsTheOldReportOutOfReach() = runTest(dispatcher) {
         // N338: a failed Change leaves the previous report in state so the sheet can retry, but the
         // error line describes the block that was asked for — the old one must not be downloadable.
