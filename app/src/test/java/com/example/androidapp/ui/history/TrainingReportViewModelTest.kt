@@ -83,9 +83,21 @@ class TrainingReportViewModelTest {
         var result: DataResult<TrainingReport>,
         private val blocks: DataResult<List<TrainingBlockChoice>> = DataResult.Success(emptyList()),
     ) : TrainingReportRepository {
-        override suspend fun lastBlock() = result
+        var lastBlockName: String? = null
+        var rangeName: String? = null
+
+        override suspend fun lastBlock(fallbackName: String): DataResult<TrainingReport> {
+            lastBlockName = fallbackName
+            return result
+        }
+
         override suspend fun block(programId: String) = result
-        override suspend fun range(start: LocalDate, end: LocalDate) = result
+
+        override suspend fun range(start: LocalDate, end: LocalDate, name: String): DataResult<TrainingReport> {
+            rangeName = name
+            return result
+        }
+
         override suspend fun recentBlocks() = blocks
     }
 
@@ -113,11 +125,17 @@ class TrainingReportViewModelTest {
             timeSource = TimeSource { Instant.parse("2026-10-17T10:00:00Z") },
         )
 
-        viewModel.open()
+        viewModel.open("Last 8 weeks")
         advanceUntilIdle()
 
         assertThat(viewModel.state.value.report?.blockName).isEqualTo("Block")
         assertThat(viewModel.state.value.blocks).hasSize(1)
+        assertThat(repository.lastBlockName).isEqualTo("Last 8 weeks")
+
+        // N343: the range is named by its caller, not after the dates it was given.
+        viewModel.lastWeeks("Last 8 weeks")
+        advanceUntilIdle()
+        assertThat(repository.rangeName).isEqualTo("Last 8 weeks")
 
         viewModel.share()
         val file = viewModel.state.value.shareFile
@@ -138,7 +156,7 @@ class TrainingReportViewModelTest {
             documentIo = io,
             timeSource = TimeSource { Instant.parse("2026-10-17T10:00:00Z") },
         )
-        viewModel.open()
+        viewModel.open("Last 8 weeks")
         advanceUntilIdle()
 
         viewModel.download(context, Uri.parse("content://test/block.csv"))
@@ -159,7 +177,7 @@ class TrainingReportViewModelTest {
             documentIo = io,
             timeSource = TimeSource { Instant.parse("2026-10-17T10:00:00Z") },
         )
-        viewModel.open()
+        viewModel.open("Last 8 weeks")
         advanceUntilIdle()
         assertThat(viewModel.state.value.canWrite).isTrue()
 
@@ -186,7 +204,7 @@ class TrainingReportViewModelTest {
             timeSource = TimeSource { Instant.parse("2026-10-17T10:00:00Z") },
         )
 
-        viewModel.open()
+        viewModel.open("Last 8 weeks")
         advanceUntilIdle()
 
         assertThat(viewModel.state.value.error).isNotNull()

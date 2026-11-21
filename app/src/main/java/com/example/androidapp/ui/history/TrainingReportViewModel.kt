@@ -69,10 +69,10 @@ class TrainingReportViewModel @Inject constructor(
     private val _state = MutableStateFlow(TrainingReportUiState())
     val state: StateFlow<TrainingReportUiState> = _state.asStateFlow()
 
-    fun open() {
+    fun open(fallbackName: String) {
         if (_state.value.isOpen) return
         _state.update { it.copy(isOpen = true, outcome = null, error = null) }
-        loadLast()
+        loadLast(fallbackName)
     }
 
     fun close() {
@@ -83,9 +83,9 @@ class TrainingReportViewModel @Inject constructor(
         load { repository.block(programId) }
     }
 
-    fun lastWeeks() {
+    fun lastWeeks(name: String) {
         val today = today()
-        load { repository.range(today.minusWeeks(FALLBACK_WEEKS), today) }
+        load { repository.range(today.minusWeeks(FALLBACK_WEEKS), today, name) }
     }
 
     fun onShareFinished(shared: Boolean) {
@@ -119,8 +119,8 @@ class TrainingReportViewModel @Inject constructor(
         _state.update { it.copy(shareFile = reportFile(report)) }
     }
 
-    private fun loadLast() {
-        load { repository.lastBlock() }
+    private fun loadLast(fallbackName: String) {
+        load { repository.lastBlock(fallbackName) }
     }
 
     private fun load(block: suspend () -> DataResult<TrainingReport>) {

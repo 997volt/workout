@@ -124,7 +124,7 @@ class TrainingReportRepositoryTest {
             ),
         )
 
-        val report = (repository.lastBlock() as DataResult.Success).data
+        val report = (repository.lastBlock("Last 8 weeks") as DataResult.Success).data
 
         assertEquals("Block", report.blockName)
         assertEquals(LocalDate.of(2026, 10, 5), report.blockStart)
@@ -204,7 +204,7 @@ class TrainingReportRepositoryTest {
             ),
         )
 
-        val report = (repository.lastBlock() as DataResult.Success).data
+        val report = (repository.lastBlock("Last 8 weeks") as DataResult.Success).data
 
         assertTrue(report.blockComplete)
         assertEquals(LocalDate.of(2026, 10, 7), report.blockEnd)

@@ -22,10 +22,6 @@ these; they are ordered by severity, and each entry leaves this list in the comm
 an entry still here is an open one. A fix that changes an unreleased feature's behaviour folds into
 that feature's CHANGELOG entry rather than becoming a second release note.
 
-- **N343 — Name the fallback by what it is.** `range()` names a report after its dates, so **Change** →
-  **Last 8 weeks** shows the ISO range beside the localized window and doubles it in the file name. Let
-  the caller name the report, with a localized fallback for both the fallback and the range.
-
 - **N344 — Do not keep every staged block CSV.** The share folder is never cleared. Remove the previous
   staged file before staging the next one and say that in the doc, rather than claiming the system will
   do it.

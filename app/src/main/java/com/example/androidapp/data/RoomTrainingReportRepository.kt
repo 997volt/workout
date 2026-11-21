@@ -53,14 +53,14 @@ class RoomTrainingReportRepository @Inject constructor(
 
     private val planSets: SessionPlanSetDao = database.sessionPlanSetDao()
 
-    override suspend fun lastBlock(): DataResult<TrainingReport> = dataResultOf {
+    override suspend fun lastBlock(fallbackName: String): DataResult<TrainingReport> = dataResultOf {
         val sequence = programs.observePrograms().first()
             .filter { it.kind == ProgramKind.SEQUENCE }
             .maxByOrNull { it.startDate ?: LocalDate.MIN }
         if (sequence == null) {
             val today = today()
             report(
-                name = "Last 8 weeks",
+                name = fallbackName,
                 start = today.minusWeeks(FALLBACK_WEEKS),
                 end = today,
                 complete = false,
@@ -77,8 +77,12 @@ class RoomTrainingReportRepository @Inject constructor(
         blockReport(program)
     }
 
-    override suspend fun range(start: LocalDate, end: LocalDate): DataResult<TrainingReport> = dataResultOf {
-        report(name = "$start — $end", start = start, end = end, complete = false, program = null)
+    override suspend fun range(
+        start: LocalDate,
+        end: LocalDate,
+        name: String,
+    ): DataResult<TrainingReport> = dataResultOf {
+        report(name = name, start = start, end = end, complete = false, program = null)
     }
 
     override suspend fun recentBlocks(): DataResult<List<TrainingBlockChoice>> = dataResultOf {
