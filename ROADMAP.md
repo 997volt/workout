@@ -22,10 +22,6 @@ these; they are ordered by severity, and each entry leaves this list in the comm
 an entry still here is an open one. A fix that changes an unreleased feature's behaviour folds into
 that feature's CHANGELOG entry rather than becoming a second release note.
 
-- **N347 — One home for "a failed attempt occupies no plan place".** The rule is a raw
-  `!= FAILED_ATTEMPT` in two places. Name it on `SetType` (warm-ups still take their plan place) and
-  read it there.
-
 - **N348 — Fix the formatting artifacts.** Two `### Added` headings under `[Unreleased]`, a
   whitespace-only line and an outdented string in `strings.xml`, and the CSV doc's `S1`/`S2` keys that
   are actually `session-1`.

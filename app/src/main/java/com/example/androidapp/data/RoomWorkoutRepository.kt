@@ -733,7 +733,7 @@ class RoomWorkoutRepository @Inject constructor(
             // weight or stand in for a plan place.
             sets = dao.findSetsFor(previousSessionId, exerciseId)
                 .map { it.toDomain() }
-                .filter { it.setType != SetType.FAILED_ATTEMPT },
+                .filter { it.setType.occupiesAPlanPlace },
             // The date the same read is asked for elsewhere (ROADMAP N233): one answer to "when was the
             // last time", so the prefill and the exercise's own screen cannot disagree about which.
             sessionStartedAt = dao.findSession(previousSessionId)

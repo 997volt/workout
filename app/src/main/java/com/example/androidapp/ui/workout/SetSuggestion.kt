@@ -186,33 +186,7 @@ fun suggestionForNextSet(
     /** True for a plan whose weight is being found (N309): the first set has no number to start from. */
     calibrationPending: Boolean = false,
 ): SetSuggestion {
-    // "What you just did" beats "what you did last time": within a session the set before is the best
-    // evidence there is. A **failed attempt** counts only for its load (N329, N339): the bar it tried is
-    // a useful starting point, while its zero reps are not a rep count for the next set — prefilling
-    // them made the next set unloggable until the lifter typed over the zero.
-    val logged = loggedSets.lastOrNull()
-    val lastWork = loggedSets.lastOrNull { it.setType != SetType.FAILED_ATTEMPT }
-    val lastTime = previous?.sets?.lastOrNull()
-    val prefill = when {
-        logged != null -> SetSuggestion(
-            reps = lastWork?.reps ?: lastTime?.reps ?: DEFAULT_REPS,
-            weightGrams = logged.weightGrams,
-            assistanceGrams = logged.assistanceGrams,
-            durationSeconds = lastWork?.durationSeconds ?: logged.durationSeconds,
-        )
-
-        lastTime != null -> SetSuggestion(
-            reps = lastTime.reps,
-            weightGrams = lastTime.weightGrams,
-            assistanceGrams = lastTime.assistanceGrams,
-            durationSeconds = lastTime.durationSeconds,
-        )
-
-        else -> SetSuggestion(
-            reps = DEFAULT_REPS,
-            weightGrams = if (bodyweight || timed) 0L else Weight.DEFAULT_GRAMS,
-        )
-    }
+    val prefill = prefillFor(loggedSets, previous, bodyweight = bodyweight, timed = timed)
 
     // A plan's load is *one* number: `-20` is 20 kg of help and no added weight, and `100` is 100 kg and
     // no help. Taking the half it names and the other half from the fallback would build a set that is
@@ -249,6 +223,44 @@ fun suggestionForNextSet(
         // carry prescribed for this set opens on 45 (ROADMAP N242).
         durationSeconds = planned?.durationSeconds ?: prefill.durationSeconds,
     )
+}
+
+/**
+ * "What you just did" beats "what you did last time": within a session the set before is the best
+ * evidence there is, and a **failed attempt** counts only for its load (N329, N339). The bar it tried
+ * is a useful starting point; its zero reps are not a rep count for the next set, and prefilling them
+ * made the next set unloggable until the lifter typed over the zero. A duration follows the last work
+ * row for the same reason — an attempt is never a hold.
+ */
+private fun prefillFor(
+    loggedSets: List<SetRow>,
+    previous: PreviousPerformance?,
+    bodyweight: Boolean,
+    timed: Boolean,
+): SetSuggestion {
+    val logged = loggedSets.lastOrNull()
+    val lastWork = loggedSets.lastOrNull { it.setType.occupiesAPlanPlace }
+    val lastTime = previous?.sets?.lastOrNull()
+    return when {
+        logged != null -> SetSuggestion(
+            reps = lastWork?.reps ?: lastTime?.reps ?: DEFAULT_REPS,
+            weightGrams = logged.weightGrams,
+            assistanceGrams = logged.assistanceGrams,
+            durationSeconds = lastWork?.durationSeconds ?: logged.durationSeconds,
+        )
+
+        lastTime != null -> SetSuggestion(
+            reps = lastTime.reps,
+            weightGrams = lastTime.weightGrams,
+            assistanceGrams = lastTime.assistanceGrams,
+            durationSeconds = lastTime.durationSeconds,
+        )
+
+        else -> SetSuggestion(
+            reps = DEFAULT_REPS,
+            weightGrams = if (bodyweight || timed) 0L else Weight.DEFAULT_GRAMS,
+        )
+    }
 }
 
 /**

@@ -9,7 +9,6 @@ import com.example.androidapp.domain.model.ProgressionPerformance
 import com.example.androidapp.domain.model.ProgressionPlanSet
 import com.example.androidapp.domain.model.ProgressionTargets
 import com.example.androidapp.domain.model.SessionExercise
-import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.progressionSets
 import com.example.androidapp.domain.repository.ProgressionSetWrite
 import com.example.androidapp.domain.repository.TemplateRepository
@@ -141,7 +140,7 @@ internal fun SessionExercise.suggestionFor(
     plan: PlanContext,
 ): SetSuggestion {
     // A failed attempt is a row in the session but not a place in the plan (N329).
-    val planIndex = loggedSets.count { it.setType != SetType.FAILED_ATTEMPT }
+    val planIndex = loggedSets.count { it.setType.occupiesAPlanPlace }
     val planned = plannedTargetFor(
         planned = plan.plannedEntry,
         nextIndex = planIndex,

@@ -59,4 +59,14 @@ class SetTypeTest {
         assertThat(SetType.FAILURE.label).isEqualTo("To failure")
         assertThat(SetType.FAILED_ATTEMPT.label).isEqualTo("Failed attempt")
     }
+
+    @Test
+    fun aFailedAttempt_takesNoPlanPlace_butAWarmUpDoes() {
+        // N347: the plan's order is a third question, not `isWork` (a warm-up is not work but still has
+        // a prescribed place) and not `recordsEffort` (a rung has a place without a record).
+        assertFalse(SetType.FAILED_ATTEMPT.occupiesAPlanPlace)
+        assertTrue(SetType.WARMUP.occupiesAPlanPlace)
+        assertTrue(SetType.NORMAL.occupiesAPlanPlace)
+        assertTrue(SetType.DROP.occupiesAPlanPlace)
+    }
 }

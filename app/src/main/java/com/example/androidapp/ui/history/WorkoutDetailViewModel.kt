@@ -164,7 +164,7 @@ fun setDelta(set: HistorySet, previous: PastSet?): SetDelta? {
 internal fun previousByPlace(sets: List<HistorySet>, previous: List<PastSet>): List<PastSet?> {
     var place = 0
     return sets.map { set ->
-        if (set.setType == SetType.FAILED_ATTEMPT) {
+        if (!set.setType.occupiesAPlanPlace) {
             null
         } else {
             previous.getOrNull(place++)

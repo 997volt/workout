@@ -155,6 +155,16 @@ enum class SetType(val label: String) {
      * recorded, this one asks what the plan asked for.
      */
     val isWork: Boolean get() = this != WARMUP && this != FAILED_ATTEMPT
+
+    /**
+     * Whether this role keeps a place in the plan's order (N329, N347).
+     *
+     * Every role does except a **failed attempt**: it is a row in the session, but it did not perform
+     * the next prescribed set, so the "what comes next" index and the last-time read step over it. A
+     * warm-up is the opposite case and the reason this cannot be [isWork]: a plan prescribes warm-ups
+     * too, so they hold their place in the order even though they are not work.
+     */
+    val occupiesAPlanPlace: Boolean get() = this != FAILED_ATTEMPT
 }
 
 /**
