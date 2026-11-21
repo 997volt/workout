@@ -71,6 +71,11 @@ object BackupCodec {
      * scheduling days it should not, which is the same wrong meaning as N174's kind. The floor does not
      * move: a v8 file has no phase weeks, so this build reads every older backup and every helper-written
      * file exactly as before.
+     *
+     * **N329 moves it to 10 and leaves the floor at 5.** A set can now be a **failed attempt**, a role name
+     * an older build has never heard. Its decoder would throw on that name and report a valid file as
+     * corrupt — the gate runs before the decoder for exactly this reason, and it can only name the version.
+     * The floor does not move: a v9 file has no failed attempt, so this build reads every older backup.
      */
     const val CURRENT_SCHEMA_VERSION = 10
 

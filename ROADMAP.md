@@ -22,9 +22,6 @@ these; they are ordered by severity, and each entry leaves this list in the comm
 an entry still here is an open one. A fix that changes an unreleased feature's behaviour folds into
 that feature's CHANGELOG entry rather than becoming a second release note.
 
-- **N341 — The backup format documents version 10.** The KDoc explains 5 through 9 and stops at the
-  constant's new value; add N329's reason and correct the stale comment in the codec test.
-
 - **N342 — Remove the report's dead API.** `dismissOutcome` has no caller and `TrainingMeasurement.kind`
   is populated but never exported; delete what nothing reads.
 

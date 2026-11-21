@@ -264,10 +264,11 @@ class BackupCodecTest {
     }
 
     @Test
-    fun theCeilingIsNine_forAProgramsPhaseWeek_andAV8FileStillReads() {
-        // B326 moved the ceiling to 8 for a plan's hold; N292 moves it to 9 because a program's day can
-        // name a phase week, which a v8 build would read as one repeating week. The fixed value makes the
-        // next move deliberate; a v8 file has no phase weeks and reads exactly as it did.
+    fun theCeilingIsTen_forAFailedAttempt_andAV8FileStillReads() {
+        // B326 moved the ceiling to 8 for a plan's hold; N292 moved it to 9 because a program's day can
+        // name a phase week; N329 moves it to 10 because a failed attempt is a role name a v9 build cannot
+        // decode, and the gate must refuse the file rather than let the decoder call it corrupt. The fixed
+        // value makes the next move deliberate; a v8 file has none of those and reads exactly as it did.
         assertEquals(10, BackupCodec.CURRENT_SCHEMA_VERSION)
 
         val fromBeforeThePhaseWeek = sample.copy(schemaVersion = 8)
