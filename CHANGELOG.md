@@ -20,9 +20,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 - **The last training block is one CSV for a coach** (N331). History can share the most recent sequence
   block — or the last eight weeks when there is no block — as a single CSV with a `record_type` column:
   block, day, session, set, activity, measurement, sore-muscle and joint-pain rows. The plan sits beside what
-  was performed, a planned set that was not done is `performed=false`, and a failed attempt is a performed
-  row with no rep. Everything is included by default — readiness, soreness, joint pain and body measurements
-  too — with a health-data warning and no toggles. Download uses the Storage Access Framework; Share stages
+  was performed — its reps, load, assistance, effort and hold — a planned set that was not done is
+  `performed=false`, and a failed attempt is a performed row with no rep. A set number follows the app's rule,
+  so a warm-up and an attempt take none, and a block's window ends at its own last settled day rather than at
+  the latest session the device holds. Everything is included by default — readiness, soreness, joint pain
+  and body measurements too — with a health-data warning and no toggles. Download uses the Storage Access Framework; Share stages
   the file through a release `FileProvider` and the system chooser. The file leaves only through the user's
   action. The custom date range is the one Change option the sheet does not surface yet; the repository's
   range read is in place for it.
@@ -36,7 +38,8 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   140 kg". The existing Failure label is now **To failure**; its enum name is unchanged. A plan, template,
   program document or backup planned set cannot name the role, and the backup schema moves to 10 so an older
   build refuses the file rather than half-reading it. The role is offered only for a counted set; a hold is
-  not a 1RM attempt.
+  not a 1RM attempt. The history comparison and the progression prompt leave the attempt out of the plan's
+  places rather than pairing it with a prescribed set, and the next set takes its load without its zero reps.
 
 ## [2.32] — 2026-11-19 (versionCode 53)
 
