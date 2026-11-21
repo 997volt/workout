@@ -54,11 +54,14 @@ class TemplateSetDialogTest {
 
     @Test
     fun thePlanRolePicker_doesNotOfferAFailedAttempt() {
-        // N329: a plan prescribes work; a failed attempt is performed, never planned.
+        // N329: a plan prescribes work; a failed attempt is performed, never planned. The tag is the
+        // template dialog's own — `setRole` names the session dialog's option, so asserting on it here
+        // tested nothing (N334).
         show()
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_ROLE).performClick()
 
-        composeTestRule.onNodeWithTag(TestTags.setRole(SetType.FAILED_ATTEMPT.name)).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.templateSetRole(SetType.FAILED_ATTEMPT.name))
+            .assertDoesNotExist()
     }
 
     @Test

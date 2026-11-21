@@ -22,11 +22,6 @@ these; they are ordered by severity, and each entry leaves this list in the comm
 an entry still here is an open one. A fix that changes an unreleased feature's behaviour folds into
 that feature's CHANGELOG entry rather than becoming a second release note.
 
-- **N334 — A plan cannot offer a failed attempt.** The plan dialog passes `offers` through and
-  `isAnchoredAt` accepts every non-rung, so **Failed attempt** is selectable and only the write boundary
-  refuses the save. Filter it in the dialog; the guard test asserts `TestTags.setRole` while the dialog
-  renders `templateSetRole`, so it passes without testing anything.
-
 - **N335 — A failed attempt does not shift the history comparison.** `previousPerformance` drops failed
   attempts while the detail indexes the current rows by position, so a later set loses or misreads "vs
   last time". Align both sides by work place and show no delta on the attempt itself.

@@ -359,9 +359,12 @@ private fun TargetFields(
             onSelect = { onChange(draft.copy(role = it)) },
             testTag = TestTags.TEMPLATE_SET_ROLE,
             optionTag = TestTags::templateSetRole,
-            // A rung is not offered where there is nothing above it to hang off: the boundary would
-            // refuse the save, and a control that cannot write is worse than no control (N67, B64).
-            offers = offers,
+            // A rung is not offered where there is nothing above it to hang off, and a **failed attempt**
+            // is never offered at all (N329, N334): a plan prescribes work, so the only place the role
+            // could land is the boundary's refusal. The rule lives here rather than in the caller
+            // because every plan dialog is this one, and a picker that cannot write is worse than no
+            // control (N67, B64).
+            offers = { role -> role != SetType.FAILED_ATTEMPT && offers(role) },
         )
         // A rung has no load of its own to type: a cluster repeats the anchor's and a drop is the
         // anchor less the run's value, so the only field it can hold is that value — and only the rung
