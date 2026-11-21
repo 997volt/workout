@@ -1,0 +1,243 @@
+package com.example.androidapp.data
+
+import com.example.androidapp.data.local.SessionPlanSetDao
+import com.example.androidapp.data.local.SessionPlanSetEntity
+import com.example.androidapp.data.local.WorkoutDatabase
+import com.example.androidapp.domain.DataResult
+import com.example.androidapp.domain.NotFoundException
+import com.example.androidapp.domain.TimeSource
+import com.example.androidapp.domain.WeightUnit
+import com.example.androidapp.domain.dataResultOf
+import com.example.androidapp.domain.model.BodyMeasurement
+import com.example.androidapp.domain.model.ProgramKind
+import com.example.androidapp.domain.model.ProgramSlot
+import com.example.androidapp.domain.model.SetEntry
+import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.domain.model.TrainingDay
+import com.example.androidapp.domain.model.TrainingExercise
+import com.example.androidapp.domain.model.TrainingMeasurement
+import com.example.androidapp.domain.model.TrainingReport
+import com.example.androidapp.domain.model.TrainingSession
+import com.example.androidapp.domain.model.TrainingSet
+import com.example.androidapp.domain.model.WorkoutProgram
+import com.example.androidapp.domain.model.WorkoutSummary
+import com.example.androidapp.domain.nowEpochMillis
+import com.example.androidapp.domain.repository.MeasurementRepository
+import com.example.androidapp.domain.repository.ProgramRepository
+import com.example.androidapp.domain.repository.SettingsRepository
+import com.example.androidapp.domain.repository.TrainingBlockChoice
+import com.example.androidapp.domain.repository.TrainingReportRepository
+import com.example.androidapp.domain.repository.WorkoutRepository
+import kotlinx.coroutines.flow.first
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.ZoneOffset
+import javax.inject.Inject
+
+/**
+ * Assembles the last training block for the CSV export (ROADMAP N331).
+ *
+ * Read-only, and composed from the repositories the screens already use rather than a second query
+ * layer: a block is a handful of sessions, not a scan of all history, so the clarity of one assembly
+ * path beats duplicating the workout, plan and measurement reads in SQL.
+ */
+class RoomTrainingReportRepository @Inject constructor(
+    database: WorkoutDatabase,
+    private val programs: ProgramRepository,
+    private val workouts: WorkoutRepository,
+    private val measurements: MeasurementRepository,
+    private val settings: SettingsRepository,
+    private val timeSource: TimeSource,
+) : TrainingReportRepository {
+
+    private val planSets: SessionPlanSetDao = database.sessionPlanSetDao()
+
+    override suspend fun lastBlock(): DataResult<TrainingReport> = dataResultOf {
+        val sequence = programs.observePrograms().first()
+            .filter { it.kind == ProgramKind.SEQUENCE }
+            .maxByOrNull { it.startDate ?: LocalDate.MIN }
+        if (sequence == null) {
+            val today = today()
+            report(
+                name = "Last 8 weeks",
+                start = today.minusWeeks(8),
+                end = today,
+                complete = false,
+                program = null,
+            )
+        } else {
+            blockReport(sequence)
+        }
+    }
+
+    override suspend fun block(programId: String): DataResult<TrainingReport> = dataResultOf {
+        val program = programs.observePrograms().first().firstOrNull { it.id == programId }
+            ?: throw NotFoundException("program $programId")
+        blockReport(program)
+    }
+
+    override suspend fun range(start: LocalDate, end: LocalDate): DataResult<TrainingReport> = dataResultOf {
+        report(name = "$start — $end", start = start, end = end, complete = false, program = null)
+    }
+
+    override suspend fun recentBlocks(): DataResult<List<TrainingBlockChoice>> = dataResultOf {
+        programs.observePrograms().first()
+            .filter { it.kind == ProgramKind.SEQUENCE }
+            .sortedByDescending { it.startDate ?: LocalDate.MIN }
+            .take(RECENT_BLOCK_COUNT)
+            .map { TrainingBlockChoice(it.id, it.name, it.startDate ?: today()) }
+    }
+
+    private suspend fun blockReport(program: WorkoutProgram): TrainingReport {
+        val today = today()
+        val start = program.startDate ?: today
+        val complete = programs.observeProgramRun(program.id).first()?.isComplete == true
+        val end = if (complete) {
+            workouts.observeHistory().first()
+                .filter { it.finishedAt != null }
+                .map { localDate(it.startedAt, it.zoneOffsetMinutes) }
+                .filter { it >= start }
+                .maxOrNull() ?: start
+        } else {
+            today
+        }
+        return report(
+            name = program.name,
+            start = start,
+            end = end,
+            complete = complete,
+            program = program,
+        )
+    }
+
+    private suspend fun report(
+        name: String,
+        start: LocalDate,
+        end: LocalDate,
+        complete: Boolean,
+        program: WorkoutProgram?,
+    ): TrainingReport {
+        val unit = settings.observeWeightUnit().first()
+        val slots = program?.let { programs.observeSlots(it.id).first() }.orEmpty()
+        val history = workouts.observeHistory().first()
+            .filter { it.finishedAt != null && localDate(it.startedAt, it.zoneOffsetMinutes) in start..end }
+            .sortedBy { it.startedAt }
+        val sessions = history.mapNotNull { summary -> buildSession(summary, slots, unit) }
+        val days = slots.sortedBy { it.position }.map { slot ->
+            TrainingDay(
+                name = slot.templateName,
+                position = slot.position,
+                sessionId = sessions.firstOrNull { it.templateId == slot.templateId }?.id,
+            )
+        }
+        val body = measurements.observeAll().first()
+            .filter { it.measuredAt.atZone(ZoneId.systemDefault()).toLocalDate() in start..end }
+            .map { it.toTrainingMeasurement() }
+        return TrainingReport(
+            blockName = name,
+            blockStart = start,
+            blockEnd = end,
+            blockComplete = complete,
+            exportedAt = Instant.ofEpochMilli(timeSource.nowEpochMillis()),
+            unit = unit,
+            days = days,
+            sessions = sessions,
+            measurements = body,
+        )
+    }
+
+    private suspend fun buildSession(
+        summary: WorkoutSummary,
+        slots: List<ProgramSlot>,
+        unit: WeightUnit,
+    ): TrainingSession? {
+        val session = workouts.observeSession(summary.id).first() ?: return null
+        val exercises = workouts.observeSessionExercises(summary.id).first()
+        val sets = workouts.observeSets(summary.id).first()
+        val plans = planSets.findFor(exercises.map { it.id }).groupBy { it.sessionExerciseId }
+        val templateId = session.templateId
+        val dayName = slots.firstOrNull { it.templateId == templateId }?.templateName
+        return TrainingSession(
+            id = summary.id,
+            workout = summary.templateName ?: session.activity?.name ?: "Workout",
+            templateId = templateId,
+            dayName = dayName,
+            startedAt = summary.startedAt,
+            zoneOffsetMinutes = summary.zoneOffsetMinutes,
+            finishedAt = summary.finishedAt ?: session.finishedAt ?: summary.startedAt,
+            comment = session.notes,
+            readinessNote = session.readinessNote,
+            soreMuscles = session.soreMuscles,
+            activity = session.activity,
+            activityDurationSeconds = session.activityDurationSeconds,
+            activityDistanceMeters = session.activityDistanceMeters,
+            exercises = exercises.map { exercise ->
+                TrainingExercise(
+                    name = exercise.exerciseName,
+                    sets = setsFor(
+                        plans = plans[exercise.id].orEmpty(),
+                        actual = sets.filter { it.sessionExerciseId == exercise.id },
+                        unit = exercise.weightUnit ?: unit,
+                    ),
+                    joints = exercise.joints,
+                )
+            },
+        )
+    }
+
+    private fun setsFor(
+        plans: List<SessionPlanSetEntity>,
+        actual: List<SetEntry>,
+        unit: WeightUnit,
+    ): List<TrainingSet> {
+        val planByIndex = plans.associateBy { it.setIndex }
+        val actualByIndex = actual.associateBy { it.setIndex }
+        return (planByIndex.keys + actualByIndex.keys).sorted().map { index ->
+            val plan = planByIndex[index]
+            val performed = actualByIndex[index]
+            TrainingSet(
+                setIndex = index,
+                performed = performed != null,
+                role = performed?.setType ?: plan?.role ?: SetType.NORMAL,
+                unit = unit,
+                reps = performed?.reps ?: 0,
+                durationSeconds = performed?.durationSeconds,
+                weightGrams = performed?.weightGrams ?: 0L,
+                assistanceGrams = performed?.assistanceGrams ?: 0L,
+                bodyweightGrams = performed?.bodyweightGrams,
+                rpeHalves = performed?.rpeHalves,
+                comment = performed?.note,
+                plannedRole = plan?.role,
+                plannedReps = plan?.let {
+                    it.targetRepsCurrent ?: it.targetRepsMax ?: it.targetRepsMin
+                },
+                plannedWeightGrams = plan?.targetWeightGrams,
+                plannedRpeHalves = plan?.targetRpeHalves,
+            )
+        }
+    }
+
+    private fun BodyMeasurement.toTrainingMeasurement(): TrainingMeasurement = TrainingMeasurement(
+        measuredAt = measuredAt,
+        kind = kind,
+        weightGrams = weightGrams,
+        bodyFatTenths = bodyFatTenths,
+        muscleTenths = muscleTenths,
+        tape = tape,
+        soreMuscles = soreMuscles,
+    )
+
+    private fun today(): LocalDate =
+        Instant.ofEpochMilli(timeSource.nowEpochMillis()).atZone(ZoneId.systemDefault()).toLocalDate()
+
+    private fun localDate(instant: Instant, offsetMinutes: Int?): LocalDate {
+        val offset = offsetMinutes?.let { ZoneOffset.ofTotalSeconds(it * SECONDS_PER_MINUTE) } ?: ZoneOffset.UTC
+        return instant.atOffset(offset).toLocalDate()
+    }
+
+    private companion object {
+        const val RECENT_BLOCK_COUNT = 5
+        const val SECONDS_PER_MINUTE = 60
+    }
+}

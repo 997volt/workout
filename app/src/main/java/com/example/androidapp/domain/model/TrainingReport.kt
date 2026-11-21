@@ -45,6 +45,8 @@ data class TrainingDay(
 data class TrainingSession(
     val id: String,
     val workout: String,
+    /** The template it was started from, or null; the report uses it to attach the block's day. */
+    val templateId: String? = null,
     /** The block day this session stood for, or null for an unplanned workout. */
     val dayName: String? = null,
     val startedAt: Instant,

@@ -12,6 +12,7 @@ import com.example.androidapp.data.RoomProgramRepository
 import com.example.androidapp.data.RoomProgressionRepository
 import com.example.androidapp.data.RoomStatisticsRepository
 import com.example.androidapp.data.RoomTemplateRepository
+import com.example.androidapp.data.RoomTrainingReportRepository
 import com.example.androidapp.data.RoomTrendsRepository
 import com.example.androidapp.data.RoomWeeklyReviewRepository
 import com.example.androidapp.data.RoomWorkoutRepository
@@ -25,6 +26,7 @@ import com.example.androidapp.domain.repository.ProgramRepository
 import com.example.androidapp.domain.repository.ProgressionRepository
 import com.example.androidapp.domain.repository.StatisticsRepository
 import com.example.androidapp.domain.repository.TemplateRepository
+import com.example.androidapp.domain.repository.TrainingReportRepository
 import com.example.androidapp.domain.repository.TrendsRepository
 import com.example.androidapp.domain.repository.WeeklyReviewRepository
 import com.example.androidapp.domain.repository.WorkoutRepository
@@ -102,6 +104,9 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindTrendsRepository(impl: RoomTrendsRepository): TrendsRepository
+
+    @Binds
+    abstract fun bindTrainingReportRepository(impl: RoomTrainingReportRepository): TrainingReportRepository
 
     /** A program's built deload week, and the workouts it wrote (N147). */
     @Binds
