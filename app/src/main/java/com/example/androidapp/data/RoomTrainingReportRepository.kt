@@ -61,7 +61,7 @@ class RoomTrainingReportRepository @Inject constructor(
             val today = today()
             report(
                 name = "Last 8 weeks",
-                start = today.minusWeeks(8),
+                start = today.minusWeeks(FALLBACK_WEEKS),
                 end = today,
                 complete = false,
                 program = null,
@@ -237,6 +237,7 @@ class RoomTrainingReportRepository @Inject constructor(
     }
 
     private companion object {
+        const val FALLBACK_WEEKS = 8
         const val RECENT_BLOCK_COUNT = 5
         const val SECONDS_PER_MINUTE = 60
     }
