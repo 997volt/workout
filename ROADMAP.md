@@ -22,10 +22,6 @@ these; they are ordered by severity, and each entry leaves this list in the comm
 an entry still here is an open one. A fix that changes an unreleased feature's behaviour folds into
 that feature's CHANGELOG entry rather than becoming a second release note.
 
-- **N340 — Repeated block days keep their own session.** Day attribution takes the first session naming
-  the template, so an A/B/A block maps every A day to the first A session and its key. Resolve the days
-  in order, the way the sequence schedule walks them, and test the repeat.
-
 - **N341 — The backup format documents version 10.** The KDoc explains 5 through 9 and stops at the
   constant's new value; add N329's reason and correct the stale comment in the codec test.
 

@@ -119,12 +119,20 @@ class RoomTrainingReportRepository @Inject constructor(
         val history = workouts.observeHistory().first()
             .filter { it.finishedAt != null && localDate(it.startedAt, it.zoneOffsetMinutes) in start..end }
             .sortedBy { it.startedAt }
-        val sessions = history.mapNotNull { summary -> buildSession(summary, slots, unit) }
+        val rawSessions = history.mapNotNull { summary -> buildSession(summary, unit) }
+        // Resolve the days before naming them (N340): a plan may name one template on more than one
+        // day, and the session that stood for day 3 is the next unmatched one, not the first match.
+        val daySessions = sessionsByDay(slots, rawSessions)
+        val slotAtPosition = slots.associateBy { it.position }
+        val dayNameBySession = daySessions.entries.associate { (position, sessionId) ->
+            sessionId to slotAtPosition.getValue(position).templateName
+        }
+        val sessions = rawSessions.map { it.copy(dayName = dayNameBySession[it.id]) }
         val days = slots.sortedBy { it.position }.map { slot ->
             TrainingDay(
                 name = slot.templateName,
                 position = slot.position,
-                sessionId = sessions.firstOrNull { it.templateId == slot.templateId }?.id,
+                sessionId = daySessions[slot.position],
             )
         }
         val body = measurements.observeAll().first()
@@ -145,7 +153,6 @@ class RoomTrainingReportRepository @Inject constructor(
 
     private suspend fun buildSession(
         summary: WorkoutSummary,
-        slots: List<ProgramSlot>,
         unit: WeightUnit,
     ): TrainingSession? {
         val session = workouts.observeSession(summary.id).first() ?: return null
@@ -153,12 +160,10 @@ class RoomTrainingReportRepository @Inject constructor(
         val sets = workouts.observeSets(summary.id).first()
         val plans = planSets.findFor(exercises.map { it.id }).groupBy { it.sessionExerciseId }
         val templateId = session.templateId
-        val dayName = slots.firstOrNull { it.templateId == templateId }?.templateName
         return TrainingSession(
             id = summary.id,
             workout = summary.templateName ?: session.activity?.name ?: "Workout",
             templateId = templateId,
-            dayName = dayName,
             startedAt = summary.startedAt,
             zoneOffsetMinutes = summary.zoneOffsetMinutes,
             finishedAt = summary.finishedAt ?: session.finishedAt ?: summary.startedAt,
@@ -238,5 +243,30 @@ class RoomTrainingReportRepository @Inject constructor(
         const val FALLBACK_WEEKS = 8L
         const val RECENT_BLOCK_COUNT = 5
         const val SECONDS_PER_MINUTE = 60
+    }
+}
+
+/**
+ * The session that settled each block day, keyed by the day's position (N340).
+ *
+ * The walk is the sequence schedule's own (N175): days in authored order, each taking the first
+ * not-yet-used session naming its template. A program may name the same template on two days — an
+ * A/B/A block is ordinary — and the first-match lookup this replaces pointed both A days at the
+ * first A session, leaving the second one unrepresented. Sessions the block does not name, and
+ * sessions trained after the block settled, stay unassigned; the caller keeps them as unplanned.
+ *
+ * A day missing from the map was not trained.
+ */
+internal fun sessionsByDay(
+    slots: List<ProgramSlot>,
+    sessions: List<TrainingSession>,
+): Map<Int, String> {
+    val remaining = sessions.sortedBy { it.startedAt }.toMutableList()
+    return buildMap {
+        slots.sortedBy { it.position }.forEach { slot ->
+            val session = remaining.firstOrNull { it.templateId == slot.templateId } ?: return@forEach
+            remaining.remove(session)
+            put(slot.position, session.id)
+        }
     }
 }
