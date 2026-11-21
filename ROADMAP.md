@@ -22,10 +22,6 @@ these; they are ordered by severity, and each entry leaves this list in the comm
 an entry still here is an open one. A fix that changes an unreleased feature's behaviour folds into
 that feature's CHANGELOG entry rather than becoming a second release note.
 
-- **N337 — The CSV carries the plan's whole prescription.** Planned RPE is populated in the report and
-  then never written, and planned assistance and hold are not in the model at all. Add the columns and
-  assert them, including a plan that prescribes only assistance or a hold.
-
 - **N338 — A failed block read cannot leave the old file writable.** `canWrite` ignores `error`, so a
   failed **Change** keeps **Download**/**Share** enabled on the previous report. Require no error and
   clear or guard the stale report.

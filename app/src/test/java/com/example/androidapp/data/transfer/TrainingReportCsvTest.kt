@@ -168,6 +168,7 @@ class TrainingReportCsvTest {
         assertThat(plannedOnly["planned_reps"]).isEqualTo("8")
         assertThat(plannedOnly["planned_weight"]).isEqualTo("90")
         assertThat(plannedOnly["planned_unit"]).isEqualTo("kg")
+        assertThat(plannedOnly["planned_rpe"]).isEqualTo("8.5")
         assertThat(plannedOnly["weight"]).isEmpty()
 
         val measurements = records.filter { it["record_type"] == "measurement" }
@@ -191,6 +192,39 @@ class TrainingReportCsvTest {
         assertThat(joint["joint"]).isEqualTo("Knee")
         assertThat(joint["side"]).isEqualTo("LEFT")
         assertThat(joint["joint_score"]).isEqualTo("4")
+    }
+
+    @Test
+    fun aPlanThatPrescribesAssistanceAndAHold_writesBothBesideItsRpe() {
+        // N337: the prescription is reps, load *and* effort/hold/help. Before this the report carried
+        // the RPE and dropped it, and a plan that named only assistance or a hold lost its numbers.
+        val plan = TrainingSet(
+            setIndex = 0,
+            performed = false,
+            role = SetType.NORMAL,
+            unit = WeightUnit.KILOGRAMS,
+            plannedRole = SetType.NORMAL,
+            plannedAssistanceGrams = 20_000L,
+            plannedDurationSeconds = 45,
+            plannedRpeHalves = 17,
+        )
+        val csv = report.copy(
+            days = emptyList(),
+            sessions = listOf(
+                report.sessions.single().copy(
+                    exercises = listOf(TrainingExercise(name = "Assisted Bench", sets = listOf(plan))),
+                ),
+            ),
+            measurements = emptyList(),
+        )
+
+        val row = parse(TrainingReportCsv.write(csv)).single { it["record_type"] == "set" }
+
+        assertThat(row["planned_assistance"]).isEqualTo("20")
+        assertThat(row["planned_unit"]).isEqualTo("kg")
+        assertThat(row["planned_hold_seconds"]).isEqualTo("45")
+        assertThat(row["planned_rpe"]).isEqualTo("8.5")
+        assertThat(row["planned_weight"]).isEmpty()
     }
 
     @Test

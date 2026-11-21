@@ -93,6 +93,10 @@ data class TrainingSet(
     val plannedRole: SetType? = null,
     val plannedReps: Int? = null,
     val plannedWeightGrams: Long? = null,
+    /** The machine's help the plan prescribes, in grams, or null when it names none (N337). */
+    val plannedAssistanceGrams: Long? = null,
+    /** The hold the plan prescribes, in seconds, or null for a counted set (N337). */
+    val plannedDurationSeconds: Int? = null,
     val plannedRpeHalves: Int? = null,
 )
 

@@ -70,7 +70,10 @@ object TrainingReportCsv {
         "planned_role",
         "planned_reps",
         "planned_weight",
+        "planned_assistance",
         "planned_unit",
+        "planned_rpe",
+        "planned_hold_seconds",
         "reps",
         "hold_seconds",
         "weight",
@@ -195,10 +198,15 @@ object TrainingReportCsv {
     private fun plannedFields(set: TrainingSet): Map<String, String?> = buildMap {
         set.plannedRole?.let { put("planned_role", it.label) }
         set.plannedReps?.let { put("planned_reps", it.toString()) }
-        set.plannedWeightGrams?.let {
-            put("planned_weight", Weight.format(it, set.unit))
+        set.plannedWeightGrams?.let { put("planned_weight", Weight.format(it, set.unit)) }
+        set.plannedAssistanceGrams?.let { put("planned_assistance", Weight.format(it, set.unit)) }
+        // One unit column beside both planned numbers, the way the performed half states it.
+        if (set.plannedWeightGrams != null || set.plannedAssistanceGrams != null) {
             put("planned_unit", unitLabel(set.unit))
         }
+        // N337: a plan's effort and hold are part of the prescription, not details of the performance.
+        set.plannedRpeHalves?.let { put("planned_rpe", Rpe.format(it)) }
+        set.plannedDurationSeconds?.let { put("planned_hold_seconds", it.toString()) }
     }
 
     private fun actualFields(set: TrainingSet): Map<String, String?> {

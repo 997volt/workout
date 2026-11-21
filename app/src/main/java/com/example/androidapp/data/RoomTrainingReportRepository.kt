@@ -209,6 +209,8 @@ class RoomTrainingReportRepository @Inject constructor(
                     it.targetRepsCurrent ?: it.targetRepsMax ?: it.targetRepsMin
                 },
                 plannedWeightGrams = plan?.targetWeightGrams,
+                plannedAssistanceGrams = plan?.targetAssistanceGrams,
+                plannedDurationSeconds = plan?.targetDurationSeconds,
                 plannedRpeHalves = plan?.targetRpeHalves,
             )
         }
