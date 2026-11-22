@@ -172,8 +172,13 @@ class RoomBackupRepository @Inject constructor(
             if (settings.setBackupEnabled(false) is DataResult.Failure) {
                 throw IOException("the automatic backup switch could not be turned off")
             }
+            // Set the moment the rows are gone, not when the whole clear succeeds (N360): the seeder,
+            // the crash-log clear and the legacy deletion all run after this and can fail, and none of
+            // them leaves the user data the switch would back up.
+            var tablesCleared = false
             try {
                 database.clearAllTables()
+                tablesCleared = true
 
                 // The seeder runs in `RoomDatabase.Callback.onOpen`, which fires when the
                 // database is *opened*, not after its tables are emptied — so without this the
@@ -201,10 +206,11 @@ class RoomBackupRepository @Inject constructor(
                 // `clearAllTables` above is what takes them. The loop that emptied the settings string went
                 // with the string.
             } catch (failure: Throwable) {
-                // The clear did not finish, so the data is still here (B378): put the switch back rather
-                // than leaving a scheduled backup silently off. The restore's own failure is not allowed to
-                // mask the clear's.
-                if (wasEnabled) runCatching { settings.setBackupEnabled(true) }
+                // A clear that failed **before** the rows went leaves the data here (B378), so the switch
+                // goes back rather than leaving a scheduled backup silently off. A clear that failed after
+                // them must not: the next due run would write the empty database and prune one of the five
+                // pre-clear copies (N360). The restore's own failure is not allowed to mask the clear's.
+                if (wasEnabled && !tablesCleared) runCatching { settings.setBackupEnabled(true) }
                 throw failure
             }
         }

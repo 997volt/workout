@@ -1197,6 +1197,31 @@ class BackupRoundTripTest {
     }
 
     @Test
+    fun aClearThatFailsAfterTheTablesAreGone_doesNotReArmTheBackup() = runTest {
+        // N360/B378: the seeder, the crash-log clear and the legacy delete all run after
+        // clearAllTables, and a failure in any of them leaves no user data behind. Re-arming the switch
+        // would let the next run write the emptied store and prune a pre-clear copy.
+        seedAWorkout()
+        settings.setBackupEnabled(true)
+        val failingSeed = RoomBackupRepository(
+            context = context,
+            database = database,
+            timeSource = TimeSource { error("the library seeder cannot read the clock") },
+            crashLogStore = crashLogs,
+            settings = settings,
+        )
+
+        val cleared = failingSeed.clearAllUserData()
+
+        assertTrue("the failure is reported rather than swallowed", cleared is DataResult.Failure)
+        assertFalse(
+            "a failed clear must not schedule a backup of the emptied store",
+            settings.observeBackupSettings().first().enabled,
+        )
+        assertEquals("and the rows are gone, so restoring the switch would protect nothing", 0, counts().sessions)
+    }
+
+    @Test
     fun anExportTakenBeforeAClear_stillImports() = runTest {
         // The whole point of exporting first: platform backup is off, so the file is the
         // only thing that outlives the action — and it has to still work afterwards.

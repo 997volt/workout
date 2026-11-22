@@ -17,6 +17,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **"Delete everything" leaves automatic backup off when it fails after the rows are gone** (N360). The
+  switch was put back on any failure, but the seeder, the crash-log clear and the 1.x delete all run after
+  `clearAllTables`; a failure there left an empty database with the scheduled writer re-armed, and its next
+  run would prune one of the pre-clear copies. The switch now comes back only when the failure happened
+  before the rows went.
 - **The block CSV reads a stored zone through the total helper** (N359). A row imported before the
   validator refused odd offsets can still carry one, and the writer called the throwing constructor on
   the button — so Download or Share took the report screen down. The row now falls back to UTC, as the

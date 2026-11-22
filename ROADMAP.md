@@ -26,12 +26,6 @@ any template-started workout currently fails. The review did not run the instrum
 is stale on this checkout) and Robolectric still pins SDK 35 against targetSdk 37; those are verification
 gaps, not planned work.
 
-- **N360 — "Delete everything" leaves the automatic backup off when the clear fails after the rows are
-  gone.** The catch re-arms the switch on every failure, but everything that can throw (the seeder, the
-  crash-log clear, the legacy-database delete) runs after `clearAllTables`; the next run then exports the
-  empty database and prunes a pre-clear copy. Track whether the tables were cleared, restore the switch
-  only before that point, and test a post-clear failure.
-
 - **N361 — A restored plan keeps one live set per index.** Un-hiding a planned set writes its old
   `setIndex` by raw `@Update`, while removing a set renumbers the survivors: export, remove the middle
   set, import, and two live rows share an index (a session snapshot's `REPLACE` then drops one). Restore
