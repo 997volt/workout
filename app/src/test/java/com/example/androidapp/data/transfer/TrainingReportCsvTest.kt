@@ -373,6 +373,21 @@ class TrainingReportCsvTest {
     }
 
     @Test
+    fun anOutOfRangeStoredZone_fallsBackToUtcInsteadOfThrowing() {
+        // N359: a file imported before the validator refused odd offsets can still carry one. The report
+        // screen used to throw a DateTimeException on Download; the row is written in UTC like the history.
+        val bad = report.copy(
+            sessions = listOf(report.sessions.single().copy(zoneOffsetMinutes = 2_000)),
+        )
+
+        val records = parse(TrainingReportCsv.write(bad))
+
+        val session = records.single { it["record_type"] == "session" }
+        assertThat(session["session_date"]).isEqualTo("2026-10-01")
+        assertThat(session["session_started"]).isEqualTo("2026-10-01T08:00:00Z")
+    }
+
+    @Test
     fun anEmptyReport_isAHeaderAndABlockRow() {
         val csv = TrainingReportCsv.write(
             report.copy(days = emptyList(), sessions = emptyList(), measurements = emptyList()),

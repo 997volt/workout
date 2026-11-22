@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The block CSV reads a stored zone through the total helper** (N359). A row imported before the
+  validator refused odd offsets can still carry one, and the writer called the throwing constructor on
+  the button — so Download or Share took the report screen down. The row now falls back to UTC, as the
+  history and program mappers do, and the writer is tested with an invalid offset.
 - **A program document is refused when its merge cannot write it** (N358). The boundary enforced only the
   two hold rules, so a repeated id was silently dropped by `INSERT OR IGNORE`, a repeated position was
   stored, and reps or holds past the plan's own bounds were written; the shared validator also had only

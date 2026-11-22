@@ -26,11 +26,6 @@ any template-started workout currently fails. The review did not run the instrum
 is stale on this checkout) and Robolectric still pins SDK 35 against targetSdk 37; those are verification
 gaps, not planned work.
 
-- **N359 — The block CSV reads a stored zone through the total helper.** `offsetOf` calls
-  `ZoneOffset.ofTotalSeconds` directly (and multiplies minutes in an `Int`), so a database row with an
-  out-of-range stored offset throws and the report screen crashes, because the writer runs on the button
-  outside any `DataResult`. Use `storedZoneOrFallback` and test the writer with an invalid offset.
-
 - **N360 — "Delete everything" leaves the automatic backup off when the clear fails after the rows are
   gone.** The catch re-arms the switch on every failure, but everything that can throw (the seeder, the
   crash-log clear, the legacy-database delete) runs after `clearAllTables`; the next run then exports the

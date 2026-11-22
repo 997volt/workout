@@ -11,6 +11,7 @@ import com.example.androidapp.domain.model.TrainingMeasurement
 import com.example.androidapp.domain.model.TrainingReport
 import com.example.androidapp.domain.model.TrainingSession
 import com.example.androidapp.domain.model.TrainingSet
+import com.example.androidapp.domain.model.storedZoneOrFallback
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -302,14 +303,21 @@ object TrainingReportCsv {
 
     private fun tenths(value: Int): String = String.format(Locale.ROOT, "%.1f", value / TENTHS_PER_WHOLE)
 
-    private fun offsetOf(session: TrainingSession): ZoneOffset =
-        session.zoneOffsetMinutes?.let { ZoneOffset.ofTotalSeconds(it * SECONDS_PER_MINUTE) } ?: ZoneOffset.UTC
+    /**
+     * The stored zone, read through the total helper (N359).
+     *
+     * A backup imported before the validator refused odd offsets can still carry one, and
+     * `ZoneOffset.ofTotalSeconds` would throw on the report screen; the helper falls back to UTC, which
+     * is the same answer the history and program mappers give.
+     */
+    private fun offsetOf(session: TrainingSession): ZoneId =
+        storedZoneOrFallback(session.zoneOffsetMinutes, ZoneOffset.UTC)
 
-    private fun localDate(session: TrainingSession, offset: ZoneOffset): LocalDate =
-        session.startedAt.atOffset(offset).toLocalDate()
+    private fun localDate(session: TrainingSession, zone: ZoneId): LocalDate =
+        session.startedAt.atZone(zone).toLocalDate()
 
-    private fun offsetDateTime(instant: Instant, offset: ZoneOffset): String =
-        DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(instant.atOffset(offset))
+    private fun offsetDateTime(instant: Instant, zone: ZoneId): String =
+        DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(instant.atZone(zone))
 
     private fun minutes(startedAt: Instant, finishedAt: Instant): String =
         java.time.Duration.between(startedAt, finishedAt).toMinutes().toString()
