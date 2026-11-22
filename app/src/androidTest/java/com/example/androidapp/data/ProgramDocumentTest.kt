@@ -181,6 +181,8 @@ class ProgramDocumentTest {
                 slots = document.slots + document.slots.single().copy(
                     id = "slot-second",
                     templateId = "tpl-second",
+                    // A second day is a second place (N358: a repeated position is refused before the merge).
+                    position = document.slots.maxOf { it.position } + 1,
                 ),
             ),
         )
@@ -266,6 +268,8 @@ class ProgramDocumentTest {
                 slots = document.slots + document.slots.single().copy(
                     id = "slot-second",
                     templateId = "tpl-second",
+                    // A second day is a second place (N358: a repeated position is refused before the merge).
+                    position = document.slots.maxOf { it.position } + 1,
                 ),
             ),
         )

@@ -51,7 +51,7 @@ class Suite:
 # changes the suite, and the checker prints the difference when it was forgotten.
 EXPECTED_UNIT_TESTS = 2440
 EXPECTED_INSTRUMENTED_TESTS = 548
-EXPECTED_SHARED_TESTS = 29
+EXPECTED_SHARED_TESTS = 31
 
 SUITES = {
     "unit": Suite(
