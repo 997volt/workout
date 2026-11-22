@@ -13,6 +13,16 @@ repeated here.
 **1.0–1.18 live in [CHANGELOG-1.x.md](CHANGELOG-1.x.md)**, kept whole rather than deleted because the
 id a 1.x commit names is still looked up by it. This file carries the current release.
 
+## [Unreleased]
+
+### Fixed
+
+- **A restore writes a plan snapshot after its session exercise** (N355). The import inserted the
+  snapshot rows before the session exercises they belong to, and the immediate foreign key failed the
+  whole restore on an empty database — so a file taken after any template-started workout could not be
+  restored where a restore matters. The rows now go in after their parent, and a fresh round trip
+  carries them.
+
 ## [2.33] — 2026-11-21 (versionCode 54)
 
 ### Added

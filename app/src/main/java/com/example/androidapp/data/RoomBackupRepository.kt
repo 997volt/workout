@@ -683,16 +683,23 @@ class RoomBackupRepository @Inject constructor(
         val measurementSoreRows = file.measurementSoreMuscles.filter { it.measurementId in measurementParents }
         // The plan snapshots are children of the session exercises written below; a file that names a
         // parent it does not carry is refused by the validator, and this filter keeps the insert's
-        // foreign key honest if it ever is not (B471).
+        // foreign key honest if it ever is not (B471). The insert belongs after the parent write (N355):
+        // the key is immediate, and hoisting it here to read its count failed a fresh restore.
         val fileSessionExerciseIds = file.sessionExercises.mapTo(mutableSetOf()) { it.id }
         val filePlanSets = file.sessionPlanSets.filter { it.sessionExerciseId in fileSessionExerciseIds }
-        val planRows = dao.insertSessionPlanSets(filePlanSets.map { it.toEntity() })
         return dao.insertExercises(file.exercises.map { it.toEntity() })
             .countLive(file.exercises) { it.deletedAt == null } +
             dao.insertSessions(file.sessions.map { it.toEntity() })
                 .countLive(file.sessions) { it.deletedAt == null } +
             dao.insertSessionExercises(file.sessionExercises.map { it.toEntity() })
                 .countLive(file.sessionExercises) { it.deletedAt == null && it.id in visible.sessionExercises } +
+            // The snapshot rows go in after their session exercise (N355), and only the ones under a
+            // visible parent are counted.
+            dao.insertSessionPlanSets(filePlanSets.map { it.toEntity() }).let { planRows ->
+                planRows.indices.count {
+                    planRows[it] != SKIPPED && filePlanSets[it].sessionExerciseId in visible.sessionExercises
+                }
+            } +
             // The joint rows go in after the exercises they hang off, which the line above wrote (N63).
             joints.insert(file.sessionExerciseJoints.map { it.toEntity() })
                 .countLive(file.sessionExerciseJoints) { it.deletedAt == null && it.id in visible.joints } +
@@ -701,9 +708,6 @@ class RoomBackupRepository @Inject constructor(
                 .countLive(file.sessionSoreMuscles) { it.deletedAt == null && it.id in visible.soreMuscles } +
             dao.insertSets(file.sets.map { it.toEntity() })
                 .countLive(file.sets) { it.deletedAt == null && it.id in visible.sets } +
-            planRows.indices.count {
-                planRows[it] != SKIPPED && filePlanSets[it].sessionExerciseId in visible.sessionExercises
-            } +
             dao.insertTemplates(file.templates.map { it.toEntity() })
                 .countLive(file.templates) { it.deletedAt == null } +
             dao.insertTemplateExercises(file.templateExercises.map { it.toEntity() })

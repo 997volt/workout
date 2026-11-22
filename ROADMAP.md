@@ -26,13 +26,6 @@ any template-started workout currently fails. The review did not run the instrum
 is stale on this checkout) and Robolectric still pins SDK 35 against targetSdk 37; those are verification
 gaps, not planned work.
 
-- **N355 — A fresh restore writes a plan snapshot after its parent.** A file's `session_plan_sets` are
-  inserted before their `session_exercises`, and the immediate foreign key refuses the first row on an
-  empty store, rolling the whole import back. `f76910ab` (B497) hoisted the insert above the return to
-  read its count, so it is a 2.32 regression; it passes on the same device only because the parents are
-  already there. Put the insert back after the parents (or defer the key) and add a round-trip test whose
-  file carries a two-set plan snapshot.
-
 - **N356 — The block CSV pairs a prescription and a performance by plan place, not stored index.** The
   snapshot keeps the template's raw `setIndex`, while a logged set is appended at `max + 1` and that MAX
   counts soft-deleted rows. Deleting a set and pressing Undo, a document plan numbered from one, or a

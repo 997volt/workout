@@ -657,6 +657,37 @@ class BackupRoundTripTest {
     }
 
     @Test
+    fun aFreshRestore_writesAPlanSnapshotAfterItsSessionExercise() = runTest {
+        // N355: the snapshot's foreign key is immediate, and the import used to insert it before the
+        // session exercise it hangs off. On an empty database that failed the whole restore, so a file
+        // taken after any template-started workout could not be restored where it mattered.
+        seedAWorkout()
+        database.sessionPlanSetDao().insertAll(
+            listOf(
+                SessionPlanSetEntity(
+                    sessionExerciseId = "se-1",
+                    setIndex = 0,
+                    role = SetType.NORMAL,
+                    targetWeightGrams = 100_000L,
+                    targetAssistanceGrams = null,
+                    targetRepsMin = 5,
+                    targetRepsMax = 8,
+                    targetRepsCurrent = 5,
+                    targetDurationSeconds = null,
+                    targetRpeHalves = 16,
+                ),
+            ),
+        )
+        val json = exportedJson()
+
+        database.clearAllTables()
+        val imported = repository.import(json)
+
+        assertTrue("a fresh restore of a session plan must not roll back: $imported", imported is DataResult.Success)
+        assertEquals(1, database.sessionPlanSetDao().findFor(listOf("se-1")).size)
+    }
+
+    @Test
     fun aRestoreDoesNotLayASecondGoalBoundaryOnADeviceDay() = runTest {
         // B485: the device's row for a day is the newer statement; a file row with another id on that day
         // must not create a second boundary the editor's day rules cannot address.
