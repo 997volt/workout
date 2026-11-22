@@ -18,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -123,8 +124,12 @@ fun WeightGoalRow(
     onDismissSave: () -> Unit = {},
 ) {
     var showingHistory by rememberSaveable { mutableStateOf(false) }
-    var editor by remember { mutableStateOf<GoalPeriodEditor?>(null) }
-    var saving by remember { mutableStateOf(false) }
+    // The editor and its draft are saveable (N362): the activity declares no `configChanges`, and a
+    // rotation used to close the dialog and discard both picked days and the typed weight.
+    var editor by rememberSaveable(stateSaver = GoalPeriodEditorSaver) {
+        mutableStateOf<GoalPeriodEditor?>(null)
+    }
+    var saving by rememberSaveable { mutableStateOf(false) }
 
     GoalSaveEffect(saveOutcome) { success ->
         if (success) editor = null
@@ -612,6 +617,18 @@ private class GoalPeriodDraft(
     private val today: LocalDate,
     editor: GoalPeriodEditor,
 ) {
+    /** The form's values as the saveable list [rememberGoalPeriodDraft] stores (N362). */
+    fun saveParts(): List<Any?> = listOf(kindName, weight, startDay, endDay, pickingStart, pickingEnd)
+
+    fun restoreParts(parts: List<*>) {
+        kindName = parts[0] as String?
+        weight = parts[1] as String
+        startDay = parts[2] as Long?
+        endDay = parts[3] as Long?
+        pickingStart = parts[4] as Boolean
+        pickingEnd = parts[5] as Boolean
+    }
+
     val canHaveEnd: Boolean = editor.canHaveEnd
 
     /** Only the undated row the N137 migration creates, and only when it already exists, may keep no start (B232). */
@@ -668,7 +685,62 @@ private fun rememberGoalPeriodDraft(
     editor: GoalPeriodEditor,
     metric: MetricEntry,
     today: LocalDate,
-): GoalPeriodDraft = remember(editor) { GoalPeriodDraft(metric, today, editor) }
+): GoalPeriodDraft {
+    val saver = remember(editor, metric, today) {
+        Saver<GoalPeriodDraft, Any>(
+            save = { it.saveParts() },
+            restore = { parts -> GoalPeriodDraft(metric, today, editor).apply { restoreParts(parts as List<*>) } },
+        )
+    }
+    return rememberSaveable(editor, metric, today, saver = saver) { GoalPeriodDraft(metric, today, editor) }
+}
+
+/**
+ * The editor's identity and the values it opened with, as a saveable list (N362).
+ *
+ * A `GoalPeriodEditor` is a data class from a history row; only its fields are needed to reopen the same
+ * question, so it travels as primitives rather than as a Bundle-unsafe object.
+ */
+private val GoalPeriodEditorSaver: Saver<GoalPeriodEditor?, Any> = Saver(
+    save = { editor ->
+        editor?.let {
+            listOf(
+                it.id,
+                it.start.toEpochDay(),
+                it.end?.toEpochDay(),
+                it.goal?.kind()?.name,
+                it.goal?.statedWeightGrams(),
+                it.canHaveEnd,
+                it.startKnown,
+                it.titleRes,
+            )
+        } ?: emptyList<Any?>()
+    },
+    restore = { saved ->
+        val parts = saved as List<*>
+        if (parts.isEmpty()) {
+            null
+        } else {
+            GoalPeriodEditor(
+                id = parts[0] as String?,
+                start = LocalDate.ofEpochDay(parts[1] as Long),
+                end = (parts[2] as Long?)?.let(LocalDate::ofEpochDay),
+                goal = goalFrom(parts[3] as String?, parts[4] as Long?),
+                canHaveEnd = parts[5] as Boolean,
+                startKnown = parts[6] as Boolean,
+                titleRes = parts[7] as Int,
+            )
+        }
+    },
+)
+
+private fun goalFrom(kindName: String?, grams: Long?): WeightGoal? = when (kindName) {
+    WeightGoalKind.TARGET.name -> grams?.let { WeightGoal.Target(it) }
+    WeightGoalKind.MAINTAIN.name -> grams?.let { WeightGoal.Maintain(it) }
+    WeightGoalKind.LOSE.name -> WeightGoal.Direction(gain = false)
+    WeightGoalKind.GAIN.name -> WeightGoal.Direction(gain = true)
+    else -> null
+}
 
 private fun weightGoalFor(kind: WeightGoalKind?, typed: String, metric: MetricEntry): WeightGoal? = when (kind) {
     null -> null

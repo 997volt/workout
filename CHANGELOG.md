@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The goal-period editor survives a rotation** (N362). It and its draft were plain `remember`s, so a
+  rotation closed the dialog and discarded the typed weight and both picked days; its test never typed a
+  value or recorded the callback it claimed to check. Editor and draft now travel as primitives, and the
+  test types a target, reads it back from the save callback, and restores the screen with the dialog open.
 - **A restored planned set goes back into the plan's order** (N361). Removing a set renumbers the
   survivors, so the hidden row's stored index could name a place a live row now held: export, remove the
   middle set, import, and two live rows shared index 1 (a later session snapshot then dropped one). The

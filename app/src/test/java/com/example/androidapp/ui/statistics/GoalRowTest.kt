@@ -4,14 +4,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.androidapp.domain.model.WeightGoal
+import com.example.androidapp.domain.model.WeightGoalKind
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.theme.AndroidAppTheme
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -29,6 +35,8 @@ class GoalRowTest {
     @Test
     fun aFailedSave_keepsTheEditor_andASuccessClosesIt() {
         var outcome by mutableStateOf<Boolean?>(null)
+        var saved: WeightGoal? = null
+        var savedStart: LocalDate? = null
         composeTestRule.setContent {
             AndroidAppTheme {
                 WeightGoalRow(
@@ -36,7 +44,10 @@ class GoalRowTest {
                     metric = MetricRegistry.entryFor(MetricKey.Body(BodyMetric.WEIGHT)),
                     history = emptyList(),
                     today = today,
-                    onSavePeriod = { _, _, _, _ -> },
+                    onSavePeriod = { _, start, _, goal ->
+                        saved = goal
+                        savedStart = start
+                    },
                     saveOutcome = outcome,
                     onDismissSave = { outcome = null },
                 )
@@ -45,7 +56,15 @@ class GoalRowTest {
 
         composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_SET).performClick()
         composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_PERIOD_DIALOG).assertExists()
+        // Type the value the test's name promises to keep: a period with no kind offers no weight field.
+        composeTestRule.onNodeWithTag(TestTags.Statistics.weightGoalKind(WeightGoalKind.TARGET)).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_FIELD).performTextInput("78.5")
         composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_CONFIRM).performClick()
+
+        composeTestRule.runOnIdle {
+            assertEquals(WeightGoal.Target(78_500L), saved)
+            assertEquals(today, savedStart)
+        }
 
         // Nothing is closed until the write answers.
         composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_PERIOD_DIALOG).assertExists()
@@ -57,6 +76,32 @@ class GoalRowTest {
         composeTestRule.runOnIdle { outcome = true }
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_PERIOD_DIALOG).assertDoesNotExist()
+    }
+
+    @Test
+    fun aRotationKeepsTheGoalPeriodDialogAndWhatWasTyped() {
+        // N362: the editor and its draft were plain `remember`s, so a rotation closed the dialog and
+        // discarded both picked days and the typed weight.
+        val tester = StateRestorationTester(composeTestRule)
+        tester.setContent {
+            AndroidAppTheme {
+                WeightGoalRow(
+                    goal = null,
+                    metric = MetricRegistry.entryFor(MetricKey.Body(BodyMetric.WEIGHT)),
+                    history = emptyList(),
+                    today = today,
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_SET).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.weightGoalKind(WeightGoalKind.TARGET)).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_FIELD).performTextInput("78.5")
+
+        tester.emulateSavedInstanceStateRestore()
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_PERIOD_DIALOG).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_FIELD).assertTextContains("78.5")
     }
 
     @Test
