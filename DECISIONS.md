@@ -1605,9 +1605,9 @@ the rule; that one argues it.
   kept more than once (N157). The workout is named **Deload A · 5 Oct, Deload B · 5 Oct, …** in day order, with its
   week, so a year of them is not a shelf of identical names (N300); the weekday still starts from the source day at
   that position, and the
-  template editor renames a workout that now mixes upper and lower work. The store is
-  **schema 7**; the **backup's `schemaVersion` stays at 5**, so an older build reading a newer file keeps the mark
-  and the workouts but not the plan (B165). The plan travels in the backup as authored setup; N47's program
+  template editor renames a workout that now mixes upper and lower work. The store was
+  **schema 7** when this landed (it is **26** now); the **backup's `schemaVersion` stayed at 5** for that change
+  (it is **10** now), so an older build reading a newer file keeps the mark and the workouts but not the plan (B165). The plan travels in the backup as authored setup; N47's program
   document still carries neither it nor its workouts, because a week-keyed plan is history.
   ([evidence](DECISIONS-EVIDENCE.md#n147))
 - **An exempt week and a deload week are two actions** (N300). The mark is the **exemption**: it is named *Exempt
@@ -2208,8 +2208,9 @@ the rule; that one argues it.
   backup's `schemaVersion` moves for a program kind because an older build reading a sequence as a
   weekly program would repeat it forever — a wrong meaning, not a dropped extra — and the **program
   document** is the same argument made stronger, because a document is the path a block actually
-  arrives by. So the document's `formatVersion` moves to **5** with the field, while
-  `MINIMUM_FORMAT_VERSION` stays **4**, and the backup splits the same way: `CURRENT` 7, `MINIMUM` 5.
+  arrives by. So the document's `formatVersion` moves with the field (it was **5** when this landed and is **8**
+  now), while `MINIMUM_FORMAT_VERSION` stays **4**, and the backup splits the same way: `CURRENT` 7 at the time
+  (**10** now), `MINIMUM` 5.
   The **ceiling** is what stops an older build reading a sequence; the **floor** only asks whether an
   old document still means what it says, and a v4 document is a weekly program — nothing in it became
   wrong. Moving the floor with the ceiling would refuse every saved export and the three bundled
@@ -2377,8 +2378,8 @@ the rule; that one argues it.
 - **The lint baseline is unwired on purpose.** Accepting a warning is a two-step, reviewed
   act, not a side effect of running the build.
 - **Formatting is checked on the lines a change touched, not on the tree** (B123, answered by N129).
-  The ruleset reports **276 findings across 97 files** on today's code — 84 of them `ImportOrdering`
-  alone, in **84** files, measured with
+  The ruleset reports **74 findings across 59 files** on today's code — 50 of them `ImportOrdering`
+  alone, measured with
   `./gradlew :app:detektFormattingCheck --no-configuration-cache --rerun-tasks` (642 across 155 when N129
   took it; the fall is drift, not a different ruleset, and the ratio is what the rule rests on) — so
   putting it in the gate means either the repository-wide reformat B123

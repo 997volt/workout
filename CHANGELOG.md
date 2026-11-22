@@ -17,6 +17,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The documentation states today's numbers and commands** (N369). DECISIONS' N147 and N185 entries gave
+  the schema, backup and document versions as current when they were the state those decisions landed in —
+  they now say both the then and the now — and the formatting-findings count is re-measured (74 across 59
+  files) with the command it names. AGENTS' local fixture proof uses `git status`, which sees an untracked
+  fixture, and the helper page no longer says the only file it writes is the backup.
 - **The helper refuses a too-old program document**, and its catalog status is true for a current export
   (N368). The page checked only the format ceiling and then stamped the working copy at the current
   version, so a v1–3 document the app refuses was opened and re-badged; it now reads the same floor the

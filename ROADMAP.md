@@ -26,12 +26,6 @@ any template-started workout currently fails. The review did not run the instrum
 is stale on this checkout) and Robolectric still pins SDK 35 against targetSdk 37; those are verification
 gaps, not planned work.
 
-- **N369 — The documentation states today's numbers and commands.** DECISIONS carries stale backup,
-  schema, document-version and formatting-findings facts; re-measure the formatting count with the command
-  it already names and correct the others against the code. AGENTS' local fixture proof uses `git diff`,
-  which cannot see a new untracked fixture (CI uses `git status`), and the helper page still says the only
-  file it writes is the backup.
-
 - **N370 — The stale and orphaned KDocs the review found are removed.** An orphan block before
   `weightGoalOutcomes` links a `TARGET_TOLERANCE_GRAMS` that does not exist, two KDoc blocks sit on one
   property in `StatisticsViewModel`, `RecordTimelineTags` still calls itself temporary after the split
