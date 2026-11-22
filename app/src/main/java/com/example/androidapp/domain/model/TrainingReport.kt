@@ -72,10 +72,11 @@ data class TrainingExercise(
 /**
  * One set, performed, prescribed, or both.
  *
- * A plan row and its performance share a row when the plan's set index has a performed set; a plan row
- * with no performance is [performed] false and has no actual values; a performed set the plan did not
- * name has no planned values. A **failed attempt** is a performed set with [role] `FAILED_ATTEMPT` and
- * no completed rep — it is shown, but it is not volume.
+ * A prescribed row and its performance share a row when the performance holds that **plan place**
+ * (N356) — the two sides' stored set numbers are different spaces. A prescribed row with no performance
+ * is [performed] false and has no actual values; a performed set the plan did not name has no planned
+ * values. A **failed attempt** is a performed set with [role] `FAILED_ATTEMPT` and no completed rep — it
+ * is shown, but it is not volume, and it answers no prescribed row.
  */
 data class TrainingSet(
     val setIndex: Int,

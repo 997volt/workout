@@ -26,14 +26,6 @@ any template-started workout currently fails. The review did not run the instrum
 is stale on this checkout) and Robolectric still pins SDK 35 against targetSdk 37; those are verification
 gaps, not planned work.
 
-- **N356 — The block CSV pairs a prescription and a performance by plan place, not stored index.** The
-  snapshot keeps the template's raw `setIndex`, while a logged set is appended at `max + 1` and that MAX
-  counts soft-deleted rows. Deleting a set and pressing Undo, a document plan numbered from one, or a
-  failed attempt inserted mid-plan therefore misattributes the prescription and inflates
-  `planned_not_done` in the one file whose purpose is "the plan beside what was performed". Pair the way
-  the live prefill does (plan place, failed attempts consuming none), append unplanned performed rows, and
-  test those three cases.
-
 - **N357 — The helper's editor carries a hold.** Its set copies are built from `EDITOR_SET_FIELDS`, which
   does not name `targetDurationSeconds`: growing or adding a set on a hold writes one with no
   prescription, and holds of different lengths merge onto one line. Add the field, render a hold input

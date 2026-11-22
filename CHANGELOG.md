@@ -17,6 +17,12 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The block CSV pairs a plan with the set that answered it** (N356). The report joined the two by
+  stored set index, but a logged set is appended after the highest row the exercise has held (a deleted
+  one included) and a document plan may start at one. Delete-then-Undo, a one-based plan or a failed
+  attempt could show the wrong prescription and a false "planned, not done". The pairing is now by plan
+  place, the rule the workout screen already uses; a failed attempt is shown where it was logged and
+  answers no prescribed row.
 - **A restore writes a plan snapshot after its session exercise** (N355). The import inserted the
   snapshot rows before the session exercises they belong to, and the immediate foreign key failed the
   whole restore on an empty database — so a file taken after any template-started workout could not be

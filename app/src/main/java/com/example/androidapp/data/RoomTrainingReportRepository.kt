@@ -1,7 +1,6 @@
 package com.example.androidapp.data
 
 import com.example.androidapp.data.local.SessionPlanSetDao
-import com.example.androidapp.data.local.SessionPlanSetEntity
 import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.NotFoundException
@@ -11,14 +10,11 @@ import com.example.androidapp.domain.dataResultOf
 import com.example.androidapp.domain.model.BodyMeasurement
 import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.model.ProgramSlot
-import com.example.androidapp.domain.model.SetEntry
-import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.TrainingDay
 import com.example.androidapp.domain.model.TrainingExercise
 import com.example.androidapp.domain.model.TrainingMeasurement
 import com.example.androidapp.domain.model.TrainingReport
 import com.example.androidapp.domain.model.TrainingSession
-import com.example.androidapp.domain.model.TrainingSet
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.WorkoutSummary
 import com.example.androidapp.domain.nowEpochMillis
@@ -190,49 +186,15 @@ class RoomTrainingReportRepository @Inject constructor(
             exercises = exercises.map { exercise ->
                 TrainingExercise(
                     name = exercise.exerciseName,
-                    sets = setsFor(
-                        plans = plans[exercise.id].orEmpty(),
-                        actual = sets.filter { it.sessionExerciseId == exercise.id },
+                    sets = pairedTrainingSets(
+                        prescriptions = plans[exercise.id].orEmpty(),
+                        performed = sets.filter { it.sessionExerciseId == exercise.id },
                         unit = exercise.weightUnit ?: unit,
                     ),
                     joints = exercise.joints,
                 )
             },
         )
-    }
-
-    private fun setsFor(
-        plans: List<SessionPlanSetEntity>,
-        actual: List<SetEntry>,
-        unit: WeightUnit,
-    ): List<TrainingSet> {
-        val planByIndex = plans.associateBy { it.setIndex }
-        val actualByIndex = actual.associateBy { it.setIndex }
-        return (planByIndex.keys + actualByIndex.keys).sorted().map { index ->
-            val plan = planByIndex[index]
-            val performed = actualByIndex[index]
-            TrainingSet(
-                setIndex = index,
-                performed = performed != null,
-                role = performed?.setType ?: plan?.role ?: SetType.NORMAL,
-                unit = unit,
-                reps = performed?.reps ?: 0,
-                durationSeconds = performed?.durationSeconds,
-                weightGrams = performed?.weightGrams ?: 0L,
-                assistanceGrams = performed?.assistanceGrams ?: 0L,
-                bodyweightGrams = performed?.bodyweightGrams,
-                rpeHalves = performed?.rpeHalves,
-                comment = performed?.note,
-                plannedRole = plan?.role,
-                plannedReps = plan?.let {
-                    it.targetRepsCurrent ?: it.targetRepsMax ?: it.targetRepsMin
-                },
-                plannedWeightGrams = plan?.targetWeightGrams,
-                plannedAssistanceGrams = plan?.targetAssistanceGrams,
-                plannedDurationSeconds = plan?.targetDurationSeconds,
-                plannedRpeHalves = plan?.targetRpeHalves,
-            )
-        }
     }
 
     private fun BodyMeasurement.toTrainingMeasurement(): TrainingMeasurement = TrainingMeasurement(
