@@ -542,6 +542,37 @@ class WorkoutDetailScreenTest {
     }
 
     @Test
+    fun aRotation_keepsTheSaveAsPlanDialogAndItsTypedName() {
+        // N363: the flag and the typed name were plain remembers beside a saveable menu, so a rotation
+        // closed the dialog and the lifter had to type the plan's name again.
+        val tester = StateRestorationTester(composeTestRule)
+        tester.setContent {
+            WorkoutDetailScreen(
+                state = state,
+                onUpdateSet = { _, _, _, _, _, _, _, _ -> },
+                onDeleteSet = {},
+                onRateExercise = { _, _, _ -> },
+                onDeleteWorkout = {},
+                onMoveToDay = {},
+                onBack = {},
+                onOpenExerciseTrends = {},
+                onSaveAsTemplate = {},
+                onDismissSavedTemplate = {},
+                onOpenTemplate = {},
+                onScheduleTemplate = { _, _ -> },
+                onDismissMovedDay = {},
+            )
+        }
+        openMenu()
+        composeTestRule.onNodeWithTag(TestTags.DETAIL_SAVE_AS_PLAN).performClick()
+        composeTestRule.onNodeWithTag(TestTags.DETAIL_PLAN_NAME).performTextInput("Push day")
+
+        tester.emulateSavedInstanceStateRestore()
+
+        composeTestRule.onNodeWithTag(TestTags.DETAIL_PLAN_NAME).assertTextContains("Push day")
+    }
+
+    @Test
     fun aRotation_keepsTheHistorySetEditorOpen() {
         // B376: the host used to hold the open HistorySet in a plain remember, so a rotation closed the
         // editor before its saveable draft could be seen. The id is saveable now; the row is derived.

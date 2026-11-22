@@ -26,10 +26,6 @@ any template-started workout currently fails. The review did not run the instrum
 is stale on this checkout) and Robolectric still pins SDK 35 against targetSdk 37; those are verification
 gaps, not planned work.
 
-- **N363 — History detail's delete, save-as-plan and change-day dialogs survive a rotation.** Their
-  flags are `remember` beside a `rememberSaveable` menu and edit mode, in an activity with no
-  `configChanges`, so a rotation dismisses all three and loses a typed plan name. Save the flags.
-
 - **N364 — A failed previous-performance read is not "never trained".** The detail stores a failure as
   `null` and never retries it, removing every "vs last time" delta for that movement for the life of the
   screen. Cache only a success, retry a failure, and surface it, as the field's own KDoc promises.

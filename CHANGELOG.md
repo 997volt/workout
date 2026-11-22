@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **History detail's dialogs survive a rotation** (N363). The delete question, the save-as-plan dialog
+  and the change-day calendar were plain flags beside a saveable menu, so a rotation dismissed all three
+  and dropped a typed plan name. The flags and the name are saveable, and a restoration test types a name
+  and restores the screen with the dialog still open.
 - **The goal-period editor survives a rotation** (N362). It and its draft were plain `remember`s, so a
   rotation closed the dialog and discarded the typed weight and both picked days; its test never typed a
   value or recorded the callback it claimed to check. Editor and draft now travel as primitives, and the

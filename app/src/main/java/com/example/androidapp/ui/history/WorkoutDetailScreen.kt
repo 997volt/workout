@@ -225,9 +225,12 @@ fun WorkoutDetailScreen(
     val editing = editingSetId?.let { id ->
         state.exercises.asSequence().flatMap { it.sets.asSequence() }.firstOrNull { it.id == id }
     }
-    var confirmingDelete by remember { mutableStateOf(false) }
-    var savingAsPlan by remember { mutableStateOf(false) }
-    var changingDay by remember { mutableStateOf(false) }
+    // Saveable for the same reason the menu and the edit mode are (N363): this activity declares no
+    // `configChanges`, so a rotation would otherwise dismiss the delete question, the save-as-plan
+    // dialog and the change-day calendar mid-decision.
+    var confirmingDelete by rememberSaveable { mutableStateOf(false) }
+    var savingAsPlan by rememberSaveable { mutableStateOf(false) }
+    var changingDay by rememberSaveable { mutableStateOf(false) }
     // Reading or editing (N84). `rememberSaveable`, unlike the three above: a data class is not something a
     // Bundle can hold, but a mode the user chose is, and this activity declares no `configChanges` — so a
     // rotation would otherwise put the workout back into reading and switch every edit off under them.

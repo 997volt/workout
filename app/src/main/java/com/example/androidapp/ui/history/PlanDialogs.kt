@@ -46,7 +46,8 @@ private fun SaveAsPlanDialog(
     onDismiss: () -> Unit,
     onConfirm: (String) -> Unit,
 ) {
-    var name by remember { mutableStateOf("") }
+    // The name is the decision this dialog holds; a rotation must not make the lifter type it again (N363).
+    var name by rememberSaveable { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.detail_save_as_plan)) },
