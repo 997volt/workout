@@ -12,12 +12,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material.icons.filled.EventAvailable
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Straighten
+import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -312,9 +312,11 @@ private fun StatisticsBody(
             // Under the goal, because the rate is now *derived* from it rather than typed beside it
             // (N135): it is the same fact read at the speed the goal asks for.
             EnergyAdjustmentSection(
-                // The statement is a verdict, not a drawing: it reads the whole series so the chart's range
-                // (seven days by default) cannot silence it below N98's 21-day floor (B141).
-                series = MetricSeries(key = series.key, readings = state.goalReadings),
+                // The statement is a verdict, not a drawing: it reads the goal's own period, unwindowed, so
+                // neither the chart's range (seven days by default) nor a bodyweight from before the goal can
+                // silence or distort it (B141, N137).
+                series = MetricSeries(key = series.key, readings = state.goalReadings)
+                    .from(state.weightGoalStart),
                 metric = entry,
                 weightGoal = state.weightGoal,
                 rateTarget = state.rateTarget,

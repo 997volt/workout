@@ -542,6 +542,75 @@ class MeasurementsViewModelTest {
     }
 
     @Test
+    fun aWeighIn_speaksAboutTheGoalsPeriod_notTheBodyBeforeIt() = runTest(dispatcher) {
+        // The report: a lifter bulked from 65 kg and now holds 89-91 under a maintain goal of 90 ±1. The
+        // prompt read the whole history, whose fit is far below the corridor, and said "more than 1,500 kcal
+        // more"; the period the goal covers is inside it.
+        val goalStart = FIRST_DAY.plus(Duration.ofDays(30))
+        val old = (0L until 35L).map { week ->
+            entry("old$week", weight = 65_000L, at = goalStart.minus(Duration.ofDays(282 - week * 7)))
+        }
+        val recent = (0L until 22L).map { day ->
+            entry("recent$day", weight = 89_000L + 2_000L * day / 21, at = goalStart.plus(Duration.ofDays(day)))
+        }
+        entries.value = old + recent
+        val viewModel = viewModelOf(
+            FakeMeasurementRepository(entries),
+            FakeGoalRepository(
+                current = mapOf(
+                    WEIGHT_ID to GoalPeriod(
+                        id = "p0",
+                        startedAt = goalStart,
+                        kind = WeightGoalKind.MAINTAIN.name,
+                        value = 90_000.0,
+                    ),
+                ),
+            ),
+        )
+        backgroundScope.launch(dispatcher) { viewModel.uiState.collect {} }
+        advanceUntilIdle()
+
+        viewModel.onSave(entry("m-new", weight = 90_500L, at = goalStart.plus(Duration.ofDays(22))))
+        advanceUntilIdle()
+
+        val verdict = viewModel.rateVerdict.value
+        assertNotNull("the goal's own period has enough weigh-ins to answer", verdict)
+        assertTrue("and every one of them is inside the corridor", verdict!!.isOnTarget)
+    }
+
+    @Test
+    fun aGoalYoungerThanTheFloor_saysNothing_ratherThanFittingWhatCameBefore() = runTest(dispatcher) {
+        // A bodyweight from before the goal is not evidence about this goal: with three weigh-ins in its
+        // period the prompt waits, rather than quoting a fit the goal never covered.
+        val goalStart = LAST_DAY.minus(Duration.ofDays(2))
+        entries.value = weighIns() + listOf(
+            entry("young0", weight = 90_000L, at = goalStart),
+            entry("young1", weight = 90_200L, at = goalStart.plus(Duration.ofDays(1))),
+            entry("young2", weight = 90_100L, at = goalStart.plus(Duration.ofDays(2))),
+        )
+        val viewModel = viewModelOf(
+            FakeMeasurementRepository(entries),
+            FakeGoalRepository(
+                current = mapOf(
+                    WEIGHT_ID to GoalPeriod(
+                        id = "p0",
+                        startedAt = goalStart,
+                        kind = WeightGoalKind.MAINTAIN.name,
+                        value = 90_000.0,
+                    ),
+                ),
+            ),
+        )
+        backgroundScope.launch(dispatcher) { viewModel.uiState.collect {} }
+        advanceUntilIdle()
+
+        viewModel.onSave(entry("m-new", weight = 90_300L, at = LAST_DAY))
+        advanceUntilIdle()
+
+        assertNull("the old readings are not this goal's floor", viewModel.rateVerdict.value)
+    }
+
+    @Test
     fun aFailedSave_saysNothing_ratherThanAnsweringFromNothing() = runTest(dispatcher) {
         val repository = FakeMeasurementRepository(MutableStateFlow(weighIns()))
         repository.failNextSave = true

@@ -2045,10 +2045,14 @@ would be a second band around a band.
 **The derived rate is a share of the body *now*, which is why it is computed from the unwindowed series.** The
 chart is windowed by the chosen range; the rate is not, because a range that excluded the latest weigh-in would
 change the rate the goal asks for — and the goal did not change. **The energy statement uses the same unwindowed
-series**, for the same reason applied to a verdict: at the default seven days it sat below N98's
-eight-readings-over-21-days floor by construction, so it could not speak even when the weigh-in verdict could.
-The chart and the readings stay windowed; only the statement moves. (No roadmap row: found while implementing
-N149.)
+series from the goal's own period**, for the same reason applied to a verdict: at the default seven days it sat
+below N98's eight-readings-over-21-days floor by construction, so it could not speak even when the weigh-in
+verdict could. The period matters for the other half of the same rule: a lifter who had bulked from 65 kg to a
+hold of 90 ±1 had every recent weigh-in inside the corridor, while a fit over the whole history — the body before
+the goal included — sat 2.5 kg under it and read "more than 1,500 kcal a day more". The history already judges
+each period against the readings **in that period** (N137), so the live verdict reads the same stretch; a goal
+whose beginning is unknown (B232's undated first period) keeps the whole series, because the app cannot invent the
+boundary it would clip at. The chart and the readings stay windowed; only the statement moves.
 
 ## N136
 

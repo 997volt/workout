@@ -141,6 +141,14 @@ data class StatisticsUiState(
      */
     val goalPeriods: List<GoalPeriod> = emptyList(),
     /**
+     * When the open weight goal began, or null when there is no goal or its beginning is unknown (N137).
+     *
+     * The energy verdict reads **this period's** readings, not every weigh-in ever: a reading from before the
+     * goal is another body's, and a fit that took it in could call a lifter holding 90 ±1 thousands of calories
+     * short. Null keeps the whole series, which is all the undated first period allows.
+     */
+    val weightGoalStart: Instant? = null,
+    /**
      * The **whole** series the goal history is judged from, unwindowed (ROADMAP N137, B141).
      *
      * The chart's own [series] is clipped to the range chips, and a period's verdict must not be: a target is
@@ -539,6 +547,9 @@ class StatisticsViewModel @Inject constructor(
                     lifts = sources.lifts,
                     goal = levelGoal,
                     weightGoal = weightGoal,
+                    // The period the live verdict reads, beside the goal it reads it for: the energy section
+                    // clips `goalReadings` to this start, so a bodyweight from before the goal cannot move it.
+                    weightGoalStart = weightGoal?.let { current?.startedAt },
                     goalPeriods = periods,
                     // Unwindowed, beside the windowed `series`: the history judges each period against the
                     // readings **in that period**, not against what the range chips happen to show (B141).

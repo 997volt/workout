@@ -124,6 +124,20 @@ class GoalOutcomesTest {
     }
 
     @Test
+    fun maintenance_atTheCorridorEdge_isMet_ratherThanMissedByAFraction() {
+        // The report's own shape: 89-91 kg around a hold of 90 ±1, rising through the band. The fitted line's
+        // last value lands a fraction of a gram over 91.0 — the line's remainder, not a missed goal.
+        val outcomes = weightGoalOutcomes(
+            listOf(period(null, "MAINTAIN", 90_000.0)),
+            readings(
+                *((0L until 22L).map { day -> day to (89_000.0 + 2_000.0 * day / 21) }).toTypedArray(),
+            ),
+        )
+
+        assertThat(outcomes.single().outcome).isEqualTo(GoalOutcome.Met)
+    }
+
+    @Test
     fun maintenance_isMissed_whenTheWeightLeftIt() {
         val outcomes = weightGoalOutcomes(
             listOf(period(null, "MAINTAIN", 80_000.0)),

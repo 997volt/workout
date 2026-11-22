@@ -3,9 +3,9 @@ package com.example.androidapp.ui.statistics
 import com.example.androidapp.domain.model.WeightGoal
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
+import org.junit.Test
 import java.time.Duration
 import java.time.Instant
-import org.junit.Test
 
 /**
  * The energy adjustment a weight trend implies (ROADMAP N98).
@@ -172,6 +172,26 @@ class EnergyAdjustmentTest {
         assertThat(huge.capped).isTrue()
         assertThat(huge.eatsMore).isFalse()
         assertThat(huge.magnitude).isEqualTo(EnergyAdjustment.MAX_KCAL..EnergyAdjustment.MAX_KCAL)
+    }
+
+    @Test
+    fun aCorridorVerdict_readsTheGoalsPeriod_ratherThanTheBodyBeforeIt() {
+        // The report: a lifter who bulked from 65 kg now holds 89-91 under a maintain goal of 90 ±1. The
+        // whole-history fit sits 2.5 kg under the corridor and the capped sentence said "more than 1,500 kcal
+        // a day more"; the readings since the goal are the ones the goal is about, and they are inside it.
+        val before = (0L until 35L).map { week -> (week * 7) to 65_000.0 }
+        val goalDay = 282L
+        val sinceGoal = (0L until 22L).map { day ->
+            (goalDay + day) to (89_000.0 + 2_000.0 * day / 21)
+        }
+        val everything = series(*(before + sinceGoal).toTypedArray())
+
+        assertThat(everything.energyAdjustmentToCorridor(targetGrams = 90_000.0)!!.capped).isTrue()
+
+        val scoped = everything.from(everything.readings[before.size].at)
+            .energyAdjustmentToCorridor(targetGrams = 90_000.0)!!
+
+        assertThat(scoped.isOnTarget).isTrue()
     }
 
     @Test

@@ -1357,6 +1357,29 @@ class StatisticsScreenTest {
     }
 
     @Test
+    fun aWeightHeldSinceTheGoal_isNotJudgedAgainstTheBodyBeforeIt() {
+        // The report: a lifter bulked from 65 kg, now holds 89-91 under a maintain goal of 90 ±1, and the
+        // whole-history fit made the section say "more than 1500 kcal more". The goal's own period is what the
+        // verdict reads, so the bodyweight from before it cannot speak.
+        val old = (0L until 35L).map { week ->
+            MetricReading(Instant.parse("2025-01-01T08:00:00Z").plus(Duration.ofDays(week * 7)), 65_000.0)
+        }
+        val goalStart = Instant.parse("2025-10-10T08:00:00Z")
+        val sinceGoal = (0L until 22L).map { day ->
+            MetricReading(goalStart.plus(Duration.ofDays(day)), 89_000.0 + 2_000.0 * day / 21)
+        }
+        setScreen(
+            state = stateWithGoal(WeightGoal.Maintain(90_000L)).copy(
+                goalReadings = old + sinceGoal,
+                weightGoalStart = goalStart,
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_STATEMENT)
+            .assertTextEquals("Your trend is where you asked it to be")
+    }
+
+    @Test
     fun aMaintenanceGoal_belowTheFloor_saysWaiting_ratherThanQuotingANumber() {
         // B480: the default two weigh-ins are below N98's floor; the corridor branch used to quote a figure
         // from them while the rate branch and the weigh-in prompt both refused.

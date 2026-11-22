@@ -29,6 +29,24 @@ data class MetricSeries(
 )
 
 /**
+ * The readings from [startedAt] on, or this series when the goal's beginning is unknown (ROADMAP N137).
+ *
+ * A weight goal is a **period**, not a single number, and a reading from before its boundary is about another
+ * body — or another goal. A fit that took them in let a lifter holding 90 ±1 be told to eat more than 1,500 kcal
+ * more because of the bodyweight they had before the goal; the history already reads one period at a time
+ * ([weightGoalOutcomes]), and the live verdict is about the goal in force. A null start is the undated first
+ * period, whose beginning the app cannot know, so it keeps every reading rather than inventing a boundary.
+ */
+fun MetricSeries.from(startedAt: Instant?): MetricSeries =
+    copy(readings = readings.within(startedAt, until = null))
+
+/** The readings inside [from] (inclusive) to [until] (exclusive), each null meaning unbounded (ROADMAP N137). */
+internal fun List<MetricReading>.within(from: Instant?, until: Instant?): List<MetricReading> =
+    filter { reading ->
+        (from == null || !reading.at.isBefore(from)) && (until == null || reading.at.isBefore(until))
+    }
+
+/**
  * The readings for one metric (ROADMAP N35).
  *
  * Pure, and takes every source rather than a repository, for two reasons: the twenty-one series come from

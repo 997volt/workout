@@ -6,6 +6,7 @@ import com.example.androidapp.domain.model.WeightGoal
 import com.example.androidapp.domain.model.weightRateBandPerWeekGrams
 import com.example.androidapp.domain.repository.GoalPeriod
 import kotlin.math.abs
+import kotlin.math.roundToLong
 
 /**
  * What a period's goal turned out to be, as far as the weight series can say (ROADMAP N137).
@@ -69,11 +70,7 @@ private fun readingsWithin(
     period: GoalPeriod,
     next: GoalPeriod?,
     readings: List<MetricReading>,
-): List<MetricReading> = readings.filter { reading ->
-    val afterStart = period.startedAt?.let { !reading.at.isBefore(it) } ?: true
-    val beforeEnd = next?.startedAt?.let { reading.at.isBefore(it) } ?: true
-    afterStart && beforeEnd
-}
+): List<MetricReading> = readings.within(period.startedAt, until = next?.startedAt)
 
 private fun outcomeOf(period: GoalPeriod, readings: List<MetricReading>): GoalOutcome {
     val goal = period.weightGoal
@@ -108,7 +105,10 @@ private fun maintenanceOutcome(targetGrams: Long, readings: List<MetricReading>)
     }
 
 private fun stayedInCorridor(targetGrams: Long, readings: List<MetricReading>): Boolean {
-    val inside = { value: Double -> abs(value - targetGrams) <= MAINTENANCE_CORRIDOR_GRAMS }
+    // The band's edges are whole grams and the fit is not: a fitted value a fraction of a gram outside is the
+    // line's own remainder, not a morning's water, and comparing it raw turned a week of 89-91 at a hold of
+    // 90 ±1 into "Missed" on a 0.1 g overshoot. The comparison is made at the unit the band is stored in.
+    val inside = { value: Double -> abs(value.roundToLong() - targetGrams) <= MAINTENANCE_CORRIDOR_GRAMS }
     val recorded = readings.filter { it.value != null }
     val line = MetricSeries(MetricKey.Body(BodyMetric.WEIGHT), readings).trend()
     return if (line != null) {

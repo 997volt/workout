@@ -613,6 +613,45 @@ class StatisticsViewModelTest {
     }
 
     @Test
+    fun theOpenWeightGoalsStart_reachesTheState() = runTest(dispatcher) {
+        // N137: the live verdict reads the period the goal covers, so the screen needs its beginning. A weight
+        // from before it is another body's, and the energy section must not fit it.
+        val start = Instant.parse("2026-10-01T00:00:00Z")
+        val viewModel = viewModel(
+            range = StatisticsRange(RangeKind.ALL),
+            goalRepository = FakeGoalRepository(
+                current = mapOf(
+                    "BODY:WEIGHT" to GoalPeriod(
+                        id = "g",
+                        startedAt = start,
+                        kind = WeightGoalKind.MAINTAIN.name,
+                        value = 90_000.0,
+                    ),
+                ),
+            ),
+        )
+        observe(viewModel)
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.weightGoalStart).isEqualTo(start)
+    }
+
+    @Test
+    fun anUndatedGoal_hasNoStart_forTheVerdictToClipTo() = runTest(dispatcher) {
+        // The undated first period (B232) has no beginning the app can know, so the verdict keeps the whole
+        // series rather than inventing a boundary that would discard readings.
+        val viewModel = viewModel(
+            range = StatisticsRange(RangeKind.ALL),
+            goals = mapOf("BODY:WEIGHT" to 80_000.0),
+            goalKinds = mapOf("BODY:WEIGHT" to WeightGoalKind.MAINTAIN.name),
+        )
+        observe(viewModel)
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.weightGoalStart).isNull()
+    }
+
+    @Test
     fun aDirectionGoal_leavesTheChartWithNoLine() = runTest(dispatcher) {
         // N135's rule: the app never manufactures an end weight the lifter did not state, so there is no
         // level to draw — only the direction, which the rate carries.

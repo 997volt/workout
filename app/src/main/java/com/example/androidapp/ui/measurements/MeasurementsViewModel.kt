@@ -22,6 +22,7 @@ import com.example.androidapp.ui.statistics.MetricKey
 import com.example.androidapp.ui.statistics.MetricReading
 import com.example.androidapp.ui.statistics.MetricSeries
 import com.example.androidapp.ui.statistics.WEIGHT_METRIC_ID
+import com.example.androidapp.ui.statistics.from
 import com.example.androidapp.ui.statistics.weighInVerdict
 import com.example.androidapp.ui.statistics.weightGoalOutcomes
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -217,17 +218,18 @@ class MeasurementsViewModel @Inject constructor(
     private suspend fun verdictFor(measurement: BodyMeasurement): EnergyAdjustment? {
         // A zero is not a weigh-in (B336): the save states no weight, so it is not a question the trend can answer.
         if (measurement.kind != MeasurementKind.DAILY || measurement.statedWeightGrams == null) return null
-        val series = MetricSeries(
-            key = MetricKey.Body(BodyMetric.WEIGHT),
-            readings = repository.observeAll().first()
-                .mapNotNull { entry ->
-                    entry.statedWeightGrams?.let { grams -> MetricReading(entry.measuredAt, grams.toDouble()) }
-                }
-                .sortedBy { it.at },
-        )
+        val readings = repository.observeAll().first()
+            .mapNotNull { entry ->
+                entry.statedWeightGrams?.let { grams -> MetricReading(entry.measuredAt, grams.toDouble()) }
+            }
+            .sortedBy { it.at }
         // The period this metric has open (N137), read as the weight goal N135 gave it.
-        val goal = goals.observeCurrent().first()[WEIGHT_METRIC_ID]?.weightGoal
-        return series.weighInVerdict(goal, series.readings.lastOrNull()?.value?.toLong())
+        val period = goals.observeCurrent().first()[WEIGHT_METRIC_ID]
+        // The prompt is about the goal in force, so it reads that period and not the bodyweight the lifter had
+        // before it — the same stretch the statistics section reads, so the two cannot say different things.
+        return MetricSeries(key = MetricKey.Body(BodyMetric.WEIGHT), readings = readings)
+            .from(period?.startedAt)
+            .weighInVerdict(period?.weightGoal, readings.lastOrNull()?.value?.toLong())
     }
 
     /** Takes the sentence away once its snackbar has been read (ROADMAP N136). */

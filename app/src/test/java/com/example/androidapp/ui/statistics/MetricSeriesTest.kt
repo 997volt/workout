@@ -15,6 +15,7 @@ import com.example.androidapp.domain.model.jointSiteKey
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import org.junit.Test
+import java.time.Duration
 import java.time.Instant
 
 /**
@@ -309,6 +310,37 @@ class MetricSeriesTest {
         val series = metricSeries(MetricKey.Workout(TrendMetric.RPE))
 
         assertThat(series.readings).isEqualTo(emptyList<MetricReading>())
+    }
+
+    @Test
+    fun aSeriesFromAGoalsStart_keepsTheBoundaryDay_andDropsWhatCameBefore() {
+        // N137: a goal is a period. The weigh-in on the day it began belongs to it, and a bodyweight from
+        // before it belongs to whatever the lifter was asking for then — or to nothing at all.
+        val series = MetricSeries(
+            key = MetricKey.Body(BodyMetric.WEIGHT),
+            readings = listOf(
+                MetricReading(first, 65_000.0),
+                MetricReading(second, 89_000.0),
+                MetricReading(second.plus(Duration.ofDays(7)), 90_000.0),
+            ),
+        )
+
+        val scoped = series.from(second)
+
+        assertThat(scoped.readings.map { it.value }).isEqualTo(listOf(89_000.0, 90_000.0))
+        assertWithMessage("the series in hand is not rewritten").that(series.readings).hasSize(3)
+    }
+
+    @Test
+    fun aGoalWhoseBeginningIsUnknown_keepsEveryReading() {
+        // The undated first period (B232): the app cannot know when it started, so it does not invent a
+        // boundary that would throw readings away.
+        val series = MetricSeries(
+            key = MetricKey.Body(BodyMetric.WEIGHT),
+            readings = listOf(MetricReading(first, 65_000.0), MetricReading(second, 89_000.0)),
+        )
+
+        assertThat(series.from(null).readings).isEqualTo(series.readings)
     }
 
     private fun measurement(

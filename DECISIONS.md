@@ -1105,9 +1105,12 @@ the rule; that one argues it.
   ("about 200 kcal a day less than you are eating now") and the absolute target stays where the food is logged.
   **The band is measured, never assumed**: it is the fitted line's own standard error, null below three
   readings because a line through two points passes through both and every residual is zero. **The statement
-  reads the whole weight series**: the chart's range is a display setting and its seven-day default is below the
-  floor, so a verdict that used it could never speak (B141's rule). **Nothing is said until there is enough to
-  say it** — eight readings across twenty-one days — and below that the screen says so
+  reads the whole period of the goal in force**: the chart's range is a display setting and its seven-day default
+  is below the floor, so a verdict that used it could never speak (B141's rule) — but a weigh-in from before the
+  goal is another body's, and a fit that took it in told a lifter holding 90 ±1 to eat more than 1,500 kcal more
+  because of the weight they had left behind. The period is the same stretch the goal history judges (N137), so
+  the two surfaces cannot disagree about which readings the goal covers. **Nothing is said until there is enough
+  to say it** — eight readings across twenty-one days *within that period* — and below that the screen says so
   rather than drawing a figure from noise, which is P2.8's bar. **Nothing is written**: the statement sets no
   setting, no plan and no target, which is the app's oldest rule reaching a second surface.
 
