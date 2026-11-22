@@ -425,12 +425,18 @@ internal fun buildDeloadDays(
     weekdayOf: (DeloadSourceDay) -> DayOfWeek?,
 ): List<DeloadDayUi> {
     val pool = poolOf(sources)
+    var emitted = 0
     return (0 until dayCount).mapNotNull { index ->
         val day = sources.getOrNull(index) ?: return@mapNotNull null
         val selected = selectedByDay.getOrElse(index) { emptySet() }
+        // The name is the place the day takes **in what will be written** (N367): a day with nothing
+        // kept is left out, so the first written day is A however many empty cards sit above it. An
+        // empty card shows the name the next written day will take; it has no workout of its own.
+        val name = deloadDayName(emitted, weekLabel)
+        if (pool.any { it.exercise.templateExerciseId in selected }) { emitted += 1 }
         DeloadDayUi(
             sourceSlotId = day.sourceSlotId,
-            sourceName = deloadDayName(index, weekLabel),
+            sourceName = name,
             weekday = day.weekdayAfter(weekdayOf),
             exercises = pool.map { pooled ->
                 val exercise = pooled.exercise
@@ -497,13 +503,17 @@ internal fun buildDeloadInputs(
     weekdayOf: (DeloadSourceDay) -> DayOfWeek?,
 ): List<DeloadDayInput> {
     val pool = poolOf(sources)
+    var emitted = 0
     return (0 until dayCount).mapNotNull { index ->
         val day = sources.getOrNull(index) ?: return@mapNotNull null
         val selected = selectedByDay.getOrElse(index) { emptySet() }
         val kept = pool.map { it.exercise }.filter { it.templateExerciseId in selected }
         if (kept.isEmpty()) return@mapNotNull null
+        // Named by the place it is written at, not by the source day it started from (N367), so a
+        // first day left empty cannot make the week begin at "Deload B".
+        val name = deloadDayName(emitted++, weekLabel)
         DeloadDayInput(
-            name = deloadDayName(index, weekLabel),
+            name = name,
             weekday = day.weekdayAfter(weekdayOf),
             exercises = kept.map { exercise ->
                 DeloadExerciseInput(

@@ -17,6 +17,9 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A deload's workouts are named in the order they are written** (N367). Unticking the first day's whole
+  pool left a one-workout week called "Deload B", because the name came from the source day's index; the
+  preview and the write now number the days that are actually written, so the week starts at A.
 - **The rest choices wrap at a large font** (N366). Five fixed `m:ss` chips sat in a non-wrapping row, so
   the last values were clipped instead of moving to a second line. They use `FlowRow`, as the progression
   chips on the same screen already did.

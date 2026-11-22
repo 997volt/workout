@@ -26,11 +26,6 @@ any template-started workout currently fails. The review did not run the instrum
 is stale on this checkout) and Robolectric still pins SDK 35 against targetSdk 37; those are verification
 gaps, not planned work.
 
-- **N367 — A deload's workouts are named in the order they are written.** The name comes from the source
-  day's index, so unticking the first day writes "Deload B" as the week's first workout, contradicting the
-  builder's own KDoc and pinning the odd name in a test. Number from the emitted position and keep the
-  weekday from the source day.
-
 - **N368 — The helper enforces the document floor, and its catalog status is true for a current export.**
   The page checks only the ceiling and then stamps the working copy at the current version, so a v1–3
   document the app refuses is opened and re-badged (and a program taken from a newer backup is laundered

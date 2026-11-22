@@ -216,7 +216,18 @@ class DeloadCreatorStateTest {
             weekdayOf = weekdayOf,
         )
 
-        assertThat(inputs.map { it.name }).containsExactly("Deload B · $weekLabel")
+        assertThat(inputs.map { it.name }).containsExactly("Deload A · $weekLabel")
+        // The preview names the same day the same way: the empty first card does not shift the write
+        // (N367), so its own name is the next written one rather than a second "B".
+        val days = buildDeloadDays(
+            sources = sources,
+            weekLabel = weekLabel,
+            dayCount = 2,
+            selectedByDay = listOf(emptySet(), setOf("te3")),
+            loadKeptPercent = 60,
+            weekdayOf = weekdayOf,
+        )
+        assertThat(days[1].sourceName).isEqualTo("Deload A · $weekLabel")
     }
 
     @Test
