@@ -234,6 +234,34 @@ class ProgramCoreTest {
     }
 
     @Test
+    fun a_holdLongerThanADay_isRefused() {
+        // N358: the app's plan dialog refuses a hold past MAX_SET_SECONDS, and the page must not build a
+        // document its own write boundary would reject.
+        val document = baseDocument(
+            templateSets = listOf(
+                setRow("set_a", "te_a", 0).copy(
+                    targetWeightGrams = null,
+                    targetRepsMin = null,
+                    targetRepsMax = null,
+                    targetDurationSeconds = 86_401,
+                ),
+            ),
+        )
+
+        assertEquals(listOf(ProblemCode.INVALID_HOLD), validate(document).map { it.code })
+    }
+
+    @Test
+    fun a_repTargetAboveTheWriteBound_isRefused() {
+        // N358: MAX_REPS, the app's own plan bound; a document could carry 99,999 reps and the merge wrote it.
+        val document = baseDocument(
+            templateSets = listOf(setRow("set_a", "te_a", 0).copy(targetRepsMax = 10_001)),
+        )
+
+        assertEquals(listOf(ProblemCode.INVALID_REPS), validate(document).map { it.code })
+    }
+
+    @Test
     fun a_setThatNamesBothRepsAndAHold_isRefused() {
         // B308: a set is counted or held, never both — the exclusivity the app's write boundary already states.
         val document = baseDocument(

@@ -26,12 +26,6 @@ any template-started workout currently fails. The review did not run the instrum
 is stale on this checkout) and Robolectric still pins SDK 35 against targetSdk 37; those are verification
 gaps, not planned work.
 
-- **N358 — A program document is refused for every rule its merge cannot honour.** The boundary enforces
-  only `INVALID_HOLD` and `COUNTED_AND_HELD`, then writes with `INSERT OR IGNORE`: a repeated slot id
-  loses a day silently, and values the plan dialog and the strict backup import refuse are written because
-  the shared validator only has lower bounds. Refuse the merge-breaking codes, give the shared validator
-  the app's upper bounds, and test a document with a repeated slot id.
-
 - **N359 — The block CSV reads a stored zone through the total helper.** `offsetOf` calls
   `ZoneOffset.ofTotalSeconds` directly (and multiplies minutes in an `Int`), so a database row with an
   out-of-range stored offset throws and the report screen crashes, because the writer runs on the button

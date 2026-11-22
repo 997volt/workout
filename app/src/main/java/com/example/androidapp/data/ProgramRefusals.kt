@@ -17,22 +17,31 @@ import kotlinx.coroutines.flow.first
  * app's are chosen. Stale and missing are the two the lifter can act on, so they get their own.
  */
 /**
- * Refuses a document whose **set targets** break the write boundary, before either import path writes (B328).
+ * Refuses a document the merge cannot write faithfully, before either import path writes (B328, N358).
  *
- * Only the two set rules are refused here, not every problem the shared validator can name: a document that
- * names an exercise this device does not hold is a case the merge handles by dropping the movement, and the
- * import has always accepted it (and says so in its summary). A set that is counted and held, or held for no
- * time, is different — the merge writes it straight into `template_sets`, bypassing the boundary that refuses
- * it, and the row is invalid the moment it exists.
+ * The shared validator names everything wrong with a document. Four of those are references the merge
+ * resolves by design: a slot or exercise naming a workout/movement this device already holds is kept, and
+ * one it does not is dropped and counted, which is the `droppedMovements` line the import has always
+ * shown. Every other problem describes a row the merge would write as it stands — a repeated id is
+ * silently ignored by `INSERT OR IGNORE`, a repeated position is stored, and a value the plan boundary
+ * refuses is written straight into `template_sets` — so those are refused here.
  */
 internal fun requireValidDocument(document: ProgramDocument) {
     val problems = ProgramDocumentCodec.problems(document)
-        .filter { it.code == ProblemCode.INVALID_HOLD || it.code == ProblemCode.COUNTED_AND_HELD }
+        .filterNot { it.code in DROPPED_BY_THE_MERGE }
     if (problems.isEmpty()) return
     throw InvalidInputException(
         if (document.edit != null) editRefusal(problems) else loadRefusal(problems),
     )
 }
+
+/** The reference failures the merge answers by resolving or dropping, and the summary counts. */
+private val DROPPED_BY_THE_MERGE = setOf(
+    ProblemCode.DANGLING_SLOT_TEMPLATE,
+    ProblemCode.DANGLING_TEMPLATE_EXERCISE,
+    ProblemCode.DANGLING_SET,
+    ProblemCode.DANGLING_EXERCISE,
+)
 
 /** A file being opened, in the same two write-boundary sentences an edit gets (B308, B328). */
 private fun loadRefusal(problems: List<ProgramProblem>): String {
@@ -43,6 +52,14 @@ private fun loadRefusal(problems: List<ProgramProblem>): String {
             "A set is either counted or held: it cannot name both reps and a hold."
 
         ProblemCode.EMPTY_NAME -> "Give the program a name."
+        ProblemCode.DUPLICATE_ID -> "Two rows in that file share an id; it cannot be imported as it stands."
+        ProblemCode.INVALID_REPS -> "A rep target must be between 1 and 10,000."
+        ProblemCode.INVALID_POSITION -> "Two rows in that file sit in the same place."
+        ProblemCode.INVALID_SET_INDEX -> "Two sets in that file share a place."
+        ProblemCode.INVALID_LOAD -> "A target load cannot be negative."
+        ProblemCode.INVALID_REST -> "A rest must be between 0 seconds and an hour."
+        ProblemCode.INVALID_RPE -> "A target effort must be between 1 and 10."
+        ProblemCode.INVALID_PHASE -> "That file mixes phased and unphased days."
         else ->
             "That program file does not fit the app's rules " +
                 "(${first.code.name.lowercase().replace('_', ' ')})."

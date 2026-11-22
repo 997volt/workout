@@ -4644,7 +4644,7 @@
       tmp = tmp0_elvis_lhs;
     }
     var hold = tmp;
-    if (hold < 1) {
+    if (!(1 <= hold ? hold <= 86400 : false)) {
       refuse.j1h(ProblemCode_INVALID_HOLD_getInstance(), path + '.targetDurationSeconds');
     }
     if (!(set.b1g_1 == null) || !(set.c1g_1 == null)) {
@@ -4657,7 +4657,7 @@
       null;
     else {
       // Inline function 'kotlin.let' call
-      if (tmp0_safe_receiver < 1) {
+      if (!(1 <= tmp0_safe_receiver ? tmp0_safe_receiver <= 10000 : false)) {
         refuse.j1h(ProblemCode_INVALID_REPS_getInstance(), path + '.targetRepsMin');
       }
     }
@@ -4666,7 +4666,7 @@
       null;
     else {
       // Inline function 'kotlin.let' call
-      if (tmp1_safe_receiver < 1) {
+      if (!(1 <= tmp1_safe_receiver ? tmp1_safe_receiver <= 10000 : false)) {
         refuse.j1h(ProblemCode_INVALID_REPS_getInstance(), path + '.targetRepsMax');
       }
     }
@@ -4680,7 +4680,7 @@
       null;
     else {
       // Inline function 'kotlin.let' call
-      if (tmp2_safe_receiver < 1) {
+      if (!(1 <= tmp2_safe_receiver ? tmp2_safe_receiver <= 10000 : false)) {
         refuse.j1h(ProblemCode_INVALID_REPS_getInstance(), path + '.targetRepsCurrent');
       }
       if (!(max == null) && tmp2_safe_receiver > max) {

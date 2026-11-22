@@ -16,6 +16,14 @@ private class Refusal(private val sink: (ProblemCode, String, String?) -> Unit) 
 /** The longest rest a plan may prescribe: an hour (N21's bound, enforced for the shared host too). */
 private const val MAX_REST_SECONDS = 3600
 
+/**
+ * The longest hold and the most reps a plan may prescribe, mirroring the app's `MAX_SET_SECONDS` and
+ * `MAX_REPS` (N358). The app's plan dialog and its strict backup import refuse these numbers, so the
+ * page must not build a document the app's write boundary would reject.
+ */
+private const val MAX_SET_SECONDS = 86_400
+private const val MAX_REPS = 10_000
+
 /** RPE is half-points, so 1.0–10.0 is 1..20 (N6). */
 private const val RPE_HALVES_MIN = 2
 private const val RPE_HALVES_MAX = 20
@@ -181,12 +189,12 @@ private fun validateSetTargets(document: ProgramDocument, refuse: Refusal) {
 /**
  * The hold a set prescribes, if it names one (ROADMAP N242, B308).
  *
- * The same two rules the app's write boundary refuses, so the page cannot build a document the app would
- * reject: a hold is at least one second, and a set is counted **or** held, never both.
+ * The same rules the app's write boundary refuses, so the page cannot build a document the app would
+ * reject: a hold is between one second and a day, and a set is counted **or** held, never both (N358).
  */
 private fun validateHold(set: TemplateSetDto, path: String, refuse: Refusal) {
     val hold = set.targetDurationSeconds ?: return
-    if (hold < 1) refuse(ProblemCode.INVALID_HOLD, "$path.targetDurationSeconds")
+    if (hold !in 1..MAX_SET_SECONDS) refuse(ProblemCode.INVALID_HOLD, "$path.targetDurationSeconds")
     if (set.targetRepsMin != null || set.targetRepsMax != null) {
         refuse(ProblemCode.COUNTED_AND_HELD, path)
     }
@@ -195,13 +203,13 @@ private fun validateHold(set: TemplateSetDto, path: String, refuse: Refusal) {
 /** The range's ends and where the lifter is in it: a current rung outside its own range is a plan no
  * session can read. */
 private fun validateReps(set: TemplateSetDto, path: String, refuse: Refusal) {
-    set.targetRepsMin?.let { if (it < 1) refuse(ProblemCode.INVALID_REPS, "$path.targetRepsMin") }
-    set.targetRepsMax?.let { if (it < 1) refuse(ProblemCode.INVALID_REPS, "$path.targetRepsMax") }
+    set.targetRepsMin?.let { if (it !in 1..MAX_REPS) refuse(ProblemCode.INVALID_REPS, "$path.targetRepsMin") }
+    set.targetRepsMax?.let { if (it !in 1..MAX_REPS) refuse(ProblemCode.INVALID_REPS, "$path.targetRepsMax") }
     val min = set.targetRepsMin
     val max = set.targetRepsMax
     if (min != null && max != null && min > max) refuse(ProblemCode.INVALID_REPS, path)
     set.targetRepsCurrent?.let { current ->
-        if (current < 1) refuse(ProblemCode.INVALID_REPS, "$path.targetRepsCurrent")
+        if (current !in 1..MAX_REPS) refuse(ProblemCode.INVALID_REPS, "$path.targetRepsCurrent")
         if (max != null && current > max) refuse(ProblemCode.INVALID_REPS, "$path.targetRepsCurrent")
         if (min != null && current < min) refuse(ProblemCode.INVALID_REPS, "$path.targetRepsCurrent")
     }

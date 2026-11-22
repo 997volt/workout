@@ -17,6 +17,12 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A program document is refused when its merge cannot write it** (N358). The boundary enforced only the
+  two hold rules, so a repeated id was silently dropped by `INSERT OR IGNORE`, a repeated position was
+  stored, and reps or holds past the plan's own bounds were written; the shared validator also had only
+  lower bounds. It now mirrors the app's **10,000 reps** and **day-long hold** limits, and every problem
+  the merge cannot honour is refused before the write. The four reference failures the merge resolves or
+  drops — a movement or workout this device holds or does not — are still accepted and counted.
 - **The helper editor carries a hold** (N357). Its set copies came from a field list that did not name the
   hold, so growing or adding a set on a plank wrote one with no prescription, and two holds of different
   lengths merged onto one line. The page now copies the hold, shows a **Hold (s)** field that clears the
