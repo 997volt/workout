@@ -17,6 +17,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A failed attempt is not a warm-up to the write boundary, and not a plan place in the rest timer**
+  (N365). N346 fixed the picker's rung refusal; the repository had its own copy of the rule, and it called a
+  failed attempt a warm-up when it blocked a drop. The rule is one function now, used by both. The rest
+  timer also counted every performed row, so an attempt started a rest between an anchor and its drop; it
+  counts plan places, as the prefill does.
 - **A failed previous-performance read no longer reads as "never trained"** (N364). The detail stored a
   failure in the same `null` as "no earlier session" and never retried, so a transient storage error
   removed every "vs last time" delta for that movement while the screen stayed open. A failure is retried

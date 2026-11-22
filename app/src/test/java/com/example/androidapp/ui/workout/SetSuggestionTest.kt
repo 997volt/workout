@@ -3,14 +3,15 @@ package com.example.androidapp.ui.workout
 import com.example.androidapp.domain.Load
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.WeightUnit
-import com.example.androidapp.ui.components.values
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.PreviousPerformance
+import com.example.androidapp.domain.model.RungRefusal
 import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSet
+import com.example.androidapp.ui.components.values
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull

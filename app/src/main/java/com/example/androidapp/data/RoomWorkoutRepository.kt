@@ -28,6 +28,7 @@ import com.example.androidapp.domain.model.PersonalRecords
 import com.example.androidapp.domain.model.PreviousPerformance
 import com.example.androidapp.domain.model.ProgressionDirection
 import com.example.androidapp.domain.model.Rpe
+import com.example.androidapp.domain.model.RungRefusal
 import com.example.androidapp.domain.model.SessionExercise
 import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.domain.model.SetType
@@ -35,12 +36,11 @@ import com.example.androidapp.domain.model.TenPointScale
 import com.example.androidapp.domain.model.WorkoutSession
 import com.example.androidapp.domain.model.WorkoutSummary
 import com.example.androidapp.domain.model.movedToDay
+import com.example.androidapp.domain.model.rungRefusalFor
 import com.example.androidapp.domain.model.zoneIdOrNull
 import com.example.androidapp.domain.nowEpochMillis
 import com.example.androidapp.domain.repository.StartedSession
 import com.example.androidapp.domain.repository.WorkoutRepository
-import com.example.androidapp.ui.workout.RungRefusal
-import com.example.androidapp.ui.workout.sentence
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -972,13 +972,7 @@ private fun rungRefusal(
     var start = above.size
     while (start > 0 && above[start - 1].setType == role) start--
     val anchor = above.getOrNull(start - 1)
-    // The same three causes `SetSuggestion.refusalForLoggingAs` tells apart for the picker, read off the
-    // **stored** rows rather than the session's own type.
-    return when {
-        !role.isRung -> null
-        anchor == null -> RungRefusal.NothingAbove
-        anchor.setType.recordsEffort -> null
-        anchor.setType.isRung -> RungRefusal.ARungAbove
-        else -> RungRefusal.OnlyAWarmUp
-    }
+    // The picker's own rule, read off the **stored** rows rather than the session's type. It used to be a
+    // second copy that never learned a failed attempt is not a warm-up (N346, N365).
+    return rungRefusalFor(role, anchor?.setType)
 }

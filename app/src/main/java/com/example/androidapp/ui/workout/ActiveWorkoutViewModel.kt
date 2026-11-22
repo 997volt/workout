@@ -996,7 +996,6 @@ class ActiveWorkoutViewModel @Inject constructor(
         _volumeUndo.value = null
     }
 
-
     /**
      * Writes how an exercise felt, at any time (ROADMAP N10).
      *
@@ -1161,7 +1160,9 @@ class ActiveWorkoutViewModel @Inject constructor(
                 // And the group's own rest waits for the run to close (N79): a rung has no rest of its
                 // own between it and the next, because the point of a drop or a cluster is that the
                 // sets follow each other.
-                val runContinues = row.sets.size in row.runContinuesAfter
+                // A failed attempt is a performed row but not a plan place (N329, N365): counting it
+                // started a rest between an anchor and its drop.
+                val runContinues = row.sets.count { it.setType.occupiesAPlanPlace } in row.runContinuesAfter
                 if (!runContinues && uiState.value.roundIsCompleteFor(row)) {
                     // The group's own rest wins in a superset, then this exercise's, then the
                     // app setting (ROADMAP N5, N21, B15). Taking the rest from whichever member
