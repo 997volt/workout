@@ -35,6 +35,8 @@ data class TrainingReportUiState(
     val isLoading: Boolean = false,
     val report: TrainingReport? = null,
     val blocks: List<TrainingBlockChoice> = emptyList(),
+    /** A failed read of the block list; the report can still load, but Change has nothing to offer (N371). */
+    val blocksError: DataError? = null,
     val error: DataError? = null,
     val writing: Boolean = false,
     val outcome: TrainingReportOutcome? = null,
@@ -126,16 +128,15 @@ class TrainingReportViewModel @Inject constructor(
     private fun load(block: suspend () -> DataResult<TrainingReport>) {
         _state.update { it.copy(isLoading = true, error = null, outcome = null) }
         viewModelScope.launch {
-            val blocks = when (val recent = repository.recentBlocks()) {
-                is DataResult.Success -> recent.data
-                is DataResult.Failure -> emptyList()
-            }
+            val recent = repository.recentBlocks()
+            val blocks = (recent as? DataResult.Success)?.data.orEmpty()
+            val blocksError = (recent as? DataResult.Failure)?.error
             when (val result = block()) {
                 is DataResult.Success -> _state.update {
-                    it.copy(isLoading = false, report = result.data, blocks = blocks)
+                    it.copy(isLoading = false, report = result.data, blocks = blocks, blocksError = blocksError)
                 }
                 is DataResult.Failure -> _state.update {
-                    it.copy(isLoading = false, error = result.error, blocks = blocks)
+                    it.copy(isLoading = false, error = result.error, blocks = blocks, blocksError = blocksError)
                 }
             }
         }

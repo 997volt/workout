@@ -37,8 +37,8 @@ internal fun historyGroups(
             } else {
                 val month = HistoryFormat.month(group.month, locale)
                 val rows = group.workouts
-                    .filter { row -> row.searchWords(month).contains(wanted) }
-                    .map { row -> row.withMatch(wanted) }
+                    .filter { row -> row.searchWords(month, locale).contains(wanted) }
+                    .map { row -> row.withMatch(wanted, locale) }
                 // A month with nothing left in it is not a heading over an empty list: the heading exists to
                 // group rows, and a query that removed them all has nothing to group.
                 rows.takeIf { it.isNotEmpty() }?.let { HistoryGroup(month = group.month, workouts = it) }
@@ -47,16 +47,16 @@ internal fun historyGroups(
 }
 
 /** What a row is searched by: the month above it, what it was, and a workout's set count. */
-private fun WorkoutSummary.withMatch(wanted: String): WorkoutSummary {
+private fun WorkoutSummary.withMatch(wanted: String, locale: Locale): WorkoutSummary {
     val match = when {
-        notes?.searchKey()?.contains(wanted) == true -> HistoryMatch.NOTES
-        exerciseNames?.searchKey()?.contains(wanted) == true -> HistoryMatch.EXERCISES
+        notes?.searchKey(locale)?.contains(wanted) == true -> HistoryMatch.NOTES
+        exerciseNames?.searchKey(locale)?.contains(wanted) == true -> HistoryMatch.EXERCISES
         else -> null
     }
     return copy(searchMatch = match)
 }
 
-private fun WorkoutSummary.searchWords(month: String): String = buildString {
+private fun WorkoutSummary.searchWords(month: String, locale: Locale): String = buildString {
     append(month)
     append(' ')
     // The stored name rather than the row's label: the label is a string resource, and a ViewModel may not read
@@ -74,7 +74,7 @@ private fun WorkoutSummary.searchWords(month: String): String = buildString {
         append(' ')
         append(setCount)
     }
-}.searchKey(Locale.getDefault())
+}.searchKey(locale)
 
 /**
  * The form both a query and a row are compared in: lowercase, and without the spaces.

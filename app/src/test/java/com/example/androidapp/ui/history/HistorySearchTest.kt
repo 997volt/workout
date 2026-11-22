@@ -54,6 +54,24 @@ class HistorySearchTest {
     }
 
     @Test
+    fun aQuery_isNormalizedInTheLocaleItWasGiven() {
+        // N371: the query key used the supplied locale while the row's words read the machine default.
+        // In Turkish a capital I lowercases to a dotless ı, so the two sides disagreed and the row was missed.
+        val turkish = Locale.forLanguageTag("tr")
+        val iso = squatDay.copy(templateName = "ISO", activity = null, notes = null, exerciseNames = null)
+
+        val groups = historyGroups(
+            workouts = listOf(iso),
+            query = "ı",
+            filter = HistoryFilter.ALL,
+            zone = zone,
+            locale = turkish,
+        )
+
+        assertThat(groups.flatMap { it.workouts }.map { it.id }).containsExactly("squat")
+    }
+
+    @Test
     fun aQuery_reachesThePlansName() {
         val groups = historyGroups(
             workouts = listOf(squatDay, swimDay),

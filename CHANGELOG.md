@@ -17,6 +17,13 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **Four small defects the review found** (N371). A failed calibration read with no marked exercises left a
+  non-null empty notice list, which drew a title-only dialog with no buttons under the error's own dialog —
+  the list is null now. A failed block-list read was drawn as "no blocks"; the sheet says the read failed
+  and still loads the report. `planned_not_done` counts only planned sets inside the sessions you did, and
+  the sheet's label now says so — a day never trained is its own `not_done` row. History search normalized
+  the query in the locale it was given but the row's words in the machine default, so a Turkish dotless ı
+  could miss a title.
 - **The stale and orphaned KDocs the review found are gone** (N370). The goal reader carried a dead block
   linking a constant that never existed, two blocks sat on one property, the timeline's tags still called
   themselves a temporary home after the split landed, the record query described a live-path divergence

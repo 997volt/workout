@@ -1473,7 +1473,9 @@ class ActiveWorkoutViewModel @Inject constructor(
                         if (notice == null) closeSession() else showStalls(notice)
                     } else {
                         pendingStallNotice.value = notice
-                        _calibrationNotice.value = calibration.notices
+                        // Empty notices with a read error is not a prompt (N371): a non-null empty list
+                        // drew a title-only dialog with no buttons under the error's own dialog.
+                        _calibrationNotice.value = calibration.notices.ifEmpty { null }
                         _calibrationReadError.value = calibration.error
                     }
                 }

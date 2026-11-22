@@ -61,6 +61,7 @@ internal fun TrainingReportSheet(
                     state.report != null -> ReportContent(
                         report = state.report,
                         blocks = state.blocks,
+                        blocksError = state.blocksError,
                         onChoose = onChoose,
                         onLastWeeks = onLastWeeks,
                     )
@@ -109,6 +110,7 @@ internal fun TrainingReportSheet(
 private fun ReportContent(
     report: TrainingReport,
     blocks: List<com.example.androidapp.domain.repository.TrainingBlockChoice>,
+    blocksError: com.example.androidapp.domain.DataError?,
     onChoose: (String) -> Unit,
     onLastWeeks: () -> Unit,
 ) {
@@ -133,6 +135,8 @@ private fun ReportContent(
         Text(stringResource(R.string.history_block_includes_title))
         Text(stringResource(R.string.history_block_includes))
         Text(stringResource(R.string.history_block_warning))
+        // A failed list read is said rather than drawn as "no blocks" (N371).
+        blocksError?.let { Text(dataErrorMessage(it)) }
         ChangeMenu(blocks = blocks, onChoose = onChoose, onLastWeeks = onLastWeeks)
     }
 }

@@ -1972,6 +1972,7 @@ class ActiveWorkoutViewModelTest {
         settle()
 
         assertNotNull("the read's failure is held for one acknowledgement", viewModel.calibrationReadError.value)
+        assertNull("an empty prompt is not drawn under the error (N371)", viewModel.calibrationNotice.value)
         assertFalse("the workout waits for that acknowledgement", viewModel.closed.value)
 
         viewModel.onDismissCalibrationReadError()

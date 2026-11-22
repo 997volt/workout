@@ -138,6 +138,9 @@ object TrainingReportCsv {
                 it.sets.count { set -> set.performed }
             }
         }
+        // The planned sets a **session** left undone. A day that was never trained carries no plan rows
+        // here — its `day_status=not_done` row is the statement, and counting its plan would need a read the
+        // report does not carry (N371).
         val plannedNotDone = report.sessions.sumOf { session ->
             session.exercises.sumOf { exercise -> exercise.sets.count { set -> !set.performed } }
         }

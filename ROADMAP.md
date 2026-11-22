@@ -26,12 +26,6 @@ any template-started workout currently fails. The review did not run the instrum
 is stale on this checkout) and Robolectric still pins SDK 35 against targetSdk 37; those are verification
 gaps, not planned work.
 
-- **N371 — The review's small app fixes.** A failed calibration read with no marked exercises stores an
-  empty, non-null notice list and draws a button-less modal (make it null); a failed `recentBlocks` read is
-  shown as "no blocks" (surface it); `planned_not_done` omits the plan of an untrained day (rename or count
-  it); `historyGroups` normalizes the query with its locale but the row words with the machine default
-  (pass it through). One commit can carry the four, with the comment that names each.
-
 - **N372 — The review's tooling cleanups.** The single-file build splices raw text between script tags and
   never loads the page, so a `</script>` inside an inlined file would truncate it and still pass; the
   formatting plugin is still declared on the main detekt classpath beside the B289 comment that says only

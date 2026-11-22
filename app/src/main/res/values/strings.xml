@@ -793,8 +793,8 @@
         <item quantity="other">%1$d sets</item>
     </plurals>
     <plurals name="history_block_planned_not_done">
-        <item quantity="one">%1$d planned set not done</item>
-        <item quantity="other">%1$d planned sets not done</item>
+        <item quantity="one">%1$d planned set not done in a session</item>
+        <item quantity="other">%1$d planned sets not done in sessions</item>
     </plurals>
     <string name="history_block_includes_title">Everything in the block</string>
     <string name="history_block_includes">Sessions and activities, every set and its role, the plan and what was done, comments, RPE, assistance, bodyweight, readiness, sore muscles, joint pain, body measurements and the block’s missed days.</string>

@@ -112,6 +112,28 @@ class TrainingReportViewModelTest {
     }
 
     @Test
+    fun aFailedBlockList_isSaid_andTheReportStillLoads() = runTest(dispatcher) {
+        // N371: a failed recentBlocks read was drawn as an empty Change list. The report can still load;
+        // the failure has to be said rather than become "there are no other blocks".
+        val repository = FakeRepository(
+            result = DataResult.Success(report()),
+            blocks = DataResult.Failure(DataError.Storage(IllegalStateException("disk"))),
+        )
+        val viewModel = TrainingReportViewModel(
+            repository = repository,
+            documentIo = FakeDocumentIo(),
+            timeSource = TimeSource { Instant.parse("2026-10-17T10:00:00Z") },
+        )
+
+        viewModel.open("Last 8 weeks")
+        advanceUntilIdle()
+
+        assertThat(viewModel.state.value.report).isNotNull()
+        assertThat(viewModel.state.value.blocks).isEmpty()
+        assertThat(viewModel.state.value.blocksError).isInstanceOf(DataError.Storage::class.java)
+    }
+
+    @Test
     fun opening_loadsTheBlock_andShareStagesTheOneCsv() = runTest(dispatcher) {
         val repository = FakeRepository(
             result = DataResult.Success(report()),
