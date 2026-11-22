@@ -33,13 +33,6 @@ sealed interface GoalOutcome {
 data class GoalPeriodOutcome(val period: GoalPeriod, val outcome: GoalOutcome)
 
 /**
- * How close to a stated weight counts as **reaching** it (ROADMAP N137).
- *
- * The corridor, rather than a second tolerance: the app already has exactly one answer to "close enough to a
- * weight", and it is the one maintenance holds (N135). A number invented here would be a second opinion about
- * the same question.
- */
-/**
  * What became of each of [periods], read from the weight series (ROADMAP N137).
  *
  * The reader the entry asks for: **clip the series to the period and compare it with what that period asked
@@ -50,7 +43,7 @@ data class GoalPeriodOutcome(val period: GoalPeriod, val outcome: GoalOutcome)
  * What "met" means depends on the kind, which is why this needs N135's kinds at all:
  *
  *  - a **target** is a fact about a reading, so it needs no trend — the weight was reached when something in the
- *    period sat within [TARGET_TOLERANCE_GRAMS] of it;
+ *    period sat within [TARGET_REACHED_TOLERANCE_GRAMS] of it;
  *  - a **direction** is a rate, so it is judged on the fitted trend being inside N135's band *and* on the side
  *    the lifter asked for — and it therefore needs a fit, and N98's floor behind it, because a verdict about the
  *    past must not be a rate from three weigh-ins either;

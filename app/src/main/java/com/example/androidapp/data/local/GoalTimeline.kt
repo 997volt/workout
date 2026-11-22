@@ -39,8 +39,6 @@ internal object GoalTimeline {
     fun startOfDay(day: LocalDate, zone: ZoneId): Long =
         day.atStartOfDay(zone).toInstant().toEpochMilli()
 
-    /** The row whose boundary is [day], whether it was written at midnight or at a clock time. */
-
     /**
      * The row in force before [day]: the last one that starts on an earlier day, or the undated first row.
      *

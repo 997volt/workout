@@ -26,12 +26,6 @@ any template-started workout currently fails. The review did not run the instrum
 is stale on this checkout) and Robolectric still pins SDK 35 against targetSdk 37; those are verification
 gaps, not planned work.
 
-- **N370 — The stale and orphaned KDocs the review found are removed.** An orphan block before
-  `weightGoalOutcomes` links a `TARGET_TOLERANCE_GRAMS` that does not exist, two KDoc blocks sit on one
-  property in `StatisticsViewModel`, `RecordTimelineTags` still calls itself temporary after the split
-  landed, and `StatisticsDao` describes a live-record divergence that `recordsAgainst` already merged.
-  Delete or correct them.
-
 - **N371 — The review's small app fixes.** A failed calibration read with no marked exercises stores an
   empty, non-null notice list and draws a button-less modal (make it null); a failed `recentBlocks` read is
   shown as "no blocks" (surface it); `planned_not_done` omits the plan of an untrained day (rename or count

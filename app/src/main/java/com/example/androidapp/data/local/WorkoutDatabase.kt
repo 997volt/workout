@@ -91,6 +91,11 @@ import androidx.room.TypeConverters
  * session opens its sets blank instead of prefilling from history; the marker is one-shot and a weight
  * the lifter enters clears it. Every plan already on disk is unmarked. See [MIGRATION_24_25].
  *
+ * **Schema 26 is B471**, one table: the plan a session exercise started under, one row per prescribed
+ * set, so the stall and volume rules judge a past session against the plan it trained rather than
+ * today's. Every session already on disk has no snapshot and is read as it was. See
+ * [MIGRATION_25_26].
+ *
  * There is deliberately **no** `fallbackToDestructiveMigration()`: it would turn
  * a forgotten migration into silent, total data loss for a user's training
  * history. A missing migration must fail loudly in development instead — which is exactly why 2.0

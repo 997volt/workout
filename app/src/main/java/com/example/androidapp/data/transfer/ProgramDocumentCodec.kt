@@ -31,12 +31,6 @@ object ProgramDocumentCodec {
         SharedProgramDocumentCodec.encode(document.toShared())
 
     /**
-     * Parses [text], or throws [InvalidInputException] with a message worth showing.
-     *
-     * The shared gate answers with codes, not English, because the page renders its own sentences.
-     * Turning a code into the app's wording is this object's one job.
-     */
-    /**
      * The shared validator's problems for a decoded document (B328).
      *
      * The document is a write path: the import merges its rows straight into the store, so the rules the page
@@ -45,6 +39,12 @@ object ProgramDocumentCodec {
      */
     fun problems(document: ProgramDocument): List<ProgramProblem> = validate(document.toShared())
 
+    /**
+     * Parses [text], or throws [InvalidInputException] with a message worth showing.
+     *
+     * The shared gate answers with codes, not English, because the page renders its own sentences.
+     * Turning a code into the app's wording is this object's one job.
+     */
     fun decode(text: String): ProgramDocument =
         try {
             SharedProgramDocumentCodec.decode(text).toApp()

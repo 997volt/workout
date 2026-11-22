@@ -17,6 +17,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The stale and orphaned KDocs the review found are gone** (N370). The goal reader carried a dead block
+  linking a constant that never existed, two blocks sat on one property, the timeline's tags still called
+  themselves a temporary home after the split landed, the record query described a live-path divergence
+  that `recordsAgainst` had already merged, the database's schema story stopped at 25, and the
+  automatic-backup folder helper's KDoc sat on the method below it.
 - **The documentation states today's numbers and commands** (N369). DECISIONS' N147 and N185 entries gave
   the schema, backup and document versions as current when they were the state those decisions landed in —
   they now say both the then and the now — and the formatting-findings count is re-measured (74 across 59

@@ -1,13 +1,6 @@
 package com.example.androidapp.ui.statistics
 
-/**
- * The records timeline's test tags (ROADMAP N290).
- *
- * **Temporary home**: N285 is splitting `TestTags` into area files while this change is in flight, so these
- * four belong in `TestTagsStatistics`'s `StatisticsTags` and are referenced as `TestTags.Statistics.*` once
- * that split lands. Keeping them in the feature file until then lets the timeline and its tests compile
- * without an edit to a file another change owns.
- */
+/** The records timeline's own test tags (ROADMAP N290); the N285 split left them with the feature. */
 internal object RecordTimelineTags {
     const val TIMELINE = "statistics_records_timeline"
     const val EMPTY = "statistics_records_empty"

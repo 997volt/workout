@@ -105,12 +105,6 @@ class SafBackupFolderFiles @Inject constructor(
         false
     }
 
-    /**
-     * A name in [children] that nothing holds: [fileName], or the same name with `-2`, `-3` … appended.
-     *
-     * A second-resolution stamp made two writes in one second the same file; the same-instant case is still
-     * possible across devices and clock changes, so the folder is asked rather than assumed (B248).
-     */
     override suspend fun read(treeUri: String, fileName: String): String? = try {
         withContext(Dispatchers.IO) {
             val tree = treeUri.toUri()
@@ -130,6 +124,12 @@ class SafBackupFolderFiles @Inject constructor(
         null
     }
 
+    /**
+     * A name in [children] that nothing holds: [fileName], or the same name with `-2`, `-3` … appended.
+     *
+     * A second-resolution stamp made two writes in one second the same file; the same-instant case is still
+     * possible across devices and clock changes, so the folder is asked rather than assumed (B248).
+     */
     private fun freeName(children: Uri, fileName: String): String {
         val taken = namesIn(children).toSet()
         if (fileName !in taken) return fileName

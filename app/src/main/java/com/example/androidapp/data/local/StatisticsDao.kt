@@ -26,13 +26,9 @@ interface StatisticsDao {
      * makes "earlier" mean anything when two sessions share a timestamp.
      *
      * **"Earlier" spans the whole of a session, including a second row for the same exercise.** The live path
-     * (`onLogSet`) is narrower than that: it reads history excluding the current session and then merges only
-     * the sets of the row being added to, so a second row for the same exercise does not see the first, and
-     * each row's first set repeating the same weight is announced as a record twice. This query counts one.
-     * The count is the rule `PersonalRecords.isRecord` states — matching a best is not beating it — and the
-     * announce path is the one that diverges; narrowing this to match it was tried and rejected because it
-     * made a single session's repeated set stop counting and contradicted this query's own tests. Fixing the
-     * divergence means the live path merging the whole session's sets for the exercise rather than one row.
+     * merges every row of the movement before it announces (`ActiveWorkoutViewModel.recordsAgainst`), so a
+     * second row's first set sees the first; both sides count one, and the rule is `PersonalRecords.isRecord` —
+     * matching a best is not beating it.
      *
      * Warm-ups are excluded on both sides, which is B17's rule — a heavy warm-up is not a record — and a
      * bodyweight set is excluded by `bodyweightGrams IS NULL` (B281). It used to rely on `weightGrams > 0`

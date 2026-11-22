@@ -120,8 +120,7 @@ data class StatisticsUiState(
     val series: MetricSeries? = null,
     /** The read failed, shown in place of the chart (the same shape the trends screen uses). */
     val error: DataError? = null,
-    /** A range write failed; shown as a snackbar rather than replacing the chart (B229). */
-    /** A settings write on this screen failed: the range, a target, or the recents row (B229, B281). */
+    /** A range or settings write on this screen failed; shown as a snackbar (B229, B281). */
     val settingsError: DataError? = null,
     /** The library, for choosing the lift an Exercise metric is about. */
     val lifts: List<Exercise> = emptyList(),
