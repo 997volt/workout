@@ -234,10 +234,8 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     // Truth replaces JUnit's `assertEquals(expected, actual)` where a test is being
     // written or touched: those two arguments are easy to swap and the failure message
-    // does not say which value was which. Turbine makes a sequence of emissions
-    // assertable, which a polled `.value` cannot express at all. Both are JVM-only.
+    // does not say which value was which. JVM-only.
     testImplementation(libs.truth)
-    testImplementation(libs.turbine)
     // Compose UI tests run on the JVM under Robolectric, so a UI assertion costs
     // seconds instead of a 26-minute CI emulator cycle. The instrumented job stays
     // for anything that genuinely needs a device.
@@ -255,9 +253,9 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
 
     detektPlugins(libs.detekt.rules.compose)
+    // Only `detektFormattingCheck` loads this (B289, N129): on `detektPlugins` it would put
+    // formatting findings into the gate's report, which is the thing its own comment refuses.
     detektFormattingRules(libs.detekt.formatting)
-    // N129: not loaded by the gate above — see detektFormattingCheck below.
-    detektPlugins(libs.detekt.formatting)
 }
 
 /**

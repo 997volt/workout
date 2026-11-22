@@ -15,24 +15,6 @@ work was planned, so they do not always run in order — and an id this file doe
 shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 [CHANGELOG-1.x.md](CHANGELOG-1.x.md) for the 1.x releases.
 
-## Next — the 2.33 whole-app review fixes
-
-A whole-app review of 2.33 covered every module, the shared core, the import helper, CI and the
-documentation. It found no security or privacy defect and the gates pass, so this batch is correctness
-and contract work rather than a broken build. The entries are ordered by severity; each leaves this list
-in the commit that fixes it, so an entry still here is open. N355 is a 2.32 regression and the only
-data-loss defect: the export is the app's only escape hatch, and a fresh restore of a file taken after
-any template-started workout currently fails. The review did not run the instrumented suite (its report
-is stale on this checkout) and Robolectric still pins SDK 35 against targetSdk 37; those are verification
-gaps, not planned work.
-
-- **N372 — The review's tooling cleanups.** The single-file build splices raw text between script tags and
-  never loads the page, so a `</script>` inside an inlined file would truncate it and still pass; the
-  formatting plugin is still declared on the main detekt classpath beside the B289 comment that says only
-  the formatting task loads it; and Turbine is declared, documented as used, and imported nowhere. Refuse
-  the sequence and smoke-load the result, drop the duplicate declaration, and use or remove Turbine with
-  its coroutines exception.
-
 ## Later
 
 - **N330 — A 1RM test has its own view.** Once N329 exists, a test's attempts can read as one story:

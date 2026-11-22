@@ -17,6 +17,12 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The single-file build proves its scripts, and two dead declarations are gone** (N372). The portable
+  page is built by splicing raw file text between `<script>` tags and is never loaded by CI; it now refuses
+  a `</script>` or `<!--` in an inlined file and compiles every inlined script, so a truncation fails the
+  build instead of a browser. The formatting plugin is loaded only by `detektFormattingCheck` (the gate no
+  longer carries it, so its `formatting: active: false` exclusion went with it), and Turbine — declared,
+  documented as used, imported nowhere — is removed along with its coroutines exception.
 - **Four small defects the review found** (N371). A failed calibration read with no marked exercises left a
   non-null empty notice list, which drew a title-only dialog with no buttons under the error's own dialog —
   the list is null now. A failed block-list read was drawn as "no blocks"; the sheet says the read failed

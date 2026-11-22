@@ -17,19 +17,14 @@
 # above forbids. The decision, the current count and the command that produces it are in DECISIONS.md
 # (B123, and its Process section).
 #
-# N129 added the middle path, and it needs the block below. The plugin is on the classpath so that
-# `detektFormattingCheck` can load it, and loading it registers its rules as *defaults* for every detekt
-# task — so the gate has to switch them off by name rather than by not asking for them. That is what
-# `formatting: active: false` is: an exclusion with a reason, not a rule quietly disabled. The rules
-# themselves live in [detekt-formatting.yml](detekt-formatting.yml), which
+# N129 added the middle path: the plugin is loaded **only** by `detektFormattingCheck`, through its own
+# configuration rather than `detektPlugins` (N372), so loading it cannot register its rules as defaults for
+# this gate and no `formatting: active: false` exclusion is needed here. The rules themselves live in
+# [detekt-formatting.yml](detekt-formatting.yml), which
 # [tools/format-changed.py](../../tools/format-changed.py) loads over the files a change touches.
 
 config:
   validation: true
-
-formatting:
-  # Off in this gate; on in detekt-formatting.yml over changed files. See the header.
-  active: false
 
 Compose:
   CompositionLocalAllowlist:

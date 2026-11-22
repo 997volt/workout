@@ -54,23 +54,57 @@ sharedFiles.forEach(function (name) {
 
 // Replacements are functions: a Kotlin/JS bundle contains `$'` and `$&`, which a string
 // replacement would read as substitution patterns and splice the rest of the page into itself.
+/*
+ * A file spliced between script tags must not be able to close its own tag or open an HTML
+ * comment (N372): either would truncate the portable page's script, and the old check only
+ * looked for leftover `src=` references, so a corrupt build still passed.
+ */
+function inline(source, name) {
+  if (/<\/script/i.test(source)) {
+    console.error('build failed: ' + name + ' contains </script>, which would close the inlined block');
+    process.exit(1);
+  }
+  if (source.indexOf('<!--') !== -1) {
+    console.error('build failed: ' + name + ' contains <!--, which would hide the rest of the page');
+    process.exit(1);
+  }
+  return '<script>\n' + source + '\n</script>';
+}
+
 var out = html
   .replace('<link rel="stylesheet" href="style.css">', function () {
     return '<style>\n' + css + '\n</style>';
   })
   .replace('<script src="seed-catalog.js"></script>', function () {
-    return '<script>\n' + seed + '\n</script>';
+    return inline(seed, 'seed-catalog.js');
   })
   .replace('<script src="app.js"></script>', function () {
-    return '<script>\n' + js + '\n</script>';
+    return inline(js, 'app.js');
   });
 
 sharedFiles.forEach(function (name) {
   var tag = '<script src="shared/' + name + '"></script>';
   var source = fs.readFileSync(path.join(root, 'shared', name), 'utf8');
   out = out.replace(tag, function () {
-    return '<script>\n' + source + '\n</script>';
+    return inline(source, 'shared/' + name);
   });
+});
+
+// The page is never loaded by CI, so this compiles every inlined script as the browser would
+// parse it: a truncation or a stray token fails here rather than in a browser (N372).
+var scripts = out.match(/<script>([\s\S]*?)<\/script>/g) || [];
+if (scripts.length === 0) {
+  console.error('build failed: the portable page has no script to check');
+  process.exit(1);
+}
+scripts.forEach(function (tag, index) {
+  var source = tag.replace(/^<script>\n?/, '').replace(/\n?<\/script>$/, '');
+  try {
+    new Function(source);
+  } catch (error) {
+    console.error('build failed: inlined script ' + (index + 1) + ' does not parse: ' + error.message);
+    process.exit(1);
+  }
 });
 
 if (/<link[^>]+href="(?!data:)/.test(out) || /<script[^>]+src=/.test(out)) {
