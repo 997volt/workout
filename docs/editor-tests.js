@@ -352,6 +352,43 @@
       t.eq(JSON.parse(shared.validateJson(JSON.stringify(document))).problems.length, 0);
     });
 
+    // N357: a set copies its members from EDITOR_SET_FIELDS, and a hold is a target like any other.
+    // The page used to drop it on every copy, writing a set that prescribed nothing, and judged two
+    // holds of different lengths as one line.
+    check('a hold survives a grown line and a new set', function () {
+      var document = baseDocument();
+      var first = document.templateSets[0];
+      first.targetRepsMin = null;
+      first.targetRepsMax = null;
+      first.targetRepsCurrent = null;
+      first.targetDurationSeconds = 45;
+
+      var grown = H.editorSetRunCount(document, 'set_a', '3');
+      t.eq(grown.length, 3, 'the hold line is three sets');
+      t.ok(grown.every(function (set) { return set.targetDurationSeconds === 45; }),
+        'every copy keeps the hold');
+      t.ok(grown.every(function (set) { return set.targetRepsMin === null && set.targetRepsMax === null; }),
+        'and none of them gained reps');
+
+      H.editorAddSet(document, 'te_a');
+      var added = setsOf(document)[3];
+      t.eq(added.targetDurationSeconds, 45, 'an added set carries the hold it follows');
+      t.eq(added.targetRepsMin, null, 'still a hold, not a rep count');
+      t.eq(JSON.parse(shared.validateJson(JSON.stringify(document))).problems.length, 0);
+    });
+
+    check('holds of different lengths are different lines', function () {
+      var document = baseDocument();
+      document.templateSets[0].targetRepsMin = null;
+      document.templateSets[0].targetRepsMax = null;
+      document.templateSets[0].targetDurationSeconds = 30;
+      H.editorAddSet(document, 'te_a');
+      setsOf(document)[1].targetDurationSeconds = 60;
+
+      t.eq(H.editorSetRuns(document, 'te_a').length, 2, 'a 60-second hold is not a 30-second one');
+      t.eq(JSON.parse(shared.validateJson(JSON.stringify(document))).problems.length, 0);
+    });
+
     // B206, B207. Growing a line that is not the workout's last used to append its copies after the
     // last set, so a middle line's extra sets landed at the end and the line split in two on the next
     // render; and zero used to clamp to one and delete the rest of the line.

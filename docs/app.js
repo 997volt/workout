@@ -7137,6 +7137,7 @@
       targetRepsMin: carriesTargets ? last.targetRepsMin : null,
       targetRepsMax: carriesTargets ? last.targetRepsMax : null,
       targetRepsCurrent: null,
+      targetDurationSeconds: carriesTargets ? last.targetDurationSeconds : null,
       dropValueGrams: null,
       note: null,
       createdAt: now,
@@ -7157,6 +7158,7 @@
     'targetRepsMin',
     'targetRepsMax',
     'targetRepsCurrent',
+    'targetDurationSeconds',
     'dropValueGrams',
     'note'
   ];
@@ -7812,7 +7814,8 @@
             targetAssistanceGrams: set.targetAssistanceGrams,
             targetRepsMin: set.targetRepsMin,
             targetRepsMax: set.targetRepsMax,
-            targetRepsCurrent: set.targetRepsCurrent
+            targetRepsCurrent: set.targetRepsCurrent,
+            targetDurationSeconds: set.targetDurationSeconds
           },
           writable: true,
           configurable: true,
@@ -7824,6 +7827,7 @@
       set.targetRepsMin = null;
       set.targetRepsMax = null;
       set.targetRepsCurrent = null;
+      set.targetDurationSeconds = null;
     } else if (set.editorCarried) {
       var carried = set.editorCarried;
       set.targetWeightGrams = carried.targetWeightGrams;
@@ -7831,6 +7835,7 @@
       set.targetRepsMin = carried.targetRepsMin;
       set.targetRepsMax = carried.targetRepsMax;
       set.targetRepsCurrent = carried.targetRepsCurrent;
+      set.targetDurationSeconds = carried.targetDurationSeconds;
       delete set.editorCarried;
     }
     if (set.role !== 'DROP') { set.dropValueGrams = null; }
@@ -7858,6 +7863,22 @@
       return function (value) {
         var parsed = parse(value);
         run.forEach(function (set) { set[field] = parsed; });
+      };
+    }
+    /**
+     * A rep field is the other half of the counted-or-held choice (B308, N357): typing a rep clears
+     * the hold on every member, and the hold input on screen, without a re-render that would take the
+     * focus out of the field being typed in. The hold's own writer clears the reps instead.
+     */
+    var holdInput = null;
+    function writesReps(field) {
+      return function (value) {
+        var parsed = editorParseInt(value);
+        run.forEach(function (set) {
+          set[field] = parsed;
+          if (parsed !== null) { set.targetDurationSeconds = null; }
+        });
+        if (parsed !== null && holdInput) { holdInput.value = ''; }
       };
     }
     row.appendChild(editorSelect('Role', EDITOR_ROLES.map(function (role) {
@@ -7893,11 +7914,27 @@
         row.appendChild(count);
       }
 
-      row.appendChild(editorTextField('Reps from', first.targetRepsMin, writes('targetRepsMin', editorParseInt), { type: 'number', step: '1' }));
-      row.appendChild(editorTextField('Reps to', first.targetRepsMax, writes('targetRepsMax', editorParseInt), { type: 'number', step: '1' }));
+      // The hold and the reps are one choice: a set is counted or held, never both (B308, N357).
+      // `change`, not `input`, because writing a hold clears the rep fields and re-renders the line.
+      var hold = editorTextField('Hold (s)', first.targetDurationSeconds, function (value) {
+        var parsed = editorParseInt(value);
+        run.forEach(function (set) {
+          set.targetDurationSeconds = parsed;
+          if (parsed !== null) {
+            set.targetRepsMin = null;
+            set.targetRepsMax = null;
+            set.targetRepsCurrent = null;
+          }
+        });
+        if (parsed !== null) { editorRender(); }
+      }, { type: 'number', step: '1', event: 'change' });
+      holdInput = hold.querySelector('input');
+      row.appendChild(hold);
+      row.appendChild(editorTextField('Reps from', first.targetRepsMin, writesReps('targetRepsMin'), { type: 'number', step: '1' }));
+      row.appendChild(editorTextField('Reps to', first.targetRepsMax, writesReps('targetRepsMax'), { type: 'number', step: '1' }));
       // Named for what the field holds rather than the spreadsheet's "at": the current rep target
       // inside the range, which is the number the sets ask for now (N74).
-      row.appendChild(editorTextField('Rep target', first.targetRepsCurrent, writes('targetRepsCurrent', editorParseInt), { type: 'number', step: '1' }));
+      row.appendChild(editorTextField('Rep target', first.targetRepsCurrent, writesReps('targetRepsCurrent'), { type: 'number', step: '1' }));
       row.appendChild(editorTextField('Load (kg, -assist)', editorLoadText(first.targetWeightGrams, first.targetAssistanceGrams), function (value) {
         var load = editorParseLoad(value);
         if (!load) { return; }

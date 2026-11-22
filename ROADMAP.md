@@ -26,11 +26,6 @@ any template-started workout currently fails. The review did not run the instrum
 is stale on this checkout) and Robolectric still pins SDK 35 against targetSdk 37; those are verification
 gaps, not planned work.
 
-- **N357 — The helper's editor carries a hold.** Its set copies are built from `EDITOR_SET_FIELDS`, which
-  does not name `targetDurationSeconds`: growing or adding a set on a hold writes one with no
-  prescription, and holds of different lengths merge onto one line. Add the field, render a hold input
-  exclusive with reps, and pin the round trip and run growth in a fixture.
-
 - **N358 — A program document is refused for every rule its merge cannot honour.** The boundary enforces
   only `INVALID_HOLD` and `COUNTED_AND_HELD`, then writes with `INSERT OR IGNORE`: a repeated slot id
   loses a day silently, and values the plan dialog and the strict backup import refuse are written because

@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The helper editor carries a hold** (N357). Its set copies came from a field list that did not name the
+  hold, so growing or adding a set on a plank wrote one with no prescription, and two holds of different
+  lengths merged onto one line. The page now copies the hold, shows a **Hold (s)** field that clears the
+  reps and is cleared by them, and both cases are fixture tests.
 - **The block CSV pairs a plan with the set that answered it** (N356). The report joined the two by
   stored set index, but a logged set is appended after the highest row the exercise has held (a deleted
   one included) and a document plan may start at one. Delete-then-Undo, a one-based plan or a failed
