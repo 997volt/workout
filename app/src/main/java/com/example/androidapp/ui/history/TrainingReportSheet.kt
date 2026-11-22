@@ -66,18 +66,7 @@ internal fun TrainingReportSheet(
                         onLastWeeks = onLastWeeks,
                     )
                 }
-                state.outcome?.let { outcome ->
-                    Text(
-                        text = stringResource(
-                            if (outcome == TrainingReportOutcome.WRITTEN) {
-                                R.string.history_block_written
-                            } else {
-                                R.string.history_block_write_failed
-                            },
-                        ),
-                        modifier = Modifier.testTag(TestTags.HISTORY_BLOCK_OUTCOME),
-                    )
-                }
+                state.outcome?.let { OutcomeLine(it) }
             }
         },
         confirmButton = {
@@ -103,6 +92,21 @@ internal fun TrainingReportSheet(
                 }
             }
         },
+    )
+}
+
+/** What the write answered, under the review it was written from. */
+@Composable
+private fun OutcomeLine(outcome: TrainingReportOutcome) {
+    Text(
+        text = stringResource(
+            if (outcome == TrainingReportOutcome.WRITTEN) {
+                R.string.history_block_written
+            } else {
+                R.string.history_block_write_failed
+            },
+        ),
+        modifier = Modifier.testTag(TestTags.HISTORY_BLOCK_OUTCOME),
     )
 }
 

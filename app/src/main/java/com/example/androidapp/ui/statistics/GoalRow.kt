@@ -621,12 +621,12 @@ private class GoalPeriodDraft(
     fun saveParts(): List<Any?> = listOf(kindName, weight, startDay, endDay, pickingStart, pickingEnd)
 
     fun restoreParts(parts: List<*>) {
-        kindName = parts[0] as String?
-        weight = parts[1] as String
-        startDay = parts[2] as Long?
-        endDay = parts[3] as Long?
-        pickingStart = parts[4] as Boolean
-        pickingEnd = parts[5] as Boolean
+        kindName = parts[DraftPart.KIND] as String?
+        weight = parts[DraftPart.WEIGHT] as String
+        startDay = parts[DraftPart.START] as Long?
+        endDay = parts[DraftPart.END] as Long?
+        pickingStart = parts[DraftPart.PICKING_START] as Boolean
+        pickingEnd = parts[DraftPart.PICKING_END] as Boolean
     }
 
     val canHaveEnd: Boolean = editor.canHaveEnd
@@ -722,17 +722,39 @@ private val GoalPeriodEditorSaver: Saver<GoalPeriodEditor?, Any> = Saver(
             null
         } else {
             GoalPeriodEditor(
-                id = parts[0] as String?,
-                start = LocalDate.ofEpochDay(parts[1] as Long),
-                end = (parts[2] as Long?)?.let(LocalDate::ofEpochDay),
-                goal = goalFrom(parts[3] as String?, parts[4] as Long?),
-                canHaveEnd = parts[5] as Boolean,
-                startKnown = parts[6] as Boolean,
-                titleRes = parts[7] as Int,
+                id = parts[EditorPart.ID] as String?,
+                start = LocalDate.ofEpochDay(parts[EditorPart.START] as Long),
+                end = (parts[EditorPart.END] as Long?)?.let(LocalDate::ofEpochDay),
+                goal = goalFrom(parts[EditorPart.KIND] as String?, parts[EditorPart.GRAMS] as Long?),
+                canHaveEnd = parts[EditorPart.CAN_HAVE_END] as Boolean,
+                startKnown = parts[EditorPart.START_KNOWN] as Boolean,
+                titleRes = parts[EditorPart.TITLE] as Int,
             )
         }
     },
 )
+
+/** The positions in [GoalPeriodDraft.saveParts]'s list. */
+private object DraftPart {
+    const val KIND = 0
+    const val WEIGHT = 1
+    const val START = 2
+    const val END = 3
+    const val PICKING_START = 4
+    const val PICKING_END = 5
+}
+
+/** The positions in [GoalPeriodEditorSaver]'s list. */
+private object EditorPart {
+    const val ID = 0
+    const val START = 1
+    const val END = 2
+    const val KIND = 3
+    const val GRAMS = 4
+    const val CAN_HAVE_END = 5
+    const val START_KNOWN = 6
+    const val TITLE = 7
+}
 
 private fun goalFrom(kindName: String?, grams: Long?): WeightGoal? = when (kindName) {
     WeightGoalKind.TARGET.name -> grams?.let { WeightGoal.Target(it) }
