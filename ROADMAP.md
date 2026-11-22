@@ -26,10 +26,6 @@ any template-started workout currently fails. The review did not run the instrum
 is stale on this checkout) and Robolectric still pins SDK 35 against targetSdk 37; those are verification
 gaps, not planned work.
 
-- **N366 — The rest choices wrap at a large font.** Five fixed chips sit in a non-wrapping `Row`, so the
-  last values clip instead of moving to a second line; the same screen's progression chips already use
-  `FlowRow` for this reason. Wrap them.
-
 - **N367 — A deload's workouts are named in the order they are written.** The name comes from the source
   day's index, so unticking the first day writes "Deload B" as the week's first workout, contradicting the
   builder's own KDoc and pinning the odd name in a test. Number from the emitted position and keep the

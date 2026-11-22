@@ -17,6 +17,9 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The rest choices wrap at a large font** (N366). Five fixed `m:ss` chips sat in a non-wrapping row, so
+  the last values were clipped instead of moving to a second line. They use `FlowRow`, as the progression
+  chips on the same screen already did.
 - **A failed attempt is not a warm-up to the write boundary, and not a plan place in the rest timer**
   (N365). N346 fixed the picker's rung refusal; the repository had its own copy of the rule, and it called a
   failed attempt a warm-up when it blocked a drop. The rule is one function now, used by both. The rest

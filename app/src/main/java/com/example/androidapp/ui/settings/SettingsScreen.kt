@@ -579,7 +579,9 @@ private fun RestChoiceRow(
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    // Wrapping rather than a Row (N366): five `m:ss` chips fit a phone's width at the default font, but
+    // at a large one the last values were clipped instead of moving to a second line.
+    FlowRow(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         choices.forEach { seconds ->
             AppFilterChip(
                 selected = seconds == selected,
