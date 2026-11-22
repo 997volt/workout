@@ -47,6 +47,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -121,6 +122,42 @@ class WorkoutDetailViewModelTest {
         advanceUntilIdle()
 
         assertNull(viewModel.uiState.value.exercises.single().previous)
+    }
+
+    @Test
+    fun aTransientPreviousReadFailure_isRetried_andStillCompares() = runTest(dispatcher) {
+        // N364: a failure used to be stored as "no previous training"; a transient one is retried once,
+        // and the comparison the screen is owed comes back.
+        repository.previousByExercise = mapOf(
+            "back-squat" to PreviousPerformance(
+                sets = listOf(
+                    SetEntry(id = "p1", sessionExerciseId = "old", setIndex = 0, reps = 5, weightGrams = 100_000L),
+                ),
+                sessionStartedAt = Instant.parse("2026-09-20T07:00:00Z"),
+            ),
+        )
+        repository.previousFailures = 1
+        val viewModel = viewModelFor()
+        observe(viewModel)
+        advanceUntilIdle()
+
+        assertEquals("the read was tried again", 2, repository.previousCalls)
+        assertNull(viewModel.uiState.value.error)
+        assertNotNull("the comparison is back", viewModel.uiState.value.exercises.single().previous)
+    }
+
+    @Test
+    fun aPersistentPreviousReadFailure_isSurfaced_andIsNotCachedAsNoTraining() = runTest(dispatcher) {
+        // N364: both tries fail. The screen says the read failed, and the exercise stays uncached so a
+        // later pass can still answer; it must not read as "never trained".
+        repository.previousFailures = 2
+        val viewModel = viewModelFor()
+        observe(viewModel)
+        advanceUntilIdle()
+
+        assertEquals("one read and one retry", 2, repository.previousCalls)
+        assertNull(viewModel.uiState.value.exercises.single().previous)
+        assertTrue(viewModel.uiState.value.error is DataError.Storage)
     }
 
     @Test
@@ -506,12 +543,23 @@ class WorkoutDetailViewModelTest {
         /** The viewed session's finish the last previous-read was bounded by (B423). */
         var lastBefore: Long? = null
 
+        /** How many more previous reads fail before one succeeds (N364). */
+        var previousFailures = 0
+
+        /** Every previous read the screen asked for, so a retry is observable (N364). */
+        var previousCalls = 0
+
         override suspend fun previousPerformance(
             exerciseId: String,
             currentSessionId: String?,
             beforeFinishedAt: Long?,
         ): DataResult<PreviousPerformance> {
             lastBefore = beforeFinishedAt
+            previousCalls += 1
+            if (previousFailures > 0) {
+                previousFailures -= 1
+                return DataResult.Failure(DataError.Storage(IllegalStateException("disk")))
+            }
             return DataResult.Success(previousByExercise[exerciseId] ?: PreviousPerformance(emptyList()))
         }
 

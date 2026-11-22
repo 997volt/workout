@@ -17,6 +17,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A failed previous-performance read no longer reads as "never trained"** (N364). The detail stored a
+  failure in the same `null` as "no earlier session" and never retried, so a transient storage error
+  removed every "vs last time" delta for that movement while the screen stayed open. A failure is retried
+  once, surfaced when both tries fail, and never cached; only a definite answer is.
 - **History detail's dialogs survive a rotation** (N363). The delete question, the save-as-plan dialog
   and the change-day calendar were plain flags beside a saveable menu, so a rotation dismissed all three
   and dropped a typed plan name. The flags and the name are saveable, and a restoration test types a name

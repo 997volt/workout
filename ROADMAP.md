@@ -26,10 +26,6 @@ any template-started workout currently fails. The review did not run the instrum
 is stale on this checkout) and Robolectric still pins SDK 35 against targetSdk 37; those are verification
 gaps, not planned work.
 
-- **N364 — A failed previous-performance read is not "never trained".** The detail stores a failure as
-  `null` and never retries it, removing every "vs last time" delta for that movement for the life of the
-  screen. Cache only a success, retry a failure, and surface it, as the field's own KDoc promises.
-
 - **N365 — A failed attempt is not a warm-up at the write boundary, and not a plan place in the rest
   timer.** N346 fixed the picker's rung refusal but not the repository twin, which still says "warm-up"
   when the anchor is an attempt; and `runContinues` counts every row, so an attempt starts a rest between

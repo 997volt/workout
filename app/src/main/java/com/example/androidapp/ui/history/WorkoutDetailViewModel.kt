@@ -345,11 +345,12 @@ class WorkoutDetailViewModel @Inject constructor(
         }
 
     /**
-     * What each movement did the last time it was trained (ROADMAP N306), read once per exercise.
+     * What each movement did the last time it was trained (ROADMAP N306, N364), read once per exercise.
      *
-     * Null means "nothing to compare" — no earlier session, or a read that failed. The comparison is
-     * advisory, so a failure is not turned into a claim that the lift was never trained; it simply says
-     * nothing, and the reads around it report their own errors.
+     * Only a **success** is stored. A failed read was cached as `null`, which is the same value as "no
+     * earlier session": the comparison then quietly disappeared for the life of the screen, and the
+     * screen claimed a lift had never been trained. A failure is now retried once, surfaced through
+     * [lastError] if it persists, and left uncached so the next read can still answer.
      */
     private val previousByExercise = MutableStateFlow<Map<String, PreviousPerformance?>>(emptyMap())
 
@@ -362,20 +363,37 @@ class WorkoutDetailViewModel @Inject constructor(
                     exerciseIds
                         .filterNot { it in previousByExercise.value }
                         .forEach { exerciseId ->
-                            previousByExercise.update {
-                                it + (exerciseId to readPrevious(exerciseId))
+                            when (val read = readPrevious(exerciseId)) {
+                                is DataResult.Success -> previousByExercise.update {
+                                    it + (exerciseId to read.data)
+                                }
+                                // A failure is not a value: it is retried on the next pass and said out
+                                // loud here, so "nothing to compare" stays what it means (N364).
+                                is DataResult.Failure -> lastError.value = read.error
                             }
                         }
                 }
         }
     }
 
-    /** The movement's previous training, or null when there is none to compare (N306). */
-    private suspend fun readPrevious(exerciseId: String): PreviousPerformance? {
+    /**
+     * The movement's previous training, or null when there is none to compare (N306, N364).
+     *
+     * A failed read is retried once before it is reported: the comparison is advisory, and a transient
+     * storage hiccup should not lose it. Both failures are the caller's to surface; neither becomes the
+     * `null` that means "never trained".
+     */
+    private suspend fun readPrevious(exerciseId: String): DataResult<PreviousPerformance?> {
         val before = session.first()?.finishedAt?.toEpochMilli()
-        return when (val read = workoutRepository.previousPerformance(exerciseId, sessionId, before)) {
-            is DataResult.Success -> read.data.takeIf { it.sets.isNotEmpty() }
-            is DataResult.Failure -> null
+        val read = workoutRepository.previousPerformance(exerciseId, sessionId, before)
+        val answered = if (read is DataResult.Failure) {
+            workoutRepository.previousPerformance(exerciseId, sessionId, before)
+        } else {
+            read
+        }
+        return when (answered) {
+            is DataResult.Success -> DataResult.Success(answered.data.takeIf { it.sets.isNotEmpty() })
+            is DataResult.Failure -> answered
         }
     }
 
