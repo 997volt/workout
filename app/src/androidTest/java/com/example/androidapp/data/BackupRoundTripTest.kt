@@ -16,6 +16,7 @@ import com.example.androidapp.data.local.SessionPlanSetEntity
 import com.example.androidapp.data.local.SessionSoreMuscleEntity
 import com.example.androidapp.data.local.TemplateEntity
 import com.example.androidapp.data.local.TemplateExerciseEntity
+import com.example.androidapp.data.local.TemplateSetEntity
 import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.data.transfer.BackupCodec
 import com.example.androidapp.data.transfer.GoalPeriodDto
@@ -1220,6 +1221,52 @@ class BackupRoundTripTest {
         )
         assertEquals("and the rows are gone, so restoring the switch would protect nothing", 0, counts().sessions)
     }
+
+    @Test
+    fun aRestoredPlannedSet_isPutBackInThePlanOrder() = runTest {
+        // N361: removing a set renumbers the survivors, so the hidden row's stored index can name a place
+        // a live row now holds. Export with A, B, C; remove B (A0, C1 live, B hidden at 1); import. The
+        // restored B must sit between A and C, not share C's index.
+        seedAWorkout()
+        database.templateSetDao().insertTemplateSet(plannedSet("template-set-b", 1))
+        database.templateSetDao().insertTemplateSet(plannedSet("template-set-c", 2))
+        val json = exportedJson()
+
+        val templates = RoomTemplateRepository(database, clock)
+        assertTrue(templates.removeSet("template-set-b") is DataResult.Success)
+        assertEquals(
+            "the removal renumbered C onto B's old place",
+            listOf("template-set-1", "template-set-c"),
+            database.templateSetDao().findTemplateSets("template-1").sortedBy { it.setIndex }.map { it.id },
+        )
+
+        val imported = repository.import(json)
+
+        assertTrue("a restore must not roll back: $imported", imported is DataResult.Success)
+        val live = database.templateSetDao().findTemplateSets("template-1").sortedBy { it.setIndex }
+        assertEquals(
+            "the restored set is back between the two it was removed from",
+            listOf("template-set-1", "template-set-b", "template-set-c"),
+            live.map { it.id },
+        )
+        assertEquals("and one live set holds each place", listOf(0, 1, 2), live.map { it.setIndex })
+    }
+
+    private fun plannedSet(id: String, index: Int) = TemplateSetEntity(
+        id = id,
+        templateExerciseId = "template-exercise-1",
+        setIndex = index,
+        role = SetType.NORMAL,
+        targetWeightGrams = 100_000L,
+        targetAssistanceGrams = null,
+        targetRepsMin = 5,
+        targetRepsMax = 5,
+        targetRepsCurrent = null,
+        note = null,
+        createdAt = 1_000L,
+        updatedAt = 1_000L,
+        deletedAt = null,
+    )
 
     @Test
     fun anExportTakenBeforeAClear_stillImports() = runTest {

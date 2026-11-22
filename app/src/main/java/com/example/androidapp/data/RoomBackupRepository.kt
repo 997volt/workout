@@ -16,6 +16,7 @@ import com.example.androidapp.data.transfer.MeasurementDto
 import com.example.androidapp.data.transfer.MeasurementSoreMuscleDto
 import com.example.androidapp.data.transfer.SessionExerciseJointDto
 import com.example.androidapp.data.transfer.SessionSoreMuscleDto
+import com.example.androidapp.data.transfer.TemplateSetDto
 import com.example.androidapp.data.transfer.toDto
 import com.example.androidapp.data.transfer.toEntity
 import com.example.androidapp.data.transfer.withValidLibraryShape
@@ -572,6 +573,7 @@ class RoomBackupRepository @Inject constructor(
         dao.restoreTemplates(templates.map { it.toEntity() })
         dao.restoreTemplateExercises(templateExercises.map { it.toEntity() })
         dao.restoreTemplateSets(templateSets.map { it.toEntity() })
+        renumberRestoredTemplateSets(file, templateSets)
         // The parent before the child: a sore row un-hidden onto a parent that stayed hidden is
         // exactly the state this ordering exists to prevent (N113) — and B149 closed the other half
         // of the same ordering, which is a child un-hidden onto a parent that stayed live.
@@ -732,6 +734,34 @@ class RoomBackupRepository @Inject constructor(
             // to the device's own day violates the foreign key, and the whole import rolls back with it.
             measurementSore.insert(measurementSoreRows.map { it.toEntity() })
                 .countLive(measurementSoreRows) { it.deletedAt == null }
+    }
+
+    /**
+     * Puts the planned sets a restore brought back into the plan's order (N361).
+     *
+     * Removing a set renumbers the survivors, so a hidden row's stored index can name a place a live row
+     * now holds — export, remove the middle set, import, and two live rows share index 1. The file is the
+     * order the plan had when it was exported: its live rows for the exercise first, in file order, then
+     * any row the device has that the file does not (a set added after the export). Renumbering the live
+     * rows to that sequence is the same renumber [RoomTemplateRepository] does after a removal; a row the
+     * file keeps hidden is left alone, and the undo renumbers it if it is ever un-hidden.
+     */
+    private suspend fun renumberRestoredTemplateSets(file: BackupFile, restored: List<TemplateSetDto>) {
+        val exerciseIds = restored.mapTo(mutableSetOf()) { it.templateExerciseId }
+        if (exerciseIds.isEmpty()) return
+        val all = dao.allTemplateSets()
+        exerciseIds.forEach { exerciseId ->
+            val live = all.filter { it.templateExerciseId == exerciseId && it.deletedAt == null }
+            val fromFile = file.templateSets
+                .filter { it.templateExerciseId == exerciseId && it.deletedAt == null }
+                .sortedBy { it.setIndex }
+                .mapNotNull { row -> live.firstOrNull { it.id == row.id } }
+            val placed = fromFile.mapTo(mutableSetOf()) { it.id }
+            val ordered = fromFile + live.filter { it.id !in placed }.sortedBy { it.setIndex }
+            dao.restoreTemplateSets(
+                ordered.mapIndexed { position, row -> row.copy(setIndex = position) },
+            )
+        }
     }
 
     /**

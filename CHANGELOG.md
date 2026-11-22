@@ -17,6 +17,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A restored planned set goes back into the plan's order** (N361). Removing a set renumbers the
+  survivors, so the hidden row's stored index could name a place a live row now held: export, remove the
+  middle set, import, and two live rows shared index 1 (a later session snapshot then dropped one). The
+  restore now lays the file's live rows out in file order, followed by anything the device added after
+  the export, and the round trip is pinned on the device.
 - **"Delete everything" leaves automatic backup off when it fails after the rows are gone** (N360). The
   switch was put back on any failure, but the seeder, the crash-log clear and the 1.x delete all run after
   `clearAllTables`; a failure there left an empty database with the scheduled writer re-armed, and its next

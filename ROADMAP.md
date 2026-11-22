@@ -26,11 +26,6 @@ any template-started workout currently fails. The review did not run the instrum
 is stale on this checkout) and Robolectric still pins SDK 35 against targetSdk 37; those are verification
 gaps, not planned work.
 
-- **N361 — A restored plan keeps one live set per index.** Un-hiding a planned set writes its old
-  `setIndex` by raw `@Update`, while removing a set renumbers the survivors: export, remove the middle
-  set, import, and two live rows share an index (a session snapshot's `REPLACE` then drops one). Restore
-  through the same splice and renumber the set undo uses, with a round-trip test.
-
 - **N362 — The goal-period editor keeps its draft through a rotation.** It is held in `remember` (with its
   draft keyed on it and its `saving` guard), so a rotation closes the dialog and discards the typed weight
   and both days. Hold it in a saver as the target dialog does, and make `GoalRowTest` type a value and
