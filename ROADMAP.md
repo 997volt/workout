@@ -26,13 +26,6 @@ any template-started workout currently fails. The review did not run the instrum
 is stale on this checkout) and Robolectric still pins SDK 35 against targetSdk 37; those are verification
 gaps, not planned work.
 
-- **N368 — The helper enforces the document floor, and its catalog status is true for a current export.**
-  The page checks only the ceiling and then stamps the working copy at the current version, so a v1–3
-  document the app refuses is opened and re-badged (and a program taken from a newer backup is laundered
-  the same way); its catalog status also compares a loaded export to the 5 the page writes, calling a
-  current export unreadable. Export the floor beside the ceiling, refuse below it, and phrase the status as
-  newer-than-this-page rather than wrong.
-
 - **N369 — The documentation states today's numbers and commands.** DECISIONS carries stale backup,
   schema, document-version and formatting-findings facts; re-measure the formatting count with the command
   it already names and correct the others against the code. AGENTS' local fixture proof uses `git diff`,

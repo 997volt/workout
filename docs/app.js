@@ -3264,10 +3264,15 @@
     var text = 'Loaded ' + (label ? label + ': ' : '') + count + ' exercise row' + (count === 1 ? '' : 's');
     if (typeof file.schemaVersion === 'number') {
       text += ' (schemaVersion ' + file.schemaVersion + ')';
-      if (file.schemaVersion !== SCHEMA_VERSION) {
-        text += '. This export is schemaVersion ' + file.schemaVersion + ', not ' +
-          SCHEMA_VERSION + '; its exercise rows are copied as they are and may carry values the ' +
-          'current app cannot read. Re-export from the current app if you can.';
+      if (file.schemaVersion > SCHEMA_VERSION) {
+        // The page writes an older schema on purpose (B288); a current export is *newer than this page*,
+        // not wrong. Calling it unreadable told every current user to re-export a file they had just made
+        // (N368).
+        text += '. This export is newer than the schema this page writes (' + SCHEMA_VERSION + '); ' +
+          'its exercise rows are read as this page knows them.';
+      } else if (file.schemaVersion < SCHEMA_VERSION) {
+        text += '. This export is older than the schema this page writes (' + SCHEMA_VERSION + '); ' +
+          'its exercise rows are copied as they are.';
       } else {
         text += '.';
       }
@@ -6766,6 +6771,15 @@
     return core.programFormatVersion();
   }
 
+  /** The oldest document the core reads, so the page can refuse a file below it (N368). */
+  function programMinimumFormatVersion() {
+    var core = programCore();
+    if (!core) {
+      throw new Error('the shared core is not loaded; run ./gradlew :shared:syncSharedJs');
+    }
+    return core.programMinimumFormatVersion();
+  }
+
   /**
    * A blank program, as the document the app adds (the same shape the sheet writes, N172).
    *
@@ -8101,6 +8115,14 @@
         editorClear('That program was written by a newer version of the editor than this page carries.');
         return;
       }
+      if (parsed.formatVersion < programMinimumFormatVersion()) {
+        // The floor is the app's own (N368): a v1–3 document is refused by `ProgramCodec` before it is
+        // decoded, and opening it here would re-stamp it at the current version — the one thing the
+        // floor exists to prevent.
+        editorClear('That program was written by an older version of the editor than this page carries ' +
+          '(file v' + parsed.formatVersion + ', this page reads v' + programMinimumFormatVersion() + ' and later).');
+        return;
+      }
       editorLoadDocument(parsed, fileName);
       return;
     }
@@ -8527,6 +8549,7 @@
 
   return {
     SCHEMA_VERSION: SCHEMA_VERSION,
+    catalogStatusText: catalogStatusText,
     DEFAULT_DURATION_MINUTES: DEFAULT_DURATION_MINUTES,
     STORAGE_KEY: STORAGE_KEY,
     BACKUP_FILE_NAME: BACKUP_FILE_NAME,

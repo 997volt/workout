@@ -476,6 +476,10 @@
     _init_properties_ProgramJson_kt__8o3jdm();
     return 8;
   }
+  function programMinimumFormatVersion() {
+    _init_properties_ProgramJson_kt__8o3jdm();
+    return 4;
+  }
   function validateJson(documentJson) {
     _init_properties_ProgramJson_kt__8o3jdm();
     var tmp;
@@ -4920,6 +4924,7 @@
     var androidapp = example.androidapp || (example.androidapp = {});
     var shared = androidapp.shared || (androidapp.shared = {});
     shared.programFormatVersion = programFormatVersion;
+    shared.programMinimumFormatVersion = programMinimumFormatVersion;
     shared.validateJson = validateJson;
     shared.planJson = planJson;
   }

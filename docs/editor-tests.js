@@ -277,6 +277,18 @@
       t.eq(H.editorParseLoad('nonsense'), null);
     });
 
+    check('the core exports the oldest document it reads (N368)', function () {
+      t.eq(shared.programMinimumFormatVersion(), 4, 'the floor the app enforces');
+    });
+
+    check('a current export is newer than the page, not unreadable (N368)', function () {
+      // The page writes schema 5 on purpose (B288). A current v10 export is newer than that, not wrong,
+      // and the old sentence told the user to re-export the file they had just made.
+      var text = H.catalogStatusText({ schemaVersion: 10, exercises: [] }, 'backup.json');
+      t.ok(text.indexOf('newer than the schema this page writes') >= 0, 'it names the newer schema');
+      t.eq(text.indexOf('cannot read'), -1, 'and does not call the rows unreadable');
+    });
+
     check('adding a day writes a workout and its slot', function () {
       var document = baseDocument();
       H.editorAddDay(document);

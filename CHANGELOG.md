@@ -17,6 +17,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The helper refuses a too-old program document**, and its catalog status is true for a current export
+  (N368). The page checked only the format ceiling and then stamped the working copy at the current
+  version, so a v1–3 document the app refuses was opened and re-badged; it now reads the same floor the
+  app enforces. A current app export (schemaVersion 10) was also called "not 5 … the current app cannot
+  read" — the page writes 5 on purpose, so it now says the file is newer than the page rather than wrong.
 - **A deload's workouts are named in the order they are written** (N367). Unticking the first day's whole
   pool left a one-workout week called "Deload B", because the name came from the source day's index; the
   preview and the write now number the days that are actually written, so the week starts at A.

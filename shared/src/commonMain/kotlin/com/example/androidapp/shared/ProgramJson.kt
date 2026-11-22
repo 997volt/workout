@@ -49,6 +49,16 @@ private data class PlanOut(
 @JsExport
 fun programFormatVersion(): Int = PROGRAM_FORMAT_VERSION
 
+/**
+ * The oldest format this build reads (N368).
+ *
+ * The page used to check only the ceiling and then stamp the working copy at the current version, so a
+ * document the app refuses as too old was opened and re-badged as current. Exporting the floor lets the
+ * page refuse it for the same reason the app does.
+ */
+@JsExport
+fun programMinimumFormatVersion(): Int = ProgramDocumentCodec.MINIMUM_FORMAT_VERSION
+
 /** [validate] over JSON: `{"problems":[…]}`; an empty list means the document may be written. */
 @JsExport
 fun validateJson(documentJson: String): String {
