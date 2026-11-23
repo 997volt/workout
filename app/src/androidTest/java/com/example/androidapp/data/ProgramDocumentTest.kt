@@ -411,6 +411,25 @@ class ProgramDocumentTest {
         return programId
     }
 
+    @Test
+    fun aDocumentTheWriteRefuses_isRefusedAtPreviewToo() = runTest {
+        // N358/M2: the preview used to skip the boundary the import applies, so a repeated slot id was
+        // offered as addable and refused only after the lifter had chosen a name.
+        val file = exportOf(seedProgram())
+        val document = ProgramDocumentCodec.decode(file)
+        val duplicate = ProgramDocumentCodec.encode(
+            document.copy(
+                slots = document.slots + document.slots.single().copy(
+                    position = document.slots.maxOf { it.position } + 1,
+                ),
+            ),
+        )
+
+        val preview = programs.previewProgramDocument(duplicate)
+
+        assertTrue("the preview must refuse what the write refuses", preview is DataResult.Failure)
+    }
+
     private suspend fun exportOf(programId: String): String =
         (programs.exportProgramDocument(programId) as DataResult.Success).data
 

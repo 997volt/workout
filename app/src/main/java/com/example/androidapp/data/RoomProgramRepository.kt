@@ -646,6 +646,9 @@ class RoomProgramRepository @Inject constructor(
     override suspend fun previewProgramDocument(text: String): DataResult<ProgramDocumentPreview> =
         dataResultOf {
             val document = ProgramDocumentCodec.decode(text)
+            // The preview asks the write's own boundary (N358): a document the import would refuse must
+            // not be offered as addable and then refused after the name question.
+            requireValidDocument(document)
             if (document.edit == null) {
                 return@dataResultOf addPreview(document)
             }
