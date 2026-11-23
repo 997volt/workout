@@ -19,10 +19,6 @@ var fs = require('fs');
 var path = require('path');
 
 var root = __dirname;
-var html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-var css = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
-var seed = fs.readFileSync(path.join(root, 'seed-catalog.js'), 'utf8');
-var js = fs.readFileSync(path.join(root, 'app.js'), 'utf8');
 
 var sharedFiles = [
   'kotlin-kotlin-stdlib.js',
@@ -32,87 +28,110 @@ var sharedFiles = [
   'workout-shared.js'
 ];
 
-if (html.indexOf('<link rel="stylesheet" href="style.css">') === -1) {
-  console.error('build failed: index.html no longer links style.css the way this script expects');
-  process.exit(1);
-}
-if (html.indexOf('<script src="seed-catalog.js"></script>') === -1) {
-  console.error('build failed: index.html no longer loads seed-catalog.js the way this script expects');
-  process.exit(1);
-}
-if (html.indexOf('<script src="app.js"></script>') === -1) {
-  console.error('build failed: index.html no longer loads app.js the way this script expects');
-  process.exit(1);
-}
-sharedFiles.forEach(function (name) {
-  var tag = '<script src="shared/' + name + '"></script>';
-  if (html.indexOf(tag) === -1) {
-    console.error('build failed: index.html no longer loads shared/' + name + ' the way this script expects');
-    process.exit(1);
-  }
-});
-
-// Replacements are functions: a Kotlin/JS bundle contains `$'` and `$&`, which a string
-// replacement would read as substitution patterns and splice the rest of the page into itself.
 /*
  * A file spliced between script tags must not be able to close its own tag or open an HTML
  * comment (N372): either would truncate the portable page's script, and the old check only
  * looked for leftover `src=` references, so a corrupt build still passed.
+ *
+ * Throws rather than exiting so the rule can be asserted by the page's own test file; the
+ * build's entry point turns the throw into the one-line failure a command line expects.
  */
 function inline(source, name) {
   if (/<\/script/i.test(source)) {
-    console.error('build failed: ' + name + ' contains </script>, which would close the inlined block');
-    process.exit(1);
+    throw new Error(name + ' contains </script>, which would close the inlined block');
   }
   if (source.indexOf('<!--') !== -1) {
-    console.error('build failed: ' + name + ' contains <!--, which would hide the rest of the page');
-    process.exit(1);
+    throw new Error(name + ' contains <!--, which would hide the rest of the page');
   }
   return '<script>\n' + source + '\n</script>';
 }
 
-var out = html
-  .replace('<link rel="stylesheet" href="style.css">', function () {
-    return '<style>\n' + css + '\n</style>';
-  })
-  .replace('<script src="seed-catalog.js"></script>', function () {
-    return inline(seed, 'seed-catalog.js');
-  })
-  .replace('<script src="app.js"></script>', function () {
-    return inline(js, 'app.js');
-  });
-
-sharedFiles.forEach(function (name) {
-  var tag = '<script src="shared/' + name + '"></script>';
-  var source = fs.readFileSync(path.join(root, 'shared', name), 'utf8');
-  out = out.replace(tag, function () {
-    return inline(source, 'shared/' + name);
-  });
-});
-
-// The page is never loaded by CI, so this compiles every inlined script as the browser would
-// parse it: a truncation or a stray token fails here rather than in a browser (N372).
-var scripts = out.match(/<script>([\s\S]*?)<\/script>/g) || [];
-if (scripts.length === 0) {
-  console.error('build failed: the portable page has no script to check');
-  process.exit(1);
+/**
+ * The first script in [html] that the browser could not parse, or null when all of them do.
+ *
+ * The page is never loaded by CI, so this compiles every inlined script as the browser would parse
+ * it: a truncation or a stray token fails here rather than in a browser (N372).
+ */
+function checkScripts(html) {
+  var scripts = html.match(/<script>([\s\S]*?)<\/script>/g) || [];
+  if (scripts.length === 0) {
+    return 'the portable page has no script to check';
+  }
+  for (var index = 0; index < scripts.length; index += 1) {
+    var source = scripts[index].replace(/^<script>\n?/, '').replace(/\n?<\/script>$/, '');
+    try {
+      new Function(source);
+    } catch (error) {
+      return 'inlined script ' + (index + 1) + ' does not parse: ' + error.message;
+    }
+  }
+  return null;
 }
-scripts.forEach(function (tag, index) {
-  var source = tag.replace(/^<script>\n?/, '').replace(/\n?<\/script>$/, '');
+
+function build() {
+  var html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  var css = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
+  var seed = fs.readFileSync(path.join(root, 'seed-catalog.js'), 'utf8');
+  var js = fs.readFileSync(path.join(root, 'app.js'), 'utf8');
+
+  if (html.indexOf('<link rel="stylesheet" href="style.css">') === -1) {
+    throw new Error('index.html no longer links style.css the way this script expects');
+  }
+  if (html.indexOf('<script src="seed-catalog.js"></script>') === -1) {
+    throw new Error('index.html no longer loads seed-catalog.js the way this script expects');
+  }
+  if (html.indexOf('<script src="app.js"></script>') === -1) {
+    throw new Error('index.html no longer loads app.js the way this script expects');
+  }
+  sharedFiles.forEach(function (name) {
+    var tag = '<script src="shared/' + name + '"></script>';
+    if (html.indexOf(tag) === -1) {
+      throw new Error('index.html no longer loads shared/' + name + ' the way this script expects');
+    }
+  });
+
+  // Replacements are functions: a Kotlin/JS bundle contains `$'` and `$&`, which a string
+  // replacement would read as substitution patterns and splice the rest of the page into itself.
+  var out = html
+    .replace('<link rel="stylesheet" href="style.css">', function () {
+      return '<style>\n' + css + '\n</style>';
+    })
+    .replace('<script src="seed-catalog.js"></script>', function () {
+      return inline(seed, 'seed-catalog.js');
+    })
+    .replace('<script src="app.js"></script>', function () {
+      return inline(js, 'app.js');
+    });
+
+  sharedFiles.forEach(function (name) {
+    var tag = '<script src="shared/' + name + '"></script>';
+    var source = fs.readFileSync(path.join(root, 'shared', name), 'utf8');
+    out = out.replace(tag, function () {
+      return inline(source, 'shared/' + name);
+    });
+  });
+
+  var parseProblem = checkScripts(out);
+  if (parseProblem !== null) {
+    throw new Error(parseProblem);
+  }
+  if (/<link[^>]+href="(?!data:)/.test(out) || /<script[^>]+src=/.test(out)) {
+    throw new Error('an external stylesheet or script is still in the output');
+  }
+
+  var target = process.argv[2] || path.join(root, '..', 'dist', 'workout-import.html');
+  fs.mkdirSync(path.dirname(target), { recursive: true });
+  fs.writeFileSync(target, out);
+  console.log('wrote ' + path.relative(process.cwd(), target) + ' (' + out.length + ' bytes)');
+}
+
+if (require.main === module) {
   try {
-    new Function(source);
+    build();
   } catch (error) {
-    console.error('build failed: inlined script ' + (index + 1) + ' does not parse: ' + error.message);
+    console.error('build failed: ' + error.message);
     process.exit(1);
   }
-});
-
-if (/<link[^>]+href="(?!data:)/.test(out) || /<script[^>]+src=/.test(out)) {
-  console.error('build failed: an external stylesheet or script is still in the output');
-  process.exit(1);
 }
 
-var target = process.argv[2] || path.join(root, '..', 'dist', 'workout-import.html');
-fs.mkdirSync(path.dirname(target), { recursive: true });
-fs.writeFileSync(target, out);
-console.log('wrote ' + path.relative(process.cwd(), target) + ' (' + out.length + ' bytes)');
+module.exports = { inline: inline, checkScripts: checkScripts };

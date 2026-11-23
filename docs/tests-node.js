@@ -27,6 +27,7 @@ if (!shared) {
 }
 global.window['workout:shared'] = core;
 
+var build = require('./build-single-file.js');
 var editorTests = require('./editor-tests.js');
 
 /*
@@ -41,7 +42,7 @@ var EXPECTED_FIXTURE_CASES = 6;
  * checks executed, not of cases handed in, so a block of `check` calls behind an early return is a
  * failure here rather than a number that quietly fell.
  */
-var EXPECTED_CHECKS = 59;  // +2 B279, +5 N264, +1 N292, +2 N357 holds, +2 N357 writers, +3 N368 floor/catalog/backup, +2 N368 version
+var EXPECTED_CHECKS = 60;  // +2 B279, +5 N264, +1 N292, +2 N357 holds, +2 N357 writers, +3 N368 floor/catalog/backup, +2 N368 version, +1 N372 single-file
 if (!Array.isArray(globalThis.PROGRAM_EDIT_CASES)) {
   console.error('the edit fixture did not load: PROGRAM_EDIT_CASES is not an array');
   process.exit(1);
@@ -123,6 +124,18 @@ t.check('the body panel survives no file and keeps a broken one explainable (B22
   t.eq(plan.hidden, false, 'a file with an unreadable day is not silent');
   t.eq(plan.problems.length, 1);
   t.eq(plan.rows.length, 0);
+});
+checked += 1;
+
+t.check('the portable build refuses an inlined script that could close its block (N372)', function () {
+  var threw = false;
+  try { build.inline('</script>', 'x.js'); } catch (error) { threw = true; }
+  t.ok(threw, 'a closing tag is refused');
+  threw = false;
+  try { build.inline('<!--', 'x.js'); } catch (error) { threw = true; }
+  t.ok(threw, 'an HTML comment is refused');
+  t.eq(build.checkScripts('<script>var x = 1;</script>'), null, 'a valid script parses');
+  t.ok(build.checkScripts('<script>var x = ;</script>') !== null, 'a truncated script is reported');
 });
 checked += 1;
 
