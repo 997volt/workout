@@ -281,6 +281,15 @@
       t.eq(shared.programMinimumFormatVersion(), 4, 'the floor the app enforces');
     });
 
+    check('a newer backup is named newer where its program is edited (N368)', function () {
+      // The catalog says a current export is newer than this page; the editor, which writes a program
+      // document from it, says the same rather than silently carrying only the fields it models.
+      t.ok(H.backupSchemaNote({ schemaVersion: 10 }).indexOf('newer than the schema this page writes') >= 0,
+        'a newer backup gets the note');
+      t.eq(H.backupSchemaNote({ schemaVersion: 5 }), '', 'the schema the page writes does not');
+      t.eq(H.backupSchemaNote({}), '', 'and neither does a row with no version');
+    });
+
     check('a current export is newer than the page, not unreadable (N368)', function () {
       // The page writes schema 5 on purpose (B288). A current v10 export is newer than that, not wrong,
       // and the old sentence told the user to re-export the file they had just made.

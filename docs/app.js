@@ -8316,6 +8316,22 @@
     editorRender();
   }
 
+  /**
+   * What a backup newer than this page writes changes about editing one of its programs (N368).
+   *
+   * The page deliberately writes schema 5 (B288) and can read a current export; a program taken from a
+   * newer backup is still offered for editing, but the note says that only the fields this page models
+   * travel into the document it writes. Empty for the schema the page writes or older.
+   */
+  function backupSchemaNote(backup) {
+    if (!isObject(backup) || typeof backup.schemaVersion !== 'number' ||
+        backup.schemaVersion <= SCHEMA_VERSION) {
+      return '';
+    }
+    return ' This backup is newer than the schema this page writes (' + SCHEMA_VERSION + '); a program ' +
+      'taken from it keeps the fields this page models and does not carry the ones it does not.';
+  }
+
   function editorOfferBackup(backup, fileName) {
     var programs = (backup.programs || []).filter(function (row) { return row && !row.deletedAt; });
     if (programs.length === 0) {
@@ -8343,7 +8359,8 @@
       }
       editorLoadDocument(document, fileName, backup);
     }));
-    editorMessage('A program taken from a backup carries the time the backup was made; the app refuses the edit if the program changed after that.');
+    editorMessage('A program taken from a backup carries the time the backup was made; the app refuses the edit if the program changed after that.' +
+      backupSchemaNote(backup));
   }
 
   /**
@@ -8550,6 +8567,7 @@
   return {
     SCHEMA_VERSION: SCHEMA_VERSION,
     catalogStatusText: catalogStatusText,
+    backupSchemaNote: backupSchemaNote,
     DEFAULT_DURATION_MINUTES: DEFAULT_DURATION_MINUTES,
     STORAGE_KEY: STORAGE_KEY,
     BACKUP_FILE_NAME: BACKUP_FILE_NAME,
