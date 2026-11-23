@@ -7253,6 +7253,17 @@
     return parsed;
   }
 
+  /** Clears the visible hold field when a rep is typed (N357); a null input is the rung/no-field case. */
+  function editorClearHoldField(holdInput) {
+    if (holdInput) { holdInput.value = ''; }
+  }
+
+  /** Writes a hold to a line and re-renders only when it is a hold, not a cleared field (N357). */
+  function editorHoldWritten(run, seconds, render) {
+    editorApplyHold(run, seconds);
+    if (seconds !== null) { render(); }
+  }
+
   /** One set's editable content on a new row: the identity, the index and the times are the row's. */
   function editorCopySet(source, setIndex, now) {
     var copy = {
@@ -7929,7 +7940,7 @@
     function writesReps(field) {
       return function (value) {
         var parsed = editorApplyReps(run, field, value);
-        if (parsed !== null && holdInput) { holdInput.value = ''; }
+        if (parsed !== null) { editorClearHoldField(holdInput); }
       };
     }
     row.appendChild(editorSelect('Role', EDITOR_ROLES.map(function (role) {
@@ -7968,9 +7979,7 @@
       // The hold and the reps are one choice: a set is counted or held, never both (B308, N357).
       // `change`, not `input`, because writing a hold clears the rep fields and re-renders the line.
       var hold = editorTextField('Hold (s)', first.targetDurationSeconds, function (value) {
-        var parsed = editorParseInt(value);
-        editorApplyHold(run, parsed);
-        if (parsed !== null) { editorRender(); }
+        editorHoldWritten(run, editorParseInt(value), editorRender);
       }, { type: 'number', step: '1', event: 'change' });
       holdInput = hold.querySelector('input');
       row.appendChild(hold);
@@ -8592,6 +8601,8 @@
     documentVersionProblem: documentVersionProblem,
     editorApplyHold: editorApplyHold,
     editorApplyReps: editorApplyReps,
+    editorClearHoldField: editorClearHoldField,
+    editorHoldWritten: editorHoldWritten,
     DEFAULT_DURATION_MINUTES: DEFAULT_DURATION_MINUTES,
     STORAGE_KEY: STORAGE_KEY,
     BACKUP_FILE_NAME: BACKUP_FILE_NAME,

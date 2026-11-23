@@ -297,6 +297,23 @@
       t.eq(JSON.parse(shared.validateJson(JSON.stringify(document))).problems.length, 0);
     });
 
+    check('the visible hold field clears and a hold re-renders (N357)', function () {
+      var document = baseDocument();
+      var run = H.editorSetRuns(document, 'te_a')[0];
+      var input = { value: '45' };
+      H.editorClearHoldField(input);
+      t.eq(input.value, '', 'typing a rep clears the visible hold field');
+      H.editorClearHoldField(null);
+
+      var renders = 0;
+      H.editorHoldWritten(run, 45, function () { renders += 1; });
+      t.eq(renders, 1, 'writing a hold re-renders the line');
+      t.eq(run[0].targetRepsMin, null, 'and clears the counts');
+      H.editorHoldWritten(run, null, function () { renders += 1; });
+      t.eq(renders, 1, 'clearing a hold does not re-render');
+      t.eq(JSON.parse(shared.validateJson(JSON.stringify(document))).problems.length, 0);
+    });
+
     check('the editor refuses a document outside the versions it reads (N368)', function () {
       t.ok(H.documentVersionProblem({ formatVersion: shared.programMinimumFormatVersion() - 1 })
         .indexOf('older version') >= 0, 'below the floor');
