@@ -521,9 +521,14 @@ class RoomBackupRepository @Inject constructor(
             // after it, as the last trace of the seam the preferences store needed: a goal is a row now, and a
             // failure part-way could leave it written while the import reported that nothing had changed.
             val goals = restoreGoalPeriods(file)
+            val restored = restoreSoftDeleted(file, visibility)
+            // After both halves: every live set the file names has a place (N361), whether it was
+            // inserted as a new id or restored from a hidden row. Only the file's **live** rows take
+            // part, so an import that merely writes a still-hidden row back does not renumber a plan.
+            renumberPlannedSets(file.templateSets.filter { it.deletedAt == null })
             ImportSummary(
                 added = inserted + programs.added + goals,
-                restored = restoreSoftDeleted(file, visibility) + programs.restored,
+                restored = restored + programs.restored,
             )
         }
     }
@@ -573,7 +578,6 @@ class RoomBackupRepository @Inject constructor(
         dao.restoreTemplates(templates.map { it.toEntity() })
         dao.restoreTemplateExercises(templateExercises.map { it.toEntity() })
         dao.restoreTemplateSets(templateSets.map { it.toEntity() })
-        renumberRestoredTemplateSets(file, templateSets)
         // The parent before the child: a sore row un-hidden onto a parent that stayed hidden is
         // exactly the state this ordering exists to prevent (N113) — and B149 closed the other half
         // of the same ordering, which is a child un-hidden onto a parent that stayed live.
@@ -737,23 +741,25 @@ class RoomBackupRepository @Inject constructor(
     }
 
     /**
-     * Puts the planned sets a restore brought back into the plan's order (N361).
+     * Puts the planned sets the file names into the plan's order (N361).
      *
-     * Removing a set renumbers the survivors, so a hidden row's stored index can name a place a live row
-     * now holds — export, remove the middle set, import, and two live rows share index 1. The file is the
-     * order the plan had when it was exported: its live rows for the exercise first, in file order, then
-     * any row the device has that the file does not (a set added after the export). Renumbering the live
-     * rows to that sequence is the same renumber [RoomTemplateRepository] does after a removal; a row the
-     * file keeps hidden is left alone, and the undo renumbers it if it is ever un-hidden.
+     * Removing a set renumbers the survivors, so a stored index can name a place a live row now holds — or,
+     * for a set the file alone carries, the index can be taken on this device and the insert leaves two live
+     * rows on one place. The file is the order the plan had when it was exported: its **live** rows for the
+     * exercise first, in file order, then any row the device has that the file does not (a set added after
+     * the export). This runs after both the insert and the restore, so it sees the merged result.
+     *
+     * A row the file keeps hidden is left alone, and the undo renumbers it if it is ever un-hidden; an
+     * import that only writes such a row back therefore does not touch the live order.
      */
-    private suspend fun renumberRestoredTemplateSets(file: BackupFile, restored: List<TemplateSetDto>) {
-        val exerciseIds = restored.mapTo(mutableSetOf()) { it.templateExerciseId }
+    private suspend fun renumberPlannedSets(planned: List<TemplateSetDto>) {
+        val exerciseIds = planned.mapTo(mutableSetOf()) { it.templateExerciseId }
         if (exerciseIds.isEmpty()) return
         val all = dao.allTemplateSets()
         exerciseIds.forEach { exerciseId ->
             val live = all.filter { it.templateExerciseId == exerciseId && it.deletedAt == null }
-            val fromFile = file.templateSets
-                .filter { it.templateExerciseId == exerciseId && it.deletedAt == null }
+            val fromFile = planned
+                .filter { it.templateExerciseId == exerciseId }
                 .sortedBy { it.setIndex }
                 .mapNotNull { row -> live.firstOrNull { it.id == row.id } }
             val placed = fromFile.mapTo(mutableSetOf()) { it.id }

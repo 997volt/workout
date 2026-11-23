@@ -1252,6 +1252,35 @@ class BackupRoundTripTest {
         assertEquals("and one live set holds each place", listOf(0, 1, 2), live.map { it.setIndex })
     }
 
+    @Test
+    fun aNewPlannedSetAtATakenIndex_isGivenItsOwnPlace() = runTest {
+        // N361/M1: the file's A and a new X at index 1; the device holds A0, B1. The insert cannot know
+        // B's place, so the renumber after both halves must put X at 1 and move B to 2.
+        seedAWorkout()
+        val base = exportedJson()
+        database.templateSetDao().insertTemplateSet(plannedSet("template-set-b", 1))
+        val file = BackupCodec.decode(base)
+        val json = BackupCodec.encode(
+            file.copy(
+                templateSets = listOf(
+                    file.templateSets.single(),
+                    file.templateSets.single().copy(id = "template-set-x", setIndex = 1),
+                ),
+            ),
+        )
+
+        val imported = repository.import(json)
+
+        assertTrue("a restore must not roll back: $imported", imported is DataResult.Success)
+        val live = database.templateSetDao().findTemplateSets("template-1").sortedBy { it.setIndex }
+        assertEquals("one live set per place", listOf(0, 1, 2), live.map { it.setIndex })
+        assertEquals(
+            "the file's new set takes the place it names, and the device's set moves after it",
+            listOf("template-set-1", "template-set-x", "template-set-b"),
+            live.map { it.id },
+        )
+    }
+
     private fun plannedSet(id: String, index: Int) = TemplateSetEntity(
         id = id,
         templateExerciseId = "template-exercise-1",
