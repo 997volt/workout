@@ -282,8 +282,8 @@ private fun DeloadBody(
                 )
             }
         }
-        itemsIndexed(items = state.days, key = { _, day -> day.sourceSlotId }) { index, day ->
-            DeloadDayHeader(day = day, number = index + 1, onWeekday = onWeekday)
+        items(items = state.days, key = { day -> day.sourceSlotId }) { day ->
+            DeloadDayHeader(day = day, number = day.writtenNumber, onWeekday = onWeekday)
         }
         if (pool.isNotEmpty()) {
             item(key = "pool-header") { DeloadPoolHeader() }
@@ -420,17 +420,20 @@ private fun deloadDayTitle(day: DeloadDayUi): String =
 @Composable
 private fun DeloadDayHeader(
     day: DeloadDayUi,
-    number: Int,
+    /** The written place, or null for a card the creator will leave out. */
+    number: Int?,
     onWeekday: (String, DayOfWeek?) -> Unit,
 ) {
     AppCard(modifier = Modifier.testTag(TestTags.Deload.day(day.sourceSlotId))) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(R.string.deload_day, number),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                if (number != null) {
+                    Text(
+                        text = stringResource(R.string.deload_day, number),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 Text(text = deloadDayTitle(day), style = MaterialTheme.typography.titleMedium)
             }
             WeekdayPicker(day = day, onWeekday = onWeekday)

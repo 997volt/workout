@@ -61,6 +61,7 @@ class ProgramDeloadScreenTest {
     private fun day(
         slotId: String = "s1",
         name: String = "Deload A",
+        number: Int? = 1,
         weekday: DayOfWeek? = DayOfWeek.MONDAY,
         exercises: List<DeloadExerciseUi> = listOf(
             exercise(),
@@ -74,6 +75,7 @@ class ProgramDeloadScreenTest {
     ) = DeloadDayUi(
         sourceSlotId = slotId,
         sourceName = name,
+        writtenNumber = number,
         weekday = weekday,
         exercises = exercises,
     )
@@ -138,7 +140,7 @@ class ProgramDeloadScreenTest {
         // N156: the pool used to repeat inside every day card, so a two-day week listed every exercise twice.
         setScreen(
             state = ready.copy(
-                days = listOf(day(), day(slotId = "s2", name = "Deload B")),
+                days = listOf(day(), day(slotId = "s2", name = "Deload B", number = 2)),
                 dayCount = 2,
                 maxDays = 2,
             ),
@@ -184,7 +186,7 @@ class ProgramDeloadScreenTest {
         var toggled: Pair<Int, String>? = null
         setScreen(
             state = ready.copy(
-                days = listOf(day(), day(slotId = "s2", name = "Deload B")),
+                days = listOf(day(), day(slotId = "s2", name = "Deload B", number = 2)),
                 dayCount = 2,
                 maxDays = 2,
             ),

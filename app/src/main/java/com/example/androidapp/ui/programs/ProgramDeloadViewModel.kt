@@ -76,6 +76,8 @@ data class DeloadDayUi(
     val sourceName: String,
     /** False when the day keeps nothing and is left out of the write (N367); the card stays so it can be filled. */
     val written: Boolean = true,
+    /** The 1-based place in what will be written, or null for a card that will not be written. */
+    val writtenNumber: Int? = null,
     val weekday: DayOfWeek?,
     val exercises: List<DeloadExerciseUi>,
 )
@@ -443,6 +445,7 @@ internal fun buildDeloadDays(
             sourceSlotId = day.sourceSlotId,
             sourceName = name,
             written = written,
+            writtenNumber = if (written) emitted else null,
             weekday = day.weekdayAfter(weekdayOf),
             exercises = pool.map { pooled ->
                 val exercise = pooled.exercise

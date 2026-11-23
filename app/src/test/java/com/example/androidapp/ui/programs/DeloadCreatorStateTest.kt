@@ -230,8 +230,10 @@ class DeloadCreatorStateTest {
         )
         assertThat(days[0].written).isFalse()
         assertThat(days[0].sourceName).isEqualTo("Deload A · $weekLabel")
+        assertThat(days[0].writtenNumber).isNull()
         assertThat(days[1].written).isTrue()
         assertThat(days[1].sourceName).isEqualTo("Deload A · $weekLabel")
+        assertThat(days[1].writtenNumber).isEqualTo(1)
     }
 
     @Test
