@@ -41,7 +41,7 @@ var EXPECTED_FIXTURE_CASES = 6;
  * checks executed, not of cases handed in, so a block of `check` calls behind an early return is a
  * failure here rather than a number that quietly fell.
  */
-var EXPECTED_CHECKS = 57;  // +2 B279, +5 N264, +1 N292, +2 N357 holds, +3 N368's floor, catalog and backup note
+var EXPECTED_CHECKS = 59;  // +2 B279, +5 N264, +1 N292, +2 N357 holds, +2 N357 writers, +3 N368 floor/catalog/backup, +2 N368 version
 if (!Array.isArray(globalThis.PROGRAM_EDIT_CASES)) {
   console.error('the edit fixture did not load: PROGRAM_EDIT_CASES is not an array');
   process.exit(1);

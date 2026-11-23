@@ -2921,6 +2921,53 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
+    fun aRestBetweenAnAnchorAndItsDrop_isNotStarted() = runTest(dispatcher) {
+        // N79/N365: the run's sets follow each other, and a failed attempt is not one of its places.
+        // The last **plan place** logged is what decides, not the number of rows.
+        val repository = FakeWorkoutRepository().apply { restSecondsForNextExercise = 180 }
+        val templates = FakeTemplateRepository(
+            planned = listOf(
+                plannedExercise(
+                    position = 0,
+                    sets = listOf(
+                        plannedSet(index = 0, reps = 5, weightGrams = 100_000L),
+                        TemplateSet(
+                            id = "ts-1",
+                            templateExerciseId = "te-0",
+                            setIndex = 1,
+                            role = SetType.DROP,
+                            dropValueGrams = 20_000L,
+                        ),
+                    ),
+                ),
+            ),
+        )
+        val viewModel = viewModelFor(repository, templateId = "t1", templates = templates)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+
+        // A failed attempt first: it is a performed row, but it takes no plan place.
+        viewModel.onLogSet(
+            viewModel.uiState.value.exercises.single().id,
+            offeredSet(viewModel, reps = 0, setType = SetType.FAILED_ATTEMPT),
+        )
+        settle()
+        repository.lastRestSeconds = null
+
+        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, offeredSet(viewModel))
+        settle()
+
+        assertNull("the drop follows the anchor without a rest", repository.lastRestSeconds)
+        assertEquals(
+            "the next set is the drop",
+            SetType.DROP,
+            viewModel.uiState.value.exercises.single().suggestion.setType
+        )
+    }
+
+    @Test
     fun withTheRestTimerOff_loggingASet_startsNoRest() = runTest(dispatcher) {
         // ROADMAP N44: off means the end instant is never written, so there is no countdown hidden
         // behind a static number — the screen shows the prescription instead.

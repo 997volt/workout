@@ -6781,6 +6781,25 @@
   }
 
   /**
+   * The problem a document's version has with this page, or null when it is one the page reads (N368).
+   *
+   * Pure so both refusals are asserted without a DOM. The add path re-stamps the working copy at the
+   * current version (B198), so a newer document used to be refused as an edit and silently written as an
+   * older add (B279); the floor is the app's own, and opening a v1-3 document here would re-stamp it.
+   */
+  function documentVersionProblem(parsed) {
+    if (!isObject(parsed) || typeof parsed.formatVersion !== 'number') { return null; }
+    if (parsed.formatVersion > programFormatVersion()) {
+      return 'That program was written by a newer version of the editor than this page carries.';
+    }
+    if (parsed.formatVersion < programMinimumFormatVersion()) {
+      return 'That program was written by an older version of the editor than this page carries ' +
+        '(file v' + parsed.formatVersion + ', this page reads v' + programMinimumFormatVersion() + ' and later).';
+    }
+    return null;
+  }
+
+  /**
    * A blank program, as the document the app adds (the same shape the sheet writes, N172).
    *
    * It has no `edit` marker: a new program is a proposal to add, and the app's insert-only merge is
@@ -7210,6 +7229,28 @@
       if (run && editorSetsAlike(run[0], row)) { run.push(row); } else { runs.push([row]); }
     });
     return runs;
+  }
+
+  /** Writes a hold to a line of sets: a set is counted or held, never both (B308, N357). */
+  function editorApplyHold(run, seconds) {
+    run.forEach(function (set) {
+      set.targetDurationSeconds = seconds;
+      if (seconds !== null) {
+        set.targetRepsMin = null;
+        set.targetRepsMax = null;
+        set.targetRepsCurrent = null;
+      }
+    });
+  }
+
+  /** Writes one rep field to a line, clearing the hold when a count is typed. Returns the parsed value. */
+  function editorApplyReps(run, field, value) {
+    var parsed = editorParseInt(value);
+    run.forEach(function (set) {
+      set[field] = parsed;
+      if (parsed !== null) { set.targetDurationSeconds = null; }
+    });
+    return parsed;
   }
 
   /** One set's editable content on a new row: the identity, the index and the times are the row's. */
@@ -7887,11 +7928,7 @@
     var holdInput = null;
     function writesReps(field) {
       return function (value) {
-        var parsed = editorParseInt(value);
-        run.forEach(function (set) {
-          set[field] = parsed;
-          if (parsed !== null) { set.targetDurationSeconds = null; }
-        });
+        var parsed = editorApplyReps(run, field, value);
         if (parsed !== null && holdInput) { holdInput.value = ''; }
       };
     }
@@ -7932,14 +7969,7 @@
       // `change`, not `input`, because writing a hold clears the rep fields and re-renders the line.
       var hold = editorTextField('Hold (s)', first.targetDurationSeconds, function (value) {
         var parsed = editorParseInt(value);
-        run.forEach(function (set) {
-          set.targetDurationSeconds = parsed;
-          if (parsed !== null) {
-            set.targetRepsMin = null;
-            set.targetRepsMax = null;
-            set.targetRepsCurrent = null;
-          }
-        });
+        editorApplyHold(run, parsed);
         if (parsed !== null) { editorRender(); }
       }, { type: 'number', step: '1', event: 'change' });
       holdInput = hold.querySelector('input');
@@ -8109,18 +8139,9 @@
         editorClear('That is an edit, not a program. Open the program\'s export, or a draft.');
         return;
       }
-      if (parsed.formatVersion > programFormatVersion()) {
-        // The add path re-stamps the working copy at the current version (B198), so a newer document used
-        // to be refused as an edit and silently written as an older add (B279).
-        editorClear('That program was written by a newer version of the editor than this page carries.');
-        return;
-      }
-      if (parsed.formatVersion < programMinimumFormatVersion()) {
-        // The floor is the app's own (N368): a v1–3 document is refused by `ProgramCodec` before it is
-        // decoded, and opening it here would re-stamp it at the current version — the one thing the
-        // floor exists to prevent.
-        editorClear('That program was written by an older version of the editor than this page carries ' +
-          '(file v' + parsed.formatVersion + ', this page reads v' + programMinimumFormatVersion() + ' and later).');
+      var versionProblem = documentVersionProblem(parsed);
+      if (versionProblem !== null) {
+        editorClear(versionProblem);
         return;
       }
       editorLoadDocument(parsed, fileName);
@@ -8568,6 +8589,9 @@
     SCHEMA_VERSION: SCHEMA_VERSION,
     catalogStatusText: catalogStatusText,
     backupSchemaNote: backupSchemaNote,
+    documentVersionProblem: documentVersionProblem,
+    editorApplyHold: editorApplyHold,
+    editorApplyReps: editorApplyReps,
     DEFAULT_DURATION_MINUTES: DEFAULT_DURATION_MINUTES,
     STORAGE_KEY: STORAGE_KEY,
     BACKUP_FILE_NAME: BACKUP_FILE_NAME,

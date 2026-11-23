@@ -281,6 +281,34 @@
       t.eq(shared.programMinimumFormatVersion(), 4, 'the floor the app enforces');
     });
 
+    check('writing a hold clears the reps, and writing a rep clears the hold (N357)', function () {
+      // The form's two writers share these pure rules; the DOM half only clears the visible input.
+      var document = baseDocument();
+      var run = H.editorSetRuns(document, 'te_a')[0];
+      H.editorApplyHold(run, 45);
+      t.eq(run[0].targetDurationSeconds, 45, 'the hold is written');
+      t.eq(run[0].targetRepsMin, null, 'a held set is not counted');
+      t.eq(run[0].targetRepsMax, null);
+      H.editorApplyReps(run, 'targetRepsMin', '8');
+      t.eq(run[0].targetDurationSeconds, null, 'a counted set is not held');
+      t.eq(run[0].targetRepsMin, 8);
+      H.editorApplyHold(run, null);
+      t.eq(run[0].targetRepsMin, 8, 'clearing the hold leaves the reps');
+      t.eq(JSON.parse(shared.validateJson(JSON.stringify(document))).problems.length, 0);
+    });
+
+    check('the editor refuses a document outside the versions it reads (N368)', function () {
+      t.ok(H.documentVersionProblem({ formatVersion: shared.programMinimumFormatVersion() - 1 })
+        .indexOf('older version') >= 0, 'below the floor');
+      t.ok(H.documentVersionProblem({ formatVersion: shared.programFormatVersion() + 1 })
+        .indexOf('newer version') >= 0, 'above the ceiling');
+      t.eq(H.documentVersionProblem({ formatVersion: shared.programMinimumFormatVersion() }), null,
+        'the floor itself is read');
+      t.eq(H.documentVersionProblem({ formatVersion: shared.programFormatVersion() }), null,
+        'the ceiling itself is read');
+      t.eq(H.documentVersionProblem({}), null, 'not a versioned document');
+    });
+
     check('a newer backup is named newer where its program is edited (N368)', function () {
       // The catalog says a current export is newer than this page; the editor, which writes a program
       // document from it, says the same rather than silently carrying only the fields it models.
