@@ -1601,6 +1601,7 @@
     <string name="deload_load_failed">Couldn’t read this program’s plan.</string>
     <string name="deload_load_failed_hint">Go back and try again.</string>
     <string name="deload_day">Day %1$d</string>
+    <string name="deload_day_not_written">%1$s (not written)</string>
     <string name="deload_pool">Exercises</string>
     <string name="deload_pool_hint">Each exercise is listed once. Choose the days to keep it on.</string>
     <string name="deload_keep_on">Keep on</string>

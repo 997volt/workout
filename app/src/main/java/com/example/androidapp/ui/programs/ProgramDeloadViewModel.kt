@@ -72,8 +72,10 @@ data class DeloadPoolRowUi(
 data class DeloadDayUi(
     /** The slot the day was seeded from; it supplies the weekday and addresses the day in a test (N147). */
     val sourceSlotId: String,
-    /** The day's own workout name: Deload A, Deload B, … (N152). */
+    /** The day's own workout name: Deload A, Deload B, … (N152), by the place it will be written at. */
     val sourceName: String,
+    /** False when the day keeps nothing and is left out of the write (N367); the card stays so it can be filled. */
+    val written: Boolean = true,
     val weekday: DayOfWeek?,
     val exercises: List<DeloadExerciseUi>,
 )
@@ -411,8 +413,10 @@ private fun poolOf(sources: List<DeloadSourceDay>): List<PoolExercise> =
  *
  * Pure so the screen's state can be asserted without a ViewModel or a database, and so the preview and
  * the write read the same rule: [buildDeloadInputs] is this function's selected half in the write's own
- * shape. Every day carries the **whole program pool**, selected per day; the day's name and weekday start
- * from the source day at its position.
+ * shape. Every day carries the **whole program pool**, selected per day. Its name is the place it will be
+ * **written** at — an empty day is left out of the write, so it is marked [DeloadDayUi.written] false and
+ * shows the name the next written day will take — while the weekday still starts from the source day at
+ * that position.
  */
 // The creator's whole draft as arguments: sources, the week being named, and the four controls.
 @Suppress("LongParameterList")
@@ -433,10 +437,12 @@ internal fun buildDeloadDays(
         // kept is left out, so the first written day is A however many empty cards sit above it. An
         // empty card shows the name the next written day will take; it has no workout of its own.
         val name = deloadDayName(emitted, weekLabel)
-        if (pool.any { it.exercise.templateExerciseId in selected }) { emitted += 1 }
+        val written = pool.any { it.exercise.templateExerciseId in selected }
+        if (written) emitted += 1
         DeloadDayUi(
             sourceSlotId = day.sourceSlotId,
             sourceName = name,
+            written = written,
             weekday = day.weekdayAfter(weekdayOf),
             exercises = pool.map { pooled ->
                 val exercise = pooled.exercise

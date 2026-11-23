@@ -406,6 +406,11 @@ private fun DeloadLoadChoices(
     }
 }
 
+/** The card title: the written name, with the preview's own note when the day would be left out (N367). */
+@Composable
+private fun deloadDayTitle(day: DeloadDayUi): String =
+    if (day.written) day.sourceName else stringResource(R.string.deload_day_not_written, day.sourceName)
+
 /**
  * One day's heading: its number, its Deload name and the weekday it is offered on (N147, N156).
  *
@@ -426,7 +431,7 @@ private fun DeloadDayHeader(
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Text(text = day.sourceName, style = MaterialTheme.typography.titleMedium)
+                Text(text = deloadDayTitle(day), style = MaterialTheme.typography.titleMedium)
             }
             WeekdayPicker(day = day, onWeekday = onWeekday)
         }
@@ -512,7 +517,7 @@ private fun WeekdayPicker(
     onWeekday: (String, DayOfWeek?) -> Unit,
 ) {
     var open by rememberSaveable(day.sourceSlotId) { mutableStateOf(false) }
-    val chooseLabel = stringResource(R.string.deload_weekday, day.sourceName)
+    val chooseLabel = stringResource(R.string.deload_weekday, deloadDayTitle(day))
     Box {
         AppTextButton(
             onClick = { open = true },

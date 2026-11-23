@@ -218,7 +218,8 @@ class DeloadCreatorStateTest {
 
         assertThat(inputs.map { it.name }).containsExactly("Deload A · $weekLabel")
         // The preview names the same day the same way: the empty first card does not shift the write
-        // (N367), so its own name is the next written one rather than a second "B".
+        // (N367), so its own name is the next written one rather than a second "B" — and it is marked
+        // unwritten, which is what the card's title says (M1's follow-up).
         val days = buildDeloadDays(
             sources = sources,
             weekLabel = weekLabel,
@@ -227,6 +228,9 @@ class DeloadCreatorStateTest {
             loadKeptPercent = 60,
             weekdayOf = weekdayOf,
         )
+        assertThat(days[0].written).isFalse()
+        assertThat(days[0].sourceName).isEqualTo("Deload A · $weekLabel")
+        assertThat(days[1].written).isTrue()
         assertThat(days[1].sourceName).isEqualTo("Deload A · $weekLabel")
     }
 
