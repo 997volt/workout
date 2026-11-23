@@ -516,6 +516,14 @@ class RoomBackupRepository @Inject constructor(
             // The sets both sides will count (N261): read inside the transaction so the inventory and the
             // write see the same store (B346).
             val visibility = mergeVisibility(file)
+            // What the file will actually change in the plan's order (N361): a set it inserts, or one it
+            // un-hides. A live row the file merely repeats is not an arrival, and an import that only
+            // writes a still-hidden row back has none.
+            val localTemplateSetIds = dao.allTemplateSets().mapTo(mutableSetOf()) { it.id }
+            val hiddenTemplateSetIds = dao.softDeletedTemplateSetIds().toSet()
+            val arrivingSets = file.templateSets.filter {
+                it.deletedAt == null && (it.id !in localTemplateSetIds || it.id in hiddenTemplateSetIds)
+            }
             val inserted = insertMissing(file, visibility)
             val programs = importPrograms(file)
             // The goal periods merge **inside** the transaction like every other table (B144). They used to run
@@ -523,10 +531,13 @@ class RoomBackupRepository @Inject constructor(
             // failure part-way could leave it written while the import reported that nothing had changed.
             val goals = restoreGoalPeriods(file)
             val restored = restoreSoftDeleted(file, visibility)
-            // After both halves: every live set the file names has a place (N361), whether it was
-            // inserted as a new id or restored from a hidden row. Only the file's **live** rows take
-            // part, so an import that merely writes a still-hidden row back does not renumber a plan.
-            renumberPlannedSets(file.templateSets.filter { it.deletedAt == null })
+            // After both halves: an exercise the file actually changed gets one place per live set
+            // (N361), laid out in the file's live order. An exercise with no arriving set is left alone,
+            // so an import that only writes a still-hidden row back does not renumber a live plan.
+            renumberPlannedSets(
+                planned = file.templateSets.filter { it.deletedAt == null },
+                touched = arrivingSets.mapTo(mutableSetOf()) { it.templateExerciseId },
+            )
             ImportSummary(
                 added = inserted + programs.added + goals,
                 restored = restored + programs.restored,
@@ -751,13 +762,14 @@ class RoomBackupRepository @Inject constructor(
      * the export). This runs after both the insert and the restore, so it sees the merged result.
      *
      * A row the file keeps hidden is left alone, and the undo renumbers it if it is ever un-hidden; an
-     * import that only writes such a row back therefore does not touch the live order.
+     * import that only writes such a row back therefore does not touch the live order. [touched] is the
+     * exercises with an arriving set — inserted or un-hidden — so a live row the file merely repeats does
+     * not rewrite the order around it.
      */
-    private suspend fun renumberPlannedSets(planned: List<TemplateSetDto>) {
-        val exerciseIds = planned.mapTo(mutableSetOf()) { it.templateExerciseId }
-        if (exerciseIds.isEmpty()) return
+    private suspend fun renumberPlannedSets(planned: List<TemplateSetDto>, touched: Set<String>) {
+        if (touched.isEmpty()) return
         val all = dao.allTemplateSets()
-        exerciseIds.forEach { exerciseId ->
+        touched.forEach { exerciseId ->
             val live = all.filter { it.templateExerciseId == exerciseId && it.deletedAt == null }
             val fromFile = planned
                 .filter { it.templateExerciseId == exerciseId }

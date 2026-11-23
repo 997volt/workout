@@ -79,9 +79,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 - **A restored planned set goes back into the plan's order** (N361). Removing a set renumbers the
   survivors, so the hidden row's stored index could name a place a live row now held: export, remove the
   middle set, import, and two live rows shared index 1 (a later session snapshot then dropped one). The
-  renumber now runs after both the insert and the restore, so a set the file newly inserts into a taken
-  place is placed too; it only sees the file's live rows, so a hidden-only restore leaves the live order
-  alone. Both cases are pinned on the device.
+  renumber now runs after both the insert and the restore, for an exercise the file actually changes — a
+  set it inserts or un-hides — so a set newly inserted into a taken place is placed too, and an import
+  that only writes a still-hidden row back leaves the live order alone. The insert and the hidden-only
+  cases are pinned on the device.
 - **"Delete everything" leaves automatic backup off when it fails after the rows are gone** (N360). The
   switch was put back on any failure, but the seeder, the crash-log clear and the 1.x delete all run after
   `clearAllTables`; a failure there left an empty database with the scheduled writer re-armed, and its next

@@ -1281,6 +1281,38 @@ class BackupRoundTripTest {
         )
     }
 
+    @Test
+    fun aHiddenOnlyRestore_doesNotRenumberALivePlan() = runTest {
+        // N361: the file's A and B are already live here (B sits at 2), and only its hidden C is new.
+        // No set arrives live, so the live plan keeps the order it has; renumbering to the file's
+        // A, B order would have moved B to 1 for an import that changed nothing visible.
+        seedAWorkout()
+        val base = BackupCodec.decode(exportedJson())
+        database.templateSetDao().insertTemplateSet(plannedSet("template-set-b", 2))
+        val a = base.templateSets.single()
+        val json = BackupCodec.encode(
+            base.copy(
+                templateSets = listOf(
+                    a,
+                    a.copy(id = "template-set-b", setIndex = 1),
+                    a.copy(id = "template-set-c", setIndex = 2, deletedAt = 5L),
+                ),
+            ),
+        )
+
+        val imported = repository.import(json)
+
+        assertTrue("a restore must not roll back: $imported", imported is DataResult.Success)
+        val live = database.templateSetDao().findTemplateSets("template-1").sortedBy { it.setIndex }
+        assertEquals("the live plan kept its order", listOf(0, 2), live.map { it.setIndex })
+        assertEquals(listOf("template-set-1", "template-set-b"), live.map { it.id })
+        assertEquals(
+            "and the file's hidden row came in hidden",
+            5L,
+            database.backupDao().allTemplateSets().single { it.id == "template-set-c" }.deletedAt,
+        )
+    }
+
     private fun plannedSet(id: String, index: Int) = TemplateSetEntity(
         id = id,
         templateExerciseId = "template-exercise-1",
