@@ -2378,7 +2378,7 @@ the rule; that one argues it.
 - **The lint baseline is unwired on purpose.** Accepting a warning is a two-step, reviewed
   act, not a side effect of running the build.
 - **Formatting is checked on the lines a change touched, not on the tree** (B123, answered by N129).
-  The ruleset reports **74 findings across 59 files** on today's code — 50 of them `ImportOrdering`
+  The ruleset reports **73 findings across 58 files** on today's code — 50 of them `ImportOrdering`
   alone, measured with
   `./gradlew :app:detektFormattingCheck --no-configuration-cache --rerun-tasks` (642 across 155 when N129
   took it; the fall is drift, not a different ruleset, and the ratio is what the rule rests on) — so

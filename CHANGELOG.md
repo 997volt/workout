@@ -23,6 +23,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   build instead of a browser. The formatting plugin is loaded only by `detektFormattingCheck` (the gate no
   longer carries it, so its `formatting: active: false` exclusion went with it), and Turbine — declared,
   documented as used, imported nowhere — is removed along with its coroutines exception.
+- **The energy verdict reads the goal's own period** (N98, N137). A goal that began at 90 kg was judged
+  against the whole weight history, so an old 65 kg reading pulled the fit down and a weight held inside
+  90 ± 1 read "More than 1,500 kcal a day more". The statistics section and the weigh-in prompt now clip
+  the series to the period in force, the goal history judges each period on its own, and a fitted value
+  that lands on the corridor edge rounds like the stored weight does.
 - **Four small defects the review found** (N371). A failed calibration read with no marked exercises left a
   non-null empty notice list, which drew a title-only dialog with no buttons under the error's own dialog —
   the list is null now. A failed block-list read was drawn as "no blocks"; the sheet says the read failed
@@ -37,7 +42,7 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   automatic-backup folder helper's KDoc sat on the method below it.
 - **The documentation states today's numbers and commands** (N369). DECISIONS' N147 and N185 entries gave
   the schema, backup and document versions as current when they were the state those decisions landed in —
-  they now say both the then and the now — and the formatting-findings count is re-measured (74 across 59
+  they now say both the then and the now — and the formatting-findings count is re-measured (73 across 58
   files) with the command it names. AGENTS' local fixture proof uses `git status`, which sees an untracked
   fixture, and the helper page no longer says the only file it writes is the backup.
 - **The helper refuses a too-old program document**, and its catalog status is true for a current export
