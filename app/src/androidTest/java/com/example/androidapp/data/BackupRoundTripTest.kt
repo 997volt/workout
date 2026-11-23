@@ -1313,6 +1313,103 @@ class BackupRoundTripTest {
         )
     }
 
+    @Test
+    fun anImportedTemplateExercise_atATakenPosition_getsItsOwnPlace() = runTest {
+        // N358/N361: the file's A and a new X at position 1, the device holds A0 and B1. The insert
+        // cannot know B's place, so the pass after the merge gives the three live exercises 0, 1, 2.
+        seedAWorkout()
+        val base = BackupCodec.decode(exportedJson())
+        database.templateDao().insertTemplateExercise(
+            TemplateExerciseEntity(
+                id = "template-exercise-b",
+                templateId = "template-1",
+                exerciseId = "back-squat",
+                position = 1,
+                restSeconds = null,
+                techniqueNote = null,
+                targetRpeHalves = null,
+                supersetGroup = null,
+                createdAt = 1_000L,
+                updatedAt = 1_000L,
+                deletedAt = null,
+            ),
+        )
+        val a = base.templateExercises.single()
+        val json = BackupCodec.encode(
+            base.copy(
+                templateExercises = listOf(
+                    a,
+                    a.copy(id = "template-exercise-x", position = 1),
+                ),
+            ),
+        )
+
+        val imported = repository.import(json)
+
+        assertTrue("a restore must not roll back: $imported", imported is DataResult.Success)
+        val live = database.templateDao().findTemplateExercises("template-1")
+        assertEquals("one live exercise per place", listOf(0, 1, 2), live.map { it.position })
+        assertEquals(3, live.size)
+    }
+
+    @Test
+    fun anImportedProgramSlot_atATakenPosition_getsItsOwnPlace() = runTest {
+        // The same shape for slots: the file's slot 0 and a new X at 1, the device's B at 1.
+        seedAWorkout()
+        database.programDao().insertProgram(
+            ProgramEntity(
+                id = "program-1",
+                name = "Upper/Lower",
+                isActive = false,
+                position = 0,
+                createdAt = 1_000L,
+                updatedAt = 1_000L,
+                deletedAt = null,
+            ),
+        )
+        database.programDao().insertSlot(
+            ProgramSlotEntity(
+                id = "slot-1",
+                programId = "program-1",
+                templateId = "template-1",
+                position = 0,
+                weekday = null,
+                createdAt = 1_000L,
+                updatedAt = 1_000L,
+                deletedAt = null,
+            ),
+        )
+        val base = BackupCodec.decode(exportedJson())
+        database.programDao().insertSlot(
+            ProgramSlotEntity(
+                id = "slot-b",
+                programId = "program-1",
+                templateId = "template-1",
+                position = 1,
+                weekday = null,
+                createdAt = 1_000L,
+                updatedAt = 1_000L,
+                deletedAt = null,
+            ),
+        )
+        val slot = base.programSlots.single()
+        val json = BackupCodec.encode(
+            base.copy(
+                programSlots = listOf(
+                    slot,
+                    slot.copy(id = "slot-x", position = 1),
+                ),
+            ),
+        )
+
+        val imported = repository.import(json)
+
+        assertTrue("a restore must not roll back: $imported", imported is DataResult.Success)
+        val live = database.programDao().findSlots("program-1")
+        assertEquals("one live day per place", listOf(0, 1, 2), live.map { it.position })
+        assertEquals(3, live.size)
+    }
+
     private fun plannedSet(id: String, index: Int) = TemplateSetEntity(
         id = id,
         templateExerciseId = "template-exercise-1",

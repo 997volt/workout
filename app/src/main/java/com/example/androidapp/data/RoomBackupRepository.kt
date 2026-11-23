@@ -538,6 +538,14 @@ class RoomBackupRepository @Inject constructor(
                 planned = file.templateSets.filter { it.deletedAt == null },
                 touched = arrivingSets.mapTo(mutableSetOf()) { it.templateExerciseId },
             )
+            // The position spaces beside the sets: a template exercise or program slot inserted at a
+            // taken place would leave the plan ambiguous and its own export refused (N358, N361).
+            renumberPlanPositions(
+                database = database,
+                templateIds = file.templateExercises.mapTo(mutableSetOf()) { it.templateId },
+                programIds = file.programSlots.mapTo(mutableSetOf()) { it.programId },
+                now = timeSource.nowEpochMillis(),
+            )
             ImportSummary(
                 added = inserted + programs.added + goals,
                 restored = restored + programs.restored,

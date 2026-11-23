@@ -45,6 +45,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   they now say both the then and the now — and the formatting-findings count is re-measured (73 across 58
   files) with the command it names. AGENTS' local fixture proof uses `git status`, which sees an untracked
   fixture, and the helper page no longer says the only file it writes is the backup.
+- **A merge keeps one row per plan position** (N358, N361). A backup restore or a program-document add could
+  insert a template exercise or a program slot at a position a live row already held; the plan's order was
+  ambiguous and the stricter document boundary then refused the device's own export. The import renumbers
+  the live positions after the merge — the existing order is kept, and duplicates and gaps are closed by
+  position then id — per template and per program plus phase week.
 - **The helper refuses a too-old program document**, and its catalog status is true for a current export
   (N368). The page checked only the format ceiling and then stamped the working copy at the current
   version, so a v1–3 document the app refuses was opened and re-badged; it now reads the same floor the

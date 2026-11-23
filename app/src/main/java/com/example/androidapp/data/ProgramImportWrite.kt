@@ -136,6 +136,15 @@ internal suspend fun mergeProgramDocument(
     val slots = resolved.slots.filter { it.templateId in knownTemplates }
     programBackup.insertProgramSlots(slots.map { it.toEntity() })
 
+    // A hidden program restored beside the file's rows can put a template exercise or a slot on a taken
+    // place; the import renumbers the live positions so the plan, and its own export, has one row there
+    // (N358, N361).
+    renumberPlanPositions(
+        database = database,
+        templateIds = resolved.templates.mapTo(mutableSetOf()) { it.id },
+        programIds = setOf(resolved.program.id),
+        now = now,
+    )
     return ProgramImportSummary(
         programs = programsAdded + programsRestored,
         templates = templatesAdded,
