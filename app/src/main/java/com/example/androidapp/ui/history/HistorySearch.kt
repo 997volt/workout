@@ -8,12 +8,12 @@ import java.util.Locale
 /**
  * The rows one query and one filter leave, grouped by month, newest first (ROADMAP N146).
  *
- * **Searched on what the row says**, which is deliberate: the list is a projection of totals and a template
- * name, so a query cannot reach an exercise name without loading every set of every session — the cost the
- * projection exists to avoid. What it can reach is the month the row is grouped under, the plan it was started
- * from, what kind of day it was, and a workout's set count — and those are what a lifter scanning a log has in
- * front of them. "cycling" and "push" both land. An activity's row prints no set count (B167), so the query
- * does not reach one: a search must not find a row by a word the row does not show.
+ * **Searched on what the row says**, which is deliberate: the query reads the list's projection rather than
+ * loading every set of every session, the cost the projection exists to avoid. What it reaches is the month
+ * the row is grouped under, the plan it was started from, the notes and exercise names the projection carries
+ * (N288), what kind of day it was and a workout's set count — what a lifter scanning a log has in front of
+ * them. "cycling" and "push" both land. An activity's row prints no set count (B167), so the query does not
+ * reach one: a search must not find a row by a word the row does not show.
  *
  * Pure and file-level, like the grouping it wraps, so the matching rules are unit-tested rather than driven
  * through a screen.

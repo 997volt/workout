@@ -159,7 +159,8 @@ class RoomBackupRepository @Inject constructor(
         }
     }
 
-    // Catching the clear's own failure is the point: it must put the backup switch back before rethrowing.
+    // Catching the clear's own failure is the point: the switch goes back only while the rows are still
+    // here (N360); after `clearAllTables` it must stay off.
     @Suppress("TooGenericExceptionCaught")
     override suspend fun clearAllUserData(): DataResult<Unit> = dataResultOf {
         // Off the main thread: `clearAllTables` is a blocking call and Room asserts where
