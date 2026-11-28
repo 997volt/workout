@@ -440,7 +440,8 @@ the rule; that one argues it.
 - **A recovery gate honours a stated fact; it never measures recovery** (N377). Joint pain and soreness are
   the lifter's own records for one exercise and one session. **Joint pain** at 4 or more holds the auto step
   (reps, load or a hold's seconds) and the earned-set offer; 7 or more also asks the finish's deload/replace
-  question, with the joint and the lifter's score as the reason. **Soreness** holds only the offer: a sore
+  question, one lift at a time while the rest wait, with the joint and the lifter's score as the reason.
+  **Soreness** holds only the offer: a sore
   primary muscle above 4, or a sore secondary at 6 or more. **Muscle feel gates nothing**, because 10 is
   *fully worked*, not *recovered*. The day is the daily record as it stood at the session's start (a record
   older than three days is stale), read in the session's own zone and mapped through the plan row's muscles.

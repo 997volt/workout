@@ -19,10 +19,12 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 - **A 1RM test reads as its own card** (N330). The finished workout names the warm-up count, the best single
   and every failed attempt above it, in the order tried, instead of one sentence naming only the heaviest
-  attempt. It is the same sets under N329's roles, not a second data model.
+  attempt. A successful test with no failed attempt is read too when every working set is a single and
+  warm-ups led in. It is the same sets under N329's roles, not a second data model.
 - **The block export offers a custom window** (N332). Change now has **Custom range**: two dates, Apply held
-  until both are set, and the chosen window goes through the same single CSV and health-data warning. An empty
-  window is still writable and exports with no sessions.
+  until both are set, and the chosen window goes through the same single CSV and health-data warning. A start
+  after the end is refused rather than exported backwards; an ordered window with no sessions is still
+  writable.
 - **The auto progression banner says what each set moved** (N373). A batch no longer collapses to a count and a
   lone step no longer states only the next target: the banner names the set, the direction and the move —
   *"Set 2 · 100 kg → 102.5 kg"*, *"Set 3 · 8 → 9 reps"*, *"Plank · 0:45 → 1:00"* — with the same Undo and
@@ -39,9 +41,9 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 ### Changed
 
 - **The prefill names one source, not two** (N376). Under the next set's fields the line states the plan where
-  the planned set names a target and the last performance where it names none, so one origin explains the
-  numbers on screen. A plan that names reps but no load leaves the field's load unlabelled; that cost is
-  accepted.
+  the planned set names a target — including a hold's seconds, which reads *"Plan 0:45"* — and the last
+  performance where it names none, so one origin explains the numbers on screen. A plan that names reps but no
+  load leaves the field's load unlabelled; that cost is accepted.
 
 ### Fixed
 
