@@ -85,6 +85,7 @@ fun WorkoutHistoryRoute(
     // Read the resource in the composition, not from the Context inside the action: the latter is not
     // configuration-aware after a locale change (lint's LocalContextGetResourceValueCall).
     val lastWeeksName = stringResource(R.string.history_block_last_weeks)
+    val customName = stringResource(R.string.history_block_custom_name)
 
     // The repeat is a start, so it goes through the program's missed-day question like every other
     // start (P3.3, N48): the prompt is asked at the point of starting, never at launch. A skip that
@@ -140,6 +141,7 @@ fun WorkoutHistoryRoute(
             onShare = reportViewModel::share,
             onChoose = reportViewModel::choose,
             onLastWeeks = { reportViewModel.lastWeeks(lastWeeksName) },
+            onCustom = { from, to -> reportViewModel.custom(from, to, customName) },
             onClose = reportViewModel::close,
         )
     }

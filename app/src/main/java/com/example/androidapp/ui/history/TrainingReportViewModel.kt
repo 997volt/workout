@@ -90,6 +90,17 @@ class TrainingReportViewModel @Inject constructor(
         load { repository.range(today.minusWeeks(FALLBACK_WEEKS), today, name) }
     }
 
+    /**
+     * The chosen window, from the custom range's two dates (ROADMAP N332).
+     *
+     * The range is the repository's own read; the sheet and the file are unchanged, so an empty window
+     * exports the same one-file CSV with no sessions rather than a second format. The caller names it,
+     * as it names the last-eight-weeks window (N343).
+     */
+    fun custom(start: LocalDate, end: LocalDate, name: String) {
+        load { repository.range(start, end, name) }
+    }
+
     fun onShareFinished(shared: Boolean) {
         _state.update {
             it.copy(

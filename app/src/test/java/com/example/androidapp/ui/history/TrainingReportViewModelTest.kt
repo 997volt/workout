@@ -17,6 +17,7 @@ import com.example.androidapp.domain.repository.TrainingBlockChoice
 import com.example.androidapp.domain.repository.TrainingReportRepository
 import com.example.androidapp.platform.DocumentIo
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -85,6 +86,8 @@ class TrainingReportViewModelTest {
     ) : TrainingReportRepository {
         var lastBlockName: String? = null
         var rangeName: String? = null
+        var rangeStart: LocalDate? = null
+        var rangeEnd: LocalDate? = null
 
         override suspend fun lastBlock(fallbackName: String): DataResult<TrainingReport> {
             lastBlockName = fallbackName
@@ -94,6 +97,8 @@ class TrainingReportViewModelTest {
         override suspend fun block(programId: String) = result
 
         override suspend fun range(start: LocalDate, end: LocalDate, name: String): DataResult<TrainingReport> {
+            rangeStart = start
+            rangeEnd = end
             rangeName = name
             return result
         }
@@ -169,6 +174,31 @@ class TrainingReportViewModelTest {
         viewModel.onShareFinished(true)
         assertThat(viewModel.state.value.shareFile).isNull()
     }
+
+    @Test
+    fun aCustomRange_readsTheChosenDates_andAnEmptyWindowStillExports() = runTest(dispatcher) {
+        // N332: the chosen ends go to the repository's existing range read; a window with no sessions is a
+        // valid report (the same CSV, zero sessions), not an error and not an unwritable sheet.
+        val empty = report().copy(sessions = emptyList(), days = emptyList())
+        val repository = FakeRepository(DataResult.Success(empty))
+        val viewModel = TrainingReportViewModel(
+            repository = repository,
+            documentIo = FakeDocumentIo(),
+            timeSource = TimeSource { Instant.parse("2026-10-17T10:00:00Z") },
+        )
+        val start = LocalDate.of(2026, 8, 1)
+        val end = LocalDate.of(2026, 8, 20)
+
+        viewModel.custom(start, end, "Custom range")
+        advanceUntilIdle()
+
+        assertThat(repository.rangeStart).isEqualTo(start)
+        assertThat(repository.rangeEnd).isEqualTo(end)
+        assertThat(repository.rangeName).isEqualTo("Custom range")
+        assertThat(viewModel.state.value.report?.sessions).isEmpty()
+        assertWithMessage("an empty window can still be written")
+            .that(viewModel.state.value.canWrite)
+            .isTrue()    }
 
     @Test
     fun downloading_writesTheCsv_andSaysItDid() = runTest(dispatcher) {

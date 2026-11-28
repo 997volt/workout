@@ -795,6 +795,14 @@
     <string name="history_block_warning">This CSV includes readiness, soreness, joint pain and body measurements. Share it only with someone who should have that data.</string>
     <string name="history_block_change">Change</string>
     <string name="history_block_last_weeks">Last 8 weeks</string>
+    <!-- The custom window in the block sheet's Change (ROADMAP N332): two ends, then Apply. -->
+    <string name="history_block_custom">Custom range…</string>
+    <string name="history_block_custom_title">Custom range</string>
+    <string name="history_block_custom_name">Custom range</string>
+    <string name="history_block_custom_from">From</string>
+    <string name="history_block_custom_to">To</string>
+    <string name="history_block_custom_no_date">Not set</string>
+    <string name="history_block_custom_apply">Apply</string>
     <string name="history_block_download">Download CSV</string>
     <string name="history_block_share">Share CSV</string>
     <string name="history_block_loading">Reading the block…</string>

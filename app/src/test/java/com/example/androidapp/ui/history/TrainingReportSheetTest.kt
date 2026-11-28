@@ -36,6 +36,8 @@ class TrainingReportSheetTest {
     private var shared = 0
     private var chosen: String? = null
     private var weeks = 0
+    private var customFrom: LocalDate? = null
+    private var customTo: LocalDate? = null
 
     private fun report() = TrainingReport(
         blockName = "Upper/Lower",
@@ -80,6 +82,10 @@ class TrainingReportSheetTest {
                     onShare = { shared++ },
                     onChoose = { chosen = it },
                     onLastWeeks = { weeks++ },
+                    onCustom = { from, to ->
+                        customFrom = from
+                        customTo = to
+                    },
                     onClose = {},
                 )
             }
@@ -149,5 +155,20 @@ class TrainingReportSheetTest {
         composeTestRule.onNodeWithText("Last 8 weeks").performClick()
 
         assertEquals(1, weeks)
+    }
+
+    @Test
+    fun change_offersTheCustomRange_andApplyWaitsForBothEnds() {
+        // N332: the two-date window the sheet did not surface. A single end is no window, so Apply is held
+        // until both are set; the dates themselves go through the ViewModel's range read.
+        show(TrainingReportUiState(isOpen = true, report = report()))
+
+        composeTestRule.onNodeWithTag(TestTags.HISTORY_BLOCK_CHANGE).performClick()
+        composeTestRule.onNodeWithText("Custom range…").performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.HISTORY_BLOCK_CUSTOM).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.HISTORY_BLOCK_CUSTOM_FROM).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.HISTORY_BLOCK_CUSTOM_TO).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.HISTORY_BLOCK_CUSTOM_APPLY).assertIsNotEnabled()
     }
 }

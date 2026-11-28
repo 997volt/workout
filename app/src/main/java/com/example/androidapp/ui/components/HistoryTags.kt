@@ -66,6 +66,12 @@ internal interface HistoryTags {
     val HISTORY_BLOCK_SHARE: String get() = "history_block_share"
     val HISTORY_BLOCK_OUTCOME: String get() = "history_block_outcome"
 
+    /** The custom window the block sheet's Change offers (ROADMAP N332). */
+    val HISTORY_BLOCK_CUSTOM: String get() = "history_block_custom"
+    val HISTORY_BLOCK_CUSTOM_FROM: String get() = "history_block_custom_from"
+    val HISTORY_BLOCK_CUSTOM_TO: String get() = "history_block_custom_to"
+    val HISTORY_BLOCK_CUSTOM_APPLY: String get() = "history_block_custom_apply"
+
     /** One set's change from the same place in it (N306). */
     val HISTORY_SET_DELTA: String get() = "history_set_delta"
 
