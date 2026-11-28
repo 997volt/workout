@@ -17,6 +17,17 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Added
 
+- **A 1RM test reads as its own card** (N330). The finished workout names the warm-up count, the best single
+  and every failed attempt above it, in the order tried, instead of one sentence naming only the heaviest
+  attempt. It is the same sets under N329's roles, not a second data model; the guided attempt flow stays in
+  Later.
+- **The block export offers a custom window** (N332). Change now has **Custom range**: two dates, Apply held
+  until both are set, and the chosen window goes through the same single CSV and health-data warning. An empty
+  window is still writable and exports with no sessions.
+- **The auto progression banner says what each set moved** (N373). A batch no longer collapses to a count and a
+  lone step no longer states only the next target: the banner names the set, the direction and the move —
+  *"Set 2 · 100 kg → 102.5 kg"*, *"Set 3 · 8 → 9 reps"*, *"Plank · 0:45 → 1:00"* — with the same Undo and
+  Dismiss.
 - **Auto progression and the earned set read soreness and joint pain** (N377). A joint rated 4 or more on
   the session's own exercise holds the auto step and the earned-set offer, and 7 or more also asks the
   finish's deload/replace question with the joint and the lifter's score as the reason. A sore primary
@@ -25,6 +36,25 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   (older than three days is stale), the plan card and the finish's snackbar read one verdict, and a held
   session breaks the three-session pattern. Nothing writes a set count and no schema changes; the plan
   editor still owns every plan edit and its undo.
+
+### Changed
+
+- **The prefill names one source, not two** (N376). Under the next set's fields the line states the plan where
+  the planned set names a target and the last performance where it names none, so one origin explains the
+  numbers on screen. A plan that names reps but no load leaves the field's load unlabelled; that cost is
+  accepted.
+
+### Fixed
+
+- **A record banner is withheld when a stronger set already dominates it** (N374). 100 kg × 4 is a new four-rep
+  best even when 100 kg × 5 stands, and the app announced it. A best at more reps and at least the same weight
+  now keeps the banner quiet; the record is still stored, and a heavier four-rep set still announces.
+
+### Removed
+
+- **The workout block no longer restates the plan's progression sentence** (N375). The plan editor keeps its
+  sentence; the session is not where a plan is explained, and the Done question and auto banner are the
+  session's own answers. The line, its four strings and its test tag are gone.
 
 ## [2.34] — 2026-11-23 (versionCode 55)
 
