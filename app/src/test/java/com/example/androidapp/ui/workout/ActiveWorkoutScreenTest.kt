@@ -108,6 +108,11 @@ class ActiveWorkoutScreenTest {
         /** The reason a *Done* wrote nothing, or null (ROADMAP N377). */
         recoveryHold: RecoveryHoldMoment? = null,
         onDismissRecoveryHold: () -> Unit = {},
+        /** The severe joint pain the finish asks about, or null (ROADMAP N377). */
+        recoveryNotice: List<RecoveryNotice>? = null,
+        onDismissRecovery: () -> Unit = {},
+        onDeloadRecovery: (RecoveryNotice) -> Unit = {},
+        onReplaceRecovery: (RecoveryNotice) -> Unit = {},
         countsAgainstProgram: Boolean = false,
         restTimerEnabled: Boolean = true,
         defaultRestSeconds: Int = 90,
@@ -145,6 +150,10 @@ class ActiveWorkoutScreenTest {
                 personalRecord = personalRecord,
                 recoveryHold = recoveryHold,
                 onDismissRecoveryHold = onDismissRecoveryHold,
+                recoveryNotice = recoveryNotice,
+                onDismissRecovery = onDismissRecovery,
+                onDeloadRecovery = onDeloadRecovery,
+                onReplaceRecovery = onReplaceRecovery,
                 onUpdateSet = { _, _, _, _, _, _, _, _ -> },
                 onRemoveExercise = actions.onRemoveExercise,
                 onMoveExercise = actions.onMoveExercise,
@@ -1589,6 +1598,31 @@ class ActiveWorkoutScreenTest {
         composeTestRule.onNodeWithTag(TestTags.RECOVERY_HOLD_DISMISS).performClick()
 
         assertEquals(1, dismissed)
+    }
+
+    @Test
+    fun severeJointPain_atTheFinish_offersTheLiftDecision() {
+        // N377: seven or more is the plan's question, and its answer is the plan editor's Deload/Replace.
+        var deloaded: RecoveryNotice? = null
+        setScreen(
+            state = state(isFinished = false),
+            recoveryNotice = listOf(
+                RecoveryNotice(
+                    exerciseName = "Back Squat",
+                    templateId = "t1",
+                    templateExerciseId = "te-0",
+                    exerciseId = "back-squat",
+                    pain = JointPain(Joint.KNEE, Side.RIGHT, 7),
+                ),
+            ),
+            onDeloadRecovery = { deloaded = it },
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.RECOVERY_DIALOG).assertExists()
+        composeTestRule.onNodeWithText("Right knee 7/10", substring = true).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.recoveryDialogDeload("te-0")).performClick()
+
+        assertEquals("te-0", deloaded?.templateExerciseId)
     }
 
     @Test

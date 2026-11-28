@@ -15,6 +15,7 @@ import com.example.androidapp.domain.dataResultOf
 import com.example.androidapp.domain.getOrNull
 import com.example.androidapp.domain.model.Activity
 import com.example.androidapp.domain.model.CalibrationTarget
+import com.example.androidapp.domain.model.JOINT_PAIN_SEVERE_SCORE
 import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.PendingProgression
 import com.example.androidapp.domain.model.PerformedSetSpec
@@ -86,6 +87,21 @@ data class CalibrationNotice(
     val topAssistanceGrams: Long,
     val weightUnit: WeightUnit,
     val targets: List<CalibrationTarget>,
+)
+
+/**
+ * One lift whose joint pain is severe enough to ask the finish for a decision (ROADMAP N377).
+ *
+ * The gate stopped the step and the offer; at 7 or more the pain is also the deload/replace question's, and
+ * the card names the joint and the lifter's score as its reason. The answer is the existing plan edit, so this
+ * carries only what the hand-off needs.
+ */
+data class RecoveryNotice(
+    val exerciseName: String,
+    val templateId: String,
+    val templateExerciseId: String,
+    val exerciseId: String,
+    val pain: JointPain,
 )
 
 /** The marked plans a finish owes a question, and the read's failure when it could not answer (B452). */
@@ -308,10 +324,29 @@ class ActiveWorkoutViewModel @Inject constructor(
     private val _planHandOff = MutableStateFlow<PlanHandOff?>(null)
     val planHandOff: StateFlow<PlanHandOff?> = _planHandOff.asStateFlow()
 
-    /** The stall the finish owes once the calibration prompt has been answered (N305, N309). */
+    /**
+     * The finish's decisions, owed once the calibration prompt has been answered (N305, N309, N377).
+     *
+     * One batch rather than one pending field per card: the order is fixed — calibration, then the joint-pain
+     * card, then the stall card — and the batch is what lets each step hand the rest to the next.
+     */
+    private val pendingDecisions = MutableStateFlow<FinishDecisions?>(null)
+
+    /** The joint-pain card the finish is showing, or null (ROADMAP N377). */
+    private val _recoveryNotice = MutableStateFlow<List<RecoveryNotice>?>(null)
+    val recoveryNotice: StateFlow<List<RecoveryNotice>?> = _recoveryNotice.asStateFlow()
+
+    /** The stalls still owed after the joint-pain card, or null (N305, N310). */
     private val pendingStallNotice = MutableStateFlow<FinishStalls?>(null)
 
     private data class FinishStalls(val programId: String, val stalls: List<PlanStall>)
+
+    /** Everything the finish owes, in the order the screen states it (N377, N310). */
+    private data class FinishDecisions(
+        val programId: String,
+        val stalls: List<PlanStall>,
+        val recoveries: List<RecoveryNotice>,
+    )
 
     private val pendingUndo = MutableStateFlow<SetEntry?>(null)
     private val previousByExercise = MutableStateFlow<Map<String, PreviousPerformance>>(emptyMap())
@@ -1520,6 +1555,7 @@ class ActiveWorkoutViewModel @Inject constructor(
             // stored its rows leave the flow. Both notices are about the workout that was just trained.
             val templateId = uiState.value.sessionTemplateId
             val calibration = calibrationNotices()
+            val recoveries = recoveryNotices(templateId)
             // The movements this session trained, read before the finish closes it (B442): the stored
             // session rows, because the live state has already dropped the ones it was drawing.
             val trained = sessionExercises.first().map { it.exerciseId }.toSet()
@@ -1527,12 +1563,13 @@ class ActiveWorkoutViewModel @Inject constructor(
             when (val result = workoutRepository.finishSession(sessionId)) {
                 is DataResult.Success -> {
                     lastError.value = null
-                    // The find-the-weight prompt comes first (N309); the stall is owed after it (N305).
-                    val notice = finishStallNotice(templateId, trained)
+                    // The order is fixed: find-the-weight first (N309), then joint pain (N377), then stalls
+                    // (N305, N310). Each step hands the rest to the next, so one answer never drops another.
+                    val decisions = finishDecisions(templateId, trained, recoveries)
                     if (calibration.notices.isEmpty() && calibration.error == null) {
-                        if (notice == null) closeSession() else showStalls(notice)
+                        showNextDecisions(decisions)
                     } else {
-                        pendingStallNotice.value = notice
+                        pendingDecisions.value = decisions
                         // Empty notices with a read error is not a prompt (N371): a non-null empty list
                         // drew a title-only dialog with no buttons under the error's own dialog.
                         _calibrationNotice.value = calibration.notices.ifEmpty { null }
@@ -1668,13 +1705,13 @@ class ActiveWorkoutViewModel @Inject constructor(
         removeCalibration(notice)
     }
 
-    /** The unreadable plans were acknowledged; the finish carries on with its stall or its close (B452). */
+    /** The unreadable plans were acknowledged; the finish carries on with the next card or its close (B452). */
     fun onDismissCalibrationReadError() {
         _calibrationReadError.value = null
         if (_calibrationNotice.value.isNullOrEmpty()) {
-            val stall = pendingStallNotice.value
-            pendingStallNotice.value = null
-            if (stall == null) closeSession() else showStalls(stall)
+            val decisions = pendingDecisions.value
+            pendingDecisions.value = null
+            showNextDecisions(decisions)
         }
     }
 
@@ -1686,15 +1723,64 @@ class ActiveWorkoutViewModel @Inject constructor(
             .filterNot { it.templateExerciseId == notice.templateExerciseId }
         _calibrationNotice.value = remaining.ifEmpty { null }
         if (remaining.isEmpty()) {
-            val stall = pendingStallNotice.value
-            pendingStallNotice.value = null
-            if (stall == null) closeSession() else showStalls(stall)
+            val decisions = pendingDecisions.value
+            pendingDecisions.value = null
+            showNextDecisions(decisions)
+        }
+    }
+
+    /**
+     * The finish's fixed order: the joint-pain card, the stall card, the close (N377, N305, N310).
+     *
+     * The joint-pain card is the one N377 adds; the stall card is kept for after it, so answering one card
+     * never drops another. A batch with neither ends the workout, which is the only path that closes here.
+     */
+    private fun showNextDecisions(decisions: FinishDecisions?) {
+        if (decisions == null) {
+            closeSession()
+            return
+        }
+        if (decisions.recoveries.isNotEmpty()) {
+            _stallProgramId.value = decisions.programId
+            _recoveryNotice.value = decisions.recoveries
+            pendingStallNotice.value = decisions.stalls.takeIf { it.isNotEmpty() }
+                ?.let { FinishStalls(decisions.programId, it) }
+            return
+        }
+        if (decisions.stalls.isNotEmpty()) {
+            showStalls(FinishStalls(decisions.programId, decisions.stalls))
+        } else {
+            closeSession()
         }
     }
 
     private fun showStalls(notice: FinishStalls) {
         _stallProgramId.value = notice.programId
         _stallNotice.value = notice.stalls
+    }
+
+    /** The joint-pain card's Done: the stall card follows if it is owed (N377, N305). */
+    fun onDismissRecovery() = finishRecovery()
+
+    /** The joint-pain card's Deload: the same hand-off the stall card uses (N377, N310). */
+    fun onDeloadRecovery(notice: RecoveryNotice) = handOffRecovery(notice, replace = false)
+
+    /** The joint-pain card's Replace: the same hand-off (N377, N310). */
+    fun onReplaceRecovery(notice: RecoveryNotice) = handOffRecovery(notice, replace = true)
+
+    private fun finishRecovery() {
+        _recoveryNotice.value = null
+        val stall = pendingStallNotice.value
+        pendingStallNotice.value = null
+        if (stall == null) closeSession() else showStalls(stall)
+    }
+
+    private fun handOffRecovery(notice: RecoveryNotice, replace: Boolean) {
+        val programId = _stallProgramId.value ?: return
+        _recoveryNotice.value = null
+        pendingStallNotice.value = null
+        _stallProgramId.value = null
+        _planHandOff.value = PlanHandOff(programId, notice.templateId, notice.templateExerciseId, replace)
     }
 
     /** The finish's Deload: hand the plan screen the target it must open (N310); the plan edits, not this. */
@@ -1715,18 +1801,22 @@ class ActiveWorkoutViewModel @Inject constructor(
     }
 
     /**
-     * The stalled lifts a just-finished workout should say, or null when it should say nothing (ROADMAP N305).
+     * What the finish owes, or null when it owes nothing (ROADMAP N305, N377).
      *
      * Only a workout of an **active weekly** program is told: the notice is for a plan being followed, and
-     * the deload it points at belongs to a program the lifter runs. Only a run that **just** reached three is
+     * the deload it points at belongs to a program the lifter runs. Only a stall that **just** reached three is
      * told, so the dialog does not become a popup after every session it stays stuck; the program screen and
-     * the weekly review carry it from there. A failed read answers null for the same reason: the workout is
-     * finished and stored, and an advisory notice must not strand it — the durable surfaces report the error.
+     * the weekly review carry it from there. A failed read answers no stalls for the same reason: the workout
+     * is finished and stored, and an advisory notice must not strand it — the durable surfaces report the error.
+     *
+     * The joint-pain recoveries join the same batch (N377): they owe the same card, and they must survive the
+     * calibration prompt in front of it.
      */
-    private suspend fun finishStallNotice(
+    private suspend fun finishDecisions(
         templateId: String?,
         trained: Set<String>,
-    ): FinishStalls? {
+        recoveries: List<RecoveryNotice>,
+    ): FinishDecisions? {
         val program = templateId
             ?.let { programRepository.activeWeeklyProgramForTemplate(it) }
             ?.getOrNull()
@@ -1735,10 +1825,35 @@ class ActiveWorkoutViewModel @Inject constructor(
             // Only a movement this session trained (B442): a run of three survives a workout of the
             // template that did not train the lift, and the next one must not claim it just reached three.
             ?.filter { it.sessions == STALL_SESSIONS && it.exerciseId in trained }
-        return if (program == null || stalls.isNullOrEmpty()) {
+            .orEmpty()
+        return if (program == null || (stalls.isEmpty() && recoveries.isEmpty())) {
             null
         } else {
-            FinishStalls(program, stalls)
+            FinishDecisions(program, stalls, recoveries)
+        }
+    }
+
+    /**
+     * The lifts whose joint pain is severe enough for the deload/replace question (ROADMAP N377).
+     *
+     * Read from the live rows before the session closes, and only for a plan row: a lift added by hand has no
+     * prescription to lighten, and a substituted row is not the plan's movement.
+     */
+    private fun recoveryNotices(templateId: String?): List<RecoveryNotice> {
+        val template = templateId ?: return emptyList()
+        return uiState.value.exercises.mapNotNull { row ->
+            val pain = row.joints
+                .filter { it.score >= JOINT_PAIN_SEVERE_SCORE }
+                .maxByOrNull { it.score }
+                ?: return@mapNotNull null
+            val templateExerciseId = row.planEntryId ?: return@mapNotNull null
+            RecoveryNotice(
+                exerciseName = row.name,
+                templateId = template,
+                templateExerciseId = templateExerciseId,
+                exerciseId = row.exerciseId,
+                pain = pain,
+            )
         }
     }
 
@@ -1757,6 +1872,9 @@ class ActiveWorkoutViewModel @Inject constructor(
         _volumeUndo.value = null
         _calibrationReadError.value = null
         _recoveryHold.value = null
+        _recoveryNotice.value = null
+        pendingDecisions.value = null
+        pendingStallNotice.value = null
         _closed.value = true
     }
 

@@ -257,6 +257,12 @@ internal interface WorkoutTags {
 
     val STALL_DONE: String get() = "workout_stall_done"
 
+    /** The joint-pain card the finish shows at a severe score (ROADMAP N377). */
+    val RECOVERY_DIALOG: String get() = "workout_recovery_dialog"
+    fun recoveryDialogDeload(templateExerciseId: String) = "workout_recovery_dialog_deload_$templateExerciseId"
+    fun recoveryDialogReplace(templateExerciseId: String) = "workout_recovery_dialog_replace_$templateExerciseId"
+    val RECOVERY_DONE: String get() = "workout_recovery_done"
+
     /** The finish could not read the plans it owed a find-the-weight question (B452). */
     val CALIBRATION_READ_ERROR: String get() = "workout_calibration_read_error"
     val CALIBRATION_READ_OK: String get() = "workout_calibration_read_ok"

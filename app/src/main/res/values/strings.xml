@@ -1514,6 +1514,10 @@
     <!-- What a finished workout is told when a lift has just stopped moving (ROADMAP N305). -->
     <string name="finish_stall_title">What stalled</string>
     <string name="finish_stall_done">Done</string>
+    <!-- The joint-pain card the finish shows at a severe score (ROADMAP N377). It states the lifter's
+         own rating, and the answer is the same Deload/Replace the stalled card offers. -->
+    <string name="recovery_dialog_title">Joint pain</string>
+    <string name="recovery_dialog_line">%1$s %2$d/10 — deload or replace this lift?</string>
     <!-- The find-the-weight prompt at the finish (ROADMAP N309): one line per marked plan, Use or Not now. -->
     <string name="weekly_review_volume_title">Earned sets</string>
     <string name="volume_card_title">The plan earned a set back</string>

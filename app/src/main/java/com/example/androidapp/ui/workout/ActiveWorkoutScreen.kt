@@ -88,6 +88,7 @@ fun ActiveWorkoutRoute(
     val pendingProgression by viewModel.pendingProgression.collectAsStateWithLifecycle()
     RestCueAndScreenOn(clock, restCueEnabled, keepScreenOn, restTimerEnabled)
     val stallNotice by viewModel.stallNotice.collectAsStateWithLifecycle()
+    val recoveryNotice by viewModel.recoveryNotice.collectAsStateWithLifecycle()
     val volumeSuggestion by viewModel.volumeSuggestion.collectAsStateWithLifecycle()
     val volumeUndo by viewModel.volumeUndo.collectAsStateWithLifecycle()
     val calibrationNotice by viewModel.calibrationNotice.collectAsStateWithLifecycle()
@@ -111,6 +112,10 @@ fun ActiveWorkoutRoute(
         onDismissStallNotice = viewModel::onDismissStallNotice,
         onDeloadStall = viewModel::onDeloadStall,
         onReplaceStall = viewModel::onReplaceStall,
+        recoveryNotice = recoveryNotice,
+        onDismissRecovery = viewModel::onDismissRecovery,
+        onDeloadRecovery = viewModel::onDeloadRecovery,
+        onReplaceRecovery = viewModel::onReplaceRecovery,
         volumeSuggestion = volumeSuggestion,
         volumeUndo = volumeUndo,
         onAddVolume = viewModel::onAddVolume,
@@ -171,7 +176,9 @@ fun ActiveWorkoutRoute(
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Suppress("LongMethod")
+// The screen is the scaffold for every optional dialog the workout can owe, so its branching is the number
+// of those states rather than one flow. Each dialog's own body lives in its composable.
+@Suppress("LongMethod", "CyclomaticComplexMethod")
 @Composable
 fun ActiveWorkoutScreen(
     state: ActiveWorkoutUiState,
@@ -251,6 +258,11 @@ fun ActiveWorkoutScreen(
     defaultRestSeconds: Int = RestTimer.DEFAULT_SECONDS,
     /** The stalled lifts a just-finished workout says, or null (ROADMAP N305). */
     stallNotice: List<PlanStall>? = null,
+    /** The lifts whose joint pain is severe enough for the finish to ask, or null (ROADMAP N377). */
+    recoveryNotice: List<RecoveryNotice>? = null,
+    onDismissRecovery: () -> Unit = {},
+    onDeloadRecovery: (RecoveryNotice) -> Unit = {},
+    onReplaceRecovery: (RecoveryNotice) -> Unit = {},
     personalRecord: PersonalRecordMoment? = null,
     /** The steps auto progression just wrote, or null when there is nothing to read back (N299). */
     autoStep: AutoProgressionMoment? = null,
@@ -290,6 +302,14 @@ fun ActiveWorkoutScreen(
     }
     if (calibrationReadFailed) {
         CalibrationReadDialog(onDismiss = onDismissCalibrationReadError)
+    }
+    if (recoveryNotice != null) {
+        WorkoutRecoveryDialog(
+            notices = recoveryNotice,
+            onDone = onDismissRecovery,
+            onDeload = onDeloadRecovery,
+            onReplace = onReplaceRecovery,
+        )
     }
     if (stallNotice != null) {
         WorkoutStallDialog(

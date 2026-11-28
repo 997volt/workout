@@ -2429,6 +2429,49 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
+    fun severeJointPain_atTheFinish_asksForTheDeloadDecision() = runTest(dispatcher) {
+        // N377: seven or more is not a hold for the next session but the plan's own question. The answer is
+        // the existing hand-off, so the workout names the row and leaves the edit and its undo to the plan.
+        val repository = FakeWorkoutRepository()
+        val programs = FakeProgramRepository().apply { activeWeeklyForTemplate = "p1" }
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = answeredPlan(),
+            programs = programs,
+            trends = FakeTrendsRepository().apply { templateSessions = DataResult.Success(emptyList()) },
+        )
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        val id = viewModel.uiState.value.exercises.single().id
+        viewModel.onRateExercise(
+            id,
+            muscleFeel = 8,
+            joints = listOf(JointPain(Joint.KNEE, Side.RIGHT, 7)),
+        )
+        settle()
+
+        viewModel.onFinish()
+        settle()
+
+        val notice = viewModel.recoveryNotice.value?.single()
+        assertEquals("Back Squat", notice?.exerciseName)
+        assertEquals("the lifter's own score", 7, notice?.pain?.score)
+        assertEquals(Joint.KNEE, notice?.pain?.joint)
+        assertFalse("the workout waits for the answer", viewModel.closed.value)
+
+        viewModel.onDeloadRecovery(notice!!)
+        settle()
+
+        assertEquals("p1", viewModel.planHandOff.value?.programId)
+        assertEquals("t1", viewModel.planHandOff.value?.templateId)
+        assertEquals("the plan row the rating belongs to", "te-0", viewModel.planHandOff.value?.templateExerciseId)
+        assertEquals("the deload confirm, not the replace sheet", false, viewModel.planHandOff.value?.replace)
+    }
+
+    @Test
     fun aSecondAdd_andASecondUndo_beforeTheWriteLands_areIgnored() = runTest(dispatcher) {
         // B438's single-flight, which N313 owed a test: two presses in one frame are one write each.
         val (viewModel, templates) = earnedSetWorkout()
