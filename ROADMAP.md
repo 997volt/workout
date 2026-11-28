@@ -15,12 +15,13 @@ work was planned, so they do not always run in order — and an id this file doe
 shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 [CHANGELOG-1.x.md](CHANGELOG-1.x.md) for the 1.x releases.
 
-## Next — the live workout's words
+## Next — the live workout's feedback
 
-Four changes to what the session screen says, asked for after training with it, in the order asked.
-None moves a stored row: a set's records still derive from the sets, and the plan still moves exactly
-as N74 and N299 decide. The first two are the banners over the list; the last two are lines an exercise
-block prints.
+Five changes to what the session screen says and does, asked for after training with it, in the order
+asked. None adds a stored row or a backup field: a set's records still derive from the sets, and the
+plan still moves exactly as N74 and N299 decide. The first two are the banners over the list, the next
+two are lines an exercise block prints, and N377 is the gate behind the auto step and the earned-set
+offer.
 
 - **N373 — The auto progression banner says what moved, and how.** A batch of several steps collapses to
   *"3 targets adjusted"* and a lone step says only *"next time 82.5 kg"*; neither names the direction or
@@ -51,6 +52,24 @@ block prints.
   last performance alone. A plan that names reps but no load therefore leaves the field's load unlabelled:
   that is the cost of one source, accepted. This amends P3.17's "states its two sources", so DECISIONS is
   updated when it ships.
+
+- **N377 — Auto progression and the earned set read soreness and joint pain.** The gate is per exercise
+  and per session, from the lifter's own records. **Joint pain** ≥ 4 holds the auto step — whichever
+  direction it earned, reps, load or a hold's seconds — and the earned-set offer; ≥ 7 also offers the
+  existing deload/replace card, with the joint and its score as the reason. **Soreness** holds only the
+  offer: a sore primary muscle > 4, or a sore secondary muscle ≥ 6, withholds the add and never the
+  step. **Muscle feel** gates nothing; it stays recorded and charted, because 10 is *fully worked*, not
+  *recovered*. The day's soreness is the daily record as it stands at the session's start — a record
+  older than three days is stale — mapped through the exercise's `primaryMuscle` and
+  `secondaryMuscles`. A session held by the add gate breaks the three-session pattern, so both the
+  comfortable and extra-set offers need consecutive clear sessions and the Done snackbar and the plan
+  card read one rule. **Nothing writes a set count**: a held step writes no target, a held add withholds
+  an offer, and a trim stays the deload card's confirmed, undoable action, offered by pain alone. The
+  Ask dialog is unchanged. The gate is derived from the stored ratings and days, so no schema or backup
+  field is added; it needs the taxonomy on the workout row, a targeted daily-record read, ratings in the
+  volume finder's session read, and the hold reason in the auto banner. Rejected: gating on muscle feel,
+  letting soreness hold a step, writing the set count (N299's no down-adjustment and N311's lifter-adds
+  rule), parsing the free-text readiness note, storing the hold as a row, and a soreness-triggered trim.
 
 ## Later
 
