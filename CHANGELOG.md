@@ -19,8 +19,7 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 - **A 1RM test reads as its own card** (N330). The finished workout names the warm-up count, the best single
   and every failed attempt above it, in the order tried, instead of one sentence naming only the heaviest
-  attempt. It is the same sets under N329's roles, not a second data model; the guided attempt flow stays in
-  Later.
+  attempt. It is the same sets under N329's roles, not a second data model.
 - **The block export offers a custom window** (N332). Change now has **Custom range**: two dates, Apply held
   until both are set, and the chosen window goes through the same single CSV and health-data warning. An empty
   window is still writable and exports with no sessions.

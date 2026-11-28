@@ -1,7 +1,7 @@
 # Workout — Roadmap
 
-> **What is planned, not what happened.** *Later* is decided and waiting, *Parked* is decided against
-> until a named trigger fires, and the non-goals are lines this app does not cross.
+> **What is planned, not what happened.** *Parked* is decided against until a named trigger fires, and the
+> non-goals are lines this app does not cross.
 > Shipped work is [CHANGELOG.md](CHANGELOG.md), how a release is cut is [RELEASING.md](RELEASING.md), and the
 > settled rules are [DECISIONS.md](DECISIONS.md) with their argument in
 > [DECISIONS-EVIDENCE.md](DECISIONS-EVIDENCE.md).
@@ -14,13 +14,6 @@ backlog, `R#.#` releases) are stable and go in commit messages. They were assign
 work was planned, so they do not always run in order — and an id this file does not list has
 shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 [CHANGELOG-1.x.md](CHANGELOG-1.x.md) for the 1.x releases.
-
-## Later
-
-- **N330 — A guided 1RM attempt flow.** The test's own card reads a finished session — its warm-ups, the
-  made single, and the failed attempts above it — but the flow that walks the lifter through the test
-  (rest between attempts, an attempt ladder, the result written once) is still waiting. It is not a second
-  data model: a 1RM test is an ordinary session whose sets carry N329's roles.
 
 ## Parked — deliberately not planned
 
