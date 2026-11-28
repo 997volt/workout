@@ -34,8 +34,14 @@ internal fun SuggestionReasonLine(
     )
     val parts = mutableListOf<String>()
     if (reason.lastReps != null || reason.lastDurationSeconds != null) {
-        var last = reason.lastDurationSeconds?.let {
-            stringResource(R.string.suggestion_hold_shape, DurationFormat.ofSeconds(it.toLong()))
+        var last = reason.lastDurationSeconds?.let { seconds ->
+            val duration = DurationFormat.ofSeconds(seconds.toLong())
+            val weight = weightWithUnit(reason.lastWeightGrams, unit, unitLabel)
+            if (weight.isEmpty()) {
+                duration
+            } else {
+                stringResource(R.string.suggestion_hold_at, duration, weight)
+            }
         } ?: stringResource(
             R.string.suggestion_set_shape,
             reason.lastReps ?: 0,
@@ -95,7 +101,11 @@ private fun planReasonPart(reason: SuggestionReason, weight: String): String {
             reason.planReps,
             reason.planReps,
         )
-        duration != null -> duration
+        duration != null -> if (weight.isEmpty()) {
+            duration
+        } else {
+            stringResource(R.string.suggestion_hold_at, duration, weight)
+        }
         else -> weight
     }
     return appendRpe(plan, reason.planRpeHalves)

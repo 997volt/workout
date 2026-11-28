@@ -41,7 +41,8 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 ### Changed
 
 - **The prefill names one source, not two** (N376). Under the next set's fields the line states the plan where
-  the planned set names a target — including a hold's seconds, which reads *"Plan 0:45"* — and the last
+  the planned set names a target — including a hold's seconds and load, which reads *"Plan 0:45 · 20 kg"*
+  or *"Plan 0:45"* — and the last
   performance where it names none, so one origin explains the numbers on screen. A plan that names reps but no
   load leaves the field's load unlabelled; that cost is accepted.
 

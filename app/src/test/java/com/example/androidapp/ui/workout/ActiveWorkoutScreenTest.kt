@@ -633,12 +633,12 @@ class ActiveWorkoutScreenTest {
                     reps = 0,
                     weightGrams = 20_000L,
                     durationSeconds = 45,
-                    reason = SuggestionReason(planDurationSeconds = 45),
+                    reason = SuggestionReason(planDurationSeconds = 45, planWeightGrams = 20_000L),
                 ),
             ),
         )
 
-        composeTestRule.onNodeWithText("Plan 0:45").assertExists()
+        composeTestRule.onNodeWithText("Plan 0:45 · 20 kg").assertExists()
     }
 
     @Test
@@ -659,7 +659,7 @@ class ActiveWorkoutScreenTest {
             ),
         )
 
-        composeTestRule.onNodeWithText("Last time 0:45").assertExists()
+        composeTestRule.onNodeWithText("Last time 0:45 · 20 kg").assertExists()
     }
 
     @Test

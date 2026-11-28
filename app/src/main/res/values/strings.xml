@@ -368,8 +368,10 @@
     <string name="suggestion_last_time">Last time %1$s</string>
     <string name="suggestion_plan">Plan %1$s</string>
     <string name="suggestion_set_shape">%1$d × %2$s</string>
-    <!-- A hold has no reps; its one number is the time, whether the plan or the last set named it (N376). -->
+    <!-- A hold has no reps; its one number is the time, whether the plan or the last set named it (N376).
+         A weighted hold states both. -->
     <string name="suggestion_hold_shape">%1$s</string>
+    <string name="suggestion_hold_at">%1$s · %2$s</string>
     <!-- The plan's authored range, shown beside the next set's weight when a load step has restarted
          the range at its floor (B478). The field above already states the current place; this is what
          the lifter can still climb. The quantity is the range's upper end, which is what a plural reads
