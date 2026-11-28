@@ -122,9 +122,6 @@ internal interface ExerciseTags {
 
     val EXERCISE_EDIT_WEIGHT_UNIT_LB: String get() = "exercise_edit_weight_unit_lb"
 
-    /** What the plan will do with the set, in the block's small print (ROADMAP N227). */
-    val EXERCISE_PROGRESSION: String get() = "exercise_progression"
-
     /** Merging one movement into another (ROADMAP N245): the detail's action and the picker. */
     val EXERCISE_MORE: String get() = "exercise_more"
 

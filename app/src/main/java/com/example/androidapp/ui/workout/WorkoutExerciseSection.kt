@@ -41,12 +41,9 @@ import com.example.androidapp.domain.DurationFormat
 import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.WeightUnit
-import com.example.androidapp.domain.model.HOLD_STEP_SECONDS
 import com.example.androidapp.domain.model.JointPain
-import com.example.androidapp.domain.model.ProgressionRule
 import com.example.androidapp.domain.model.Rpe
 import com.example.androidapp.domain.model.SetType
-import com.example.androidapp.domain.model.progressionRuleFor
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.DEFAULT_HOLD_SECONDS
 import com.example.androidapp.ui.components.DEFAULT_RPE_HALVES
@@ -63,7 +60,6 @@ import com.example.androidapp.ui.components.SetRoleSelector
 import com.example.androidapp.ui.components.SetRpeField
 import com.example.androidapp.ui.components.SubstituteAction
 import com.example.androidapp.ui.components.TestTags
-import com.example.androidapp.ui.components.label
 import com.example.androidapp.ui.components.restLabel
 import com.example.androidapp.ui.components.rpeMarker
 import com.example.androidapp.ui.components.setRoleMarker
@@ -365,45 +361,6 @@ private fun WorkoutExerciseActions(
 }
 
 /**
- * What this exercise's plan will do with the set, or null when it says nothing worth reading (N227).
- *
- * The plan's effort is one number for the exercise (N59) and it rides on every planned set, so the rule
- * reads it from the sets — which is also what makes an exercise with no plan, or a plan that cannot
- * progress, draw no line at all rather than a line about why not: that sentence is the plan editor's
- * (B181), and the session is not where a plan is mended.
- */
-@Composable
-private fun SessionExerciseRow.progressionStepLine(): String? {
-    val planSets = progression.sets.mapNotNull { it.planned }
-    val targetRpeHalves = planSets.firstNotNullOfOrNull { it.targetRpeHalves }
-    val step = Weight.format(Weight.stepGramsFor(stepGrams, weightUnit), weightUnit)
-    return when (progressionRuleFor(targetRpeHalves, planSets)) {
-        ProgressionRule.REPS_THEN_LOAD -> stringResource(
-            R.string.active_workout_progresses_reps_then_load,
-            step,
-            weightUnit.label(),
-        )
-
-        ProgressionRule.REPS_ONLY -> stringResource(R.string.active_workout_progresses_reps_only)
-
-        ProgressionRule.HOLD -> stringResource(
-            R.string.active_workout_progresses_hold,
-            DurationFormat.ofSeconds(HOLD_STEP_SECONDS.toLong()),
-        )
-        ProgressionRule.LOAD_ONLY -> stringResource(
-            R.string.active_workout_progresses_load_only,
-            step,
-            weightUnit.label(),
-        )
-
-        ProgressionRule.NO_TARGET_RPE,
-        ProgressionRule.NO_REPS,
-        ProgressionRule.NOTHING_TO_MOVE,
-        -> null
-    }
-}
-
-/**
  * The exercise's state action, rendered at its foot: **Reopen** on a done exercise, **Done** on one
  * that has something to finish (ROADMAP N7, N69).
  *
@@ -702,18 +659,6 @@ private fun ExerciseNames(
                 style = MaterialTheme.typography.bodySmall,
                 fontStyle = FontStyle.Italic,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        // What the plan will do with the set, drawn as a fact about the exercise the way the rest
-        // prescription is (ROADMAP N227) — and **never on the prefill's reason line**, which P3.17 settles
-        // as where the numbers came from rather than the app's opinion of what to do next (N33). It reads
-        // the same rule the plan editor prints, so the two screens cannot promise different steps.
-        row.progressionStepLine()?.let { line ->
-            Text(
-                text = line,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.testTag(TestTags.EXERCISE_PROGRESSION),
             )
         }
         if (!restTimerEnabled) {
