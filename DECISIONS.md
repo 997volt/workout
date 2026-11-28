@@ -437,6 +437,19 @@ the rule; that one argues it.
   snackbar, and the plan takes effect next session. No auto volume: the auto switch, its baseline and Reset
   stay exactly as they are, and an automatic volume step would be its own opt-in later.
 
+- **A recovery gate honours a stated fact; it never measures recovery** (N377). Joint pain and soreness are
+  the lifter's own records for one exercise and one session. **Joint pain** at 4 or more holds the auto step
+  (reps, load or a hold's seconds) and the earned-set offer; 7 or more also asks the finish's deload/replace
+  question, with the joint and the lifter's score as the reason. **Soreness** holds only the offer: a sore
+  primary muscle above 4, or a sore secondary at 6 or more. **Muscle feel gates nothing**, because 10 is
+  *fully worked*, not *recovered*. The day is the daily record as it stood at the session's start (a record
+  older than three days is stale), read in the session's own zone and mapped through the plan row's muscles.
+  A held session is not one of N311's clear sessions, so it breaks the pattern, and the Done snackbar and the
+  plan card read the same verdict. **Nothing writes a set count and no hold is stored**: the gate is derived,
+  and the plan editor keeps every edit and its undo. **This is not N22's rejected rotation**: that chose the
+  next template from fatigue and hid the reason; this keeps the session's plan, withholds one offer for one
+  lift, and states the lifter's own rating. A recovery score derived from volume or feel is still rejected.
+
 - **An encrypted export is a password-derived container, not a Keystore key** (N294). The Data section offers
   a second export beside the plain one: the ordinary backup JSON is wrapped in a self-describing JSON envelope
   (version, KDF, iteration count, salt, nonce, ciphertext), and PBKDF2-HMAC-SHA256 with 600,000 iterations and
