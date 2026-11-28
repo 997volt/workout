@@ -726,7 +726,7 @@ private fun ExerciseBlock(
                 onDeleteSet = onDeleteSet,
             )
         }
-        OneRepMaxTestLine(exercise.sets, exerciseWeightUnit(exercise.sets.firstOrNull()?.weightUnit))
+        OneRepMaxTestCard(exercise.sets, exerciseWeightUnit(exercise.sets.firstOrNull()?.weightUnit))
 
         // A step was there and the lifter passed (ROADMAP N236), in the same sentence the review uses.
         declinedStepText(exercise.declinedDirections)?.let { declined ->
@@ -886,35 +886,60 @@ private fun HistorySetNumbers(
 }
 
 /**
- * The test a set of failed attempts describes (N329): the best single that was made, and the heavier
- * load that was not. Only drawn when a failed attempt is above the best single, so an ordinary failed
- * set below a working single is not dressed as a 1RM test.
+ * The 1RM test a session's failed attempts describe (N330, N329): its warm-ups, the made single that is
+ * the result, and **every** failed attempt above it. Only drawn when one of those attempts is above the
+ * best single, so an ordinary failed set below a working single is not dressed as a test.
  */
 @Composable
-private fun OneRepMaxTestLine(sets: List<HistorySet>, unit: WeightUnit) {
-    val failed = sets
-        .filter { it.setType == SetType.FAILED_ATTEMPT }
-        .maxByOrNull { loadGrams(it.weightGrams, it.bodyweightGrams, it.assistanceGrams) }
+private fun OneRepMaxTestCard(sets: List<HistorySet>, unit: WeightUnit) {
+    val failed = sets.filter { it.setType == SetType.FAILED_ATTEMPT }
     val best = sets
         .filter { it.setType.isWork && !it.setType.isRung && it.reps == 1 }
         .maxByOrNull { loadGrams(it.weightGrams, it.bodyweightGrams, it.assistanceGrams) }
-    if (failed == null || best == null) return
+    if (failed.isEmpty() || best == null) return
     val bestLoad = loadGrams(best.weightGrams, best.bodyweightGrams, best.assistanceGrams)
-    val failedLoad = loadGrams(failed.weightGrams, failed.bodyweightGrams, failed.assistanceGrams)
-    if (failedLoad > bestLoad) {
-        val label = unit.label()
+    val attempts = failed.filter {
+        loadGrams(it.weightGrams, it.bodyweightGrams, it.assistanceGrams) > bestLoad
+    }
+    if (attempts.isEmpty()) return
+    val label = unit.label()
+    val warmUps = sets.count { it.setType == SetType.WARMUP }
+    Column(
+        modifier = Modifier.testTag(TestTags.HISTORY_ONE_REP_MAX_TEST),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.history_one_rep_max_title),
+            style = MaterialTheme.typography.titleSmall,
+        )
+        if (warmUps > 0) {
+            Text(
+                text = pluralStringResource(R.plurals.history_one_rep_max_warmups, warmUps, warmUps),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         Text(
             text = stringResource(
-                R.string.history_one_rep_max_test,
+                R.string.history_one_rep_max_best,
                 Weight.display(bestLoad, 0L, unit),
-                label,
-                Weight.display(failedLoad, 0L, unit),
                 label,
             ),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.testTag(TestTags.HISTORY_ONE_REP_MAX_TEST),
         )
+        attempts.forEach { attempt ->
+            val load = loadGrams(attempt.weightGrams, attempt.bodyweightGrams, attempt.assistanceGrams)
+            Text(
+                text = stringResource(
+                    R.string.history_one_rep_max_attempt,
+                    Weight.display(load, 0L, unit),
+                    label,
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 

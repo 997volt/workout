@@ -99,8 +99,8 @@ class WorkoutDetailScreenTest {
 
     @Test
     fun aFailedAttemptAboveABestSingle_readsAsAOneRepMaxTest() {
-        // N329: the history keeps the failed attempt and states the test it describes without letting the
-        // attempt become the session's heaviest set or 1RM.
+        // N329/N330: the history keeps the failed attempt and reads the test as its own card, without
+        // letting the attempt become the session's heaviest set or 1RM.
         setScreen(
             state.copy(
                 exercises = listOf(
@@ -120,7 +120,67 @@ class WorkoutDetailScreenTest {
         )
 
         composeTestRule.onNodeWithTag(TestTags.HISTORY_ONE_REP_MAX_TEST).assertExists()
-        composeTestRule.onNodeWithText("Best single 137.5 kg — failed 140 kg").assertExists()
+        composeTestRule.onNodeWithText("1RM test").assertExists()
+        composeTestRule.onNodeWithText("Best single 137.5 kg").assertExists()
+        composeTestRule.onNodeWithText("Attempted 140 kg — failed").assertExists()
+    }
+
+    @Test
+    fun aTestWithWarmUpsAndSeveralAttempts_readsAsOneStory() {
+        // N330: every failed attempt above the best, not only the heaviest, and the warm-ups that led in.
+        setScreen(
+            state.copy(
+                exercises = listOf(
+                    state.exercises.single().copy(
+                        sets = listOf(
+                            HistorySet(id = "w1", reps = 5, weightGrams = 60_000L, setType = SetType.WARMUP),
+                            HistorySet(id = "w2", reps = 3, weightGrams = 100_000L, setType = SetType.WARMUP),
+                            HistorySet(id = "set1", reps = 1, weightGrams = 137_500L),
+                            HistorySet(
+                                id = "set2",
+                                reps = 0,
+                                weightGrams = 140_000L,
+                                setType = SetType.FAILED_ATTEMPT,
+                            ),
+                            HistorySet(
+                                id = "set3",
+                                reps = 0,
+                                weightGrams = 142_500L,
+                                setType = SetType.FAILED_ATTEMPT,
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithText("2 warm-ups").assertExists()
+        composeTestRule.onNodeWithText("Best single 137.5 kg").assertExists()
+        composeTestRule.onNodeWithText("Attempted 140 kg — failed").assertExists()
+        composeTestRule.onNodeWithText("Attempted 142.5 kg — failed").assertExists()
+    }
+
+    @Test
+    fun aFailedAttemptBelowTheBestSingle_isNotATest() {
+        setScreen(
+            state.copy(
+                exercises = listOf(
+                    state.exercises.single().copy(
+                        sets = listOf(
+                            HistorySet(id = "set1", reps = 1, weightGrams = 137_500L),
+                            HistorySet(
+                                id = "set2",
+                                reps = 0,
+                                weightGrams = 130_000L,
+                                setType = SetType.FAILED_ATTEMPT,
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.HISTORY_ONE_REP_MAX_TEST).assertDoesNotExist()
     }
 
     @Test
