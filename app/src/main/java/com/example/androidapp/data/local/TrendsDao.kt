@@ -181,6 +181,7 @@ interface TrendsDao {
         SELECT se.sessionId AS sessionId,
                ws.startedAt AS startedAt,
                se.id AS sessionExerciseId,
+               se.muscleFeel AS muscleFeel,
                (
                    SELECT MAX(j.score) FROM session_exercise_joints j
                    WHERE j.sessionExerciseId = se.id AND j.deletedAt IS NULL
