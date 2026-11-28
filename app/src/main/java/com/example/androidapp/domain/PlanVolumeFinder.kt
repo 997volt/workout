@@ -18,13 +18,13 @@ import com.example.androidapp.domain.model.progressionSets
 import com.example.androidapp.domain.model.recoveryVerdict
 import com.example.androidapp.domain.model.sorenessSpeaksFor
 import com.example.androidapp.domain.model.stall
+import com.example.androidapp.domain.model.storedZoneOrFallback
 import com.example.androidapp.domain.repository.MeasurementRepository
 import com.example.androidapp.domain.repository.ProgramRepository
 import com.example.androidapp.domain.repository.TemplateRepository
 import com.example.androidapp.domain.repository.TemplateSetEdit
 import com.example.androidapp.domain.repository.TrendsRepository
 import java.time.ZoneId
-import java.time.ZoneOffset
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -293,9 +293,9 @@ class PlanVolumeFinder @Inject constructor(
         session: TemplateSession,
         performed: PerformedExercise,
     ): Boolean {
-        val zone = session.zoneOffsetMinutes
-            ?.let(ZoneOffset::ofTotalSeconds)
-            ?: ZoneId.systemDefault()
+        // The stored value is minutes; `storedZoneOrFallback` is the one place that converts it to a
+        // ZoneOffset (B282), and a bad imported value falls back rather than throwing.
+        val zone = storedZoneOrFallback(session.zoneOffsetMinutes, ZoneId.systemDefault())
         val day = measurements.latestDailyAtOrBefore(session.startedAt).getOrNull()
         val sore = day
             ?.takeIf { sorenessSpeaksFor(it.measuredAt, session.startedAt, zone) }

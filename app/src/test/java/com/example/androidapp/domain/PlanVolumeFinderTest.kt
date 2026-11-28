@@ -285,12 +285,15 @@ class PlanVolumeFinderTest {
         sets: List<com.example.androidapp.domain.model.ProgressionPerformance>,
         exerciseId: String = "squat",
         joints: List<JointPain> = emptyList(),
+        startedAt: Instant = Instant.parse("2026-09-01T07:00:00Z"),
+        zoneOffsetMinutes: Int? = null,
     ) = TemplateSession(
         sessionId = "s-${sets.size}-${System.identityHashCode(sets)}",
-        startedAt = Instant.parse("2026-09-01T07:00:00Z"),
+        startedAt = startedAt,
         performed = listOf(
             PerformedExercise(exerciseId = exerciseId, sets = sets, joints = joints),
         ),
+        zoneOffsetMinutes = zoneOffsetMinutes,
     )
 
     @Test
@@ -350,6 +353,39 @@ class PlanVolumeFinderTest {
 
         assertThat(clearSuggestion.map { it.reason }).containsExactly(VolumeReason.EXTRA_SET)
         assertThat(heldSuggestion).isEmpty()
+    }
+
+    @Test
+    fun theCard_readsTheDaysOwnZone_notAStoredOffsetAsSeconds() = runTest {
+        // N377: the stored value is minutes (+09:00 = 540), and passing it to ofTotalSeconds made the
+        // session +00:09. A record four days old in the session's own zone then looked three days old and
+        // held the offer. With the correct zone it is stale, so the card still offers the extra set.
+        val exercise = exercise().copy(primaryMuscle = MuscleGroup.QUADS)
+        val templates = FakeTemplateRepository().apply { exercises.value = mapOf("t1" to listOf(exercise)) }
+        val sessionStart = Instant.parse("2026-09-05T15:30:00Z")
+        val trends = FakeTrendsRepository().apply {
+            templateSessions = DataResult.Success(
+                listOf(
+                    session(List(4) { performed() }, startedAt = sessionStart, zoneOffsetMinutes = 540),
+                    session(List(4) { performed() }, startedAt = sessionStart, zoneOffsetMinutes = 540),
+                ),
+            )
+        }
+        val stale = FakeMeasurementRepository().apply {
+            measurements.value = listOf(
+                BodyMeasurement(
+                    id = "old-day",
+                    measuredAt = Instant.parse("2026-09-02T14:00:00Z"),
+                    kind = MeasurementKind.DAILY,
+                    soreMuscles = listOf(SoreMuscle(MuscleGroup.QUADS, 9)),
+                ),
+            )
+        }
+
+        val suggestions = PlanVolumeFinder(FakeProgramRepository(), templates, trends, stale)
+            .suggestionsForTemplate("t1").getOrNull().orEmpty()
+
+        assertThat(suggestions.map { it.reason }).containsExactly(VolumeReason.EXTRA_SET)
     }
 
     @Test
