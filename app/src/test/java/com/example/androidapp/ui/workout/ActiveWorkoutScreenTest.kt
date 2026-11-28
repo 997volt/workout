@@ -607,6 +607,23 @@ class ActiveWorkoutScreenTest {
     }
 
     @Test
+    fun aPlanThatNamesOnlyItsEffort_readsWithoutAComma() {
+        // N376: the plan part has no numbers but does name its RPE; the appended form would read "Plan , RPE 8".
+        setScreen(
+            state = state(
+                isFinished = false,
+                suggestion = SetSuggestion(
+                    reps = 5,
+                    weightGrams = 100_000L,
+                    reason = SuggestionReason(planRpeHalves = 16),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithText("Plan RPE 8").assertExists()
+    }
+
+    @Test
     fun aPlanThatEarnedALoadStep_statesTheRepRangeAtTheNewLoad() {
         // B478: a 5–10 plan at 100 kg, answered at 10, progresses to 102.5 kg and restarts the range at
         // 5. The line said only "Plan 5 reps @ 102.5 kg", so the session looked like a fixed target and

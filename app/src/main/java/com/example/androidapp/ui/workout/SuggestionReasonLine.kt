@@ -41,7 +41,7 @@ internal fun SuggestionReasonLine(
         reason.lastRpeHalves?.let { last += stringResource(R.string.suggestion_rpe, Rpe.format(it)) }
         parts += stringResource(R.string.suggestion_last_time, last)
     }
-    if (reason.planReps != null || reason.planWeightGrams != null) {
+    if (reason.planReps != null || reason.planWeightGrams != null || reason.planRpeHalves != null) {
         val weight = weightWithUnit(reason.planWeightGrams, unit, unitLabel)
         parts += stringResource(R.string.suggestion_plan, planReasonPart(reason, weight))
     }
