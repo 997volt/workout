@@ -890,9 +890,10 @@ private fun HistorySetNumbers(
  * **every** failed attempt above it.
  *
  * A failed attempt above the best single identifies the test. A **successful** test has no such attempt, so
- * it is read only when every working set is a single and warm-ups led in: a heavy single among ordinary
- * working sets is a workout, not a test. A failed set below a working single with no such shape is still not
- * dressed as a test.
+ * it is read only when **at least two singles were made and every working set is a single**: one heavy single
+ * is a heavy single, and a single among ordinary working sets is a workout, not a test. Warm-ups are stated
+ * when they exist but are not required: two attempts are the evidence. A failed set below a working single
+ * with no such shape is still not dressed as a test.
  */
 @Composable
 private fun OneRepMaxTestCard(sets: List<HistorySet>, unit: WeightUnit) {
@@ -907,7 +908,8 @@ private fun OneRepMaxTestCard(sets: List<HistorySet>, unit: WeightUnit) {
         loadGrams(it.weightGrams, it.bodyweightGrams, it.assistanceGrams) > bestLoad
     }
     val warmUps = sets.count { it.setType == SetType.WARMUP }
-    val successfulTest = attempts.isEmpty() && warmUps > 0 && work.all { it.reps == 1 }
+    // Two made singles are the evidence for a successful test; one might be an ordinary top set.
+    val successfulTest = attempts.isEmpty() && work.all { it.reps == 1 } && work.size >= 2
     if (attempts.isEmpty() && !successfulTest) return
     val label = unit.label()
     Column(

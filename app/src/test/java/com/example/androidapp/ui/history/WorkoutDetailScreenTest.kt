@@ -208,6 +208,45 @@ class WorkoutDetailScreenTest {
     }
 
     @Test
+    fun aSuccessfulTestWithoutWarmUps_readsAsATest() {
+        // Two made singles are the evidence; warm-ups are context, not a requirement.
+        setScreen(
+            state.copy(
+                exercises = listOf(
+                    state.exercises.single().copy(
+                        sets = listOf(
+                            HistorySet(id = "s1", reps = 1, weightGrams = 135_000L),
+                            HistorySet(id = "s2", reps = 1, weightGrams = 140_000L),
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.HISTORY_ONE_REP_MAX_TEST).assertExists()
+        composeTestRule.onNodeWithText("Best single 140 kg").assertExists()
+    }
+
+    @Test
+    fun aSingleTopSetWithWarmUps_isNotATest() {
+        // One single is a heavy single; without a failed attempt or a second attempt there is no test to read.
+        setScreen(
+            state.copy(
+                exercises = listOf(
+                    state.exercises.single().copy(
+                        sets = listOf(
+                            HistorySet(id = "w1", reps = 5, weightGrams = 60_000L, setType = SetType.WARMUP),
+                            HistorySet(id = "s1", reps = 1, weightGrams = 140_000L),
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.HISTORY_ONE_REP_MAX_TEST).assertDoesNotExist()
+    }
+
+    @Test
     fun aHeavySingleAmongWorkingSets_isNotATest() {
         setScreen(
             state.copy(
