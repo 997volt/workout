@@ -886,24 +886,30 @@ private fun HistorySetNumbers(
 }
 
 /**
- * The 1RM test a session's failed attempts describe (N330, N329): its warm-ups, the made single that is
- * the result, and **every** failed attempt above it. Only drawn when one of those attempts is above the
- * best single, so an ordinary failed set below a working single is not dressed as a test.
+ * The 1RM test a session describes (N330, N329): its warm-ups, the made single that is the result, and
+ * **every** failed attempt above it.
+ *
+ * A failed attempt above the best single identifies the test. A **successful** test has no such attempt, so
+ * it is read only when every working set is a single and warm-ups led in: a heavy single among ordinary
+ * working sets is a workout, not a test. A failed set below a working single with no such shape is still not
+ * dressed as a test.
  */
 @Composable
 private fun OneRepMaxTestCard(sets: List<HistorySet>, unit: WeightUnit) {
     val failed = sets.filter { it.setType == SetType.FAILED_ATTEMPT }
-    val best = sets
-        .filter { it.setType.isWork && !it.setType.isRung && it.reps == 1 }
+    val work = sets.filter { it.setType.isWork && !it.setType.isRung }
+    val best = work
+        .filter { it.reps == 1 }
         .maxByOrNull { loadGrams(it.weightGrams, it.bodyweightGrams, it.assistanceGrams) }
-    if (failed.isEmpty() || best == null) return
+        ?: return
     val bestLoad = loadGrams(best.weightGrams, best.bodyweightGrams, best.assistanceGrams)
     val attempts = failed.filter {
         loadGrams(it.weightGrams, it.bodyweightGrams, it.assistanceGrams) > bestLoad
     }
-    if (attempts.isEmpty()) return
-    val label = unit.label()
     val warmUps = sets.count { it.setType == SetType.WARMUP }
+    val successfulTest = attempts.isEmpty() && warmUps > 0 && work.all { it.reps == 1 }
+    if (attempts.isEmpty() && !successfulTest) return
+    val label = unit.label()
     Column(
         modifier = Modifier.testTag(TestTags.HISTORY_ONE_REP_MAX_TEST),
         verticalArrangement = Arrangement.spacedBy(2.dp),

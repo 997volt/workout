@@ -184,6 +184,49 @@ class WorkoutDetailScreenTest {
     }
 
     @Test
+    fun aSuccessfulTestWithWarmUps_readsAsATest() {
+        // N330: a test that never failed above its best is still a test. It is read when every working set
+        // is a single and warm-ups led in; the result is the best single.
+        setScreen(
+            state.copy(
+                exercises = listOf(
+                    state.exercises.single().copy(
+                        sets = listOf(
+                            HistorySet(id = "w1", reps = 5, weightGrams = 60_000L, setType = SetType.WARMUP),
+                            HistorySet(id = "w2", reps = 3, weightGrams = 100_000L, setType = SetType.WARMUP),
+                            HistorySet(id = "s1", reps = 1, weightGrams = 135_000L),
+                            HistorySet(id = "s2", reps = 1, weightGrams = 140_000L),
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.HISTORY_ONE_REP_MAX_TEST).assertExists()
+        composeTestRule.onNodeWithText("Best single 140 kg").assertExists()
+        composeTestRule.onNodeWithText("Attempted", substring = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun aHeavySingleAmongWorkingSets_isNotATest() {
+        setScreen(
+            state.copy(
+                exercises = listOf(
+                    state.exercises.single().copy(
+                        sets = listOf(
+                            HistorySet(id = "w1", reps = 5, weightGrams = 60_000L, setType = SetType.WARMUP),
+                            HistorySet(id = "s1", reps = 1, weightGrams = 140_000L),
+                            HistorySet(id = "s2", reps = 5, weightGrams = 100_000L),
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.HISTORY_ONE_REP_MAX_TEST).assertDoesNotExist()
+    }
+
+    @Test
     fun aHold_readsAsItsDuration_andIsSpokenInWords() {
         // B256: the row is the one place a lifter reads a set back, and nothing tested that a hold renders
         // as "0:45" rather than "0 reps" — nor that a screen reader gets words instead of digits.
