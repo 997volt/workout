@@ -410,7 +410,9 @@ the rule; that one argues it.
   plan edits gave it the answers it was missing. Each stalled lift on the finish now offers **Deload** and
   **Replace**, and neither writes the plan from here: the workout hands off to the plan editor (the deload
   confirm or the replace sheet) and is replaced by it, so the confirm, the shared warning and the undo stay
-  in one place — decision 3a. *Done* is do nothing, which is a decision too and stores nothing. N237's "one
+  in one place — decision 3a. **A recovery hand-off is the exception** (N377): it is pushed, not replaced,
+  so the workout stays behind the editor and can ask its next severe notice when the editor returns; the
+  stall hand-off still replaces. *Done* is do nothing, which is a decision too and stores nothing. N237's "one
   stall, not a list" is amended for the same reason: the card now lists **every** stalled lift, each with its
   run length and both actions, because hiding the second lift made the card say less than it knew; the
   week-level "lighter week" stays a secondary link at the bottom, and the finder gains the program-wide list
@@ -440,7 +442,8 @@ the rule; that one argues it.
 - **A recovery gate honours a stated fact; it never measures recovery** (N377). Joint pain and soreness are
   the lifter's own records for one exercise and one session. **Joint pain** at 4 or more holds the auto step
   (reps, load or a hold's seconds) and the earned-set offer; 7 or more also asks the finish's deload/replace
-  question, one lift at a time while the rest wait, with the joint and the lifter's score as the reason.
+  question, one lift at a time while the rest wait, with the workout left behind the plan editor so the
+  next card can be asked when it returns, and with the joint and the lifter's score as the reason.
   **Soreness** holds only the offer: a sore
   primary muscle above 4, or a sore secondary at 6 or more. **Muscle feel gates nothing**, because 10 is
   *fully worked*, not *recovered*. The day is the daily record as it stood at the session's start (a record

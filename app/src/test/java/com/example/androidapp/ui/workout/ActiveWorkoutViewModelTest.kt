@@ -2505,6 +2505,7 @@ class ActiveWorkoutViewModelTest {
         assertEquals("t1", viewModel.planHandOff.value?.templateId)
         assertEquals("the plan row the rating belongs to", "te-0", viewModel.planHandOff.value?.templateExerciseId)
         assertEquals("the deload confirm, not the replace sheet", false, viewModel.planHandOff.value?.replace)
+        assertTrue("the workout stays behind for the next notice", viewModel.planHandOff.value?.returnsForNext == true)
     }
 
     @Test
@@ -2541,6 +2542,7 @@ class ActiveWorkoutViewModelTest {
 
         assertTrue("the replace sheet opens", viewModel.planHandOff.value?.replace == true)
         assertEquals("for the rated plan row", "te-0", viewModel.planHandOff.value?.templateExerciseId)
+        assertTrue("and the workout stays for the next notice", viewModel.planHandOff.value?.returnsForNext == true)
     }
 
     @Test
@@ -2584,6 +2586,7 @@ class ActiveWorkoutViewModelTest {
             first.templateExerciseId,
             viewModel.planHandOff.value?.templateExerciseId,
         )
+        assertTrue("and the workout stays behind for the second", viewModel.planHandOff.value?.returnsForNext == true)
         assertNull("and the card is gone while the editor is open", viewModel.recoveryNotice.value)
 
         viewModel.onPlanHandOffHandled()
@@ -2832,6 +2835,7 @@ class ActiveWorkoutViewModelTest {
         assertEquals("t1", viewModel.planHandOff.value?.templateId)
         assertEquals(stall.templateExerciseId, viewModel.planHandOff.value?.templateExerciseId)
         assertFalse("deload, not replace", viewModel.planHandOff.value?.replace ?: true)
+        assertFalse("a stall still replaces the workout", viewModel.planHandOff.value?.returnsForNext ?: true)
         assertNull("the dialog is answered", viewModel.stallNotice.value)
         assertFalse("the workout screen has not closed itself; the nav replaces it", viewModel.closed.value)
 

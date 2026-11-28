@@ -274,9 +274,10 @@ private fun NavGraphBuilder.workoutDestinations(navController: NavHostController
             // exactly as they were and one back tap returns to them (ROADMAP N234).
             onOpenExercise = { exerciseId -> navController.navigate(ExerciseDetail(exerciseId)) },
             onOpenPlan = { handOff ->
-                // The plan editor owns the confirm/sheet and the undo; the workout screen is replaced (3a).
+                // The plan editor owns the confirm/sheet and the undo. A stall hand-off replaces the workout
+                // (3a); a pain hand-off is pushed so the workout can ask about its next severe rating (N377).
                 navController.navigate(planEditorRouteFor(handOff)) {
-                    popUpTo<ActiveWorkout> { inclusive = true }
+                    if (!handOff.returnsForNext) popUpTo<ActiveWorkout> { inclusive = true }
                 }
             },
         )

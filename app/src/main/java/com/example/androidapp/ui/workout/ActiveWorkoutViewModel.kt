@@ -121,6 +121,14 @@ data class PlanHandOff(
     val templateId: String,
     val templateExerciseId: String,
     val replace: Boolean,
+    /**
+     * True when the workout stays behind the plan editor so the next notice can be asked (N377).
+     *
+     * The recovery card can owe several lifts, and its hand-off is one lift at a time. A stall hand-off
+     * still replaces the workout (N310, decision 3a); a recovery hand-off is pushed so the next card is
+     * waiting when the editor returns.
+     */
+    val returnsForNext: Boolean = false,
 )
 
 /**
@@ -1810,7 +1818,13 @@ class ActiveWorkoutViewModel @Inject constructor(
         // The answered notice leaves the queue; the rest wait for the plan hand-off to be handled, and the
         // program id stays because the next notice's hand-off needs it.
         pendingRecoveries = pendingRecoveries.drop(1)
-        _planHandOff.value = PlanHandOff(programId, notice.templateId, notice.templateExerciseId, replace)
+        _planHandOff.value = PlanHandOff(
+            programId = programId,
+            templateId = notice.templateId,
+            templateExerciseId = notice.templateExerciseId,
+            replace = replace,
+            returnsForNext = true,
+        )
     }
 
     /** The finish's Deload: hand the plan screen the target it must open (N310); the plan edits, not this. */
