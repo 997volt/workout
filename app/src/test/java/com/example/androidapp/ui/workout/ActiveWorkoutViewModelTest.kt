@@ -2647,6 +2647,57 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
+    fun aPainHandOff_leavesTheStallForAfterIt() = runTest(dispatcher) {
+        // The hand-off path differs from Done: the plan editor takes the lift, and when that hand-off is
+        // handled the pending stall must follow rather than be dropped with the pain card.
+        val repository = FakeWorkoutRepository()
+        val programs = FakeProgramRepository().apply { activeWeeklyForTemplate = "p1" }
+        val trends = FakeTrendsRepository().apply {
+            templateSessions = DataResult.Success(List(3) { aSessionThatMissed() })
+        }
+        repository.exercises.value = listOf(aSessionExercise("back-squat"))
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = answeredPlan(),
+            programs = programs,
+            trends = trends,
+        )
+        observe(viewModel)
+        settle()
+        val id = viewModel.uiState.value.exercises.single().id
+        viewModel.onRateExercise(
+            id,
+            muscleFeel = 8,
+            joints = listOf(JointPain(Joint.KNEE, Side.RIGHT, 7)),
+        )
+        settle()
+
+        viewModel.onFinish()
+        settle()
+        val notice = viewModel.recoveryNotice.value?.single()
+        assertNotNull("the pain card is shown", notice)
+
+        viewModel.onDeloadRecovery(notice!!)
+        settle()
+        assertNotNull("the plan editor is handed the lift", viewModel.planHandOff.value)
+
+        viewModel.onPlanHandOffHandled()
+        settle()
+
+        assertNull(viewModel.recoveryNotice.value)
+        assertEquals(
+            "the stall follows the hand-off",
+            "Back Squat",
+            viewModel.stallNotice.value?.single()?.exerciseName,
+        )
+
+        viewModel.onDismissStallNotice()
+        settle()
+        assertTrue(viewModel.closed.value)
+    }
+
+    @Test
     fun aSecondAdd_andASecondUndo_beforeTheWriteLands_areIgnored() = runTest(dispatcher) {
         // B438's single-flight, which N313 owed a test: two presses in one frame are one write each.
         val (viewModel, templates) = earnedSetWorkout()
