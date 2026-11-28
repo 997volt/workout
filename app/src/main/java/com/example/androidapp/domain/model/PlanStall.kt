@@ -33,8 +33,6 @@ data class PerformedExercise(
     val sets: List<ProgressionPerformance>,
     /** The session exercise these sets belong to, or null in a test/older read (B471). */
     val sessionExerciseId: String? = null,
-    /** How well the target muscle was worked, 1–10, or null (ROADMAP N377). */
-    val muscleFeel: Int? = null,
     /** The joints this exercise reported painful, for the recovery gate (ROADMAP N377). */
     val joints: List<JointPain> = emptyList(),
 )

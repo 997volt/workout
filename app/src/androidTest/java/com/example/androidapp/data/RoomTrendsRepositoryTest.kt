@@ -90,15 +90,15 @@ class RoomTrendsRepositoryTest {
     }
 
     @Test
-    fun templateSessions_carryTheRatingZoneAndJoints_theRecoveryGateReads() = runTest {
-        // N377: the plan card's gate needs the same three facts the *Done* gate reads — the exercise's
-        // rating, the joints, and the zone the session's day belongs to. The joints are a child table the
-        // set query cannot join, so this pins that the repository still attaches them.
+    fun templateSessions_carryTheZoneAndJoints_theRecoveryGateReads() = runTest {
+        // N377: the plan card's gate needs the facts the *Done* gate reads — the joints and the zone the
+        // session's day belongs to. The joints are a child table the set query cannot join, so this pins
+        // that the repository still attaches them; muscle feel is deliberately not read, because it gates
+        // nothing.
         seedSession(
             id = "s1",
             startedAt = 1_000L,
             rpeHalves = listOf(16),
-            muscleFeel = 8,
             jointPain = 5,
             templateId = "t1",
             zoneOffsetMinutes = 120,
@@ -109,7 +109,6 @@ class RoomTrendsRepositoryTest {
         val session = sessions.single()
         assertEquals("the session's own zone", 120, session.zoneOffsetMinutes)
         val performed = session.performed.single()
-        assertEquals("the rating", 8, performed.muscleFeel)
         assertEquals("the joint", Joint.KNEE, performed.joints.single().joint)
         assertEquals("and its score", 5, performed.joints.single().score)
     }

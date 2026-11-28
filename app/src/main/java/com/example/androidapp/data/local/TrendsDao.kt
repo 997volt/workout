@@ -181,7 +181,6 @@ interface TrendsDao {
         SELECT se.sessionId AS sessionId,
                ws.startedAt AS startedAt,
                se.id AS sessionExerciseId,
-               se.muscleFeel AS muscleFeel,
                (
                    SELECT MAX(j.score) FROM session_exercise_joints j
                    WHERE j.sessionExerciseId = se.id AND j.deletedAt IS NULL
@@ -240,7 +239,6 @@ interface TrendsDao {
                s.rpeHalves AS rpeHalves,
                s.durationSeconds AS durationSeconds,
                s.setType AS setType,
-               se.muscleFeel AS muscleFeel,
                ws.zoneOffsetMinutes AS zoneOffsetMinutes
         FROM workout_sessions ws
         JOIN session_exercises se
@@ -277,8 +275,6 @@ data class TemplateSessionSetRow(
     val rpeHalves: Int?,
     val durationSeconds: Int?,
     val setType: String?,
-    /** How well the exercise's muscle was worked, 1–10, or null (ROADMAP N377). */
-    val muscleFeel: Int? = null,
     /** The zone the session was performed in, for the recovery gate's day (ROADMAP N377). */
     val zoneOffsetMinutes: Int? = null,
 )
@@ -401,7 +397,6 @@ internal fun List<TemplateSessionSetRow>.toTemplateSessions(
                             exerciseId = logged.first().exerciseId,
                             sessionExerciseId = sessionExerciseId,
                             sets = logged.mapNotNull { it.toPerformance() },
-                            muscleFeel = logged.first().muscleFeel,
                             joints = jointsByExercise[sessionExerciseId].orEmpty(),
                         )
                     },
