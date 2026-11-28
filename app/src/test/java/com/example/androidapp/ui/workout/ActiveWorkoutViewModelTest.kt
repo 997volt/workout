@@ -963,6 +963,41 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
+    fun aPainfulJoint_withNoEarnedStep_statesNoHold() = runTest(dispatcher) {
+        // N377: the banner explains a step that was held. A session that earned no step finishes without
+        // one — otherwise the hold claims a non-write that would have happened anyway.
+        val repository = FakeWorkoutRepository()
+        val templates = answeredPlan()
+        val progression = FakeProgressionRepository().apply { autoPrograms["t1"] = "p1" }
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = templates,
+            progression = progression,
+        )
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        val id = viewModel.uiState.value.exercises.single().id
+        // The plan asks for five reps; four misses it, so there is no step to write.
+        logAnsweredSet(viewModel, repository, reps = 4, weightGrams = 100_000L, rpe = 7)
+        viewModel.onRateExercise(
+            id,
+            muscleFeel = 6,
+            joints = listOf(JointPain(Joint.KNEE, Side.RIGHT, 6)),
+        )
+        settle()
+
+        viewModel.onFinishExercise(id)
+        settle()
+
+        assertTrue("the exercise finishes", viewModel.uiState.value.exercises.single().isFinished)
+        assertEquals("no step was written", 0, templates.progressionWrites.size)
+        assertNull("no step, no hold to explain", viewModel.recoveryHold.value)
+    }
+
+    @Test
     fun aMildAche_belowTheGate_stillWritesTheStep() = runTest(dispatcher) {
         // The threshold is a boundary, not a mood: three is a twinge and the step it earned is written.
         val repository = FakeWorkoutRepository()

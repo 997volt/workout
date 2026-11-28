@@ -783,15 +783,6 @@ class ActiveWorkoutViewModel @Inject constructor(
         row: SessionExerciseRow,
         programId: String,
     ) {
-        // The gate is read before the question: a held step writes nothing at all, so there is no dialog to
-        // skip and no undo to offer. The reason is the only trace, and it is the lifter's own rating.
-        val recovery = recoveryVerdictFor(row)
-        val hold = recovery.hold
-        if (hold != null && recovery.holdsStep) {
-            _recoveryHold.value = RecoveryHoldMoment(row.name, hold)
-            finishExercise(sessionExerciseId, row.progression)
-            return
-        }
         val question = pendingProgressionFor(
             sessionExerciseId = sessionExerciseId,
             exerciseName = row.name,
@@ -799,6 +790,17 @@ class ActiveWorkoutViewModel @Inject constructor(
             prompt = row.progression,
         ).chooseEveryOffer()
         if (question.chosen.isEmpty()) {
+            finishExercise(sessionExerciseId, row.progression)
+            return
+        }
+        // The gate is read only when there is a step to hold: a session that earned nothing must finish
+        // without claiming a hold as the reason for a non-write that would have happened anyway. A held step
+        // writes nothing at all, so there is no dialog to skip and no undo to offer; the reason is the only
+        // trace, and it is the lifter's own rating.
+        val recovery = recoveryVerdictFor(row)
+        val hold = recovery.hold
+        if (hold != null && recovery.holdsStep) {
+            _recoveryHold.value = RecoveryHoldMoment(row.name, hold)
             finishExercise(sessionExerciseId, row.progression)
             return
         }
