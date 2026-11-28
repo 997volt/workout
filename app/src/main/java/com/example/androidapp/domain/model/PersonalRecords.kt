@@ -61,6 +61,17 @@ data class PersonalRecords(
             weightGrams > 0L &&
             (bestAt(reps)?.let { weightGrams > it } ?: true)
 
+    /**
+     * True when a best at **more reps** is at least as heavy as this set (ROADMAP N374).
+     *
+     * A record is per rep count, so 100 kg × 4 is a new best at four even when 100 kg × 5 stands. The
+     * five-rep set is the stronger performance and already speaks for that weight, so the four-rep best is
+     * not worth announcing — it is still recorded, because records derive from the sets and this is only the
+     * banner's rule. A *heavier* set at fewer reps is not dominated: 105 kg × 4 beats 100 kg × 5.
+     */
+    fun dominatedAt(reps: Int, weightGrams: Long): Boolean =
+        bestByReps.any { (atReps, best) -> atReps > reps && best >= weightGrams }
+
     val isEmpty: Boolean get() = bestByReps.isEmpty() && longestHoldSeconds == null
 
     /**

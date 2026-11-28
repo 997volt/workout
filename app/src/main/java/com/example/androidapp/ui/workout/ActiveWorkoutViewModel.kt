@@ -1185,12 +1185,27 @@ class ActiveWorkoutViewModel @Inject constructor(
      * that produced it: the role goes in, or a heavy warm-up raises a best (B17), and what it beat is read
      * from the *merged* view, because the bar may have been set earlier in this same session — saying "the
      * first time at this rep count" then would be false while claiming a record over that very set (B18).
-     * A **bodyweight** set claims nothing (B246): its belt is not the lift.
+     * A **bodyweight** set claims nothing (B246): its belt is not the lift. **A stronger set already on
+     * record stays the announcement** (N374): a best at more reps with at least this weight is a better
+     * performance, so the lower-rep best is not announced — while the record itself is still stored, because
+     * records derive from the sets and only the banner is withheld.
      */
     private fun announceRecord(row: SessionExerciseRow, against: PersonalRecords?, edit: SetEdit) {
-        if (against == null || row.isBodyweight) return
-        if (!against.isRecord(edit.reps, edit.weightGrams, edit.setType)) return
-        _personalRecord.value = PersonalRecordMoment(
+        recordFor(row, against, edit)?.let { _personalRecord.value = it }
+    }
+
+    /** The record to announce, or null when the set is none, is bodyweight, or a stronger best stands (N374). */
+    private fun recordFor(
+        row: SessionExerciseRow,
+        against: PersonalRecords?,
+        edit: SetEdit,
+    ): PersonalRecordMoment? = when {
+        against == null || row.isBodyweight -> null
+        !against.isRecord(edit.reps, edit.weightGrams, edit.setType) -> null
+        // A record at more reps and at least this weight already dominates the set; the record itself is
+        // still stored, because records derive from the sets and only the banner is withheld.
+        against.dominatedAt(edit.reps, edit.weightGrams) -> null
+        else -> PersonalRecordMoment(
             exerciseName = row.name,
             reps = edit.reps,
             weightGrams = edit.weightGrams,

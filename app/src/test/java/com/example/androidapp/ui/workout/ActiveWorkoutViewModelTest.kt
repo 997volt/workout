@@ -4649,6 +4649,50 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
+    fun aRecordAtFewerReps_isWithheld_whenAHigherRepBestDominatesIt() = runTest(dispatcher) {
+        // N374: 100 kg × 4 is a new best at four reps, but 100 kg × 5 already stands and is the stronger
+        // performance. The record is still stored; only the banner stays quiet.
+        val repository = FakeWorkoutRepository()
+        val viewModel = viewModelFor(repository)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        val id = viewModel.uiState.value.exercises.single().id
+
+        viewModel.onLogSet(id, offeredSet(viewModel, reps = 5, weightGrams = 100_000L))
+        settle()
+        assertNotNull("the five-rep best is a record", viewModel.personalRecord.value)
+
+        viewModel.onLogSet(id, offeredSet(viewModel, reps = 4, weightGrams = 100_000L))
+        settle()
+
+        assertNull("100 kg × 5 dominates 100 kg × 4", viewModel.personalRecord.value)
+    }
+
+    @Test
+    fun aHeavierRecordAtFewerReps_stillAnnounces() = runTest(dispatcher) {
+        // The domination rule is weight *and* reps: 105 kg × 4 beats a 100 kg × 5 best, so it is not
+        // suppressed. This is the boundary the previous rule must not swallow.
+        val repository = FakeWorkoutRepository()
+        val viewModel = viewModelFor(repository)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        val id = viewModel.uiState.value.exercises.single().id
+
+        viewModel.onLogSet(id, offeredSet(viewModel, reps = 5, weightGrams = 100_000L))
+        settle()
+        viewModel.onLogSet(id, offeredSet(viewModel, reps = 4, weightGrams = 105_000L))
+        settle()
+
+        val moment = viewModel.personalRecord.value
+        assertNotNull("105 kg × 4 is not dominated by 100 kg × 5", moment)
+        assertEquals(105_000L, moment!!.weightGrams)
+    }
+
+    @Test
     fun aRecord_isNotClaimedOver_aBetterSetOnAnotherRowOfTheSameMovement() = runTest(dispatcher) {
         // B118: history is read with this session **excluded**, so what the session has already logged is
         // the other half of the comparison — and a plan may name a movement twice (N54), which puts a

@@ -49,6 +49,19 @@ class PersonalRecordsTest {
     }
 
     @Test
+    fun aHigherRepBest_dominatesTheLowerRepSet() {
+        // N374: 100 kg × 4 is a new four-rep best, but 100 kg × 5 already stands and is stronger. A heavier
+        // four-rep set, or the same rep count, is not dominated.
+        val records = PersonalRecords.from(listOf(did(100_000L, 5)))
+
+        assertTrue("100 × 5 dominates 100 × 4", records.dominatedAt(reps = 4, weightGrams = 100_000L))
+        assertTrue("and 95 × 4", records.dominatedAt(reps = 4, weightGrams = 95_000L))
+        assertFalse("105 × 4 is heavier", records.dominatedAt(reps = 4, weightGrams = 105_000L))
+        assertFalse("the same rep count is not more reps", records.dominatedAt(reps = 5, weightGrams = 100_000L))
+        assertFalse("more reps is not dominated by fewer", records.dominatedAt(reps = 6, weightGrams = 100_000L))
+    }
+
+    @Test
     fun theFirstSetAtARepCount_isARecord() {
         val records = PersonalRecords.from(listOf(did(100_000L, 5)))
 
