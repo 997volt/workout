@@ -277,7 +277,7 @@ private fun NavGraphBuilder.workoutDestinations(navController: NavHostController
                 // The plan editor owns the confirm/sheet and the undo. A stall hand-off replaces the workout
                 // (3a); a pain hand-off is pushed so the workout can ask about its next severe rating (N377).
                 navController.navigate(planEditorRouteFor(handOff)) {
-                    if (!handOff.returnsForNext) popUpTo<ActiveWorkout> { inclusive = true }
+                    if (replacesWorkout(handOff)) popUpTo<ActiveWorkout> { inclusive = true }
                 }
             },
         )
@@ -432,3 +432,11 @@ private fun NavGraphBuilder.historyDestinations(navController: NavHostController
         )
     }
 }
+
+/**
+ * Whether a plan hand-off replaces the workout rather than leaving it behind (N310, N377).
+ *
+ * A stall hand-off replaces it; a pain hand-off is pushed so the workout can ask its next severe notice.
+ * The decision is here rather than inline in the navigation builder so it has a test of its own.
+ */
+internal fun replacesWorkout(handOff: PlanHandOff): Boolean = !handOff.returnsForNext
