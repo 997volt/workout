@@ -624,6 +624,45 @@ class ActiveWorkoutScreenTest {
     }
 
     @Test
+    fun aPlanThatNamesAHold_statesItsSeconds() {
+        // N376: a hold plan states a target too — its time — rather than leaving the line to history.
+        setScreen(
+            state = state(
+                isFinished = false,
+                suggestion = SetSuggestion(
+                    reps = 0,
+                    weightGrams = 20_000L,
+                    durationSeconds = 45,
+                    reason = SuggestionReason(planDurationSeconds = 45),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithText("Plan 0:45").assertExists()
+    }
+
+    @Test
+    fun aLastHold_statesItsSeconds() {
+        setScreen(
+            state = state(
+                isFinished = false,
+                suggestion = SetSuggestion(
+                    reps = 0,
+                    weightGrams = 20_000L,
+                    durationSeconds = 45,
+                    reason = SuggestionReason(
+                        lastReps = 0,
+                        lastWeightGrams = 20_000L,
+                        lastDurationSeconds = 45,
+                    ),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithText("Last time 0:45").assertExists()
+    }
+
+    @Test
     fun aPlanThatEarnedALoadStep_statesTheRepRangeAtTheNewLoad() {
         // B478: a 5–10 plan at 100 kg, answered at 10, progresses to 102.5 kg and restarts the range at
         // 5. The line said only "Plan 5 reps @ 102.5 kg", so the session looked like a fixed target and

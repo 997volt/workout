@@ -83,6 +83,10 @@ data class SuggestionReason(
      */
     val planRepsMin: Int? = null,
     val planRepsMax: Int? = null,
+    /** The hold the plan prescribes, in seconds, or null (N242, N376). */
+    val planDurationSeconds: Int? = null,
+    /** The hold the last set held, in seconds, or null (N376). */
+    val lastDurationSeconds: Int? = null,
 )
 
 /**
@@ -112,7 +116,7 @@ fun suggestionReason(
     }
     val plan = planned?.takeIf {
         it.reps != null || it.weightGrams != null || it.rpeHalves != null ||
-            it.repsMin != null || it.repsMax != null
+            it.repsMin != null || it.repsMax != null || it.durationSeconds != null
     }
     return when {
         plan != null -> SuggestionReason(
@@ -121,12 +125,14 @@ fun suggestionReason(
             planRpeHalves = plan.rpeHalves,
             planRepsMin = plan.repsMin,
             planRepsMax = plan.repsMax,
+            planDurationSeconds = plan.durationSeconds,
         )
 
         last != null -> SuggestionReason(
             lastReps = last.reps,
             lastWeightGrams = last.weightGrams,
             lastRpeHalves = last.rpeHalves,
+            lastDurationSeconds = last.durationSeconds,
         )
 
         else -> null

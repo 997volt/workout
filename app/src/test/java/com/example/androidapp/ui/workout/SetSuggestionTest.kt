@@ -98,6 +98,34 @@ class SetSuggestionTest {
     }
 
     @Test
+    fun theReason_namesAPlansHold_whenThePlanStatesOnlySeconds() {
+        // N376: a hold plan's target is time, not reps or a load. It is still the plan speaking, so the line
+        // must name it alone rather than falling back to the last performance.
+        val reason = suggestionReason(
+            previous = null,
+            planned = PlannedTarget(reps = null, weightGrams = null, durationSeconds = 45),
+        )
+
+        assertEquals(45, reason?.planDurationSeconds)
+        assertNull("the plan's seconds are the source", reason?.lastReps)
+    }
+
+    @Test
+    fun theReason_namesTheLastHold_whenThePlanStatesNothing() {
+        val reason = suggestionReason(
+            previous = PreviousPerformance(
+                listOf(
+                    SetEntry("s1", "se1", 0, reps = 0, weightGrams = 20_000L, durationSeconds = 45),
+                ),
+            ),
+            planned = null,
+        )
+
+        assertEquals(45, reason?.lastDurationSeconds)
+        assertEquals(0, reason?.lastReps)
+    }
+
+    @Test
     fun theReason_isNull_whenNeitherSourceSpeaks() {
         assertNull(suggestionReason(previous = null, planned = null))
     }

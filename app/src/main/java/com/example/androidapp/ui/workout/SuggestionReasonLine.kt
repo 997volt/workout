@@ -9,6 +9,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
+import com.example.androidapp.domain.DurationFormat
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.Rpe
@@ -32,16 +33,18 @@ internal fun SuggestionReasonLine(
         if (unit == WeightUnit.KILOGRAMS) R.string.suggestion_unit_kg else R.string.suggestion_unit_lb,
     )
     val parts = mutableListOf<String>()
-    if (reason.lastReps != null) {
-        var last = stringResource(
+    if (reason.lastReps != null || reason.lastDurationSeconds != null) {
+        var last = reason.lastDurationSeconds?.let {
+            stringResource(R.string.suggestion_hold_shape, DurationFormat.ofSeconds(it.toLong()))
+        } ?: stringResource(
             R.string.suggestion_set_shape,
-            reason.lastReps,
+            reason.lastReps ?: 0,
             weightWithUnit(reason.lastWeightGrams, unit, unitLabel),
         )
         reason.lastRpeHalves?.let { last += stringResource(R.string.suggestion_rpe, Rpe.format(it)) }
         parts += stringResource(R.string.suggestion_last_time, last)
     }
-    if (reason.planReps != null || reason.planWeightGrams != null || reason.planRpeHalves != null) {
+    if (reason.hasPlanNumbers() || reason.planDurationSeconds != null) {
         val weight = weightWithUnit(reason.planWeightGrams, unit, unitLabel)
         parts += stringResource(R.string.suggestion_plan, planReasonPart(reason, weight))
     }
@@ -62,10 +65,9 @@ internal fun SuggestionReasonLine(
  */
 @Composable
 private fun planReasonPart(reason: SuggestionReason, weight: String): String {
-    val range = reason.planRepsMin?.let { min ->
-        reason.planRepsMax?.takeIf { max -> min < max }?.let { max -> min to max }
-    }
-    var plan = when {
+    val range = reason.repRange()
+    val duration = reason.planDurationSeconds?.let { DurationFormat.ofSeconds(it.toLong()) }
+    val plan = when {
         range != null && reason.planWeightGrams != null -> pluralStringResource(
             R.plurals.suggestion_rep_range_at,
             range.second,
@@ -93,18 +95,33 @@ private fun planReasonPart(reason: SuggestionReason, weight: String): String {
             reason.planReps,
             reason.planReps,
         )
+        duration != null -> duration
         else -> weight
     }
-    val rpe = reason.planRpeHalves?.let { Rpe.format(it) }
-    if (rpe != null) {
-        plan = if (plan.isEmpty()) {
-            // A plan that names only its effort: the appended form would start with a comma (N376).
-            stringResource(R.string.suggestion_rpe_only, rpe)
-        } else {
-            plan + stringResource(R.string.suggestion_rpe, rpe)
-        }
+    return appendRpe(plan, reason.planRpeHalves)
+}
+
+/** True when the plan names reps, a load or an effort; a hold's seconds are checked separately (N376). */
+private fun SuggestionReason.hasPlanNumbers(): Boolean =
+    planReps != null || planWeightGrams != null || planRpeHalves != null
+
+/** The plan's authored range when both ends are set and differ, or null (B478). */
+private fun SuggestionReason.repRange(): Pair<Int, Int>? =
+    planRepsMin?.let { min -> planRepsMax?.takeIf { max -> min < max }?.let { max -> min to max } }
+
+/**
+ * Appends the plan's effort, or states it alone when it is the only thing the plan names (N376).
+ *
+ * The comma-prefixed form reads as a continuation; a plan that names only its RPE has nothing to continue.
+ */
+@Composable
+private fun appendRpe(plan: String, rpeHalves: Int?): String {
+    val rpe = rpeHalves?.let { Rpe.format(it) }
+    return when {
+        rpe == null -> plan
+        plan.isEmpty() -> stringResource(R.string.suggestion_rpe_only, rpe)
+        else -> plan + stringResource(R.string.suggestion_rpe, rpe)
     }
-    return plan
 }
 
 /** A weight and its unit, or an empty string when the source named none. */
