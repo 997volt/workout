@@ -18,7 +18,6 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Straighten
 import androidx.compose.material.icons.outlined.StarBorder
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -55,7 +54,7 @@ import com.example.androidapp.ui.components.AppCard
 import com.example.androidapp.ui.components.AppFilterChip
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.CenteredMessage
-import com.example.androidapp.ui.components.DatePrompt
+import com.example.androidapp.ui.components.CustomRangeDialog
 import com.example.androidapp.ui.components.LocalWeightUnit
 import com.example.androidapp.ui.components.MessageSnackbar
 import com.example.androidapp.ui.components.TabRootTopBar
@@ -64,9 +63,7 @@ import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.history.HistoryFormat
 import com.example.androidapp.ui.statistics.chart.SeriesChart
 import com.example.androidapp.ui.theme.EyebrowStyle
-import java.time.LocalDate
 import java.time.ZoneId
-import java.time.ZoneOffset
 
 /** The Statistics tab (ROADMAP N35). */
 @Composable
@@ -142,13 +139,10 @@ fun StatisticsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     SettingsErrorSnackbar(state, snackbarHostState, onDismissSettingsError)
     if (choosingDates) {
-        CustomRangeDialog(
+        StatisticsCustomRange(
             initial = state.range,
             onDismiss = { choosingDates = false },
-            onConfirm = { chosen ->
-                choosingDates = false
-                onSelectRange(chosen)
-            },
+            onSelectRange = onSelectRange,
         )
     }
 
@@ -660,86 +654,34 @@ private fun ReadingRow(label: String, value: String, testTag: String) {
 }
 
 /**
- * The custom range, with its From and To (ROADMAP N35).
+ * The custom window, on the shared two-date dialog (ROADMAP N35, N332).
  *
- * Each date is chosen in a calendar of its own, and applying is refused until both are: a window with one
- * end is the same as no window, and the type's tolerance for a missing end exists so an older stored value
- * cannot break a screen, not as a state to offer.
- *
- * The dates are read back in UTC, which is the zone the picker reports in — converting them in the device's
- * zone would shift the day for anyone west of Greenwich and make "From 1 August" mean 31 July.
+ * The dialog itself is shared with the block export: the same two calendars, the same refusal of a reversed
+ * or half-chosen window. Only the strings and tags are Statistics'.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CustomRangeDialog(
+private fun StatisticsCustomRange(
     initial: StatisticsRange,
     onDismiss: () -> Unit,
-    onConfirm: (StatisticsRange) -> Unit,
+    onSelectRange: (StatisticsRange) -> Unit,
 ) {
-    // Stored as days rather than LocalDate, which has no bundle saver (B465).
-    var fromDay by rememberSaveable { mutableStateOf(initial.from?.toString()) }
-    var toDay by rememberSaveable { mutableStateOf(initial.to?.toString()) }
-    var picking by rememberSaveable { mutableStateOf<Boolean?>(null) }
-    val from = fromDay?.let(LocalDate::parse)
-    val to = toDay?.let(LocalDate::parse)
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.range_custom)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                DateRow(
-                    labelRes = R.string.statistics_custom_from,
-                    date = from,
-                    testTag = TestTags.Statistics.CUSTOM_FROM,
-                    onClick = { picking = true },
-                )
-                DateRow(
-                    labelRes = R.string.statistics_custom_to,
-                    date = to,
-                    testTag = TestTags.Statistics.CUSTOM_TO,
-                    onClick = { picking = false },
-                )
-            }
-        },
-        confirmButton = {
-            AppTextButton(
-                onClick = { onConfirm(StatisticsRange(RangeKind.CUSTOM, from = from, to = to)) },
-                enabled = from != null && to != null,
-                modifier = Modifier.testTag(TestTags.Statistics.CUSTOM_APPLY),
-            ) {
-                Text(stringResource(R.string.statistics_custom_apply))
-            }
-        },
-        dismissButton = {
-            AppTextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
+    CustomRangeDialog(
+        title = stringResource(R.string.range_custom),
+        fromLabel = stringResource(R.string.statistics_custom_from),
+        toLabel = stringResource(R.string.statistics_custom_to),
+        noDateLabel = stringResource(R.string.statistics_custom_no_date),
+        applyLabel = stringResource(R.string.statistics_custom_apply),
+        initialFrom = initial.from,
+        initialTo = initial.to,
+        fromTestTag = TestTags.Statistics.CUSTOM_FROM,
+        toTestTag = TestTags.Statistics.CUSTOM_TO,
+        applyTestTag = TestTags.Statistics.CUSTOM_APPLY,
+        onDismiss = onDismiss,
+        onConfirm = { from, to ->
+            onDismiss()
+            onSelectRange(StatisticsRange(RangeKind.CUSTOM, from = from, to = to))
         },
     )
-
-    picking?.let { choosing ->
-        // The calendar is shared with the measurement day field (B217); this end of a range may be any day.
-        DatePrompt(
-            initial = if (choosing) from else to,
-            onDismiss = { picking = null },
-            onPick = { date ->
-                if (choosing) fromDay = date.toString() else toDay = date.toString()
-                picking = null
-            },
-        )
-    }
-}
-
-/** One end of a custom range: what it is, what it currently says, and the way to change it. */
-@Composable
-private fun DateRow(labelRes: Int, date: LocalDate?, testTag: String, onClick: () -> Unit) {
-    // The picker reports UTC days, and displaying them in the device zone would shift the day west of
-    // Greenwich (B373). The date still goes through the app's one history formatter.
-    val shown = date?.let {
-        HistoryFormat.date(it.atStartOfDay(ZoneOffset.UTC).toInstant(), zone = ZoneOffset.UTC)
-    } ?: stringResource(R.string.statistics_custom_no_date)
-    AppTextButton(onClick = onClick, modifier = Modifier.testTag(testTag)) {
-        Text(stringResource(labelRes) + ": " + shown)
-    }
 }
 
 /**

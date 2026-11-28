@@ -537,6 +537,9 @@
     <string name="statistics_custom_from">From</string>
     <string name="statistics_custom_to">To</string>
     <string name="statistics_custom_apply">Apply</string>
+    <!-- The shared two-date window refuses a start after the end rather than exporting a reversed or empty
+         window (N35, N332). -->
+    <string name="custom_range_order">Choose a start on or before the end.</string>
     <string name="statistics_readings">Readings (%1$d)</string>
     <!-- The disclosure's state, which its label does not say and its icon does not read out (N221). -->
     <string name="statistics_readings_collapsed">Collapsed</string>
