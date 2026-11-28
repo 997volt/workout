@@ -2366,6 +2366,68 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
+    fun aSorePrimaryMuscle_withholdsTheEarnedSet() = runTest(dispatcher) {
+        // N377: the extra-set pattern is met exactly as the test above meets it; the day's soreness is the
+        // only difference, and it withholds the offer without touching the plan or the sets.
+        val repository = FakeWorkoutRepository()
+        repository.exercises.value = listOf(
+            aSessionExercise("back-squat", primaryMuscle = MuscleGroup.QUADS),
+        )
+        val templates = FakeTemplateRepository(
+            planned = listOf(
+                plannedExercise(
+                    position = 0,
+                    sets = (0 until 3).map { plannedSet(index = it, reps = 5, weightGrams = 100_000L) },
+                ),
+            ),
+        )
+        val trends = FakeTrendsRepository().apply {
+            templateSessions = DataResult.Success(
+                listOf(aStoredSession(sets = 3), aStoredSession(sets = 4)),
+            )
+        }
+        val measurements = FakeBodyMeasurements().apply {
+            saved += BodyMeasurement(
+                id = "day",
+                measuredAt = Instant.parse("2026-09-28T06:00:00Z"),
+                kind = MeasurementKind.DAILY,
+                soreMuscles = listOf(SoreMuscle(MuscleGroup.QUADS, 9)),
+            )
+        }
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = templates,
+            trends = trends,
+            measurements = measurements,
+        )
+        observe(viewModel)
+        settle()
+        val id = viewModel.uiState.value.exercises.single().id
+        repeat(4) {
+            viewModel.onLogSet(
+                id,
+                SetEdit(
+                    reps = 5,
+                    weightGrams = 100_000L,
+                    rpeHalves = 7,
+                    note = null,
+                    setType = SetType.NORMAL,
+                    assistanceGrams = 0L,
+                ),
+            )
+            settle()
+        }
+        viewModel.onFinishExercise(id)
+        settle()
+        viewModel.onFinishExercise(id)
+        settle()
+
+        assertNull("the sore day withheld the extra set", viewModel.volumeSuggestion.value)
+        assertEquals("and wrote nothing", 0, templates.addedSets.size)
+    }
+
+    @Test
     fun aSecondAdd_andASecondUndo_beforeTheWriteLands_areIgnored() = runTest(dispatcher) {
         // B438's single-flight, which N313 owed a test: two presses in one frame are one write each.
         val (viewModel, templates) = earnedSetWorkout()

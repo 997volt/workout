@@ -978,8 +978,14 @@ class ActiveWorkoutViewModel @Inject constructor(
         // The prompt Done judged, or the row's own when no question was asked (B437); no row means
         // there is nothing to offer.
         val current = prompt ?: row?.progression ?: return
-        val planEntryId = row?.planEntryId
+        if (row == null) return
+        val planEntryId = row.planEntryId
         val suggestion = if (uiState.value.isDeloadWorkout || templateId == null || planEntryId == null) {
+            null
+        } else if (recoveryVerdictFor(row).holdsAdd) {
+            // N377: a held add is withheld here. The step was the auto path's to hold; this is the volume
+            // half, the only place a session can add a set, and the gate withholds the suggestion rather
+            // than a write.
             null
         } else {
             planVolumeFinder
