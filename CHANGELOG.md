@@ -13,6 +13,19 @@ repeated here.
 **1.0–1.18 live in [CHANGELOG-1.x.md](CHANGELOG-1.x.md)**, kept whole rather than deleted because the
 id a 1.x commit names is still looked up by it. This file carries the current release.
 
+## [Unreleased]
+
+### Added
+
+- **Auto progression and the earned set read soreness and joint pain** (N377). A joint rated 4 or more on
+  the session's own exercise holds the auto step and the earned-set offer, and 7 or more also asks the
+  finish's deload/replace question with the joint and the lifter's score as the reason. A sore primary
+  muscle above 4, or a sore secondary at 6 or more, holds only the offer — never a load or rep step — and
+  muscle feel stays recorded without gating anything. The day's record is read at the session's start
+  (older than three days is stale), the plan card and the finish's snackbar read one verdict, and a held
+  session breaks the three-session pattern. Nothing writes a set count and no schema changes; the plan
+  editor still owns every plan edit and its undo.
+
 ## [2.34] — 2026-11-23 (versionCode 55)
 
 ### Fixed
