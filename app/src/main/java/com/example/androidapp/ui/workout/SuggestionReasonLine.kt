@@ -95,7 +95,15 @@ private fun planReasonPart(reason: SuggestionReason, weight: String): String {
         )
         else -> weight
     }
-    reason.planRpeHalves?.let { plan += stringResource(R.string.suggestion_rpe, Rpe.format(it)) }
+    val rpe = reason.planRpeHalves?.let { Rpe.format(it) }
+    if (rpe != null) {
+        plan = if (plan.isEmpty()) {
+            // A plan that names only its effort: the appended form would start with a comma (N376).
+            stringResource(R.string.suggestion_rpe_only, rpe)
+        } else {
+            plan + stringResource(R.string.suggestion_rpe, rpe)
+        }
+    }
     return plan
 }
 

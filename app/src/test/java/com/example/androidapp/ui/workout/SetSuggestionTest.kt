@@ -29,9 +29,8 @@ import org.junit.Test
 class SetSuggestionTest {
 
     @Test
-    fun theReason_namesTheLastSet_andThePlan() {
-        // P3.17: the numbers on screen say where they came from — the same set the prefill read, and the
-        // plan's target for the set about to be done.
+    fun theReason_namesThePlanAlone_whenThePlanSpeaks() {
+        // N376: the plan is the prescription and history is its fallback, so one source is stated, not two.
         val reason = suggestionReason(
             previous = PreviousPerformance(
                 listOf(
@@ -48,11 +47,54 @@ class SetSuggestionTest {
             planned = PlannedTarget(reps = 5, weightGrams = null, rpeHalves = 16),
         )
 
+        assertEquals("the plan's reps", 5, reason?.planReps)
+        assertEquals("the plan's effort", 16, reason?.planRpeHalves)
+        assertNull("history is not named beside it", reason?.lastReps)
+        assertNull(reason?.lastWeightGrams)
+        assertNull(reason?.lastRpeHalves)
+    }
+
+    @Test
+    fun theReason_namesTheLastSetAlone_whenThereIsNoPlan() {
+        // The fallback's own case: nothing planned, so the one source is what the lift did last time.
+        val reason = suggestionReason(
+            previous = PreviousPerformance(
+                listOf(
+                    SetEntry(
+                        id = "s1",
+                        sessionExerciseId = "se1",
+                        setIndex = 0,
+                        reps = 5,
+                        weightGrams = 100_000L,
+                        rpeHalves = 17,
+                    ),
+                ),
+            ),
+            planned = null,
+        )
+
         assertEquals(5, reason?.lastReps)
         assertEquals(100_000L, reason?.lastWeightGrams)
         assertEquals(17, reason?.lastRpeHalves)
-        assertEquals(5, reason?.planReps)
-        assertEquals(16, reason?.planRpeHalves)
+        assertNull("no plan, no plan half", reason?.planReps)
+    }
+
+    @Test
+    fun theReason_namesTheLastSet_whenThePlanRowStatesNothing() {
+        // A plan row that names no number supplies no origin: the field still shows history, so the line
+        // names history rather than an empty "Plan" (N376).
+        val reason = suggestionReason(
+            previous = PreviousPerformance(
+                listOf(
+                    SetEntry("s1", "se1", 0, reps = 5, weightGrams = 100_000L),
+                ),
+            ),
+            planned = PlannedTarget(reps = null, weightGrams = null),
+        )
+
+        assertEquals(5, reason?.lastReps)
+        assertEquals(100_000L, reason?.lastWeightGrams)
+        assertNull(reason?.planReps)
     }
 
     @Test

@@ -86,7 +86,13 @@ data class SuggestionReason(
 )
 
 /**
- * The two sources behind a prefill, or null when neither says anything (P3.17).
+ * The one source behind a prefill, or null when neither says anything (P3.17, amended by N376).
+ *
+ * **One source, not two** (N376): where the planned set states a target the line states the plan alone; where
+ * it states nothing — no plan, a plan row that names no number, or a rung whose targets are derived — it
+ * states the last performance alone. The plan is the prescription and the history is the fallback, so the
+ * lifter reads one origin for the numbers on screen. A plan that names reps but no load therefore leaves the
+ * field's load unlabelled: that is the cost of one source, accepted.
  *
  * The set named is the one the prefill read: for an ordinary set that is [PreviousPerformance]'s last set —
  * [suggestionForNextSet]'s `lastTime` — and for a **rung** it is the same place last time, which is where
@@ -104,22 +110,27 @@ fun suggestionReason(
     } else {
         previous?.sets?.lastOrNull()
     }
-    val planSaysSomething = planned != null &&
-        (
-            planned.reps != null || planned.weightGrams != null || planned.rpeHalves != null ||
-                planned.repsMin != null || planned.repsMax != null
-            )
-    if (last == null && !planSaysSomething) return null
-    return SuggestionReason(
-        lastReps = last?.reps,
-        lastWeightGrams = last?.weightGrams,
-        lastRpeHalves = last?.rpeHalves,
-        planReps = planned?.reps,
-        planWeightGrams = planned?.weightGrams,
-        planRpeHalves = planned?.rpeHalves,
-        planRepsMin = planned?.repsMin,
-        planRepsMax = planned?.repsMax,
-    )
+    val plan = planned?.takeIf {
+        it.reps != null || it.weightGrams != null || it.rpeHalves != null ||
+            it.repsMin != null || it.repsMax != null
+    }
+    return when {
+        plan != null -> SuggestionReason(
+            planReps = plan.reps,
+            planWeightGrams = plan.weightGrams,
+            planRpeHalves = plan.rpeHalves,
+            planRepsMin = plan.repsMin,
+            planRepsMax = plan.repsMax,
+        )
+
+        last != null -> SuggestionReason(
+            lastReps = last.reps,
+            lastWeightGrams = last.weightGrams,
+            lastRpeHalves = last.rpeHalves,
+        )
+
+        else -> null
+    }
 }
 
 /**

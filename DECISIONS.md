@@ -1900,12 +1900,14 @@ the rule; that one argues it.
   takes each row's own: the rep below a ceiling, the load at it. A plan with no ceiling offers both on the
   same row, and the rep is taken there because it is the smaller step at the same load. Picking is still not
   writing: only *Done* reaches the plan.
-- **The prefill states its two sources, and neither is labelled a recommendation** (P3.17). Under the next
-  set's fields a line names what the lift did last time and what the plan asks, each labelled; a set with
-  neither source shows nothing. The set named is the one the prefill read — the last set for an ordinary set,
-  and a **rung's own place last time** for a rung, which is where its reps come from (N168) — not the
-  session's best, so the line explains the number on screen. It is not the app's opinion of what to do next
-  (N33): it is where the numbers already on screen came from.
+- **The prefill states one source, and it is not labelled a recommendation** (P3.17, amended by N376). Under
+  the next set's fields a line names the plan where the planned set states a target, or what the lift did last
+  time where it states none — no plan, a row that names no number, or a rung whose targets are derived — so the
+  lifter reads one origin for the numbers on screen. A plan that names reps but no load therefore leaves the
+  field's load unlabelled: that is the cost of one source, accepted. The set named is the one the prefill read
+  — the last set for an ordinary set, and a **rung's own place last time** for a rung, which is where its reps
+  come from (N168) — not the session's best, so the line explains the number on screen. It is not the app's
+  opinion of what to do next (N33): it is where the numbers already on screen came from.
 - **The progression prompt is a three-way choice, and the old switch still answers** (P3.17). Settings carries
   *Ask*, *Apply at Done* and *Off* instead of on/off: the middle is the lifter who wants the steps taken
   without tapping each one, and a boolean could not express it. Apply opens the same question with every

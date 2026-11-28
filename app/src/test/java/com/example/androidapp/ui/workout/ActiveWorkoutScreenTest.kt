@@ -578,9 +578,8 @@ class ActiveWorkoutScreenTest {
     )
 
     @Test
-    fun theNextSet_statesWhyItHasThoseNumbers() {
-        // P3.17: "last time" and "plan" are the two sources the prefill reads, and the line says which is
-        // which rather than presenting a remembered number as a prescription.
+    fun theNextSet_statesOneSourceForItsNumbers() {
+        // N376: the plan is the prescription and history is the fallback, so the line names one of them.
         setScreen(
             state = state(
                 isFinished = false,
@@ -588,10 +587,8 @@ class ActiveWorkoutScreenTest {
                     reps = 5,
                     weightGrams = 100_000L,
                     reason = SuggestionReason(
-                        lastReps = 5,
-                        lastWeightGrams = 100_000L,
-                        lastRpeHalves = 17,
                         planReps = 5,
+                        planWeightGrams = 100_000L,
                         planRpeHalves = 16,
                     ),
                 ),
@@ -602,8 +599,11 @@ class ActiveWorkoutScreenTest {
             .onNodeWithTag(TestTags.exerciseSuggestionReason("se1"))
             .assertExists()
         composeTestRule
-            .onNodeWithText("Last time 5 × 100 kg, RPE 8.5", substring = true)
+            .onNodeWithText("Plan 5 reps @ 100 kg, RPE 8")
             .assertExists()
+        composeTestRule
+            .onNodeWithText("Last time", substring = true)
+            .assertDoesNotExist()
     }
 
     @Test

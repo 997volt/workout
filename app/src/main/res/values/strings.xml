@@ -389,6 +389,8 @@
         <item quantity="other">%1$d reps</item>
     </plurals>
     <string name="suggestion_rpe">, RPE %1$s</string>
+    <!-- A plan that names only its effort: the comma form above would start a sentence with it (N376). -->
+    <string name="suggestion_rpe_only">RPE %1$s</string>
     <string name="suggestion_separator"> · </string>
     <string name="suggestion_unit_kg">kg</string>
     <string name="suggestion_unit_lb">lb</string>
