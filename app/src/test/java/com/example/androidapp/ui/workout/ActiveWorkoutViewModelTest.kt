@@ -2563,6 +2563,54 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
+    fun aStall_waitsBehindThePainCard_andFollowsIt() = runTest(dispatcher) {
+        // N377's card is asked before the stall card; answering it must hand the stall on rather than drop
+        // it. This is the ordering the fixed sequence promises, with both cards actually owed.
+        val repository = FakeWorkoutRepository()
+        val programs = FakeProgramRepository().apply { activeWeeklyForTemplate = "p1" }
+        val trends = FakeTrendsRepository().apply {
+            templateSessions = DataResult.Success(List(3) { aSessionThatMissed() })
+        }
+        repository.exercises.value = listOf(aSessionExercise("back-squat"))
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = answeredPlan(),
+            programs = programs,
+            trends = trends,
+        )
+        observe(viewModel)
+        settle()
+        val id = viewModel.uiState.value.exercises.single().id
+        viewModel.onRateExercise(
+            id,
+            muscleFeel = 8,
+            joints = listOf(JointPain(Joint.KNEE, Side.RIGHT, 7)),
+        )
+        settle()
+
+        viewModel.onFinish()
+        settle()
+
+        assertNotNull("the pain card comes first", viewModel.recoveryNotice.value)
+        assertNull("the stall waits for it", viewModel.stallNotice.value)
+
+        viewModel.onDismissRecovery()
+        settle()
+
+        assertNull(viewModel.recoveryNotice.value)
+        assertEquals(
+            "the stall follows the pain card",
+            "Back Squat",
+            viewModel.stallNotice.value?.single()?.exerciseName,
+        )
+
+        viewModel.onDismissStallNotice()
+        settle()
+        assertTrue(viewModel.closed.value)
+    }
+
+    @Test
     fun aSecondAdd_andASecondUndo_beforeTheWriteLands_areIgnored() = runTest(dispatcher) {
         // B438's single-flight, which N313 owed a test: two presses in one frame are one write each.
         val (viewModel, templates) = earnedSetWorkout()
