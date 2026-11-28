@@ -93,6 +93,7 @@ internal suspend fun writeAutoProgressionSteps(
                     direction = choice.direction,
                     before = write.before,
                     after = write.after,
+                    number = choice.number,
                 ),
             )
         }

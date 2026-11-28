@@ -82,6 +82,8 @@ data class AutoProgressionStep(
     val direction: ProgressionDirection,
     val before: ProgressionTargets,
     val after: ProgressionTargets,
+    /** The set's place in the plan question, 1-based, for the banner's "Set 2" (ROADMAP N373). */
+    val number: Int,
 )
 
 /**

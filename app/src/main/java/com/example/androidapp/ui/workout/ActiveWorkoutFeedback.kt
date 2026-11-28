@@ -23,7 +23,9 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
+import com.example.androidapp.domain.DurationFormat
 import com.example.androidapp.domain.Weight
+import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.PersonalRecordMoment
 import com.example.androidapp.domain.model.ProgressionDirection
 import com.example.androidapp.domain.model.RecoveryHold
@@ -170,7 +172,12 @@ internal fun AutoProgressionBanner(
                 text = stringResource(R.string.auto_progression_label),
                 style = MaterialTheme.typography.labelLarge,
             )
-            Text(text = autoProgressionMessage(moment), style = MaterialTheme.typography.bodyMedium)
+            Text(text = moment.exerciseName, style = MaterialTheme.typography.titleSmall)
+            // One line per set the batch moved, so a multi-set write reads as what changed rather than as a
+            // count (N373). The direction and the before → after are the whole of "what and how".
+            autoProgressionLines(moment).forEach { line ->
+                Text(text = line, style = MaterialTheme.typography.bodyMedium)
+            }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End,
@@ -193,41 +200,44 @@ internal fun AutoProgressionBanner(
     }
 }
 
-/** The one line the banner says: the next target, or how many sets moved. */
+/** One line per moved set: its place in the plan, then the move itself (ROADMAP N373). */
 @Composable
-private fun autoProgressionMessage(moment: AutoProgressionMoment): String {
-    if (moment.steps.size != 1) {
-        return pluralStringResource(
-            R.plurals.auto_progression_steps,
-            moment.steps.size,
-            moment.exerciseName,
-            moment.steps.size,
-        )
+private fun autoProgressionLines(moment: AutoProgressionMoment): List<String> =
+    moment.steps.map { step ->
+        stringResource(R.string.auto_progression_set_line, step.number, stepMove(step, moment.unit))
     }
-    val step = moment.steps.single()
-    return when (step.direction) {
-        ProgressionDirection.LOAD -> step.after.weightGrams?.let {
-            stringResource(
-                R.string.auto_progression_next_load,
-                moment.exerciseName,
-                Weight.display(it, assistanceGrams = 0L, unit = moment.unit),
-            )
-        }
 
-        ProgressionDirection.REPS -> step.after.repsCurrent?.let {
-            pluralStringResource(
-                R.plurals.auto_progression_next_reps,
-                it,
-                moment.exerciseName,
-                it,
-            )
-        }
+/**
+ * The move one step made: the direction and its before → after.
+ *
+ * The direction is the "how" — reps below the range's ceiling, the load at it, a hold's seconds — and the
+ * values are the plan's own, not a recomputation. A field the step did not move is not shown.
+ */
+@Composable
+private fun stepMove(step: AutoProgressionStep, unit: WeightUnit): String = when (step.direction) {
+    ProgressionDirection.LOAD -> stringResource(
+        R.string.auto_progression_load_move,
+        weightWithUnit(step.before.weightGrams, unit),
+        weightWithUnit(step.after.weightGrams, unit),
+    )
 
-        ProgressionDirection.SECONDS -> step.after.durationSeconds?.let {
-            stringResource(R.string.auto_progression_next_seconds, moment.exerciseName, it)
-        }
-    } ?: moment.exerciseName
+    ProgressionDirection.REPS -> {
+        val from = step.before.repsCurrent ?: 0
+        val to = step.after.repsCurrent ?: 0
+        pluralStringResource(R.plurals.auto_progression_reps_move, to, from, to)
+    }
+
+    ProgressionDirection.SECONDS -> stringResource(
+        R.string.auto_progression_seconds_move,
+        step.before.durationSeconds?.let { DurationFormat.ofSeconds(it.toLong()) }.orEmpty(),
+        step.after.durationSeconds?.let { DurationFormat.ofSeconds(it.toLong()) }.orEmpty(),
+    )
 }
+
+/** A planned load in this exercise's unit, or an em dash when the target names none. */
+@Composable
+private fun weightWithUnit(grams: Long?, unit: WeightUnit): String =
+    grams?.let { Weight.display(it, assistanceGrams = 0L, unit = unit) + " " + unit.label() } ?: "—"
 
 /**
  * The reason a *Done* held its step (ROADMAP N377).

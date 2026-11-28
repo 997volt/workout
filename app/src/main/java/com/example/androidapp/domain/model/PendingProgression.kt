@@ -44,10 +44,11 @@ data class PendingProgression(
 
     /** The steps the lifter has picked and not yet had written, in the plan's own order (N74). */
     val chosen: List<ProgressionChoice>
-        get() = sets.mapNotNull { set ->
-            val offer = set.prompt.offer ?: return@mapNotNull null
-            val direction = set.direction ?: return@mapNotNull null
-            ProgressionChoice(offer, direction)
+        get() = sets.mapIndexedNotNull { index, set ->
+            val offer = set.prompt.offer ?: return@mapIndexedNotNull null
+            val direction = set.direction ?: return@mapIndexedNotNull null
+            // The row's own place, so the auto banner can name "Set 2" the way the question did (N373).
+            ProgressionChoice(offer = offer, direction = direction, number = index + 1)
         }
 
     /** True once every picked step has been written, so the caller can close the question. */
@@ -157,6 +158,8 @@ data class PendingProgression(
 data class ProgressionChoice(
     val offer: ProgressionOffer,
     val direction: ProgressionDirection,
+    /** The set's place in the question, 1-based, for the banner's "Set 2" (N373). */
+    val number: Int,
 )
 
 /** The frozen question for one exercise: every working set, its offer, and nothing chosen yet (N74). */

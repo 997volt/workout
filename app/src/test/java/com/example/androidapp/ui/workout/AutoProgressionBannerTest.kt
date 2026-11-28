@@ -43,6 +43,7 @@ class AutoProgressionBannerTest {
                                 direction = ProgressionDirection.LOAD,
                                 before = ProgressionTargets(weightGrams = 100_000L, repsCurrent = 8),
                                 after = ProgressionTargets(weightGrams = 102_500L, repsCurrent = 5),
+                                number = 1,
                             ),
                         ),
                     ),
@@ -53,15 +54,16 @@ class AutoProgressionBannerTest {
         }
 
         composeTestRule.onNodeWithTag(TestTags.AUTO_PROGRESSION).assertIsDisplayed()
-        composeTestRule.onNodeWithText("Bench Press · next time 102.5").assertExists()
+        composeTestRule.onNodeWithText("Bench Press").assertExists()
+        composeTestRule.onNodeWithText("Set 1 · 100 kg → 102.5 kg").assertExists()
         composeTestRule.onNodeWithTag(TestTags.AUTO_PROGRESSION_UNDO).performClick()
 
         assertThat(undone).isTrue()
     }
 
     @Test
-    fun aBatchOfTwoSteps_saysHowManyTargetsMoved() {
-        // N325: the plural branch had no test, so a batch of two could have read like one.
+    fun aBatchOfTwoSteps_statesEachSetAndItsMove() {
+        // N373: a batch states what each set left, not only how many were touched.
         composeTestRule.setContent {
             AndroidAppTheme {
                 AutoProgressionBanner(
@@ -74,12 +76,14 @@ class AutoProgressionBannerTest {
                                 direction = ProgressionDirection.REPS,
                                 before = ProgressionTargets(weightGrams = 100_000L, repsCurrent = 5),
                                 after = ProgressionTargets(weightGrams = 100_000L, repsCurrent = 6),
+                                number = 1,
                             ),
                             AutoProgressionStep(
                                 writeId = "w2",
                                 direction = ProgressionDirection.REPS,
                                 before = ProgressionTargets(weightGrams = 100_000L, repsCurrent = 6),
                                 after = ProgressionTargets(weightGrams = 100_000L, repsCurrent = 7),
+                                number = 2,
                             ),
                         ),
                     ),
@@ -89,7 +93,8 @@ class AutoProgressionBannerTest {
             }
         }
 
-        composeTestRule.onNodeWithText("Bench Press · 2 targets adjusted").assertExists()
+        composeTestRule.onNodeWithText("Set 1 · 5 → 6 reps").assertExists()
+        composeTestRule.onNodeWithText("Set 2 · 6 → 7 reps").assertExists()
     }
 
     @Test
@@ -107,6 +112,7 @@ class AutoProgressionBannerTest {
                                 direction = ProgressionDirection.REPS,
                                 before = ProgressionTargets(weightGrams = 100_000L, repsCurrent = 5),
                                 after = ProgressionTargets(weightGrams = 100_000L, repsCurrent = 6),
+                                number = 1,
                             ),
                         ),
                     ),
