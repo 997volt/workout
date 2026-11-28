@@ -3,6 +3,7 @@ package com.example.androidapp.data
 import com.example.androidapp.data.local.JointPainSiteRow
 import com.example.androidapp.data.local.SessionPlanSetEntity
 import com.example.androidapp.data.local.WorkoutDatabase
+import com.example.androidapp.data.local.toDomain
 import com.example.androidapp.data.local.toTemplateSessions
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.dataResultOf
@@ -62,6 +63,9 @@ class RoomTrendsRepository @Inject constructor(
 
     /** The prescriptions the stall and volume rules read (ROADMAP B471). */
     private val plans = database.sessionPlanSetDao()
+
+    /** The joints the plan card's recovery gate reads with the session ratings (ROADMAP N377). */
+    private val joints = database.sessionExerciseJointDao()
 
     /**
      * The per-site pain read serves every lift at once, so exercises outside the chosen window arrive too
@@ -140,7 +144,15 @@ class RoomTrendsRepository @Inject constructor(
         templateId: String,
         limit: Int,
     ): DataResult<List<TemplateSession>> = dataResultOf {
-        dao.findTemplateSessionSets(templateId, limit).toTemplateSessions()
+        val rows = dao.findTemplateSessionSets(templateId, limit)
+        // The joint rows are a child table the set query cannot join without multiplying its rows (N377);
+        // one read keyed by the exercises it already named is the flat query count this file holds to.
+        val ids = rows.map { it.sessionExerciseId }.distinct()
+        val jointRows = if (ids.isEmpty()) emptyList() else joints.findForExercises(ids)
+        rows.toTemplateSessions(
+            jointsByExercise = jointRows.groupBy { it.sessionExerciseId }
+                .mapValues { (_, atExercise) -> atExercise.map { it.toDomain() } },
+        )
     }
 
     override suspend fun prescriptions(

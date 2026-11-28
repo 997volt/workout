@@ -2,6 +2,7 @@ package com.example.androidapp.data.local
 
 import androidx.room.Dao
 import androidx.room.Query
+import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.PerformedExercise
 import com.example.androidapp.domain.model.ProgressionPerformance
 import com.example.androidapp.domain.model.SetType
@@ -238,7 +239,9 @@ interface TrendsDao {
                s.reps AS reps,
                s.rpeHalves AS rpeHalves,
                s.durationSeconds AS durationSeconds,
-               s.setType AS setType
+               s.setType AS setType,
+               se.muscleFeel AS muscleFeel,
+               ws.zoneOffsetMinutes AS zoneOffsetMinutes
         FROM workout_sessions ws
         JOIN session_exercises se
           ON se.sessionId = ws.id AND se.deletedAt IS NULL
@@ -274,6 +277,10 @@ data class TemplateSessionSetRow(
     val rpeHalves: Int?,
     val durationSeconds: Int?,
     val setType: String?,
+    /** How well the exercise's muscle was worked, 1–10, or null (ROADMAP N377). */
+    val muscleFeel: Int? = null,
+    /** The zone the session was performed in, for the recovery gate's day (ROADMAP N377). */
+    val zoneOffsetMinutes: Int? = null,
 )
 
 /** One workout's average RPE. */
@@ -373,8 +380,14 @@ internal fun TemplateSessionSetRow.toPerformance(): ProgressionPerformance? {
  *
  * Grouped here rather than in SQL because the grouping *is* the shape the rule reads — one entry per session
  * that trained the movement, in order — and a `Map` built in Kotlin keeps that order explicit.
+ *
+ * [jointsByExercise] is the one thing the query cannot join without multiplying its set rows (ROADMAP N377):
+ * the joint rows are a child table keyed to the session exercise, so the reader that has them in hand passes
+ * them in. The session's own zone rides on every row and is taken once.
  */
-internal fun List<TemplateSessionSetRow>.toTemplateSessions(): List<TemplateSession> =
+internal fun List<TemplateSessionSetRow>.toTemplateSessions(
+    jointsByExercise: Map<String, List<JointPain>> = emptyMap(),
+): List<TemplateSession> =
     groupBy { it.sessionId to it.startedAt }
         .toSortedMap(compareBy({ it.second }, { it.first }))
         .map { (session, sets) ->
@@ -388,7 +401,10 @@ internal fun List<TemplateSessionSetRow>.toTemplateSessions(): List<TemplateSess
                             exerciseId = logged.first().exerciseId,
                             sessionExerciseId = sessionExerciseId,
                             sets = logged.mapNotNull { it.toPerformance() },
+                            muscleFeel = logged.first().muscleFeel,
+                            joints = jointsByExercise[sessionExerciseId].orEmpty(),
                         )
                     },
+                zoneOffsetMinutes = sets.first().zoneOffsetMinutes,
             )
         }

@@ -90,6 +90,31 @@ class RoomTrendsRepositoryTest {
     }
 
     @Test
+    fun templateSessions_carryTheRatingZoneAndJoints_theRecoveryGateReads() = runTest {
+        // N377: the plan card's gate needs the same three facts the *Done* gate reads — the exercise's
+        // rating, the joints, and the zone the session's day belongs to. The joints are a child table the
+        // set query cannot join, so this pins that the repository still attaches them.
+        seedSession(
+            id = "s1",
+            startedAt = 1_000L,
+            rpeHalves = listOf(16),
+            muscleFeel = 8,
+            jointPain = 5,
+            templateId = "t1",
+            zoneOffsetMinutes = 120,
+        )
+
+        val sessions = (repository.templateSessions("t1", limit = 10) as DataResult.Success).data
+
+        val session = sessions.single()
+        assertEquals("the session's own zone", 120, session.zoneOffsetMinutes)
+        val performed = session.performed.single()
+        assertEquals("the rating", 8, performed.muscleFeel)
+        assertEquals("the joint", Joint.KNEE, performed.joints.single().joint)
+        assertEquals("and its score", 5, performed.joints.single().score)
+    }
+
+    @Test
     fun theAverages_areInPoints_notHalves() = runTest {
         // 9.5 and 8.0 as recorded, which is 19 and 16 halves. The chart must read 9.5
         // and 8.0 — half of that is a wrong divisor, and double it is the stored count.
@@ -159,6 +184,8 @@ class RoomTrendsRepositoryTest {
         jointPain: Int? = null,
         finished: Boolean = true,
         sets: List<PlannedSet>? = null,
+        templateId: String? = null,
+        zoneOffsetMinutes: Int? = null,
     ) {
         database.workoutDao().insertSession(
             WorkoutSessionEntity(
@@ -168,9 +195,11 @@ class RoomTrendsRepositoryTest {
                 notes = null,
                 restEndsAt = null,
                 readinessNote = null,
+                zoneOffsetMinutes = zoneOffsetMinutes,
                 createdAt = startedAt,
                 updatedAt = startedAt,
                 deletedAt = null,
+                templateId = templateId,
             ),
         )
         database.workoutDao().insertSessionExercise(

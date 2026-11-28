@@ -33,17 +33,23 @@ data class PerformedExercise(
     val sets: List<ProgressionPerformance>,
     /** The session exercise these sets belong to, or null in a test/older read (B471). */
     val sessionExerciseId: String? = null,
+    /** How well the target muscle was worked, 1–10, or null (ROADMAP N377). */
+    val muscleFeel: Int? = null,
+    /** The joints this exercise reported painful, for the recovery gate (ROADMAP N377). */
+    val joints: List<JointPain> = emptyList(),
 )
 
 /**
  * One finished session started from a template, with what each of its exercises performed (ROADMAP N237).
  *
- * [performed] is in the session's own order, which is the order the plan was prescribed in.
+ * [performed] is in the session's own order, which is the order the plan was prescribed in. [zoneOffsetMinutes]
+ * is the session's own zone, carried so the plan card can find the day its soreness came from (N377).
  */
 data class TemplateSession(
     val sessionId: String,
     val startedAt: Instant,
     val performed: List<PerformedExercise>,
+    val zoneOffsetMinutes: Int? = null,
 )
 
 /**

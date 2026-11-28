@@ -36,6 +36,18 @@ interface SessionExerciseJointDao {
     fun observeForSession(sessionId: String): Flow<List<SessionExerciseJointEntity>>
 
     /**
+     * The live rows of several session exercises at once, for the plan card's recovery gate (ROADMAP N377).
+     *
+     * A one-shot read keyed by the exercises a history read already named, so the gate adds one query rather
+     * than one per session or a join that would multiply the set rows.
+     */
+    @Query(
+        "SELECT * FROM session_exercise_joints " +
+            "WHERE sessionExerciseId IN (:sessionExerciseIds) AND deletedAt IS NULL ORDER BY position",
+    )
+    suspend fun findForExercises(sessionExerciseIds: List<String>): List<SessionExerciseJointEntity>
+
+    /**
      * Writes a save's whole list, so a replace is one statement rather than a row-per-joint loop
      * that a failure could stop halfway.
      */
