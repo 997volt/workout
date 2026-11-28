@@ -83,6 +83,18 @@ class RoomMeasurementRepository @Inject constructor(
         dao.latestWeight()?.let { LatestWeight(grams = it.weightGrams, at = Instant.ofEpochMilli(it.measuredAt)) }
     }
 
+    /**
+     * The day the session started under, sore list included (ROADMAP N377).
+     *
+     * One row and its own child rows rather than the whole table: the gate asks at *Done*, on the logging
+     * path, and `observeAll` would read every entry the device holds to answer today's question.
+     */
+    override suspend fun latestDailyAtOrBefore(at: Instant): DataResult<BodyMeasurement?> = dataResultOf {
+        dao.findLatestAtOrBefore(at.toEpochMilli(), MeasurementKind.DAILY.name)?.let { row ->
+            row.toDomain(soreDao.findForMeasurement(row.id))
+        }
+    }
+
     override suspend fun save(measurement: BodyMeasurement): DataResult<Unit> = dataResultOf {
         // The same 1–10 scale as a set's RPE and the per-exercise ratings, so the one validator covers
         // them (N8, N62). The picker clamps and cannot produce a bad score; this is the boundary, the

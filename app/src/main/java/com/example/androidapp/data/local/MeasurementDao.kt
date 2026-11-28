@@ -88,6 +88,19 @@ interface MeasurementDao {
     @Query(QuerySql.FIND_MEASUREMENT_ON_DAY)
     suspend fun findOnDay(from: Long, to: Long, kind: String): MeasurementEntity?
 
+    /**
+     * The newest daily record at or before [at], or null (ROADMAP N377).
+     *
+     * The recovery gate reads the soreness a session started under; a record made after it began is not
+     * that readiness, so the comparison is `<=` rather than "on the day". `createdAt` breaks a tie the way
+     * the screen's own list does.
+     */
+    @Query(
+        "SELECT * FROM measurements WHERE kind = :kind AND measuredAt <= :at AND deletedAt IS NULL " +
+            "ORDER BY measuredAt DESC, createdAt DESC LIMIT 1",
+    )
+    suspend fun findLatestAtOrBefore(at: Long, kind: String): MeasurementEntity?
+
     /** Rewrites one day's weight, leaving its tape, body fat, muscle and sore rows untouched (B255). */
     @Query("UPDATE measurements SET weightGrams = :grams, updatedAt = :at WHERE id = :id")
     suspend fun updateWeight(id: String, grams: Long, at: Long): Int

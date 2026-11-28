@@ -592,6 +592,8 @@ internal class FakeMeasurementRepository : MeasurementRepository {
 
     override suspend fun latestWeight(): DataResult<LatestWeight?> = unused()
 
+    override suspend fun latestDailyAtOrBefore(at: Instant): DataResult<BodyMeasurement?> = unused()
+
     override suspend fun setDailyWeight(at: Instant, grams: Long): DataResult<Unit> = unused()
 
     override suspend fun delete(id: String): DataResult<Unit> = unused()

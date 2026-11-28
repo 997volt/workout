@@ -1234,6 +1234,10 @@ private class FakeMeasurementRepository(
             entries.filter { it.weightGrams != null }.maxByOrNull { it.measuredAt }
                 ?.let { LatestWeight(grams = it.weightGrams!!, at = it.measuredAt) },
         )
+
+    /** Statistics never runs the workout gate, so there is no day to read (N377). */
+    override suspend fun latestDailyAtOrBefore(at: Instant): DataResult<BodyMeasurement?> =
+        DataResult.Success(null)
 }
 
 private class FakeExerciseRepository(private val lifts: List<Exercise>) : ExerciseRepository {

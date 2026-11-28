@@ -28,6 +28,13 @@ interface MeasurementSoreMuscleDao {
     @Query("SELECT * FROM measurement_sore_muscles WHERE deletedAt IS NULL ORDER BY position")
     fun observeAll(): Flow<List<MeasurementSoreMuscleEntity>>
 
+    /** One day's live list, in the order it was picked — what the recovery gate reads (ROADMAP N377). */
+    @Query(
+        "SELECT * FROM measurement_sore_muscles WHERE measurementId = :measurementId AND deletedAt IS NULL " +
+            "ORDER BY position",
+    )
+    suspend fun findForMeasurement(measurementId: String): List<MeasurementSoreMuscleEntity>
+
     /**
      * Writes a save's whole list, so a replace is one statement rather than a row-per-muscle loop that
      * a failure could stop halfway.

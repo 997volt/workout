@@ -480,6 +480,36 @@ class MeasurementRepositoryTest {
         assertEquals("the newest weight, not the newest row", 82_000L, latest.data?.grams)
     }
 
+    @Test
+    fun theLatestDailyRecordAtOrBefore_returnsItsOwnSoreList() = runTest {
+        // N377: the recovery gate reads the readiness a session started under. It wants the newest daily
+        // record at or before the start, not merely the newest daily record, and the tape entries of the
+        // same days are not it.
+        val twoDaysAgo = localHour(8).minusSeconds(2 * 86_400L)
+        val yesterday = localHour(9).minusSeconds(86_400L)
+        repository.save(
+            entry(at = twoDaysAgo, weightGrams = 80_000L, soreMuscles = listOf(SoreMuscle(MuscleGroup.QUADS, 7))),
+        )
+        repository.save(
+            entry(at = yesterday, weightGrams = 81_000L, soreMuscles = listOf(SoreMuscle(MuscleGroup.GLUTES, 6))),
+        )
+        repository.save(
+            entry(at = localHour(8), weightGrams = 82_000L, soreMuscles = listOf(SoreMuscle(MuscleGroup.CHEST, 5))),
+        )
+        repository.save(entry(at = localHour(6), kind = MeasurementKind.TAPE, waistMm = 800L))
+
+        val beforeToday = repository.latestDailyAtOrBefore(localHour(7)) as DataResult.Success
+        assertEquals("yesterday's record, not today's", yesterday, beforeToday.data?.measuredAt)
+        assertEquals(
+            listOf(SoreMuscle(MuscleGroup.GLUTES, 6)),
+            beforeToday.data?.soreMuscles,
+        )
+
+        val atToday = repository.latestDailyAtOrBefore(localHour(8)) as DataResult.Success
+        assertEquals("the boundary is inclusive", localHour(8), atToday.data?.measuredAt)
+        assertEquals(listOf(SoreMuscle(MuscleGroup.CHEST, 5)), atToday.data?.soreMuscles)
+    }
+
     private fun entry(
         at: Instant,
         kind: MeasurementKind = MeasurementKind.DAILY,

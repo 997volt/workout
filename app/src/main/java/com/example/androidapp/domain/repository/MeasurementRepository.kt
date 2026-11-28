@@ -36,6 +36,15 @@ interface MeasurementRepository {
     suspend fun latestWeight(): DataResult<LatestWeight?>
 
     /**
+     * The newest daily record at or before [at], or null (ROADMAP N377).
+     *
+     * The recovery gate reads the day's sore muscles from it. At-or-before because a record made after a
+     * session began is not the readiness it was trained under; the caller decides whether the record is too
+     * old to speak for the session ([com.example.androidapp.domain.model.sorenessSpeaksFor]).
+     */
+    suspend fun latestDailyAtOrBefore(at: Instant): DataResult<BodyMeasurement?>
+
+    /**
      * Sets [at]'s daily weight, keeping whatever else that day already says (B255).
      *
      * The targeted write the bodyweight prompt needs: saving a whole entry would replace the day's body

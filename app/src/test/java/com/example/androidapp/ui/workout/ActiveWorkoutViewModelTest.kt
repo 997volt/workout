@@ -3385,6 +3385,19 @@ class ActiveWorkoutViewModelTest {
         } else {
             DataResult.Success(latest?.let { LatestWeight(grams = it, at = weighedAt) })
         }
+
+        /** The day the recovery gate reads (N377); a failed read is a state a test can ask for. */
+        var failDaily = false
+
+        override suspend fun latestDailyAtOrBefore(at: Instant): DataResult<BodyMeasurement?> =
+            if (failDaily) {
+                DataResult.Failure(DataError.Storage(IOException("the days could not be read")))
+            } else {
+                DataResult.Success(
+                    saved.filter { it.kind == MeasurementKind.DAILY && !it.measuredAt.isAfter(at) }
+                        .maxByOrNull { it.measuredAt },
+                )
+            }
     }
 
     private class FakeWorkoutRepository : WorkoutRepository {

@@ -705,6 +705,10 @@ private class FakeMeasurementRepository(
                 ?.let { LatestWeight(grams = it.weightGrams!!, at = it.measuredAt) },
         )
 
+    /** This screen never runs the workout gate, so there is no day to read (N377). */
+    override suspend fun latestDailyAtOrBefore(at: Instant): DataResult<BodyMeasurement?> =
+        DataResult.Success(null)
+
     /** The day-weight write the workout prompt uses (B255); this screen does not log sets. */
     override suspend fun setDailyWeight(at: Instant, grams: Long): DataResult<Unit> = DataResult.Success(Unit)
 
