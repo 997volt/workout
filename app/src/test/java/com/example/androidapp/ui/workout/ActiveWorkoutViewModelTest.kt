@@ -89,6 +89,7 @@ import kotlinx.coroutines.yield
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -2504,6 +2505,61 @@ class ActiveWorkoutViewModelTest {
         assertEquals("t1", viewModel.planHandOff.value?.templateId)
         assertEquals("the plan row the rating belongs to", "te-0", viewModel.planHandOff.value?.templateExerciseId)
         assertEquals("the deload confirm, not the replace sheet", false, viewModel.planHandOff.value?.replace)
+    }
+
+    @Test
+    fun aSecondPainfulJoint_isAskedAfterTheFirst_andAfterThePlanHandOff() = runTest(dispatcher) {
+        // N377: the card asks one lift at a time. A Deload hands that lift to the plan editor; the queue
+        // keeps the other severe rating, and it is asked when the hand-off is handled rather than dropped.
+        val repository = FakeWorkoutRepository()
+        val programs = FakeProgramRepository().apply { activeWeeklyForTemplate = "p1" }
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = twoAnsweredPlans(),
+            programs = programs,
+            trends = FakeTrendsRepository().apply { templateSessions = DataResult.Success(emptyList()) },
+        )
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        viewModel.onAddExercise("back-squat")
+        settle()
+        val rows = viewModel.uiState.value.exercises
+        assertEquals(2, rows.size)
+        rows.forEach { row ->
+            viewModel.onRateExercise(
+                row.id,
+                muscleFeel = 8,
+                joints = listOf(JointPain(Joint.KNEE, Side.RIGHT, 7)),
+            )
+        }
+        settle()
+
+        viewModel.onFinish()
+        settle()
+        val first = viewModel.recoveryNotice.value?.single()
+        assertNotNull("the first notice is shown", first)
+
+        viewModel.onDeloadRecovery(first!!)
+        settle()
+        assertEquals(
+            "the plan editor is handed the first lift",
+            first.templateExerciseId,
+            viewModel.planHandOff.value?.templateExerciseId,
+        )
+        assertNull("and the card is gone while the editor is open", viewModel.recoveryNotice.value)
+
+        viewModel.onPlanHandOffHandled()
+        settle()
+        val second = viewModel.recoveryNotice.value?.single()
+        assertNotNull("the second notice follows", second)
+        assertNotEquals(first.templateExerciseId, second!!.templateExerciseId)
+
+        viewModel.onDismissRecovery()
+        settle()
+        assertNull(viewModel.recoveryNotice.value)
+        assertTrue("the workout closes after the last answer", viewModel.closed.value)
     }
 
     @Test

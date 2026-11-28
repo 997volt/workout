@@ -336,6 +336,9 @@ class ActiveWorkoutViewModel @Inject constructor(
     private val _recoveryNotice = MutableStateFlow<List<RecoveryNotice>?>(null)
     val recoveryNotice: StateFlow<List<RecoveryNotice>?> = _recoveryNotice.asStateFlow()
 
+    /** The joint-pain notices still owed after the one on screen, worst first (N377). */
+    private var pendingRecoveries: List<RecoveryNotice> = emptyList()
+
     /** The stalls still owed after the joint-pain card, or null (N305, N310). */
     private val pendingStallNotice = MutableStateFlow<FinishStalls?>(null)
 
@@ -1747,10 +1750,12 @@ class ActiveWorkoutViewModel @Inject constructor(
     }
 
     /**
-     * The finish's fixed order: the joint-pain card, the stall card, the close (N377, N305, N310).
+     * The finish's fixed order: the joint-pain notices, then the stall card, then the close (N377, N305,
+     * N310).
      *
-     * The joint-pain card is the one N377 adds; the stall card is kept for after it, so answering one card
-     * never drops another. A batch with neither ends the workout, which is the only path that closes here.
+     * The notices are asked **one at a time** (N377): a Deload/Replace hands one lift to the plan editor and
+     * the queue carries the rest to the next card, so two painful joints are not one answer and a lost second.
+     * A batch with none ends the workout, which is the only path that closes here.
      */
     private fun showNextDecisions(decisions: FinishDecisions?) {
         if (decisions == null) {
@@ -1759,9 +1764,10 @@ class ActiveWorkoutViewModel @Inject constructor(
         }
         if (decisions.recoveries.isNotEmpty()) {
             _stallProgramId.value = decisions.programId
-            _recoveryNotice.value = decisions.recoveries
             pendingStallNotice.value = decisions.stalls.takeIf { it.isNotEmpty() }
                 ?.let { FinishStalls(decisions.programId, it) }
+            pendingRecoveries = decisions.recoveries
+            _recoveryNotice.value = listOf(decisions.recoveries.first())
             return
         }
         if (decisions.stalls.isNotEmpty()) {
@@ -1776,7 +1782,7 @@ class ActiveWorkoutViewModel @Inject constructor(
         _stallNotice.value = notice.stalls
     }
 
-    /** The joint-pain card's Done: the stall card follows if it is owed (N377, N305). */
+    /** The joint-pain card's Done: the next notice follows, then the stall card (N377, N305). */
     fun onDismissRecovery() = finishRecovery()
 
     /** The joint-pain card's Deload: the same hand-off the stall card uses (N377, N310). */
@@ -1787,6 +1793,12 @@ class ActiveWorkoutViewModel @Inject constructor(
 
     private fun finishRecovery() {
         _recoveryNotice.value = null
+        pendingRecoveries = pendingRecoveries.drop(1)
+        val next = pendingRecoveries.firstOrNull()
+        if (next != null) {
+            _recoveryNotice.value = listOf(next)
+            return
+        }
         val stall = pendingStallNotice.value
         pendingStallNotice.value = null
         if (stall == null) closeSession() else showStalls(stall)
@@ -1795,8 +1807,9 @@ class ActiveWorkoutViewModel @Inject constructor(
     private fun handOffRecovery(notice: RecoveryNotice, replace: Boolean) {
         val programId = _stallProgramId.value ?: return
         _recoveryNotice.value = null
-        pendingStallNotice.value = null
-        _stallProgramId.value = null
+        // The answered notice leaves the queue; the rest wait for the plan hand-off to be handled, and the
+        // program id stays because the next notice's hand-off needs it.
+        pendingRecoveries = pendingRecoveries.drop(1)
         _planHandOff.value = PlanHandOff(programId, notice.templateId, notice.templateExerciseId, replace)
     }
 
@@ -1815,6 +1828,14 @@ class ActiveWorkoutViewModel @Inject constructor(
 
     fun onPlanHandOffHandled() {
         _planHandOff.value = null
+        val next = pendingRecoveries.firstOrNull()
+        if (next != null) {
+            _recoveryNotice.value = listOf(next)
+            return
+        }
+        val stall = pendingStallNotice.value ?: return
+        pendingStallNotice.value = null
+        showStalls(stall)
     }
 
     /**
@@ -1871,7 +1892,7 @@ class ActiveWorkoutViewModel @Inject constructor(
                 exerciseId = row.exerciseId,
                 pain = pain,
             )
-        }
+        }.sortedByDescending { it.pain.score }
     }
 
     /**
@@ -1890,8 +1911,11 @@ class ActiveWorkoutViewModel @Inject constructor(
         _calibrationReadError.value = null
         _recoveryHold.value = null
         _recoveryNotice.value = null
+        pendingRecoveries = emptyList()
         pendingDecisions.value = null
         pendingStallNotice.value = null
+        _stallProgramId.value = null
+        _planHandOff.value = null
         _closed.value = true
     }
 
