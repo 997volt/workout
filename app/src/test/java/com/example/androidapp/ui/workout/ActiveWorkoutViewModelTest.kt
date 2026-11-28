@@ -63,6 +63,7 @@ import com.example.androidapp.ui.components.DEFAULT_RPE_HALVES
 import com.example.androidapp.ui.components.SetEdit
 import com.example.androidapp.ui.components.WriteOutcome
 import com.example.androidapp.ui.testing.FakeDeloadRepository
+import com.example.androidapp.ui.testing.FakeMeasurementRepository
 import com.example.androidapp.ui.testing.FakeProgressionRepository
 import com.example.androidapp.ui.testing.FakeTrendsRepository
 import kotlinx.coroutines.CompletableDeferred
@@ -177,7 +178,7 @@ class ActiveWorkoutViewModelTest {
         templates,
         programs,
         PlanStallFinder(programs, templates, trends),
-        PlanVolumeFinder(programs, templates, trends),
+        PlanVolumeFinder(programs, templates, trends, measurements),
         progression,
         activeWorkoutRoute(templateId, repeatSessionId, slotId),
         settings,
@@ -3510,7 +3511,12 @@ class ActiveWorkoutViewModelTest {
             FakeTemplateRepository(),
             FakeProgramRepository(),
             PlanStallFinder(FakeProgramRepository(), FakeTemplateRepository(), FakeTrendsRepository()),
-            PlanVolumeFinder(FakeProgramRepository(), FakeTemplateRepository(), FakeTrendsRepository()),
+            PlanVolumeFinder(
+                FakeProgramRepository(),
+                FakeTemplateRepository(),
+                FakeTrendsRepository(),
+                FakeMeasurementRepository(),
+            ),
             FakeProgressionRepository(),
             activeWorkoutRoute(),
             FakeSettingsRepository(),

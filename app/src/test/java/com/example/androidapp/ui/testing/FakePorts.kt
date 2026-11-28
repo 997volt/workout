@@ -12,6 +12,7 @@ import com.example.androidapp.domain.model.BodyMeasurement
 import com.example.androidapp.domain.model.DeloadWeek
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.LatestWeight
+import com.example.androidapp.domain.model.MeasurementKind
 import com.example.androidapp.domain.model.PendingOccurrence
 import com.example.androidapp.domain.model.PersonalRecords
 import com.example.androidapp.domain.model.PreviousPerformance
@@ -592,7 +593,18 @@ internal class FakeMeasurementRepository : MeasurementRepository {
 
     override suspend fun latestWeight(): DataResult<LatestWeight?> = unused()
 
-    override suspend fun latestDailyAtOrBefore(at: Instant): DataResult<BodyMeasurement?> = unused()
+    /**
+     * The newest daily entry at or before [at], as the real repository answers it (N377).
+     *
+     * The recovery-gate tests seed [measurements] and read through the production rule, so this fake mirrors
+     * the query's at-or-before and daily-kind filter rather than returning a fixed value.
+     */
+    override suspend fun latestDailyAtOrBefore(at: Instant): DataResult<BodyMeasurement?> =
+        DataResult.Success(
+            measurements.value
+                .filter { it.kind == MeasurementKind.DAILY && !it.measuredAt.isAfter(at) }
+                .maxByOrNull { it.measuredAt },
+        )
 
     override suspend fun setDailyWeight(at: Instant, grams: Long): DataResult<Unit> = unused()
 

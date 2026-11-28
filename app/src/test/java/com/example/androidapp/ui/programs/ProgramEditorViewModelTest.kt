@@ -19,6 +19,7 @@ import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.ui.testing.FakeDocumentIo
+import com.example.androidapp.ui.testing.FakeMeasurementRepository
 import com.example.androidapp.ui.testing.FakeProgramRepository
 import com.example.androidapp.ui.testing.FakeTemplateRepository
 import com.example.androidapp.ui.testing.FakeTrendsRepository
@@ -77,7 +78,7 @@ class ProgramEditorViewModelTest {
         repository = repository,
         templateRepository = templates,
         stallFinder = PlanStallFinder(repository, templates, FakeTrendsRepository()),
-        planVolumeFinder = PlanVolumeFinder(repository, templates, FakeTrendsRepository()),
+        planVolumeFinder = PlanVolumeFinder(repository, templates, FakeTrendsRepository(), FakeMeasurementRepository()),
         documentIo = documentIo,
         savedStateHandle = handle,
     )
@@ -349,7 +350,7 @@ class ProgramEditorViewModelTest {
             repository = repository,
             templateRepository = templates,
             stallFinder = PlanStallFinder(repository, templates, trends),
-            planVolumeFinder = PlanVolumeFinder(repository, templates, trends),
+            planVolumeFinder = PlanVolumeFinder(repository, templates, trends, FakeMeasurementRepository()),
             documentIo = documentIo,
             savedStateHandle = SavedStateHandle(mapOf("programId" to PROGRAM_ID)),
         )

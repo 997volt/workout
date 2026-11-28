@@ -22,6 +22,7 @@ import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.WorkoutSummary
 import com.example.androidapp.domain.repository.WeeklyReviewRepository
+import com.example.androidapp.ui.testing.FakeMeasurementRepository
 import com.example.androidapp.ui.testing.FakeProgramRepository
 import com.example.androidapp.ui.testing.FakeTemplateRepository
 import com.example.androidapp.ui.testing.FakeTrendsRepository
@@ -255,6 +256,7 @@ class WeeklyReviewViewModelTest {
             FakeProgramRepository(),
             FakeTemplateRepository(),
             FakeTrendsRepository(),
+            FakeMeasurementRepository(),
         ),
         templateRepository: FakeTemplateRepository = FakeTemplateRepository(),
     ) = WeeklyReviewViewModel(
@@ -279,7 +281,7 @@ class WeeklyReviewViewModelTest {
         )
         val viewModel = reviewViewModel(
             fake,
-            planVolumeFinder = PlanVolumeFinder(programs, templates, trends),
+            planVolumeFinder = PlanVolumeFinder(programs, templates, trends, FakeMeasurementRepository()),
             templateRepository = templates,
         )
         advanceUntilIdle()
@@ -301,7 +303,7 @@ class WeeklyReviewViewModelTest {
         )
         val viewModel = reviewViewModel(
             fake,
-            planVolumeFinder = PlanVolumeFinder(programs, templates, trends),
+            planVolumeFinder = PlanVolumeFinder(programs, templates, trends, FakeMeasurementRepository()),
             templateRepository = templates,
         )
         advanceUntilIdle()
@@ -322,7 +324,7 @@ class WeeklyReviewViewModelTest {
         )
         val viewModel = reviewViewModel(
             fake,
-            planVolumeFinder = PlanVolumeFinder(programs, templates, trends),
+            planVolumeFinder = PlanVolumeFinder(programs, templates, trends, FakeMeasurementRepository()),
             templateRepository = templates,
         )
         advanceUntilIdle()
@@ -354,7 +356,7 @@ class WeeklyReviewViewModelTest {
         )
         val viewModel = reviewViewModel(
             fake,
-            planVolumeFinder = PlanVolumeFinder(programs, templates, trends),
+            planVolumeFinder = PlanVolumeFinder(programs, templates, trends, FakeMeasurementRepository()),
             templateRepository = templates,
         )
         advanceUntilIdle()
@@ -382,7 +384,7 @@ class WeeklyReviewViewModelTest {
         )
         val viewModel = reviewViewModel(
             fake,
-            planVolumeFinder = PlanVolumeFinder(programs, templates, trends),
+            planVolumeFinder = PlanVolumeFinder(programs, templates, trends, FakeMeasurementRepository()),
             templateRepository = templates,
         )
         advanceUntilIdle()

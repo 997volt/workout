@@ -15,11 +15,16 @@ import com.example.androidapp.domain.model.VolumeSuggestion
 import com.example.androidapp.domain.model.performedOccurrence
 import com.example.androidapp.domain.model.progressionPromptFor
 import com.example.androidapp.domain.model.progressionSets
+import com.example.androidapp.domain.model.recoveryVerdict
+import com.example.androidapp.domain.model.sorenessSpeaksFor
 import com.example.androidapp.domain.model.stall
+import com.example.androidapp.domain.repository.MeasurementRepository
 import com.example.androidapp.domain.repository.ProgramRepository
 import com.example.androidapp.domain.repository.TemplateRepository
 import com.example.androidapp.domain.repository.TemplateSetEdit
 import com.example.androidapp.domain.repository.TrendsRepository
+import java.time.ZoneId
+import java.time.ZoneOffset
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -33,9 +38,11 @@ import javax.inject.Singleton
  * the offer's own gate rather than the RPE field (decision 1b).
  *
  * The gates are the same on both surfaces: no open stall (a deload is the answer to a stall, not more work),
- * the plan's working-set count below [MAX_WORK_SETS], and a working plan that names sets at all. The card
- * holds while the rule holds; the finish fires once when the pattern reaches its threshold — the extra-set
- * first, one suggestion at a time.
+ * the plan's working-set count below [MAX_WORK_SETS], and a working plan that names sets at all. **A recovery
+ * hold joins them** (N377): a session whose day was sore enough, or whose exercise reported a painful joint,
+ * does not count as one of the pattern's clear sessions, so the card and the finish withhold the same offer.
+ * The card holds while the rule holds; the finish fires once when the pattern reaches its threshold — the
+ * extra-set first, one suggestion at a time.
  *
  * The read is the trends' finished sessions and the plan; nothing is stored. The write is the repository's
  * append, which the caller makes only when the lifter presses Add.
@@ -45,6 +52,8 @@ class PlanVolumeFinder @Inject constructor(
     private val programs: ProgramRepository,
     private val templates: TemplateRepository,
     private val trends: TrendsRepository,
+    /** The daily record the recovery gate reads (ROADMAP N377). */
+    private val measurements: MeasurementRepository,
 ) {
 
     /** Every suggestion in [programId]'s plans, in program then plan order (the card's read). */
@@ -113,6 +122,9 @@ class PlanVolumeFinder @Inject constructor(
                 session to performed
             }
         }
+        // The add half of the recovery gate for each previous session (N377): a session whose day was sore
+        // enough, or whose exercise reported a painful joint, does not count as evidence for another set.
+        val held = trained.map { (session, performed) -> addHeld(exercise, session, performed) }
         doneSuggestion(
             exercise = exercise,
             current = current,
@@ -124,6 +136,7 @@ class PlanVolumeFinder @Inject constructor(
             plannedBySession = trained.map { (_, performed) ->
                 planFor(exercise, performed, prescriptions)
             } + listOf(null),
+            previousHeld = held,
         )
     }
 
@@ -151,6 +164,15 @@ class PlanVolumeFinder @Inject constructor(
          * null entries fall back to the current plan for sessions from before the snapshot.
          */
         plannedBySession: List<List<ProgressionPlanSet>?> = emptyList(),
+        /** The current session's add gate, when the caller already knows it (ROADMAP N377). */
+        currentHeld: Boolean = false,
+        /**
+         * The add gate per previous session, oldest first (ROADMAP N377).
+         *
+         * Absent or short reads as clear, which keeps the pure tests' older shape: a held session is not one
+         * of the pattern's clear sessions, so it breaks the run rather than merely being counted.
+         */
+        previousHeld: List<Boolean> = emptyList(),
     ): VolumeSuggestion? {
         val planned = exercise.progressionSets()
         val work = planned.workSets()
@@ -165,24 +187,58 @@ class PlanVolumeFinder @Inject constructor(
 
         // The current makes the pair/trio; the session behind it must not have held, or the threshold
         // was reached on an earlier Done and the card carries it instead.
-        val previousHeldExtra = previous.lastOrNull()?.extraCount() == 1
-        val beforePreviousHeldExtra = previous.getOrNull(previous.size - 2)?.extraCount() == 1
-        if (current.extraCount() == EXTRA_SET_COUNT && previousHeldExtra && !beforePreviousHeldExtra) {
+        if (extraEarned(current, previous, currentHeld, previousHeld)) {
             return suggestion(exercise, work, VolumeReason.EXTRA_SET, current.extraPerformed())
         }
-        val previousTwoEarned = previous.takeLast(EXTRA_SESSIONS).let { last ->
-            last.size == EXTRA_SESSIONS && last.all { it.everyWorkSetEarned() }
-        }
-        val fourthBackEarned =
-            previous.getOrNull(previous.size - COMFORTABLE_SESSIONS)?.everyWorkSetEarned() == true
-        if (current.everyWorkSetEarned() && previousTwoEarned && !fourthBackEarned) {
+        if (comfortableEarned(current, previous, currentHeld, previousHeld)) {
             return suggestion(exercise, work, VolumeReason.COMFORTABLE, null)
         }
         return null
     }
 
+    /**
+     * The extra-set pattern, with the recovery gate (N377).
+     *
+     * The current and the session behind it are the pair; the one before must not already have held, or the
+     * threshold was reached on an earlier Done and the card carries it instead.
+     */
+    private fun extraEarned(
+        current: ProgressionPrompt,
+        previous: List<ProgressionPrompt>,
+        currentHeld: Boolean,
+        previousHeld: List<Boolean>,
+    ): Boolean {
+        val pattern = current.extraCount() == EXTRA_SET_COUNT &&
+            previous.lastOrNull()?.extraCount() == 1 &&
+            previous.getOrNull(previous.size - 2)?.extraCount() != 1
+        return pattern && recoveryClear(currentHeld, previousHeld, EXTRA_SESSIONS)
+    }
+
+    /** The comfortable pattern, with the recovery gate (N377): the trio must be clear too. */
+    private fun comfortableEarned(
+        current: ProgressionPrompt,
+        previous: List<ProgressionPrompt>,
+        currentHeld: Boolean,
+        previousHeld: List<Boolean>,
+    ): Boolean {
+        val previousTwoEarned = previous.takeLast(EXTRA_SESSIONS).let { last ->
+            last.size == EXTRA_SESSIONS && last.all { it.everyWorkSetEarned() }
+        }
+        val fourthBackEarned =
+            previous.getOrNull(previous.size - COMFORTABLE_SESSIONS)?.everyWorkSetEarned() == true
+        val pattern = current.everyWorkSetEarned() && previousTwoEarned && !fourthBackEarned
+        return pattern && recoveryClear(currentHeld, previousHeld, EXTRA_SESSIONS)
+    }
+
+    /** True when the current session and the pattern's previous ones are all clear of a hold (N377). */
+    private fun recoveryClear(
+        currentHeld: Boolean,
+        previousHeld: List<Boolean>,
+        previousSessions: Int,
+    ): Boolean = !currentHeld && previousHeld.takeLast(previousSessions).none { it }
+
     @Suppress("ReturnCount")
-    private fun planSuggestion(
+    private suspend fun planSuggestion(
         exercise: TemplateExercise,
         occurrence: Int,
         sessions: List<TemplateSession>,
@@ -199,12 +255,16 @@ class PlanVolumeFinder @Inject constructor(
         }
         val sessionPlans = trained.map { (_, performed) -> planFor(exercise, performed, prescriptions) }
         if (!isOpen(work, exercise, trained.map { it.second.sets }, sessionPlans)) return null
+        // The add half of the recovery gate per session (N377): a held session is not one of the pattern's
+        // clear sessions, so the card cannot offer a set the Done snackbar withheld.
+        val held = trained.map { (session, performed) -> addHeld(exercise, session, performed) }
 
         val prompts = trained.mapIndexed { index, (_, performed) ->
             progressionPromptFor(sessionPlans[index], performed.sets)
         }
         if (prompts.takeLast(EXTRA_SESSIONS).size == EXTRA_SESSIONS &&
-            prompts.takeLast(EXTRA_SESSIONS).all { it.extraCount() == 1 }
+            prompts.takeLast(EXTRA_SESSIONS).all { it.extraCount() == 1 } &&
+            held.takeLast(EXTRA_SESSIONS).none { it }
         ) {
             return suggestion(
                 exercise,
@@ -214,11 +274,39 @@ class PlanVolumeFinder @Inject constructor(
             )
         }
         if (prompts.takeLast(COMFORTABLE_SESSIONS).size == COMFORTABLE_SESSIONS &&
-            prompts.takeLast(COMFORTABLE_SESSIONS).all { it.everyWorkSetEarned() }
+            prompts.takeLast(COMFORTABLE_SESSIONS).all { it.everyWorkSetEarned() } &&
+            held.takeLast(COMFORTABLE_SESSIONS).none { it }
         ) {
             return suggestion(exercise, work, VolumeReason.COMFORTABLE, null)
         }
         return null
+    }
+
+    /**
+     * True when the recovery gate withholds this session's add (ROADMAP N377).
+     *
+     * The session's own day is read at or before its start, in its own zone, and the soreness is mapped
+     * through the plan row's muscles; the exercise's rating is the joint half. A failed read is no signal.
+     */
+    private suspend fun addHeld(
+        exercise: TemplateExercise,
+        session: TemplateSession,
+        performed: PerformedExercise,
+    ): Boolean {
+        val zone = session.zoneOffsetMinutes
+            ?.let(ZoneOffset::ofTotalSeconds)
+            ?: ZoneId.systemDefault()
+        val day = measurements.latestDailyAtOrBefore(session.startedAt).getOrNull()
+        val sore = day
+            ?.takeIf { sorenessSpeaksFor(it.measuredAt, session.startedAt, zone) }
+            ?.soreMuscles
+            .orEmpty()
+        return recoveryVerdict(
+            primaryMuscle = exercise.primaryMuscle,
+            secondaryMuscles = exercise.secondaryMuscles,
+            soreMuscles = sore,
+            joints = performed.joints,
+        ).holdsAdd
     }
 
     /**

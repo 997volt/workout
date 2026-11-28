@@ -1,16 +1,24 @@
 package com.example.androidapp.domain
 
+import com.example.androidapp.domain.model.BodyMeasurement
+import com.example.androidapp.domain.model.Joint
+import com.example.androidapp.domain.model.JointPain
+import com.example.androidapp.domain.model.MeasurementKind
+import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.PerformedExercise
 import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.ProgressionPerformance
 import com.example.androidapp.domain.model.ProgressionPrompt
 import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.domain.model.Side
+import com.example.androidapp.domain.model.SoreMuscle
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSession
 import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.VolumeReason
 import com.example.androidapp.domain.model.progressionPromptFor
 import com.example.androidapp.domain.model.progressionSets
+import com.example.androidapp.ui.testing.FakeMeasurementRepository
 import com.example.androidapp.ui.testing.FakeProgramRepository
 import com.example.androidapp.ui.testing.FakeTemplateRepository
 import com.example.androidapp.ui.testing.FakeTrendsRepository
@@ -28,10 +36,13 @@ import java.time.Instant
  */
 class PlanVolumeFinderTest {
 
+    private val measurements = FakeMeasurementRepository()
+
     private val finder = PlanVolumeFinder(
         FakeProgramRepository(),
         FakeTemplateRepository(),
         FakeTrendsRepository(),
+        measurements,
     )
 
     @Test
@@ -189,7 +200,7 @@ class PlanVolumeFinderTest {
                 ),
             )
         }
-        val finder = PlanVolumeFinder(FakeProgramRepository(), templates, trends)
+        val finder = PlanVolumeFinder(FakeProgramRepository(), templates, trends, measurements)
         val current = prompt(second, List(4) { performed() })
 
         val suggestion = finder.doneSuggestion("t1", "te2", current, List(4) { performed() }).getOrNull()
@@ -227,7 +238,7 @@ class PlanVolumeFinderTest {
                 "se-$index" to rangeExercise(current).progressionSets()
             }.toMap()
         }
-        val finder = PlanVolumeFinder(FakeProgramRepository(), templates, trends)
+        val finder = PlanVolumeFinder(FakeProgramRepository(), templates, trends, measurements)
         val current = progressionPromptFor(currentPlan.progressionSets(), listOf(performed(reps = 8)))
 
         val suggestion = finder.doneSuggestion("t1", "te1", current, listOf(performed(reps = 8))).getOrNull()
@@ -250,7 +261,7 @@ class PlanVolumeFinderTest {
                 ),
             )
         }
-        val finder = PlanVolumeFinder(FakeProgramRepository(), templates, trends)
+        val finder = PlanVolumeFinder(FakeProgramRepository(), templates, trends, measurements)
 
         val suggestions = finder.suggestionsForTemplate("t1").getOrNull().orEmpty()
 
@@ -273,11 +284,98 @@ class PlanVolumeFinderTest {
     private fun session(
         sets: List<com.example.androidapp.domain.model.ProgressionPerformance>,
         exerciseId: String = "squat",
+        joints: List<JointPain> = emptyList(),
     ) = TemplateSession(
         sessionId = "s-${sets.size}-${System.identityHashCode(sets)}",
         startedAt = Instant.parse("2026-09-01T07:00:00Z"),
-        performed = listOf(PerformedExercise(exerciseId = exerciseId, sets = sets)),
+        performed = listOf(
+            PerformedExercise(exerciseId = exerciseId, sets = sets, joints = joints),
+        ),
     )
+
+    @Test
+    fun aHeldPreviousSession_breaksTheExtraSetRun() {
+        // N377: a held session is not one of the pattern's clear sessions. The same pair offers the set
+        // when neither is held and none when one is — the gate is the only difference.
+        val exercise = exercise()
+        val current = prompt(exercise, List(4) { performed() })
+        val previous = listOf(
+            prompt(exercise, List(3) { performed() }),
+            prompt(exercise, List(4) { performed() }),
+        )
+
+        val held = finder.doneSuggestion(
+            exercise,
+            current,
+            previous,
+            previousHeld = listOf(false, true),
+        )
+        val clear = finder.doneSuggestion(
+            exercise,
+            current,
+            previous,
+            previousHeld = listOf(false, false),
+        )
+
+        assertThat(held).isNull()
+        assertThat(clear?.reason).isEqualTo(VolumeReason.EXTRA_SET)
+    }
+
+    @Test
+    fun theCard_withholdsTheOffer_whenTheDayWasSore() = runTest {
+        // N377: the card reads the same gate the *Done* snackbar reads, from the day at the session's start.
+        val exercise = exercise().copy(primaryMuscle = MuscleGroup.QUADS)
+        val templates = FakeTemplateRepository().apply { exercises.value = mapOf("t1" to listOf(exercise)) }
+        val trends = FakeTrendsRepository().apply {
+            templateSessions = DataResult.Success(
+                listOf(session(List(4) { performed() }), session(List(4) { performed() })),
+            )
+        }
+        val sore = FakeMeasurementRepository().apply {
+            measurements.value = listOf(
+                BodyMeasurement(
+                    id = "day",
+                    measuredAt = Instant.parse("2026-09-01T06:00:00Z"),
+                    kind = MeasurementKind.DAILY,
+                    soreMuscles = listOf(SoreMuscle(MuscleGroup.QUADS, 9)),
+                ),
+            )
+        }
+        val clear = FakeMeasurementRepository()
+
+        val clearSuggestion = PlanVolumeFinder(FakeProgramRepository(), templates, trends, clear)
+            .suggestionsForTemplate("t1").getOrNull().orEmpty()
+        val heldSuggestion = PlanVolumeFinder(FakeProgramRepository(), templates, trends, sore)
+            .suggestionsForTemplate("t1").getOrNull().orEmpty()
+
+        assertThat(clearSuggestion.map { it.reason }).containsExactly(VolumeReason.EXTRA_SET)
+        assertThat(heldSuggestion).isEmpty()
+    }
+
+    @Test
+    fun theCard_withholdsTheOffer_whenTheSessionReportedPain() = runTest {
+        // The joint half of the same gate, from the session's own rating rather than the day's record.
+        val templates = FakeTemplateRepository().apply { exercises.value = mapOf("t1" to listOf(exercise())) }
+        val pain = listOf(JointPain(Joint.KNEE, Side.RIGHT, 6))
+        val trends = FakeTrendsRepository().apply {
+            templateSessions = DataResult.Success(
+                listOf(
+                    session(List(4) { performed() }, joints = pain),
+                    session(List(4) { performed() }, joints = pain),
+                ),
+            )
+        }
+        val finder = PlanVolumeFinder(
+            FakeProgramRepository(),
+            templates,
+            trends,
+            FakeMeasurementRepository(),
+        )
+
+        val suggestions = finder.suggestionsForTemplate("t1").getOrNull().orEmpty()
+
+        assertThat(suggestions).isEmpty()
+    }
 
     @Test
     fun theCard_ignoresASessionThatDidNotTrainTheMovement() = runTest {
@@ -293,7 +391,7 @@ class PlanVolumeFinderTest {
                 ),
             )
         }
-        val finder = PlanVolumeFinder(FakeProgramRepository(), templates, trends)
+        val finder = PlanVolumeFinder(FakeProgramRepository(), templates, trends, measurements)
 
         val suggestion = finder.suggestionsForTemplate("t1").getOrNull().orEmpty().single()
 
@@ -316,7 +414,7 @@ class PlanVolumeFinderTest {
                 ProgramSlot(id = "ps1", programId = "p1", templateId = "t1", position = 0),
             )
         }
-        val finder = PlanVolumeFinder(programs, templates, trends)
+        val finder = PlanVolumeFinder(programs, templates, trends, measurements)
 
         val suggestions = finder.suggestionsForProgram("p1").getOrNull().orEmpty()
 
@@ -333,7 +431,7 @@ class PlanVolumeFinderTest {
         val trends = FakeTrendsRepository().apply {
             templateSessions = DataResult.Failure(DataError.Storage(IllegalStateException("history")))
         }
-        val finder = PlanVolumeFinder(FakeProgramRepository(), templates, trends)
+        val finder = PlanVolumeFinder(FakeProgramRepository(), templates, trends, measurements)
 
         assertThat(finder.suggestionsForTemplate("t1")).isInstanceOf(DataResult.Failure::class.java)
     }
