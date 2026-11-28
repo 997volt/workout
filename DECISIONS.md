@@ -418,7 +418,10 @@ the rule; that one argues it.
   week-level "lighter week" stays a secondary link at the bottom, and the finder gains the program-wide list
   (distinct by the plan's exercise row, so a template used by two slots answers once). The card's actions are
   offered on any program; the finish sheet stays active-weekly. The calibration prompt still runs before the
-  stall notice, and the hand-off is a navigation, not a background write.
+  stall notice, and the hand-off is a navigation, not a background write. **The stall hand-off stays
+  one-shot**: the card lists every stalled lift, but its ongoing state is carried by the program editor and
+  the weekly review, so one replacement is the answer. The queued card is the recovery card's, because a
+  joint rating lives only on the session (N377).
 
 - **A plan can earn a set back, and only the lifter adds it** (N311). The trim's counterweight is a plan
   edit with evidence, offered and never automatic. **The extra set**: the plan prescribes N working sets and
@@ -442,9 +445,10 @@ the rule; that one argues it.
 - **A recovery gate honours a stated fact; it never measures recovery** (N377). Joint pain and soreness are
   the lifter's own records for one exercise and one session. **Joint pain** at 4 or more holds the auto step
   (reps, load or a hold's seconds) and the earned-set offer; 7 or more also asks the finish's deload/replace
-  question, one lift at a time while the rest wait, with the workout left behind the plan editor so the
-  next card can be asked when it returns, and with the joint and the lifter's score as the reason.
-  **Soreness** holds only the offer: a sore
+  question, one lift at a time while the rest wait. A recovery hand-off leaves the workout behind the plan
+  editor so the next card can be asked when it returns; the joint and the lifter's score are the reason. The
+  queue is workout state: a process death after the session is stored ends it, as it ends the finish's other
+  prompts, while the ratings remain in the session's history. **Soreness** holds only the offer: a sore
   primary muscle above 4, or a sore secondary at 6 or more. **Muscle feel gates nothing**, because 10 is
   *fully worked*, not *recovered*. The day is the daily record as it stood at the session's start (a record
   older than three days is stale), read in the session's own zone and mapped through the plan row's muscles.
