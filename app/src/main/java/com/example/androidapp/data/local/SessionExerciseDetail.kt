@@ -61,6 +61,8 @@ data class SessionExerciseDetail(
     val supersetGroup: Int?,
     /** The directions of a step offered and not taken, by name, or null (ROADMAP N236). */
     val declinedDirections: String?,
+    /** The other muscles the movement trains, as the library states them (ROADMAP N377). */
+    val secondaryMuscles: List<MuscleGroup> = emptyList(),
 )
 
 /**
@@ -93,6 +95,7 @@ internal fun SessionExerciseDetail.toDomain(
     declinedDirections = declaredDirections(declinedDirections),
     joints = joints.map { it.toDomain() },
     supersetGroup = supersetGroup,
+    secondaryMuscles = secondaryMuscles,
 )
 
 /** One joint row as the rest of the app reads it (ROADMAP N63). */

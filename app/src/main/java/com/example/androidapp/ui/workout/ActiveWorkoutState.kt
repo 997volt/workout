@@ -5,6 +5,7 @@ import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.Activity
 import com.example.androidapp.domain.model.JointPain
+import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.ProgressionDirection
 import com.example.androidapp.domain.model.ProgressionMode
 import com.example.androidapp.domain.model.ProgressionPrompt
@@ -187,6 +188,15 @@ data class SessionExerciseRow(
     val progression: ProgressionPrompt = ProgressionPrompt(),
     /** The plan row this occurrence follows, or null for a movement the plan does not name (B428). */
     val planEntryId: String? = null,
+    /**
+     * The muscle this movement trains, or null when nothing states one (ROADMAP N377).
+     *
+     * Carried beside the workout's ratings so the recovery gate can map the day's soreness to the lift
+     * without a library read at *Done*. It is the same resolved value [subtitle] already names.
+     */
+    val primaryMuscle: MuscleGroup? = null,
+    /** The other muscles this movement trains, for the same gate (ROADMAP N377). */
+    val secondaryMuscles: List<MuscleGroup> = emptyList(),
 )
 
 /**

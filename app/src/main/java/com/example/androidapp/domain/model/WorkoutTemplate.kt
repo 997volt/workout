@@ -113,6 +113,13 @@ data class TemplateExercise(
     val calibrationPending: Boolean = false,
     /** The planned sets, in order (ROADMAP N14). Empty for a template with none. */
     val sets: List<TemplateSet> = emptyList(),
+    /**
+     * The other muscles this plan's movement trains, read from the library like [primaryMuscle] (ROADMAP N377).
+     *
+     * The plan card's recovery gate needs the same taxonomy the workout reads, so a sore secondary muscle
+     * withholds the card's offer under the same threshold.
+     */
+    val secondaryMuscles: List<MuscleGroup> = emptyList(),
 )
 
 /**

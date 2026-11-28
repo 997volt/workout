@@ -141,7 +141,8 @@ interface WorkoutDao {
                se.finishedAt AS finishedAt,
                se.muscleFeel AS muscleFeel,
                se.supersetGroup AS supersetGroup,
-               se.declinedDirections AS declinedDirections
+               se.declinedDirections AS declinedDirections,
+               e.secondaryMuscles AS secondaryMuscles
         FROM session_exercises se
         JOIN exercises e ON e.id = se.exerciseId
         -- The category, not filtered by `deletedAt`: a removed head still supplies its children

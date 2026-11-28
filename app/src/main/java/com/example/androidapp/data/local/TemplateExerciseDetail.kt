@@ -41,6 +41,8 @@ data class TemplateExerciseDetail(
     val supersetGroup: Int?,
     /** The one-shot find-the-weight marker (ROADMAP N309). */
     val calibrationPending: Boolean,
+    /** The other muscles the movement trains, as the library states them (ROADMAP N377). */
+    val secondaryMuscles: List<MuscleGroup> = emptyList(),
 )
 
 internal fun TemplateExerciseDetail.toDomain(
@@ -62,6 +64,7 @@ internal fun TemplateExerciseDetail.toDomain(
     supersetGroup = supersetGroup,
     calibrationPending = calibrationPending,
     sets = sets,
+    secondaryMuscles = secondaryMuscles,
 )
 
 internal fun TemplateSetEntity.toDomain(): TemplateSet = TemplateSet(

@@ -258,6 +258,8 @@ class ActiveWorkoutViewModelTest {
         substitutedFrom: String? = null,
         isTimed: Boolean = false,
         name: String = "Back Squat",
+        primaryMuscle: MuscleGroup? = null,
+        secondaryMuscles: List<MuscleGroup> = emptyList(),
     ) = SessionExercise(
         id = id,
         sessionId = "s1",
@@ -265,9 +267,10 @@ class ActiveWorkoutViewModelTest {
         substitutedFromExerciseId = substitutedFrom,
         position = position,
         exerciseName = name,
-        primaryMuscle = null,
+        primaryMuscle = primaryMuscle,
         equipment = null,
         isTimed = isTimed,
+        secondaryMuscles = secondaryMuscles,
     )
 
     /** Two exercises the plan answers, so two *Done* presses can each earn a step (B402). */
@@ -318,6 +321,27 @@ class ActiveWorkoutViewModelTest {
         // screen state (F16), so a tick cannot rebuild the exercise list.
         assertEquals("1:00:00", viewModel.clock.value.elapsed)
         assertTrue(state.isEmpty)
+    }
+
+    @Test
+    fun theWorkoutRowCarriesTheMusclesTheRecoveryGateReads() = runTest(dispatcher) {
+        // N377: the gate maps the day's soreness through the row, so the row must carry the same taxonomy
+        // the library states without a second read at *Done*.
+        val repository = FakeWorkoutRepository()
+        repository.exercises.value = listOf(
+            aSessionExercise(
+                "back-squat",
+                primaryMuscle = MuscleGroup.QUADS,
+                secondaryMuscles = listOf(MuscleGroup.GLUTES),
+            ),
+        )
+        val viewModel = viewModelFor(repository)
+        observe(viewModel)
+        settle()
+
+        val row = viewModel.uiState.value.exercises.single()
+        assertEquals(MuscleGroup.QUADS, row.primaryMuscle)
+        assertEquals(listOf(MuscleGroup.GLUTES), row.secondaryMuscles)
     }
 
     @Test

@@ -237,7 +237,8 @@ interface TemplateDao {
                e.stepGrams AS stepGrams,
                e.progressionMode AS progressionMode,
                te.supersetGroup AS supersetGroup,
-               te.calibrationPending AS calibrationPending
+               te.calibrationPending AS calibrationPending,
+               e.secondaryMuscles AS secondaryMuscles
         FROM template_exercises te
         JOIN exercises e ON e.id = te.exerciseId
         LEFT JOIN exercises parent ON parent.id = e.parentId

@@ -240,6 +240,9 @@ private fun SessionExercise.toRow(
             performed = loggedSets.map { it.toProgressionPerformance() },
             stepGrams = Weight.stepGramsFor(stepGrams, plan.unit),
         ),
+        // The taxonomy the recovery gate maps the day's soreness through (N377).
+        primaryMuscle = primaryMuscle,
+        secondaryMuscles = secondaryMuscles,
     )
 }
 

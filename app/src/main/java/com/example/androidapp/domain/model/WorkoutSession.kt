@@ -231,6 +231,15 @@ data class SessionExercise(
      * which are gone with the store that could carry them (N105).
      */
     val joints: List<JointPain> = emptyList(),
+    /**
+     * The other muscles this movement trains, read from the library like [primaryMuscle] (ROADMAP N377).
+     *
+     * The recovery gate maps the day's soreness through these: a sore muscle the lift assists counts at a
+     * higher score than the one it is filed under, and a sore muscle it does not train at all is not its
+     * business. The list is the movement's own, as the library reads it — a fact about the movement today,
+     * not something the session agreed to.
+     */
+    val secondaryMuscles: List<MuscleGroup> = emptyList(),
 ) {
     val isFinished: Boolean get() = finishedAt != null
 }
