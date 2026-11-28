@@ -15,9 +15,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
-import java.util.Locale
 
 /**
  * A window with two ends, chosen a day at a time (ROADMAP N35, N332).
@@ -33,6 +30,9 @@ import java.util.Locale
  * The dates are read back in UTC, which is the zone the picker reports in — converting them in the device's
  * zone would shift the day for anyone west of Greenwich and make "From 1 August" mean 31 July.
  */
+// The dialog's length is its state and two composables; extracting them would only pass the same
+// strings and tags through another signature.
+@Suppress("LongMethod")
 @Composable
 fun CustomRangeDialog(
     title: String,
@@ -40,6 +40,8 @@ fun CustomRangeDialog(
     toLabel: String,
     noDateLabel: String,
     applyLabel: String,
+    /** How the caller words a calendar day; the history formatter for Statistics, the sheet's own for export. */
+    formatDate: (LocalDate) -> String,
     onDismiss: () -> Unit,
     onConfirm: (LocalDate, LocalDate) -> Unit,
     initialFrom: LocalDate? = null,
@@ -68,6 +70,7 @@ fun CustomRangeDialog(
                     date = from,
                     noDate = noDateLabel,
                     testTag = fromTestTag,
+                    formatDate = formatDate,
                     onClick = { picking = true },
                 )
                 DateRow(
@@ -75,6 +78,7 @@ fun CustomRangeDialog(
                     date = to,
                     noDate = noDateLabel,
                     testTag = toTestTag,
+                    formatDate = formatDate,
                     onClick = { picking = false },
                 )
                 if (isReversed(from, to)) {
@@ -140,12 +144,11 @@ private fun DateRow(
     date: LocalDate?,
     noDate: String,
     testTag: String?,
+    formatDate: (LocalDate) -> String,
     onClick: () -> Unit,
 ) {
-    // The picker reports UTC days; formatting the LocalDate directly keeps the day it reported.
-    val shown = date?.let {
-        DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(Locale.getDefault()).format(it)
-    } ?: noDate
+    // The picker reports UTC days; the caller's formatter keeps the day it reported.
+    val shown = date?.let(formatDate) ?: noDate
     AppTextButton(
         onClick = onClick,
         modifier = testTag?.let { Modifier.testTag(it) } ?: Modifier,

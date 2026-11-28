@@ -161,6 +161,7 @@ private fun ReportContent(
             toLabel = stringResource(R.string.history_block_custom_to),
             noDateLabel = stringResource(R.string.history_block_custom_no_date),
             applyLabel = stringResource(R.string.history_block_custom_apply),
+            formatDate = ::text,
             fromTestTag = TestTags.HISTORY_BLOCK_CUSTOM_FROM,
             toTestTag = TestTags.HISTORY_BLOCK_CUSTOM_TO,
             applyTestTag = TestTags.HISTORY_BLOCK_CUSTOM_APPLY,

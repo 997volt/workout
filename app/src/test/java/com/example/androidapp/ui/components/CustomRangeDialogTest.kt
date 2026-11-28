@@ -34,6 +34,7 @@ class CustomRangeDialogTest {
                     toLabel = "To",
                     noDateLabel = "Not set",
                     applyLabel = "Apply",
+                    formatDate = { it.toString() },
                     fromTestTag = "from",
                     toTestTag = "to",
                     applyTestTag = "apply",

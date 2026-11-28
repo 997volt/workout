@@ -64,6 +64,7 @@ import com.example.androidapp.ui.history.HistoryFormat
 import com.example.androidapp.ui.statistics.chart.SeriesChart
 import com.example.androidapp.ui.theme.EyebrowStyle
 import java.time.ZoneId
+import java.time.ZoneOffset
 
 /** The Statistics tab (ROADMAP N35). */
 @Composable
@@ -671,6 +672,9 @@ private fun StatisticsCustomRange(
         toLabel = stringResource(R.string.statistics_custom_to),
         noDateLabel = stringResource(R.string.statistics_custom_no_date),
         applyLabel = stringResource(R.string.statistics_custom_apply),
+        formatDate = { date ->
+            HistoryFormat.date(date.atStartOfDay(ZoneOffset.UTC).toInstant(), zone = ZoneOffset.UTC)
+        },
         initialFrom = initial.from,
         initialTo = initial.to,
         fromTestTag = TestTags.Statistics.CUSTOM_FROM,
