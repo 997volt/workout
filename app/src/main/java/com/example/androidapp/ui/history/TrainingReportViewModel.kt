@@ -98,6 +98,14 @@ class TrainingReportViewModel @Inject constructor(
      * as it names the last-eight-weeks window (N343).
      */
     fun custom(start: LocalDate, end: LocalDate, name: String) {
+        // The shared dialog refuses this too; the ViewModel is the boundary, so a caller that bypasses the
+        // control cannot read a backwards window and call it a report.
+        if (start.isAfter(end)) {
+            _state.update {
+                it.copy(error = DataError.Invalid("The start date must be on or before the end date."))
+            }
+            return
+        }
         load { repository.range(start, end, name) }
     }
 

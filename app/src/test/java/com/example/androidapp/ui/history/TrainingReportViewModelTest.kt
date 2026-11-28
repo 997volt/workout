@@ -202,6 +202,25 @@ class TrainingReportViewModelTest {
     }
 
     @Test
+    fun aReversedCustomRange_isRefused_beforeTheRead() = runTest(dispatcher) {
+        // The shared dialog holds Apply for an ordered pair; the ViewModel is the boundary a caller can reach
+        // without the control, so a backwards window is said and nothing is read.
+        val repository = FakeRepository(DataResult.Success(report()))
+        val viewModel = TrainingReportViewModel(
+            repository = repository,
+            documentIo = FakeDocumentIo(),
+            timeSource = TimeSource { Instant.parse("2026-10-17T10:00:00Z") },
+        )
+
+        viewModel.custom(LocalDate.of(2026, 3, 20), LocalDate.of(2026, 1, 10), "Custom range")
+        advanceUntilIdle()
+
+        assertThat(viewModel.state.value.error).isInstanceOf(DataError.Invalid::class.java)
+        assertThat(repository.rangeStart).isNull()
+        assertThat(viewModel.state.value.canWrite).isFalse()
+    }
+
+    @Test
     fun downloading_writesTheCsv_andSaysItDid() = runTest(dispatcher) {
         val io = FakeDocumentIo()
         val viewModel = TrainingReportViewModel(
