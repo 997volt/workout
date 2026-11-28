@@ -98,6 +98,35 @@ class AutoProgressionBannerTest {
     }
 
     @Test
+    fun aHoldStep_statesItsSeconds() {
+        // N373: the seconds branch is the one direction a hold earns, and it must read as time rather than as
+        // a weight or a rep count.
+        composeTestRule.setContent {
+            AndroidAppTheme {
+                AutoProgressionBanner(
+                    moment = AutoProgressionMoment(
+                        exerciseName = "Plank",
+                        unit = WeightUnit.KILOGRAMS,
+                        steps = listOf(
+                            AutoProgressionStep(
+                                writeId = "w1",
+                                direction = ProgressionDirection.SECONDS,
+                                before = ProgressionTargets(durationSeconds = 45),
+                                after = ProgressionTargets(durationSeconds = 60),
+                                number = 1,
+                            ),
+                        ),
+                    ),
+                    onUndo = {},
+                    onDismiss = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Set 1 · 0:45 → 1:00").assertExists()
+    }
+
+    @Test
     fun dismissHidesTheBannerWithoutUndoingTheStep() {
         var dismissed = false
         composeTestRule.setContent {
