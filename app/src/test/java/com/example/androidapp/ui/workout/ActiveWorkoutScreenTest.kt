@@ -1620,6 +1620,8 @@ class ActiveWorkoutScreenTest {
 
         composeTestRule.onNodeWithTag(TestTags.RECOVERY_DIALOG).assertExists()
         composeTestRule.onNodeWithText("Right knee 7/10", substring = true).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.recoveryDialogReplace("te-0")).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.RECOVERY_DONE).assertExists()
         composeTestRule.onNodeWithTag(TestTags.recoveryDialogDeload("te-0")).performClick()
 
         assertEquals("te-0", deloaded?.templateExerciseId)
