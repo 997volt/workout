@@ -26,7 +26,9 @@ import com.example.androidapp.R
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.model.PersonalRecordMoment
 import com.example.androidapp.domain.model.ProgressionDirection
+import com.example.androidapp.domain.model.RecoveryHold
 import com.example.androidapp.domain.model.SetEntry
+import com.example.androidapp.domain.model.label
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.BodyweightPromptDialog
 import com.example.androidapp.ui.components.TestTags
@@ -225,6 +227,64 @@ private fun autoProgressionMessage(moment: AutoProgressionMoment): String {
             stringResource(R.string.auto_progression_next_seconds, moment.exerciseName, it)
         }
     } ?: moment.exerciseName
+}
+
+/**
+ * The reason a *Done* held its step (ROADMAP N377).
+ *
+ * A hold has no undo — nothing was written — so this is a notice rather than a decision, but it still states
+ * the lifter's own fact ("Right knee 6/10") instead of a blank "held": an unexplained non-write is the shape
+ * a bug takes, and the auto banner exists for the same reason.
+ */
+@Composable
+internal fun RecoveryHoldBanner(
+    moment: RecoveryHoldMoment,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth().testTag(TestTags.RECOVERY_HOLD),
+        color = MaterialTheme.colorScheme.tertiaryContainer,
+        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+            Text(
+                text = stringResource(R.string.recovery_hold_label),
+                style = MaterialTheme.typography.labelLarge,
+            )
+            Text(text = recoveryHoldMessage(moment), style = MaterialTheme.typography.bodyMedium)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                AppTextButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.testTag(TestTags.RECOVERY_HOLD_DISMISS),
+                ) {
+                    Text(stringResource(R.string.recovery_hold_dismiss))
+                }
+            }
+        }
+    }
+}
+
+/** The one line the hold states: the lift, the lifter's score, and what was not written. */
+@Composable
+private fun recoveryHoldMessage(moment: RecoveryHoldMoment): String = when (val hold = moment.hold) {
+    is RecoveryHold.Joint -> stringResource(
+        R.string.recovery_hold_joint,
+        moment.exerciseName,
+        hold.pain.label,
+        hold.pain.score,
+    )
+
+    is RecoveryHold.Sore -> stringResource(
+        R.string.recovery_hold_sore,
+        moment.exerciseName,
+        hold.muscle.label,
+        hold.score,
+    )
 }
 
 /**

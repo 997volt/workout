@@ -21,6 +21,8 @@ import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.LatestWeight
 import com.example.androidapp.domain.model.MeasurementKind
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.RecoveryHold
+import com.example.androidapp.domain.model.SoreMuscle
 import com.example.androidapp.domain.model.PendingOccurrence
 import com.example.androidapp.domain.model.PerformedExercise
 import com.example.androidapp.domain.model.PersonalRecords
@@ -915,6 +917,141 @@ class ActiveWorkoutViewModelTest {
         val moment = viewModel.autoStep.value
         assertNotNull("the write is read back", moment)
         assertEquals("and its id is what undo addresses", 1, moment!!.steps.size)
+    }
+
+    @Test
+    fun aPainfulJoint_holdsTheAutoStep_andSaysWhy() = runTest(dispatcher) {
+        // N377: pain is the one signal that stops a prescription, and the hold has to name the lifter's own
+        // rating — a silent non-write is the shape a bug takes.
+        val repository = FakeWorkoutRepository()
+        val templates = answeredPlan()
+        val progression = FakeProgressionRepository().apply { autoPrograms["t1"] = "p1" }
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = templates,
+            progression = progression,
+        )
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        val id = viewModel.uiState.value.exercises.single().id
+        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
+        viewModel.onRateExercise(
+            id,
+            muscleFeel = 6,
+            joints = listOf(JointPain(Joint.KNEE, Side.RIGHT, 6)),
+        )
+        settle()
+
+        viewModel.onFinishExercise(id)
+        settle()
+
+        assertTrue("the exercise still finishes", viewModel.uiState.value.exercises.single().isFinished)
+        assertEquals("no step was written", 0, templates.progressionWrites.size)
+        assertNull("no question was opened", viewModel.pendingProgression.value)
+        val hold = viewModel.recoveryHold.value
+        assertNotNull("the hold is stated", hold)
+        assertEquals("Back Squat", hold!!.exerciseName)
+        assertTrue(hold.hold is RecoveryHold.Joint)
+        assertEquals(6, (hold.hold as RecoveryHold.Joint).pain.score)
+
+        viewModel.onDismissRecoveryHold()
+        assertNull(viewModel.recoveryHold.value)
+    }
+
+    @Test
+    fun aMildAche_belowTheGate_stillWritesTheStep() = runTest(dispatcher) {
+        // The threshold is a boundary, not a mood: three is a twinge and the step it earned is written.
+        val repository = FakeWorkoutRepository()
+        val templates = answeredPlan()
+        val progression = FakeProgressionRepository().apply { autoPrograms["t1"] = "p1" }
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = templates,
+            progression = progression,
+        )
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        val id = viewModel.uiState.value.exercises.single().id
+        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
+        viewModel.onRateExercise(id, muscleFeel = 6, joints = listOf(JointPain(Joint.KNEE, Side.RIGHT, 3)))
+        settle()
+
+        viewModel.onFinishExercise(id)
+        settle()
+
+        assertEquals("the step was earned and written", 1, templates.progressionWrites.size)
+        assertNull("nothing held", viewModel.recoveryHold.value)
+    }
+
+    @Test
+    fun soreness_neverHoldsTheStep_evenAtNineOfTen() = runTest(dispatcher) {
+        // The settled rule is soreness holds only the offer. The day is read from the record at or before the
+        // session, so a sore primary muscle leaves this write alone.
+        val repository = FakeWorkoutRepository()
+        repository.exercises.value = listOf(aSessionExercise("back-squat", primaryMuscle = MuscleGroup.QUADS))
+        val templates = answeredPlan()
+        val progression = FakeProgressionRepository().apply { autoPrograms["t1"] = "p1" }
+        val measurements = FakeBodyMeasurements().apply {
+            saved += BodyMeasurement(
+                id = "day",
+                measuredAt = Instant.parse("2026-09-28T06:00:00Z"),
+                kind = MeasurementKind.DAILY,
+                soreMuscles = listOf(SoreMuscle(MuscleGroup.QUADS, 9)),
+            )
+        }
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = templates,
+            progression = progression,
+            measurements = measurements,
+        )
+        observe(viewModel)
+        settle()
+        val id = viewModel.uiState.value.exercises.single().id
+        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
+
+        viewModel.onFinishExercise(id)
+        settle()
+
+        assertEquals("soreness never stops a step", 1, templates.progressionWrites.size)
+        assertNull(viewModel.recoveryHold.value)
+    }
+
+    @Test
+    fun aFailedSorenessRead_doesNotStrandTheStep() = runTest(dispatcher) {
+        // The gate is advisory: a day that cannot be read is no signal, and the joint rating on the row is
+        // still the one that can hold it. A storage failure must not leave the exercise open.
+        val repository = FakeWorkoutRepository()
+        val templates = answeredPlan()
+        val progression = FakeProgressionRepository().apply { autoPrograms["t1"] = "p1" }
+        val measurements = FakeBodyMeasurements().apply { failDaily = true }
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = templates,
+            progression = progression,
+            measurements = measurements,
+        )
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        val id = viewModel.uiState.value.exercises.single().id
+        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
+
+        viewModel.onFinishExercise(id)
+        settle()
+
+        assertTrue("the exercise finished", viewModel.uiState.value.exercises.single().isFinished)
+        assertEquals("the earned step was written", 1, templates.progressionWrites.size)
+        assertNull(viewModel.recoveryHold.value)
     }
 
     @Test

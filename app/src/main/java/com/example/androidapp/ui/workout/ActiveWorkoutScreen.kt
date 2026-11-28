@@ -95,6 +95,7 @@ fun ActiveWorkoutRoute(
     val calibrationReadError by viewModel.calibrationReadError.collectAsStateWithLifecycle()
     val personalRecord by viewModel.personalRecord.collectAsStateWithLifecycle()
     val autoStep by viewModel.autoStep.collectAsStateWithLifecycle()
+    val recoveryHold by viewModel.recoveryHold.collectAsStateWithLifecycle()
     val setWriteOutcome by viewModel.setWriteOutcome.collectAsStateWithLifecycle()
 
     ActiveWorkoutScreen(
@@ -127,6 +128,8 @@ fun ActiveWorkoutRoute(
         autoStep = autoStep,
         onUndoAutoStep = viewModel::onUndoAutoStep,
         onDismissAutoStep = viewModel::onDismissAutoStep,
+        recoveryHold = recoveryHold,
+        onDismissRecoveryHold = viewModel::onDismissRecoveryHold,
         bodyweightPrompt = viewModel.bodyweightPrompt.collectAsStateWithLifecycle().value,
         onEnterBodyweight = viewModel::onBodyweightTaken,
         onDismissBodyweight = viewModel::onDismissBodyweightPrompt,
@@ -253,6 +256,9 @@ fun ActiveWorkoutScreen(
     autoStep: AutoProgressionMoment? = null,
     onUndoAutoStep: () -> Unit = {},
     onDismissAutoStep: () -> Unit = {},
+    /** The reason a *Done* wrote nothing instead, or null (ROADMAP N377). */
+    recoveryHold: RecoveryHoldMoment? = null,
+    onDismissRecoveryHold: () -> Unit = {},
     bodyweightPrompt: PendingBodyweight? = null,
     /**
      * The progression question a *Done* froze, or null while none is open (ROADMAP N74).
@@ -380,6 +386,8 @@ fun ActiveWorkoutScreen(
             autoStep = autoStep,
             onUndoAutoStep = onUndoAutoStep,
             onDismissAutoStep = onDismissAutoStep,
+            recoveryHold = recoveryHold,
+            onDismissRecoveryHold = onDismissRecoveryHold,
             onToggleSuperset = onToggleSuperset,
             restTimerEnabled = restTimerEnabled,
             defaultRestSeconds = defaultRestSeconds,
@@ -514,10 +522,21 @@ private fun WorkoutBody(
     autoStep: AutoProgressionMoment? = null,
     onUndoAutoStep: () -> Unit = {},
     onDismissAutoStep: () -> Unit = {},
+    recoveryHold: RecoveryHoldMoment? = null,
+    onDismissRecoveryHold: () -> Unit = {},
     restTimerEnabled: Boolean = true,
     defaultRestSeconds: Int = RestTimer.DEFAULT_SECONDS,
 ) {
     Column(modifier = modifier.fillMaxSize()) {
+        // A hold is the latest news about this exercise and the one with no undo, so it comes first; the
+        // auto banner's own write (and its way back) stays below it (N377, N299).
+        recoveryHold?.let {
+            RecoveryHoldBanner(
+                moment = it,
+                onDismiss = onDismissRecoveryHold,
+                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+            )
+        }
         // The app's own write sits above the work with its undo, before the record: a step the
         // lifter did not tap should be the first thing they can take back (N299).
         autoStep?.let {

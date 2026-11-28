@@ -1045,6 +1045,14 @@
         <item quantity="other">%1$s · %2$d targets adjusted</item>
     </plurals>
 
+    <!-- The hold a recovery signal puts on an auto step (ROADMAP N377). The reason is the lifter's own
+         rating, so the banner states it rather than a general "held"; the title is short because the line
+         carries the fact. -->
+    <string name="recovery_hold_label">Held</string>
+    <string name="recovery_hold_joint">%1$s — %2$s %3$d/10. No next step was written; the plan is unchanged.</string>
+    <string name="recovery_hold_sore">%1$s — %2$s %3$d/10. No extra set was offered.</string>
+    <string name="recovery_hold_dismiss">Dismiss</string>
+
     <!-- Rest timer (P1.4) -->
     <string name="rest_remaining">Rest %1$s</string>
     <string name="rest_add">+15s</string>

@@ -36,6 +36,7 @@ import com.example.androidapp.domain.model.ProgressionPlanSet
 import com.example.androidapp.domain.model.ProgressionPrompt
 import com.example.androidapp.domain.model.ProgressionSetPrompt
 import com.example.androidapp.domain.model.ProgressionStep
+import com.example.androidapp.domain.model.RecoveryHold
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.Side
 import com.example.androidapp.domain.model.VolumeReason
@@ -104,6 +105,9 @@ class ActiveWorkoutScreenTest {
         state: ActiveWorkoutUiState,
         actions: Actions = Actions(),
         personalRecord: PersonalRecordMoment? = null,
+        /** The reason a *Done* wrote nothing, or null (ROADMAP N377). */
+        recoveryHold: RecoveryHoldMoment? = null,
+        onDismissRecoveryHold: () -> Unit = {},
         countsAgainstProgram: Boolean = false,
         restTimerEnabled: Boolean = true,
         defaultRestSeconds: Int = 90,
@@ -139,6 +143,8 @@ class ActiveWorkoutScreenTest {
                 onLogSet = actions.onLogSet,
                 onToggleSuperset = onToggleSuperset,
                 personalRecord = personalRecord,
+                recoveryHold = recoveryHold,
+                onDismissRecoveryHold = onDismissRecoveryHold,
                 onUpdateSet = { _, _, _, _, _, _, _, _ -> },
                 onRemoveExercise = actions.onRemoveExercise,
                 onMoveExercise = actions.onMoveExercise,
@@ -1561,6 +1567,28 @@ class ActiveWorkoutScreenTest {
         setScreen(state = state(isFinished = false))
 
         composeTestRule.onNodeWithTag(TestTags.PERSONAL_RECORD).assertDoesNotExist()
+    }
+
+    @Test
+    fun aHeldDone_isStatedAboveTheWork_andNamesItsReason() {
+        // N377: the auto path's silence has to say what it did not write, or it reads as the bug it is not.
+        var dismissed = 0
+        setScreen(
+            state = state(isFinished = false),
+            recoveryHold = RecoveryHoldMoment(
+                exerciseName = "Back Squat",
+                hold = RecoveryHold.Joint(JointPain(Joint.KNEE, Side.RIGHT, 6)),
+            ),
+            onDismissRecoveryHold = { dismissed++ },
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.RECOVERY_HOLD).assertExists()
+        composeTestRule.onNodeWithText(
+            "Back Squat — Right knee 6/10. No next step was written; the plan is unchanged.",
+        ).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.RECOVERY_HOLD_DISMISS).performClick()
+
+        assertEquals(1, dismissed)
     }
 
     @Test

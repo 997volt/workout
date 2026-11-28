@@ -25,6 +25,7 @@ import com.example.androidapp.domain.model.PreviousPerformance
 import com.example.androidapp.domain.model.ProgressionDirection
 import com.example.androidapp.domain.model.ProgressionMode
 import com.example.androidapp.domain.model.ProgressionPrompt
+import com.example.androidapp.domain.model.RecoveryVerdict
 import com.example.androidapp.domain.model.STALL_SESSIONS
 import com.example.androidapp.domain.model.SessionExercise
 import com.example.androidapp.domain.model.SetEntry
@@ -33,7 +34,9 @@ import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.VolumeSuggestion
 import com.example.androidapp.domain.model.WorkoutSession
 import com.example.androidapp.domain.model.pendingProgressionFor
+import com.example.androidapp.domain.model.recoveryVerdict
 import com.example.androidapp.domain.model.runContinuesAfter
+import com.example.androidapp.domain.model.sorenessSpeaksFor
 import com.example.androidapp.domain.repository.DeloadRepository
 import com.example.androidapp.domain.repository.MeasurementRepository
 import com.example.androidapp.domain.repository.ProgramRepository
@@ -66,6 +69,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.time.Duration
+import java.time.ZoneId
 import javax.inject.Inject
 
 /**
@@ -337,6 +341,16 @@ class ActiveWorkoutViewModel @Inject constructor(
      */
     private val _autoStep = MutableStateFlow<AutoProgressionMoment?>(null)
     val autoStep: StateFlow<AutoProgressionMoment?> = _autoStep.asStateFlow()
+
+    /**
+     * The exercise a *Done* held instead of writing, or null (ROADMAP N377).
+     *
+     * A step that is not written is not a step the app took, so there is no undo — but there is a reason, and
+     * the same silence that would read as a bug on the write path reads as a bug here. The banner stays until
+     * dismissed, like the auto one, so a lifter who looked away can still see why the plan stayed put.
+     */
+    private val _recoveryHold = MutableStateFlow<RecoveryHoldMoment?>(null)
+    val recoveryHold: StateFlow<RecoveryHoldMoment?> = _recoveryHold.asStateFlow()
 
     /** Moments waiting behind the one on screen, oldest first (B402). Main-thread only. */
     private val queuedAutoSteps = ArrayDeque<AutoProgressionMoment>()
@@ -725,13 +739,24 @@ class ActiveWorkoutViewModel @Inject constructor(
      *
      * The order is the plan's: the write, its record, then the finish. A failure leaves the exercise
      * open so a retry can offer what did not land; the rows that did land no longer offer anything,
-     * because the plan has moved past the work that earned them.
+     * because the plan has moved past the work that earned them. A recovery hold returns before the
+     * write and is the third ending: no step, a stated reason, and the exercise finished (N377).
      */
+    @Suppress("ReturnCount")
     private suspend fun applyAutoProgression(
         sessionExerciseId: String,
         row: SessionExerciseRow,
         programId: String,
     ) {
+        // The gate is read before the question: a held step writes nothing at all, so there is no dialog to
+        // skip and no undo to offer. The reason is the only trace, and it is the lifter's own rating.
+        val recovery = recoveryVerdictFor(row)
+        val hold = recovery.hold
+        if (hold != null && recovery.holdsStep) {
+            _recoveryHold.value = RecoveryHoldMoment(row.name, hold)
+            finishExercise(sessionExerciseId, row.progression)
+            return
+        }
         val question = pendingProgressionFor(
             sessionExerciseId = sessionExerciseId,
             exerciseName = row.name,
@@ -770,6 +795,30 @@ class ActiveWorkoutViewModel @Inject constructor(
         // A step was taken, so an earlier *Not now* no longer describes this exercise (B310).
         val cleared = workoutRepository.declineProgression(sessionExerciseId, emptySet())
         if (cleared is DataResult.Failure && lastError.value == null) lastError.value = cleared.error
+    }
+
+    /**
+     * What the day and this exercise's own rating say about its step (ROADMAP N377).
+     *
+     * The soreness read is the day the session started under, not the newest record, and a record older than
+     * the window is not today's. A failed read is the absence of a signal rather than a hold: the gate is
+     * advisory, the joint rating on the row still gates, and a storage failure must not strand a workout the
+     * way a read that could not answer used to (B422).
+     */
+    private suspend fun recoveryVerdictFor(row: SessionExerciseRow): RecoveryVerdict {
+        val start = uiState.value.startedAtInstant ?: return RecoveryVerdict()
+        val zone = uiState.value.sessionZone ?: ZoneId.systemDefault()
+        val day = measurementRepository.latestDailyAtOrBefore(start).getOrNull()
+        val sore = day
+            ?.takeIf { sorenessSpeaksFor(it.measuredAt, start, zone) }
+            ?.soreMuscles
+            .orEmpty()
+        return recoveryVerdict(
+            primaryMuscle = row.primaryMuscle,
+            secondaryMuscles = row.secondaryMuscles,
+            soreMuscles = sore,
+            joints = row.joints,
+        )
     }
 
     /** The one on screen, or the next one queued behind it (B402). */
@@ -824,6 +873,11 @@ class ActiveWorkoutViewModel @Inject constructor(
         if (autoUndoInFlight) return
         val moment = _autoStep.value ?: return
         advanceAutoStep(moment)
+    }
+
+    /** The hold's reason has been read, so it is not shown again (ROADMAP N377). */
+    fun onDismissRecoveryHold() {
+        _recoveryHold.value = null
     }
 
     /**
@@ -1696,6 +1750,7 @@ class ActiveWorkoutViewModel @Inject constructor(
         _volumeSuggestion.value = null
         _volumeUndo.value = null
         _calibrationReadError.value = null
+        _recoveryHold.value = null
         _closed.value = true
     }
 

@@ -67,6 +67,9 @@ internal fun Snapshot.toUiState(
         startedAt = session?.let {
             WorkoutFormat.clockTime(it.startedAt, zone = it.zoneIdOrNull() ?: ZoneId.systemDefault())
         }.orEmpty(),
+        // The recovery gate reads the day the session started under (N377); the header keeps the hour.
+        startedAtInstant = session?.startedAt,
+        sessionZone = session?.zoneIdOrNull(),
         exercises = exercises.map {
             it.toRow(
                 sets = sets,

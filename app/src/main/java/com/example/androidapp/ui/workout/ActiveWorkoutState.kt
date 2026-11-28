@@ -10,10 +10,13 @@ import com.example.androidapp.domain.model.ProgressionDirection
 import com.example.androidapp.domain.model.ProgressionMode
 import com.example.androidapp.domain.model.ProgressionPrompt
 import com.example.androidapp.domain.model.ProgressionTargets
+import com.example.androidapp.domain.model.RecoveryHold
 import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.ui.components.SetEdit
 import com.example.androidapp.ui.components.WriteOutcome
+import java.time.Instant
+import java.time.ZoneId
 
 /** A logged set as the screen shows it: position, weight, reps, and N6's extras. */
 data class SetRow(
@@ -92,6 +95,18 @@ data class AutoProgressionMoment(
     val exerciseName: String,
     val unit: WeightUnit,
     val steps: List<AutoProgressionStep>,
+)
+
+/**
+ * What a *Done* held instead of writing (ROADMAP N377).
+ *
+ * The auto path says what it wrote; a hold has to say what it did **not** write, or the silence is
+ * indistinguishable from a bug. It carries the reason the gate chose, so the banner names the joint and its
+ * score rather than a generic "held".
+ */
+data class RecoveryHoldMoment(
+    val exerciseName: String,
+    val hold: RecoveryHold,
 )
 
 /** One exercise in the workout, with its sets and what the next set will prefill. */
@@ -237,6 +252,14 @@ data class ActiveWorkoutUiState(
     val isDeloadWorkout: Boolean = false,
     /** Fixed for the life of the session, so it does not belong on the clock. */
     val startedAt: String = "",
+    /**
+     * The session's start and the zone it was performed in (ROADMAP N377).
+     *
+     * The recovery gate reads the day the session started under. [startedAt] is the formatted hour the header
+     * shows; these are the facts the daily-record read needs, kept beside it so no screen asks the store again.
+     */
+    val startedAtInstant: Instant? = null,
+    val sessionZone: ZoneId? = null,
     val exercises: List<SessionExerciseRow> = emptyList(),
     /** A just-deleted set awaiting undo; the screen shows it as a snackbar. */
     val pendingUndo: SetEntry? = null,

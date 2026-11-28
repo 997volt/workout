@@ -220,6 +220,12 @@ internal interface WorkoutTags {
     /** Hides the banner without undoing the step (ROADMAP N299). */
     val AUTO_PROGRESSION_DISMISS: String get() = "auto_progression_dismiss"
 
+    /** The banner a held *Done* shows, naming the reason (ROADMAP N377). */
+    val RECOVERY_HOLD: String get() = "recovery_hold"
+
+    /** Hides the hold's reason (ROADMAP N377). */
+    val RECOVERY_HOLD_DISMISS: String get() = "recovery_hold_dismiss"
+
     /** The prompt a bodyweight set raises when no weight is on record (ROADMAP N219). */
     val BODYWEIGHT_FIELD: String get() = "bodyweight_field"
 
