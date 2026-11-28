@@ -2508,6 +2508,42 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
+    fun severeJointPain_atTheFinish_offersTheReplaceSheet() = runTest(dispatcher) {
+        // The card's other action: Replace hands the plan editor its replace sheet, not the deload confirm.
+        val repository = FakeWorkoutRepository()
+        val programs = FakeProgramRepository().apply { activeWeeklyForTemplate = "p1" }
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = answeredPlan(),
+            programs = programs,
+            trends = FakeTrendsRepository().apply { templateSessions = DataResult.Success(emptyList()) },
+        )
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        val id = viewModel.uiState.value.exercises.single().id
+        viewModel.onRateExercise(
+            id,
+            muscleFeel = 8,
+            joints = listOf(JointPain(Joint.KNEE, Side.RIGHT, 7)),
+        )
+        settle()
+
+        viewModel.onFinish()
+        settle()
+        val notice = viewModel.recoveryNotice.value?.single()
+        assertNotNull("the pain card is shown", notice)
+
+        viewModel.onReplaceRecovery(notice!!)
+        settle()
+
+        assertTrue("the replace sheet opens", viewModel.planHandOff.value?.replace == true)
+        assertEquals("for the rated plan row", "te-0", viewModel.planHandOff.value?.templateExerciseId)
+    }
+
+    @Test
     fun aSecondPainfulJoint_isAskedAfterTheFirst_andAfterThePlanHandOff() = runTest(dispatcher) {
         // N377: the card asks one lift at a time. A Deload hands that lift to the plan editor; the queue
         // keeps the other severe rating, and it is asked when the hand-off is handled rather than dropped.
