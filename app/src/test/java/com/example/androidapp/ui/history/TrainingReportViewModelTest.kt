@@ -198,7 +198,8 @@ class TrainingReportViewModelTest {
         assertThat(viewModel.state.value.report?.sessions).isEmpty()
         assertWithMessage("an empty window can still be written")
             .that(viewModel.state.value.canWrite)
-            .isTrue()    }
+            .isTrue()
+    }
 
     @Test
     fun downloading_writesTheCsv_andSaysItDid() = runTest(dispatcher) {
